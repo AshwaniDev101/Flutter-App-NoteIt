@@ -6,8 +6,8 @@ import 'package:noteit/features/edit_note_page/screens/view_model/edit_note_view
 import '../../../../database/drift/drift_database.dart';
 
 class EditNotePage extends ConsumerStatefulWidget {
-
   final Note? note;
+
   const EditNotePage({this.note, super.key});
 
   @override
@@ -19,6 +19,16 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
   final TextEditingController contentController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+
+    if (widget.note != null) {
+      titleController.text = widget.note!.title;
+      contentController.text = widget.note!.content;
+    }
+  }
+
+  @override
   void dispose() {
     titleController.dispose();
     contentController.dispose();
@@ -27,137 +37,112 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
 
   @override
   Widget build(BuildContext context) {
-
-    if(widget.note!=null)
-      {
-        titleController.text = widget.note!.title;
-        contentController.text = widget.note!.content;
-      }
-    final noteTheme = Theme.of(context).extension<NoteTheme>()!;
+    // final noteTheme = Theme.of(context).extension<NoteTheme>()!;
     final viewModelState = ref.watch(editNoteViewModelProvider);
     final viewModel = ref.read(editNoteViewModelProvider.notifier);
 
-    return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          child: Column(
-            children: [
-              const SizedBox(height: 6),
+    return PopScope(
+      canPop: !viewModelState.isEditing,
 
-              Row(
-                children: [
-                  IconButton(
-                    color: noteTheme.cardTitleForeground,
-                    onPressed: () async {
-                      if (context.mounted && viewModelState.isEditing) {
-                        viewModel.setEditing(false);
-                        await viewModel.saveNote(
-                          titleController.text,
-                          contentController.text,
-                        );
-                      } else {
-                        Navigator.of(context).pop();
-                      }
-                    },
-                    icon: Icon(
-                      viewModelState.isEditing
-                          ? Icons.check
-                          : Icons.arrow_back,
-                    ),
-                  ),
+      onPopInvokedWithResult: (bool didPop, result) async {
+        if (didPop) return;
 
-                  const SizedBox(width: 4),
+        if (viewModelState.isEditing) {
+          viewModel.setEditing(false);
 
-                  Expanded(
-                    child: TextField(
-                      readOnly: !viewModelState.isEditing,
-                      controller: titleController,
-                      onTap: () {
-                        if (!viewModelState.isEditing) {
-                          viewModel.setEditing(true);
+          await _saveNote(viewModel);
+        }
+      },
+
+      child: Scaffold(
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Column(
+              children: [
+                const SizedBox(height: 6),
+
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: () async {
+                        if (viewModelState.isEditing) {
+                          await _saveNote(viewModel);
+                          viewModel.setEditing(false);
+                        } else if (context.mounted) {
+                          Navigator.of(context).pop();
                         }
                       },
-                      decoration: const InputDecoration(
-                        hintText: "Title",
-                        border: InputBorder.none,
+                      icon: Icon(viewModelState.isEditing ? Icons.check : Icons.arrow_back),
+                    ),
+
+                    const SizedBox(width: 4),
+
+                    Expanded(
+                      child: TextField(
+                        readOnly: !viewModelState.isEditing,
+                        controller: titleController,
+                        onTap: () {
+                          if (!viewModelState.isEditing) {
+                            viewModel.setEditing(true);
+                          }
+                        },
+                        decoration: const InputDecoration(hintText: "Title", border: InputBorder.none),
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                       ),
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: noteTheme.cardTitleForeground,
-                      ),
                     ),
-                  ),
 
-                  IconButton(
-                    color: noteTheme.cardTitleForeground,
-                    onPressed: () {},
-                    icon: const Icon(Icons.more_vert_rounded),
-                  ),
-                ],
-              ),
+                    IconButton(onPressed: () {}, icon: const Icon(Icons.more_vert_rounded)),
+                  ],
+                ),
 
-              Row(
-                children: [
-                  Text(
-                    viewModelState.isEditing ? "Editing" : "Saved",
-                    style: TextStyle(
-                      fontSize: 12,
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    "4/23/26 8:48 AM",
-                    style: TextStyle(
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
+                Row(
+                  children: [
+                    Text(viewModelState.isEditing ? "Editing" : "Saved", style: TextStyle(fontSize: 12)),
+                    const Spacer(),
+                    Text("4/23/26 8:48 AM", style: TextStyle(fontSize: 12)),
+                  ],
+                ),
 
-              const SizedBox(height: 8),
+                const SizedBox(height: 8),
 
-              Expanded(
-                child: TextField(
-                  readOnly: !viewModelState.isEditing,
-                  controller: contentController,
-                  maxLines: null,
-                  expands: true,
-                  keyboardType: TextInputType.multiline,
-                  onTap: () {
-                    if (!viewModelState.isEditing) {
-                      viewModel.setEditing(true);
-                    }
-                  },
-                  decoration: const InputDecoration(
-                    hintText: "Start writing your note...",
-                    border: InputBorder.none,
-                  ),
-                  style: TextStyle(
-                    fontSize: 15,
+                Expanded(
+                  child: TextField(
+                    readOnly: !viewModelState.isEditing,
+                    controller: contentController,
+                    maxLines: null,
+                    expands: true,
+                    keyboardType: TextInputType.multiline,
+                    onTap: () {
+                      if (!viewModelState.isEditing) {
+                        viewModel.setEditing(true);
+                      }
+                    },
+                    decoration: const InputDecoration(hintText: "Start writing your note...", border: InputBorder.none),
+                    style: TextStyle(fontSize: 15),
                   ),
                 ),
-              ),
 
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  IconButton(
-
-                    onPressed: () {},
-                    icon: const Icon(Icons.undo),
-                  ),
-                  IconButton(
-                    onPressed: () {},
-                    icon: const Icon(Icons.redo),
-                  ),
-                ],
-              ),
-            ],
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(onPressed: () {}, icon: const Icon(Icons.undo)),
+                    IconButton(onPressed: () {}, icon: const Icon(Icons.redo)),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _saveNote(EditNoteViewModel viewModel) async {
+    if (widget.note != null) {
+      await viewModel.updateNote(widget.note!.id, titleController.text, contentController.text);
+    } else {
+      await viewModel.saveNote(titleController.text, contentController.text);
+    }
   }
 }
