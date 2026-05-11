@@ -3,8 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/theme/note_theme.dart';
 import 'package:noteit/features/edit_note_page/screens/view_model/edit_note_view_model.dart';
 
+import '../../../../database/drift/drift_database.dart';
+
 class EditNotePage extends ConsumerStatefulWidget {
-  const EditNotePage({super.key});
+
+  final Note? note;
+  const EditNotePage({this.note, super.key});
 
   @override
   ConsumerState<EditNotePage> createState() => _EditNotePageState();
@@ -23,6 +27,12 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
 
   @override
   Widget build(BuildContext context) {
+
+    if(widget.note!=null)
+      {
+        titleController.text = widget.note!.title;
+        contentController.text = widget.note!.content;
+      }
     final noteTheme = Theme.of(context).extension<NoteTheme>()!;
     final viewModelState = ref.watch(editNoteViewModelProvider);
     final viewModel = ref.read(editNoteViewModelProvider.notifier);

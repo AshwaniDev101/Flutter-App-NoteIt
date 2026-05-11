@@ -5,7 +5,6 @@ import 'package:noteit/core/routing/routing.dart';
 import 'package:noteit/core/theme/note_theme.dart';
 
 import '../../../../database/drift/drift_database.dart';
-import '../../../../database/drift/firebase_provider.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});

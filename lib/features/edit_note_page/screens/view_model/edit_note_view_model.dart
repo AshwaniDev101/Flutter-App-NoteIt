@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../database/drift/drift_database.dart';
-import '../../../../database/drift/firebase_provider.dart';
 
 class EditNoteState {
   final bool isSaved;

@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:noteit/features/edit_note_page/screens/view/edit_note_page.dart';
 import 'package:noteit/features/home_page/screens/view/home_page.dart';
 
+import '../../database/drift/drift_database.dart';
+
 
 class AppRoutes
 {
@@ -17,7 +19,11 @@ final routerProvider = Provider((ref) {
     initialLocation: AppRoutes.home,
     routes: <RouteBase>[
       GoRoute( path: AppRoutes.home, builder: (context, state) => const HomePage()),
-      GoRoute( path: AppRoutes.edit, builder: (context, state) => EditNotePage()),
+      GoRoute( path: AppRoutes.edit, builder: (context, state) {
+        final note =  state.extra as  Note?;
+
+        return EditNotePage(note: note);
+  } ),
     ],
   );
 });

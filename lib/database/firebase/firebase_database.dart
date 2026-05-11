@@ -11,8 +11,6 @@ final firestoreProvider = Provider<FirebaseFirestore>((ref) {
   return FirebaseFirestore.instance;
 });
 
-
-
 class FirebaseDatabase {
   final FirebaseFirestore _firestore;
   final String _collectionPath = 'notes';
