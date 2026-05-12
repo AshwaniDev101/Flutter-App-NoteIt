@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/routing/routing.dart';
+import 'package:noteit/shared/snack_bar_manager.dart';
 
 import 'core/theme/app_theme.dart';
 
@@ -18,6 +19,7 @@ class _MyApp extends ConsumerWidget {
     
     final router = ref.watch(routerProvider);
     return MaterialApp.router(
+      scaffoldMessengerKey: scaffoldMessengerKey,
       routerConfig: router,
       debugShowCheckedModeBanner: false,
       title: 'NoteIt',

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:noteit/core/theme/note_theme.dart';
 import 'package:noteit/features/edit_note_page/screens/view_model/edit_note_view_model.dart';
 
 import '../../../../database/drift/drift_database.dart';
+import '../../../../shared/snack_bar_manager.dart';
 
 class EditNotePage extends ConsumerStatefulWidget {
   final Note? note;
@@ -144,5 +144,8 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
     } else {
       await viewModel.saveNote(titleController.text, contentController.text);
     }
+
+    SnackBarManager.show(msg: "Note Saved",);
   }
+
 }
