@@ -1,23 +1,22 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/database/firebase/providers.dart';
 
-final firebaseDatabaseProvider = Provider((ref) {
+final noteFirebaseDatabaseProvider = Provider((ref) {
   final firestore = ref.watch(firestoreProvider);
-  return FirebaseDatabase(firestore: firestore);
+  return NoteFirestoreDatabase(firestore: firestore);
 });
 
-final firestoreProvider = Provider<FirebaseFirestore>((ref) {
-  return FirebaseFirestore.instance;
-});
 
-class FirebaseDatabase {
+class NoteFirestoreDatabase {
   final FirebaseFirestore _firestore;
   final String _collectionPath = 'notes';
 
-  FirebaseDatabase({required FirebaseFirestore firestore}) : _firestore = firestore;
 
-  Future<void> addNote(String title, String content) async {
+  NoteFirestoreDatabase({required FirebaseFirestore firestore}) : _firestore = firestore;
+
+  Future<void> addNote({required String title,required String content})  async {
     try {
       await _firestore.collection(_collectionPath).add({
         'title': title,
@@ -50,9 +49,9 @@ class FirebaseDatabase {
     }
   }
 
-  Future<void> deleteNote(String id) async {
+  Future<void> deleteNote(int id) async {
     try {
-      await _firestore.collection(_collectionPath).doc(id).delete();
+      await _firestore.collection(_collectionPath).doc(id.toString()).delete();
     } catch (e) {
       throw Exception('Failed to delete note: $e');
     }

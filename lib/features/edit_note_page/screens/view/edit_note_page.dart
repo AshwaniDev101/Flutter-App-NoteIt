@@ -139,13 +139,30 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
   }
 
   Future<void> _saveNote(EditNoteViewModel viewModel) async {
-    if (widget.note != null) {
-      await viewModel.updateNote(widget.note!.id, titleController.text, contentController.text);
-    } else {
-      await viewModel.saveNote(titleController.text, contentController.text);
+    final title = titleController.text.trim();
+    final content = contentController.text.trim();
+
+    if (title.isEmpty && content.isEmpty) {
+      if (widget.note == null) {
+        // Don't save empty new notes
+        return;
+      }
     }
 
-    SnackBarManager.show(msg: "Note Saved",);
+    if (widget.note != null) {
+      await viewModel.updateNote(widget.note!.id, title, content);
+    } else {
+      await viewModel.saveNote(title, content);
+    }
+
+    if (mounted) {
+      final state = ref.read(editNoteViewModelProvider);
+      if (state.error != null) {
+        SnackBarManager.show(msg: "Error saving note: ${state.error}");
+      } else {
+        SnackBarManager.show(msg: "Note Saved");
+      }
+    }
   }
 
 }

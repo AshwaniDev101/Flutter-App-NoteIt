@@ -355,9 +355,9 @@ class NotesCompanion extends UpdateCompanion<Note> {
   }
 }
 
-abstract class _$_AppDatabase extends GeneratedDatabase {
-  _$_AppDatabase(QueryExecutor e) : super(e);
-  $_AppDatabaseManager get managers => $_AppDatabaseManager(this);
+abstract class _$NoteDriftDatabase extends GeneratedDatabase {
+  _$NoteDriftDatabase(QueryExecutor e) : super(e);
+  $NoteDriftDatabaseManager get managers => $NoteDriftDatabaseManager(this);
   late final $NotesTable notes = $NotesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
@@ -383,7 +383,8 @@ typedef $$NotesTableUpdateCompanionBuilder =
       Value<DateTime?> updatedAt,
     });
 
-class $$NotesTableFilterComposer extends Composer<_$_AppDatabase, $NotesTable> {
+class $$NotesTableFilterComposer
+    extends Composer<_$NoteDriftDatabase, $NotesTable> {
   $$NotesTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -418,7 +419,7 @@ class $$NotesTableFilterComposer extends Composer<_$_AppDatabase, $NotesTable> {
 }
 
 class $$NotesTableOrderingComposer
-    extends Composer<_$_AppDatabase, $NotesTable> {
+    extends Composer<_$NoteDriftDatabase, $NotesTable> {
   $$NotesTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -453,7 +454,7 @@ class $$NotesTableOrderingComposer
 }
 
 class $$NotesTableAnnotationComposer
-    extends Composer<_$_AppDatabase, $NotesTable> {
+    extends Composer<_$NoteDriftDatabase, $NotesTable> {
   $$NotesTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -480,7 +481,7 @@ class $$NotesTableAnnotationComposer
 class $$NotesTableTableManager
     extends
         RootTableManager<
-          _$_AppDatabase,
+          _$NoteDriftDatabase,
           $NotesTable,
           Note,
           $$NotesTableFilterComposer,
@@ -488,11 +489,11 @@ class $$NotesTableTableManager
           $$NotesTableAnnotationComposer,
           $$NotesTableCreateCompanionBuilder,
           $$NotesTableUpdateCompanionBuilder,
-          (Note, BaseReferences<_$_AppDatabase, $NotesTable, Note>),
+          (Note, BaseReferences<_$NoteDriftDatabase, $NotesTable, Note>),
           Note,
           PrefetchHooks Function()
         > {
-  $$NotesTableTableManager(_$_AppDatabase db, $NotesTable table)
+  $$NotesTableTableManager(_$NoteDriftDatabase db, $NotesTable table)
     : super(
         TableManagerState(
           db: db,
@@ -541,7 +542,7 @@ class $$NotesTableTableManager
 
 typedef $$NotesTableProcessedTableManager =
     ProcessedTableManager<
-      _$_AppDatabase,
+      _$NoteDriftDatabase,
       $NotesTable,
       Note,
       $$NotesTableFilterComposer,
@@ -549,14 +550,14 @@ typedef $$NotesTableProcessedTableManager =
       $$NotesTableAnnotationComposer,
       $$NotesTableCreateCompanionBuilder,
       $$NotesTableUpdateCompanionBuilder,
-      (Note, BaseReferences<_$_AppDatabase, $NotesTable, Note>),
+      (Note, BaseReferences<_$NoteDriftDatabase, $NotesTable, Note>),
       Note,
       PrefetchHooks Function()
     >;
 
-class $_AppDatabaseManager {
-  final _$_AppDatabase _db;
-  $_AppDatabaseManager(this._db);
+class $NoteDriftDatabaseManager {
+  final _$NoteDriftDatabase _db;
+  $NoteDriftDatabaseManager(this._db);
   $$NotesTableTableManager get notes =>
       $$NotesTableTableManager(_db, _db.notes);
 }

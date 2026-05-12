@@ -19,7 +19,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final localDb = ref.watch(driftDbProvider);
+    final localDb = ref.watch(noteDriftDatabaseProvider);
     final noteTheme = Theme.of(context).extension<NoteTheme>()!;
 
     return Scaffold(

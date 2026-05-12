@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/database/repository.dart';
 
 import '../../../../database/drift/drift_database.dart';
 
@@ -49,7 +50,10 @@ class EditNoteViewModel extends Notifier<EditNoteState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      await ref.read(driftDbProvider).addNote(title, content);
+      // await ref.read(noteDriftDatabaseProvider).addNote(title: title, content: content);
+      print("### EditNoteViewModel Note Added!");
+      await ref.read(noteRepositoryProvider).addNote(title: title, content: content);
+
 
       state = state.copyWith(
         isSaved: true,
@@ -68,7 +72,8 @@ class EditNoteViewModel extends Notifier<EditNoteState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      await ref.read(driftDbProvider).updateNote(id, title, content);
+        print("### EditNoteViewModel Updating Note!");
+      await ref.read(noteRepositoryProvider).updateNote(id, title, content);
 
       state = state.copyWith(
         isSaved: true,
