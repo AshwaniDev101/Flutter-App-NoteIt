@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:noteit/core/routing/routing.dart';
 import 'package:noteit/core/theme/note_theme.dart';
+import 'package:noteit/database/firebase/firebase_database.dart';
+import 'package:noteit/models/note_model.dart';
 
 import '../../../../database/drift/drift_database.dart';
 
@@ -15,11 +17,12 @@ class HomePage extends ConsumerStatefulWidget {
 
 class _HomePageState extends ConsumerState<HomePage> {
   bool isSelectMode = false;
-  final Set<int> noteIds = {};
+  final Set<String> noteIds = {};
 
   @override
   Widget build(BuildContext context) {
-    final localDb = ref.watch(noteDriftDatabaseProvider);
+    // final localDb = ref.watch(noteDriftDatabaseProvider);
+    final firestoreDatabase = ref.watch(noteFirebaseDatabaseProvider);
     final noteTheme = Theme.of(context).extension<NoteTheme>()!;
 
     return Scaffold(
@@ -44,7 +47,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           IconButton(
             onPressed: () async {
               for (final id in noteIds) {
-                await localDb.deleteNote(id);
+                await firestoreDatabase.deleteNote(id.toString());
               }
               setState(() {
                 isSelectMode = false;
@@ -92,9 +95,10 @@ class _HomePageState extends ConsumerState<HomePage> {
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: StreamBuilder<List<Note>>(
-                stream: localDb.watchAllNotes(),
-                builder: (context, snapshot) {
+              child: StreamBuilder<List<NoteModel>>(
+                stream: firestoreDatabase.watchNotes(),
+                builder: (BuildContext context, AsyncSnapshot<List<NoteModel>> snapshot) {
+
                   if (!snapshot.hasData) {
                     return const Center(
                         child: CircularProgressIndicator());
@@ -198,7 +202,7 @@ class _SelectableCard extends StatelessWidget {
 }
 
 class _Card extends StatelessWidget {
-  final Note note;
+  final NoteModel note;
 
   const _Card({required this.note, super.key});
 
