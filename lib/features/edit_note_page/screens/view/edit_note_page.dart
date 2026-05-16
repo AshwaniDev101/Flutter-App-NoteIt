@@ -43,19 +43,32 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
     final viewModel = ref.read(editNoteViewModelProvider.notifier);
 
     return PopScope(
-      canPop: !viewModelState.isEditing,
+      canPop: true,
 
       onPopInvokedWithResult: (bool didPop, result) async {
         if (didPop) return;
 
         if (viewModelState.isEditing) {
-          viewModel.setEditing(false);
-
           await _saveNote(viewModel);
         }
       },
 
       child: Scaffold(
+
+    // return PopScope(
+    //   canPop: !viewModelState.isEditing,
+    //
+    //   onPopInvokedWithResult: (bool didPop, result) async {
+    //     if (didPop) return;
+    //
+    //     if (viewModelState.isEditing) {
+    //       viewModel.setEditing(false);
+    //
+    //       await _saveNote(viewModel);
+    //     }
+    //   },
+    //
+    //   child: Scaffold(
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -66,6 +79,7 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
                 Row(
                   children: [
                     IconButton(
+
                       onPressed: () async {
                         if (viewModelState.isEditing) {
                           await _saveNote(viewModel);
@@ -74,6 +88,18 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
                           Navigator.of(context).pop();
                         }
                       },
+                      // onPressed: () async {
+                      //   if (viewModelState.isEditing) {
+                      //     await _saveNote(viewModel);
+                      //   }
+                      //
+                      //   if (mounted) {
+                      //     Navigator.of(context).pop();
+                      //   }
+                      // },
+
+
+
                       icon: Icon(viewModelState.isEditing ? Icons.check : Icons.arrow_back),
                     ),
 

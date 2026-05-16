@@ -46,9 +46,8 @@ class _HomePageState extends ConsumerState<HomePage> {
         actions: [
           IconButton(
             onPressed: () async {
-              for (final id in noteIds) {
-                await firestoreDatabase.deleteNote(id.toString());
-              }
+
+              await firestoreDatabase.deleteNotes(noteIds);
               setState(() {
                 isSelectMode = false;
                 noteIds.clear();

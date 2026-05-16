@@ -62,8 +62,8 @@ class NoteFirestoreDatabase {
   /// READ
   Stream<List<NoteModel>> watchNotes() {
     return _notesRef
-        .orderBy('isPinned', descending: true)
-        .orderBy('position')
+        // .orderBy('isPinned', descending: true)
+        // .orderBy('position')
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map(
@@ -125,6 +125,21 @@ class NoteFirestoreDatabase {
       await _notesRef.doc(documentId).delete();
     } catch (e) {
       throw Exception('Failed to delete note: $e');
+    }
+  }
+
+  /// BATCH DELETE
+  Future<void> deleteNotes(Set<String> documentIds) async {
+    try {
+      final batch = _firestore.batch();
+
+      for (final id in documentIds) {
+        batch.delete(_notesRef.doc(id));
+      }
+
+      await batch.commit();
+    } catch (e) {
+      throw Exception('Failed to batch delete notes: $e');
     }
   }
 
