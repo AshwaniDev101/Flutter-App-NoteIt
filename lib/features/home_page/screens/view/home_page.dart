@@ -114,9 +114,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                   }
 
                   return GridView.builder(
-                    gridDelegate:
-                    const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
+                    gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                      maxCrossAxisExtent: 300,
                       crossAxisSpacing: 10,
                       mainAxisSpacing: 10,
                     ),
@@ -214,6 +213,11 @@ class _Card extends StatelessWidget {
       color: noteTheme.cardContentBackground,
       child: Container(
         constraints: const BoxConstraints.expand(),
+
+        // constraints: const BoxConstraints(
+        //   maxWidth: 300,
+        //   maxHeight: 250,
+        // ),
 
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
