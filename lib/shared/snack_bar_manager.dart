@@ -4,11 +4,12 @@ import 'package:flutter/material.dart';
 final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
 class SnackBarManager {
-  static void show({required String msg, double bottomMargin = 80}) {
+  static void show({required String msg}) {
     scaffoldMessengerKey.currentState?.hideCurrentSnackBar();
 
     scaffoldMessengerKey.currentState?.showSnackBar(
       SnackBar(
+        width: 400,
         content: Text(
           msg,
           style: const TextStyle(
@@ -18,7 +19,7 @@ class SnackBarManager {
         ),
         backgroundColor: Colors.black87,
         behavior: SnackBarBehavior.floating,
-        margin:  EdgeInsets.fromLTRB(16, 0, 16, bottomMargin),
+        // margin: EdgeInsets.fromLTRB(16, 0, 16, bottomMargin),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
