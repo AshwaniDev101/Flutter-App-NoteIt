@@ -70,13 +70,13 @@ class _HomePageState extends ConsumerState<HomePage> {
           IconButton(
             onPressed: () async{
 
-              final result = await showCupertinoDialog(
+              final password = await showDialog(
                 context: context,
                 barrierDismissible: false,
                 builder: (_) => const PasswordPage(),
               );
 
-              print(result);
+              print(password);
 
             },
             icon: Icon(Icons.lock, ),
