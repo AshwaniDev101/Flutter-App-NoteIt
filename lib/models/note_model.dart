@@ -9,6 +9,7 @@ class NoteModel {
   final bool isPinned;
   final bool isArchived;
   final bool isDeleted;
+  final bool isLocked;
 
   final int position;
 
@@ -27,6 +28,7 @@ class NoteModel {
     this.isPinned = false,
     this.isArchived = false,
     this.isDeleted = false,
+    this.isLocked = false,
     this.position = 0,
     this.tags,
     this.reminderAt,
@@ -54,6 +56,7 @@ class NoteModel {
       'isPinned': isPinned,
       'isArchived': isArchived,
       'isDeleted': isDeleted,
+      'isLocked': isLocked,
       'position': position,
       'tags': tags,
       'reminderAt': reminderAt?.toIso8601String(),
@@ -77,6 +80,8 @@ class NoteModel {
       isArchived: map['isArchived'] ?? false,
 
       isDeleted: map['isDeleted'] ?? false,
+
+      isLocked: map['isLocked'] ?? false,
 
       position: map['position'] ?? 0,
 
@@ -102,6 +107,7 @@ class NoteModel {
     bool? isPinned,
     bool? isArchived,
     bool? isDeleted,
+    bool? isLocked,
     int? position,
     String? tags,
     DateTime? reminderAt,
@@ -116,6 +122,7 @@ class NoteModel {
       isPinned: isPinned ?? this.isPinned,
       isArchived: isArchived ?? this.isArchived,
       isDeleted: isDeleted ?? this.isDeleted,
+      isLocked: isLocked ?? this.isLocked,
       position: position ?? this.position,
       tags: tags ?? this.tags,
       reminderAt: reminderAt ?? this.reminderAt,
