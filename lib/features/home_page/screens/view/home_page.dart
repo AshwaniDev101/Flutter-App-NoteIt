@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,7 +7,7 @@ import 'package:noteit/core/theme/note_theme.dart';
 import 'package:noteit/database/firebase/firebase_database.dart';
 import 'package:noteit/models/note_model.dart';
 
-import '../../../../database/drift/drift_database.dart';
+import '../../../password_page/screens/view/password_page.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -67,8 +68,18 @@ class _HomePageState extends ConsumerState<HomePage> {
             icon: Icon(Icons.grid_view_rounded,),
           ),
           IconButton(
-            onPressed: () {},
-            icon: Icon(Icons.sync, ),
+            onPressed: () async{
+
+              final result = await showCupertinoDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (_) => const PasswordPage(),
+              );
+
+              print(result);
+
+            },
+            icon: Icon(Icons.lock, ),
           ),
         ],
       ),
