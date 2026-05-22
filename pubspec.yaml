@@ -32,6 +32,7 @@ dependencies:
 #  Navigation dependencies
   go_router: ^17.2.2
   riverpod_annotation: ^4.0.2
+  shared_preferences: ^2.5.5
 
 dev_dependencies:
   flutter_test:

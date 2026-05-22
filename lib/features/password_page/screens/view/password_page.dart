@@ -59,7 +59,6 @@ class _PasswordPageState extends State<PasswordPage> {
                 // ),
                 //
                 // const SizedBox(height: 18),
-
                 // const Text(
                 //   'Locked Note',
                 //   style: TextStyle(
