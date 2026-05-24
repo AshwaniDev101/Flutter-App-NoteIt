@@ -32,8 +32,9 @@ class Themes {
         selectedAppBar: Color(0xFF73C566),
         selectedCheckColor: Color(0xFF73C566),
 
-        cardTitleBackground: Color(0xFF111827),
-        cardTitleForeground: Color(0xFFFFFFFF),
+        // cardTitleBackground: Color(0xFF111827),
+        cardTitleBackground: Color(0xFFF6F6F6),
+        cardTitleForeground: Color(0xFF111827),
 
         cardContentBackground: Color(0xFFF6F6F6),
         cardContentForeground: Color(0xFF111827),

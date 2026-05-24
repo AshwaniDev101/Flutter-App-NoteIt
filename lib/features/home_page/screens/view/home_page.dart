@@ -187,10 +187,10 @@ class _HomePageState extends ConsumerState<HomePage> {
       context: context,
       barrierDismissible: true, // Lets the user tap outside to dismiss
       barrierLabel: 'Dismiss Password Dialog',
-      barrierColor: Colors.transparent, // Set to transparent because your widget handles the background color and blur!
+      barrierColor: Colors.transparent, // Set to transparent because widget handles the background color and blur!
       transitionDuration: const Duration(milliseconds: 200),
       pageBuilder: (context, animation, secondaryAnimation) {
-        return const PasswordPage(); // Your custom widget
+        return const PasswordPage(); // Custom widget
       },
       // Optional: Add a nice fade transition
       transitionBuilder: (context, animation, secondaryAnimation, child) {
@@ -275,9 +275,36 @@ class _Card extends StatelessWidget {
           child: Container(
             constraints: const BoxConstraints.expand(),
 
-            child: Center(
-              child: Icon(Icons.lock, size: 40,),
-            )
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: noteTheme.cardTitleBackground,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(10),
+                      bottomRight: Radius.circular(10),
+                    ),
+                  ),
+                  child: Padding(
+                    padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    child: Text(
+                      note.title,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: noteTheme.cardTitleForeground,
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Center(
+                    child: Icon(Icons.lock, size: 40, color: noteTheme.cardContentForeground.withValues(alpha: 0.5)),
+                  )
+                )
+              ],
+            ),
           ),
         );
       }
