@@ -50,34 +50,6 @@ class _PasswordPageState extends State<PasswordPage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // const CircleAvatar(
-                //   radius: 28,
-                //   child: Icon(
-                //     Icons.lock,
-                //     size: 30,
-                //   ),
-                // ),
-                //
-                // const SizedBox(height: 18),
-                // const Text(
-                //   'Locked Note',
-                //   style: TextStyle(
-                //     fontSize: 22,
-                //     fontWeight: FontWeight.bold,
-                //   ),
-                // ),
-                //
-                // const SizedBox(height: 8),
-                //
-                // Text(
-                //   'Enter password to continue',
-                //   textAlign: TextAlign.center,
-                //   style: TextStyle(
-                //     fontSize: 14,
-                //     color: Colors.grey.shade600,
-                //   ),
-                // ),
-
                 const SizedBox(height: 20),
 
                 TextField(

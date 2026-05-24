@@ -146,10 +146,18 @@ class _HomePageState extends ConsumerState<HomePage> {
                               }
                             });
                           } else {
-                            context.push(
-                              AppRoutes.edit,
-                              extra: data[index],
-                            );
+
+                            if(data[index].isLocked)
+                              {
+                                _promptForPassword(context, data[index]);
+                              }else
+                                {
+                                  context.push(
+                                    AppRoutes.edit,
+                                    extra: data[index],
+                                  );
+                                }
+
                           }
                         },
                         onLongPress: () {
@@ -171,6 +179,45 @@ class _HomePageState extends ConsumerState<HomePage> {
       ),
     );
   }
+
+
+  Future<void> _promptForPassword(BuildContext context, NoteModel note) async {
+    // We specify <String> because your Navigator.pop(context, password) returns a String.
+    final String? enteredPassword = await showGeneralDialog<String>(
+      context: context,
+      barrierDismissible: true, // Lets the user tap outside to dismiss
+      barrierLabel: 'Dismiss Password Dialog',
+      barrierColor: Colors.transparent, // Set to transparent because your widget handles the background color and blur!
+      transitionDuration: const Duration(milliseconds: 200),
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return const PasswordPage(); // Your custom widget
+      },
+      // Optional: Add a nice fade transition
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        return FadeTransition(
+          opacity: animation,
+          child: child,
+        );
+      },
+    );
+
+    // Handle the result after the dialog closes
+    if (enteredPassword != null) {
+      print("User entered: $enteredPassword");
+      // Password verification logic here
+
+      if(enteredPassword=="1234")
+        {
+          context.push(
+            AppRoutes.edit,
+            extra: note,
+          );
+        }
+    } else {
+      print("User canceled or tapped outside.");
+    }
+  }
+
 }
 
 class _SelectableCard extends StatelessWidget {
@@ -219,16 +266,27 @@ class _Card extends StatelessWidget {
   Widget build(BuildContext context) {
     final noteTheme = Theme.of(context).extension<NoteTheme>()!;
 
+
+    if(note.isLocked)
+      {
+        return Card(
+
+          color: noteTheme.cardContentBackground,
+          child: Container(
+            constraints: const BoxConstraints.expand(),
+
+            child: Center(
+              child: Icon(Icons.lock, size: 40,),
+            )
+          ),
+        );
+      }
+
     return Card(
 
       color: noteTheme.cardContentBackground,
       child: Container(
         constraints: const BoxConstraints.expand(),
-
-        // constraints: const BoxConstraints(
-        //   maxWidth: 300,
-        //   maxHeight: 250,
-        // ),
 
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

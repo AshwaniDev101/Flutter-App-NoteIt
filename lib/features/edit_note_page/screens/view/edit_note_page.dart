@@ -101,6 +101,11 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
                             // Toggle the opposite of whatever the current state is
                             bool isCurrentlyLocked = widget.note!.isLocked;
                             viewModel.lockNote(widget.note!.id, isLocked: !isCurrentlyLocked);
+
+                            if(!isCurrentlyLocked)
+                              {
+                                Navigator.of(context).pop();
+                              }
                           }
                         }
                       },
