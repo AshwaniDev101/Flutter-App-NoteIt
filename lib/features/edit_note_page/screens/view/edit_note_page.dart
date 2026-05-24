@@ -41,8 +41,6 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
     final viewModelState = ref.watch(editNoteViewModelProvider);
     final viewModel = ref.read(editNoteViewModelProvider.notifier);
 
-
-
     return PopScope(
       canPop: !viewModelState.isEditing,
 
@@ -57,7 +55,6 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
       },
 
       child: Scaffold(
-
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -68,7 +65,6 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
                 Row(
                   children: [
                     IconButton(
-
                       onPressed: () async {
                         if (viewModelState.isEditing) {
                           _saveNote(viewModel);
@@ -77,9 +73,6 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
                           Navigator.of(context).pop();
                         }
                       },
-
-
-
 
                       icon: Icon(viewModelState.isEditing ? Icons.check : Icons.arrow_back),
                     ),
@@ -100,28 +93,36 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
                       ),
                     ),
 
-                    // IconButton(onPressed: () {
-                    //
-                    //
-                    // }, icon: const Icon(Icons.more_vert_rounded)),
                     PopupMenuButton<String>(
                       icon: const Icon(Icons.more_vert_rounded),
                       onSelected: (String value) {
-                        if (value == 'lock') {
-                          print("Lock selected");
+                        if (value == 'toggle_lock') {
+                          if (widget.note != null) {
+                            // Toggle the opposite of whatever the current state is
+                            bool isCurrentlyLocked = widget.note!.isLocked;
+                            viewModel.lockNote(widget.note!.id, isLocked: !isCurrentlyLocked);
+                          }
                         }
                       },
-                      itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                        const PopupMenuItem<String>(
-                          value: 'lock',
-                          child: Row(
-                            children: [
-                              Icon(Icons.lock_outline, size: 20),
-                              SizedBox(width: 8),
-                              Text('Lock'),
-                            ],
+                      itemBuilder: (BuildContext context) {
+                        // Determine the current state here
+                        bool isLocked = widget.note?.isLocked ?? false;
+
+                        return <PopupMenuEntry<String>>[
+                          PopupMenuItem<String>(
+                            value: 'toggle_lock',
+                            child: Row(
+                              children: [
+                                // Dynamically change the icon and text based on the lock state
+                                Icon(isLocked ? Icons.lock_open : Icons.lock_outline, size: 20),
+                                const SizedBox(width: 8),
+                                Text(isLocked ? 'Unlock' : 'Lock'),
+                              ],
+                            ),
                           ),
-                        ),
+                        ];
+                      },
+                    ),
                   ],
                 ),
 
@@ -194,4 +195,11 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
     }
   }
 
+  String getLockLabel() {
+    if (widget.note != null && widget.note!.isLocked) {
+      return "Unlock";
+    } else {
+      return "Lock";
+    }
+  }
 }

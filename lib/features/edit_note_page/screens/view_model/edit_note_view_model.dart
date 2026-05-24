@@ -88,7 +88,33 @@ class EditNoteViewModel extends Notifier<EditNoteState> {
       );
     }
   }
+
+
+  Future<void> lockNote(String noteID, {bool isLocked = true}) async {
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      print("### EditNoteViewModel Note Lock Status Changed: $isLocked");
+
+      // Pass the boolean down to your database provider
+      await ref.read(noteFirebaseDatabaseProvider).lockNote(noteID, isLocked: isLocked);
+
+      state = state.copyWith(
+        isSaved: true,
+        isEditing: false,
+        isLoading: false,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
+    }
+  }
+
 }
+
+
 
 final editNoteViewModelProvider =
 NotifierProvider<EditNoteViewModel, EditNoteState>(

@@ -154,4 +154,17 @@ class NoteFirestoreDatabase {
       throw Exception('Failed to soft delete note: $e');
     }
   }
+
+
+  /// LOCK NOTE
+  Future<void> lockNote(String documentId, {bool isLocked = true}) async {
+    try {
+      await _notesRef.doc(documentId).update({
+        'isLocked': isLocked,
+        'updatedAt': DateTime.now().toIso8601String(),
+      });
+    } catch (e) {
+      throw Exception('Failed to lock note: $e');
+    }
+  }
 }
