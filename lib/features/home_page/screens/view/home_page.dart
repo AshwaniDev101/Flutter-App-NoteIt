@@ -62,25 +62,35 @@ class _HomePageState extends ConsumerState<HomePage> {
         title: Text(
           'Note-it',
         ),
+
+
         actions: [
+
+          IconButton(
+            onPressed: () {
+              context.push(AppRoutes.search); // Make sure to add this to your router!
+            },
+            icon: const Icon(Icons.search),
+          ),
+
           IconButton(
             onPressed: () {},
             icon: Icon(Icons.grid_view_rounded,),
           ),
-          IconButton(
-            onPressed: () async{
-
-              final password = await showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder: (_) => const PasswordPage(),
-              );
-
-              print(password);
-
-            },
-            icon: Icon(Icons.lock, ),
-          ),
+          // IconButton(
+          //   onPressed: () async{
+          //
+          //     final password = await showDialog(
+          //       context: context,
+          //       barrierDismissible: false,
+          //       builder: (_) => const PasswordPage(),
+          //     );
+          //
+          //     print(password);
+          //
+          //   },
+          //   icon: Icon(Icons.lock, ),
+          // ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
