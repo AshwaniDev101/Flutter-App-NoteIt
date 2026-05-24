@@ -57,6 +57,7 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
       },
 
       child: Scaffold(
+
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -99,7 +100,28 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
                       ),
                     ),
 
-                    IconButton(onPressed: () {}, icon: const Icon(Icons.more_vert_rounded)),
+                    // IconButton(onPressed: () {
+                    //
+                    //
+                    // }, icon: const Icon(Icons.more_vert_rounded)),
+                    PopupMenuButton<String>(
+                      icon: const Icon(Icons.more_vert_rounded),
+                      onSelected: (String value) {
+                        if (value == 'lock') {
+                          print("Lock selected");
+                        }
+                      },
+                      itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                        const PopupMenuItem<String>(
+                          value: 'lock',
+                          child: Row(
+                            children: [
+                              Icon(Icons.lock_outline, size: 20),
+                              SizedBox(width: 8),
+                              Text('Lock'),
+                            ],
+                          ),
+                        ),
                   ],
                 ),
 
