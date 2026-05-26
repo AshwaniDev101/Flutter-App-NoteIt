@@ -22,15 +22,14 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    // final localDb = ref.watch(noteDriftDatabaseProvider);
     final firestoreDatabase = ref.watch(noteFirebaseDatabaseProvider);
     final noteTheme = Theme.of(context).extension<NoteTheme>()!;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-
       appBar: isSelectMode
           ? AppBar(
-        backgroundColor: noteTheme.selectedAppBar,
+        backgroundColor: noteTheme.selectedAppBar ?? colorScheme.primaryContainer,
         leading: IconButton(
           onPressed: () {
             setState(() {
@@ -38,67 +37,47 @@ class _HomePageState extends ConsumerState<HomePage> {
               noteIds.clear();
             });
           },
-          icon: Icon(Icons.arrow_back,),
+          icon: const Icon(Icons.close),
         ),
         title: Text(
           '${noteIds.length} Selected',
-
+          style: TextStyle(color: colorScheme.onPrimaryContainer),
         ),
         actions: [
           IconButton(
             onPressed: () async {
-
               await firestoreDatabase.deleteNotes(noteIds);
               setState(() {
                 isSelectMode = false;
                 noteIds.clear();
               });
             },
-            icon: Icon(Icons.delete,),
+            icon: const Icon(Icons.delete_outline),
           ),
         ],
       )
           : AppBar(
-        title: Text(
+        title: const Text(
           'Note-it',
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
-
-
         actions: [
-
           IconButton(
             onPressed: () {
-              context.push(AppRoutes.search); // Make sure to add this to your router!
+              context.push(AppRoutes.search);
             },
             icon: const Icon(Icons.search),
           ),
-
           IconButton(
             onPressed: () {},
-            icon: Icon(Icons.grid_view_rounded,),
+            icon: const Icon(Icons.grid_view_rounded),
           ),
-
           IconButton(
             onPressed: () {
-
               context.push(AppRoutes.settings);
             },
-            icon: Icon(Icons.settings,),
+            icon: const Icon(Icons.settings_outlined),
           ),
-          // IconButton(
-          //   onPressed: () async{
-          //
-          //     final password = await showDialog(
-          //       context: context,
-          //       barrierDismissible: false,
-          //       builder: (_) => const PasswordPage(),
-          //     );
-          //
-          //     print(password);
-          //
-          //   },
-          //   icon: Icon(Icons.lock, ),
-          // ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -107,135 +86,121 @@ class _HomePageState extends ConsumerState<HomePage> {
         },
         child: const Icon(Icons.add),
       ),
-      body: Column(
-        children: [
-          const SizedBox(height: 4),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1000),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Sort by: Name',
 
-              )
-            ],
-          ),
-          const SizedBox(height: 4),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: StreamBuilder<List<NoteModel>>(
-                stream: firestoreDatabase.watchNotes(),
-                builder: (BuildContext context, AsyncSnapshot<List<NoteModel>> snapshot) {
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                child: ChoiceChip(
+                  label: const Text('Sort by: Name'),
+                  selected: true,
+                  onSelected: (value) {},
+                  avatar: const Icon(Icons.sort_by_alpha, size: 16),
+                ),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                  child: StreamBuilder<List<NoteModel>>(
+                    stream: firestoreDatabase.watchNotes(),
+                    builder: (BuildContext context, AsyncSnapshot<List<NoteModel>> snapshot) {
+                      if (!snapshot.hasData) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
 
-                  if (!snapshot.hasData) {
-                    return const Center(
-                        child: CircularProgressIndicator());
-                  }
+                      final data = snapshot.data!;
 
-                  final data = snapshot.data!;
+                      if (data.isEmpty) {
+                        return const Center(
+                          child: Text('No notes yet. Tap + to add one!'),
+                        );
+                      }
 
-                  if (data.isEmpty) {
-                    return Center(
-                      child: Text(
-                        'No notes yet. Tap + to add one!',
-                      ),
-                    );
-                  }
-
-                  return GridView.builder(
-                    gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                      maxCrossAxisExtent: 300,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                    ),
-                    itemCount: data.length,
-                    itemBuilder: (context, index) {
-                      return _SelectableCard(
-                        onTap: () {
-                          if (isSelectMode) {
-                            setState(() {
-                              if (noteIds.contains(data[index].id)) {
-                                noteIds.remove(data[index].id);
-                                if (noteIds.isEmpty) {
-                                  isSelectMode = false;
-                                }
+                      return GridView.builder(
+                        padding: const EdgeInsets.only(bottom: 80),
+                        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: 220,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: 0.9,
+                        ),
+                        itemCount: data.length,
+                        itemBuilder: (context, index) {
+                          final isSelected = noteIds.contains(data[index].id);
+                          return _SelectableCard(
+                            onTap: () {
+                              if (isSelectMode) {
+                                setState(() {
+                                  if (isSelected) {
+                                    noteIds.remove(data[index].id);
+                                    if (noteIds.isEmpty) {
+                                      isSelectMode = false;
+                                    }
+                                  } else {
+                                    noteIds.add(data[index].id);
+                                  }
+                                });
                               } else {
-                                noteIds.add(data[index].id);
-                              }
-                            });
-                          } else {
-
-                            if(data[index].isLocked)
-                              {
-                                _promptForPassword(context, data[index]);
-                              }else
-                                {
+                                if (data[index].isLocked) {
+                                  _promptForPassword(context, data[index]);
+                                } else {
                                   context.push(
                                     AppRoutes.edit,
                                     extra: data[index],
                                   );
                                 }
-
-                          }
+                              }
+                            },
+                            onLongPress: () {
+                              if (!isSelectMode) {
+                                setState(() {
+                                  isSelectMode = true;
+                                  noteIds.add(data[index].id);
+                                });
+                              }
+                            },
+                            isSelected: isSelected,
+                            child: _Card(note: data[index], isSelected: isSelected),
+                          );
                         },
-                        onLongPress: () {
-                          setState(() {
-                            isSelectMode = true;
-                            noteIds.add(data[index].id);
-                          });
-                        },
-                        isSelected: noteIds.contains(data[index].id),
-                        child: _Card(note: data[index]),
                       );
                     },
-                  );
-                },
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
-
   Future<void> _promptForPassword(BuildContext context, NoteModel note) async {
-    // We specify <String> because your Navigator.pop(context, password) returns a String.
     final String? enteredPassword = await showGeneralDialog<String>(
       context: context,
-      barrierDismissible: true, // Lets the user tap outside to dismiss
+      barrierDismissible: true,
       barrierLabel: 'Dismiss Password Dialog',
-      barrierColor: Colors.transparent, // Set to transparent because widget handles the background color and blur!
+      barrierColor: Colors.black45,
       transitionDuration: const Duration(milliseconds: 200),
       pageBuilder: (context, animation, secondaryAnimation) {
-        return const PasswordPage(); // Custom widget
+        return const PasswordPage();
       },
-      // Optional: Add a nice fade transition
       transitionBuilder: (context, animation, secondaryAnimation, child) {
-        return FadeTransition(
-          opacity: animation,
-          child: child,
-        );
+        return FadeTransition(opacity: animation, child: child);
       },
     );
 
-    // Handle the result after the dialog closes
-    if (enteredPassword != null) {
-      print("User entered: $enteredPassword");
-      // Password verification logic here
-
-      if(enteredPassword=="1234")
-        {
-          context.push(
-            AppRoutes.edit,
-            extra: note,
-          );
-        }
-    } else {
-      print("User canceled or tapped outside.");
+    if (enteredPassword != null && enteredPassword == "1234") {
+      if (context.mounted) {
+        context.push(AppRoutes.edit, extra: note);
+      }
     }
   }
-
 }
 
 class _SelectableCard extends StatelessWidget {
@@ -249,27 +214,32 @@ class _SelectableCard extends StatelessWidget {
     required this.isSelected,
     required this.onTap,
     required this.onLongPress,
-    super.key,
   });
 
   @override
   Widget build(BuildContext context) {
-
-    return GestureDetector(
+    return InkWell(
       onTap: onTap,
       onLongPress: onLongPress,
-      child: Stack(
-        children: [
-          child,
-          if (isSelected)
-            Positioned(
-              top: 8,
-              right: 8,
-              child: Icon(
-                Icons.check_circle,
+      borderRadius: BorderRadius.circular(16),
+      child: AnimatedScale(
+        scale: isSelected ? 0.95 : 1.0, // Slight bounce down effect when selected
+        duration: const Duration(milliseconds: 150),
+        child: Stack(
+          children: [
+            child,
+            if (isSelected)
+              Positioned(
+                top: 12,
+                right: 12,
+                child: Icon(
+                  Icons.check_circle,
+                  color: Theme.of(context).colorScheme.primary,
+                  size: 22,
+                ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -277,91 +247,71 @@ class _SelectableCard extends StatelessWidget {
 
 class _Card extends StatelessWidget {
   final NoteModel note;
+  final bool isSelected;
 
-  const _Card({required this.note, super.key});
+  const _Card({
+    required this.note,
+    required this.isSelected,
+  });
 
   @override
   Widget build(BuildContext context) {
     final noteTheme = Theme.of(context).extension<NoteTheme>()!;
-
-
-    if(note.isLocked)
-      {
-        return Card(
-
-          color: noteTheme.cardContentBackground,
-          child: Container(
-            constraints: const BoxConstraints.expand(),
-
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    color: noteTheme.cardTitleBackground,
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(10),
-                      bottomRight: Radius.circular(10),
-                    ),
-                  ),
-                  child: Padding(
-                    padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    child: Text(
-                      note.title,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: noteTheme.cardTitleForeground,
-                      ),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Center(
-                    child: Icon(Icons.lock, size: 40, color: noteTheme.cardContentForeground.withValues(alpha: 0.5)),
-                  )
-                )
-              ],
-            ),
-          ),
-        );
-      }
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Card(
-
+      elevation: isSelected ? 1 : 0,
       color: noteTheme.cardContentBackground,
-      child: Container(
-        constraints: const BoxConstraints.expand(),
-
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: isSelected
+              ? colorScheme.primary
+              : colorScheme.outlineVariant.withValues(alpha: 0.3),
+          width: isSelected ? 2 : 1,
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+
             Container(
-              decoration: BoxDecoration(
-                color: noteTheme.cardTitleBackground,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(10),
-                  bottomRight: Radius.circular(10),
-                ),
-              ),
-              child: Padding(
-                padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                child: Text(
-                  note.title,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: noteTheme.cardTitleForeground,
-                  ),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              color: noteTheme.cardTitleBackground ?? colorScheme.surfaceContainerHigh,
+              child: Text(
+                note.title.isEmpty ? "Untitled" : note.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: noteTheme.cardTitleForeground ?? colorScheme.onSurface,
                 ),
               ),
             ),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
+                padding: const EdgeInsets.all(12.0),
+                child: note.isLocked
+                    ? Center(
+                  child: Icon(
+                    Icons.lock_outlined,
+                    size: 32,
+                    color: (noteTheme.cardContentForeground ?? colorScheme.onSurfaceVariant)
+                        .withValues(alpha: 0.4),
+                  ),
+                )
+                    : Text(
                   note.content,
-                  style: TextStyle(color: noteTheme.cardContentForeground),
+                  maxLines: 5,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13,
+                    height: 1.4,
+                    color: noteTheme.cardContentForeground ?? colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ),
             )
