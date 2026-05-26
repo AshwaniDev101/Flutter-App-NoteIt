@@ -2,9 +2,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class SharedPreferenceManager {
   SharedPreferenceManager._internal();
-  static final SharedPreferenceManager _instance = SharedPreferenceManager._internal();
 
-  factory SharedPreferenceManager() => _instance;
+  static final SharedPreferenceManager instance = SharedPreferenceManager._internal();
 
   static late SharedPreferences _prefs;
 
