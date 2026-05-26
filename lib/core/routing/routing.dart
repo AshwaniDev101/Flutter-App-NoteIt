@@ -7,12 +7,14 @@ import 'package:noteit/features/settings_page/screens/view/settings_page.dart';
 import 'package:noteit/models/note_model.dart';
 
 import '../../database/drift/drift_database.dart';
+import '../../features/settings_page/screens/view/options/master_password_page.dart';
 
 class AppRoutes {
   static const String home = '/';
   static const String edit = '/edit-note';
   static const String search = '/search';
   static const String settings = '/settings';
+  static const String masterPassword = '/master-password';
 }
 
 final routerProvider = Provider((ref) {
@@ -40,6 +42,13 @@ final routerProvider = Provider((ref) {
         path: AppRoutes.settings,
         builder: (context, state) {
           return SettingsPage();
+        },
+      ),
+
+      GoRoute(
+        path: AppRoutes.masterPassword,
+        builder: (context, state) {
+          return const MasterPasswordPage();
         },
       ),
     ],

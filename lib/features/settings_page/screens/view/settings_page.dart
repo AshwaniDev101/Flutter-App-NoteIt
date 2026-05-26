@@ -1,5 +1,7 @@
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:noteit/core/routing/routing.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -26,7 +28,10 @@ class SettingsPage extends StatelessWidget {
           ListTile(
             title: const Text('Master password'),
             subtitle: const Text('Reset or clear master password'),
-            onTap: () {},
+            onTap: () {
+
+              context.push(AppRoutes.masterPassword);
+            },
           ),
         ],
       ),
