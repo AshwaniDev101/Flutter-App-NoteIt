@@ -77,6 +77,14 @@ class _HomePageState extends ConsumerState<HomePage> {
             onPressed: () {},
             icon: Icon(Icons.grid_view_rounded,),
           ),
+
+          IconButton(
+            onPressed: () {
+
+              context.push(AppRoutes.settings);
+            },
+            icon: Icon(Icons.settings,),
+          ),
           // IconButton(
           //   onPressed: () async{
           //

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:noteit/features/edit_note_page/screens/view/edit_note_page.dart';
 import 'package:noteit/features/home_page/screens/view/home_page.dart';
 import 'package:noteit/features/search_page/search_page.dart';
+import 'package:noteit/features/settings_page/settings_page.dart';
 import 'package:noteit/models/note_model.dart';
 
 import '../../database/drift/drift_database.dart';
@@ -11,6 +12,7 @@ class AppRoutes {
   static const String home = '/';
   static const String edit = '/edit-note';
   static const String search = '/search';
+  static const String settings = '/settings';
 }
 
 final routerProvider = Provider((ref) {
@@ -30,9 +32,14 @@ final routerProvider = Provider((ref) {
       GoRoute(
         path: AppRoutes.search,
         builder: (context, state) {
-
-
           return SearchPage();
+        },
+      ),
+
+      GoRoute(
+        path: AppRoutes.settings,
+        builder: (context, state) {
+          return SettingsPage();
         },
       ),
     ],
