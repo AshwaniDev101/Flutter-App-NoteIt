@@ -18,6 +18,8 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
   final TextEditingController titleController = TextEditingController();
   final TextEditingController contentController = TextEditingController();
 
+  final UndoHistoryController _undoController = UndoHistoryController();
+
   @override
   void initState() {
     super.initState();
@@ -32,140 +34,196 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
   void dispose() {
     titleController.dispose();
     contentController.dispose();
+    _undoController.dispose();
     super.dispose();
+  }
+
+  String _getFormattedDate() {
+    final now = DateTime.now();
+    return "${now.month}/${now.day}/${now.year} ${now.hour}:${now.minute.toString().padLeft(2, '0')}";
   }
 
   @override
   Widget build(BuildContext context) {
-    // final noteTheme = Theme.of(context).extension<NoteTheme>()!;
     final viewModelState = ref.watch(editNoteViewModelProvider);
     final viewModel = ref.read(editNoteViewModelProvider.notifier);
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     return PopScope(
       canPop: !viewModelState.isEditing,
-
       onPopInvokedWithResult: (bool didPop, result) async {
         if (didPop) return;
 
         if (viewModelState.isEditing) {
           _saveNote(viewModel);
-
           viewModel.setEditing(false);
         }
       },
-
       child: Scaffold(
         body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Column(
-              children: [
-                const SizedBox(height: 6),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 800),
+              child: Column(
+                children: [
+                  const SizedBox(height: 8),
 
-                Row(
-                  children: [
-                    IconButton(
-                      onPressed: () async {
-                        if (viewModelState.isEditing) {
-                          _saveNote(viewModel);
-                          viewModel.setEditing(false);
-                        } else if (context.mounted) {
-                          Navigator.of(context).pop();
-                        }
-                      },
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          onPressed: () async {
+                            if (viewModelState.isEditing) {
+                              _saveNote(viewModel);
+                              viewModel.setEditing(false);
+                            } else if (context.mounted) {
+                              Navigator.of(context).pop();
+                            }
+                          },
+                          icon: Icon(viewModelState.isEditing ? Icons.check : Icons.arrow_back),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            readOnly: !viewModelState.isEditing,
+                            controller: titleController,
+                            onTap: () {
+                              if (!viewModelState.isEditing) viewModel.setEditing(true);
+                            },
+                            decoration: const InputDecoration(
+                              hintText: "Title",
+                              border: InputBorder.none,
+                              isDense: true,
+                            ),
+                            style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        PopupMenuButton<String>(
+                          icon: const Icon(Icons.more_vert_rounded),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          onSelected: (String value) {
+                            if (value == 'toggle_lock' && widget.note != null) {
+                              bool isCurrentlyLocked = widget.note!.isLocked;
+                              viewModel.lockNote(widget.note!.id, isLocked: !isCurrentlyLocked);
 
-                      icon: Icon(viewModelState.isEditing ? Icons.check : Icons.arrow_back),
-                    ),
-
-                    const SizedBox(width: 4),
-
-                    Expanded(
-                      child: TextField(
-                        readOnly: !viewModelState.isEditing,
-                        controller: titleController,
-                        onTap: () {
-                          if (!viewModelState.isEditing) {
-                            viewModel.setEditing(true);
-                          }
-                        },
-                        decoration: const InputDecoration(hintText: "Title", border: InputBorder.none),
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                      ),
-                    ),
-
-                    PopupMenuButton<String>(
-                      icon: const Icon(Icons.more_vert_rounded),
-                      onSelected: (String value) {
-                        if (value == 'toggle_lock') {
-                          if (widget.note != null) {
-                            // Toggle the opposite of whatever the current state is
-                            bool isCurrentlyLocked = widget.note!.isLocked;
-                            viewModel.lockNote(widget.note!.id, isLocked: !isCurrentlyLocked);
-
-                            if(!isCurrentlyLocked)
-                              {
+                              if (!isCurrentlyLocked) {
                                 Navigator.of(context).pop();
                               }
-                          }
-                        }
-                      },
-                      itemBuilder: (BuildContext context) {
-                        // Determine the current state here
-                        bool isLocked = widget.note?.isLocked ?? false;
+                            }
+                          },
+                          itemBuilder: (BuildContext context) {
+                            bool isLocked = widget.note?.isLocked ?? false;
+                            return [
+                              PopupMenuItem<String>(
+                                value: 'toggle_lock',
+                                child: Row(
+                                  children: [
+                                    Icon(isLocked ? Icons.lock_open : Icons.lock_outline, size: 20),
+                                    const SizedBox(width: 12),
+                                    Text(isLocked ? 'Unlock Note' : 'Lock Note'),
+                                  ],
+                                ),
+                              ),
+                            ];
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
 
-                        return <PopupMenuEntry<String>>[
-                          PopupMenuItem<String>(
-                            value: 'toggle_lock',
-                            child: Row(
-                              children: [
-                                // Dynamically change the icon and text based on the lock state
-                                Icon(isLocked ? Icons.lock_open : Icons.lock_outline, size: 20),
-                                const SizedBox(width: 8),
-                                Text(isLocked ? 'Unlock' : 'Lock'),
-                              ],
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 4.0),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: viewModelState.isEditing
+                                ? colorScheme.primaryContainer
+                                : colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            viewModelState.isEditing ? "Editing" : "Saved",
+                            style: textTheme.labelSmall?.copyWith(
+                              color: viewModelState.isEditing
+                                  ? colorScheme.onPrimaryContainer
+                                  : colorScheme.onSurfaceVariant,
                             ),
                           ),
-                        ];
-                      },
+                        ),
+                        const Spacer(),
+                        Text(
+                          _getFormattedDate(),
+                          style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-
-                Row(
-                  children: [
-                    Text(viewModelState.isEditing ? "Editing" : "Saved", style: TextStyle(fontSize: 12)),
-                    const Spacer(),
-                    Text("4/23/26 8:48 AM", style: TextStyle(fontSize: 12)),
-                  ],
-                ),
-
-                const SizedBox(height: 8),
-
-                Expanded(
-                  child: TextField(
-                    readOnly: !viewModelState.isEditing,
-                    controller: contentController,
-                    maxLines: null,
-                    expands: true,
-                    keyboardType: TextInputType.multiline,
-                    onTap: () {
-                      if (!viewModelState.isEditing) {
-                        viewModel.setEditing(true);
-                      }
-                    },
-                    decoration: const InputDecoration(hintText: "Start writing your note...", border: InputBorder.none),
-                    style: TextStyle(fontSize: 15),
                   ),
-                ),
 
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    IconButton(onPressed: () {}, icon: const Icon(Icons.undo)),
-                    IconButton(onPressed: () {}, icon: const Icon(Icons.redo)),
-                  ],
-                ),
-              ],
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                      child: TextField(
+                        readOnly: !viewModelState.isEditing,
+                        controller: contentController,
+                        undoController: _undoController,
+                        maxLines: null,
+                        expands: true,
+                        keyboardType: TextInputType.multiline,
+                        textCapitalization: TextCapitalization.sentences,
+                        onTap: () {
+                          if (!viewModelState.isEditing) viewModel.setEditing(true);
+                        },
+                        decoration: const InputDecoration(
+                          hintText: "Start writing your note...",
+                          border: InputBorder.none,
+                        ),
+                        style: textTheme.bodyLarge?.copyWith(height: 1.5),
+                      ),
+                    ),
+                  ),
+
+                  if (viewModelState.isEditing)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainer,
+                        border: Border(
+                          top: BorderSide(color: colorScheme.outlineVariant.withOpacity(0.5)),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          ValueListenableBuilder<UndoHistoryValue>(
+                            valueListenable: _undoController,
+                            builder: (context, value, child) {
+                              return IconButton(
+                                onPressed: value.canUndo ? () => _undoController.undo() : null,
+                                icon: const Icon(Icons.undo),
+                                tooltip: 'Undo',
+                              );
+                            },
+                          ),
+                          const SizedBox(width: 16),
+                          ValueListenableBuilder<UndoHistoryValue>(
+                            valueListenable: _undoController,
+                            builder: (context, value, child) {
+                              return IconButton(
+                                onPressed: value.canRedo ? () => _undoController.redo() : null,
+                                icon: const Icon(Icons.redo),
+                                tooltip: 'Redo',
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         ),
@@ -177,11 +235,8 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
     final title = titleController.text.trim();
     final content = contentController.text.trim();
 
-    if (title.isEmpty && content.isEmpty) {
-      if (widget.note == null) {
-        // Don't save empty new notes
-        return;
-      }
+    if (title.isEmpty && content.isEmpty && widget.note == null) {
+      return;
     }
 
     if (widget.note != null) {
@@ -197,14 +252,6 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
       } else {
         SnackBarManager.show(msg: "Note Saved");
       }
-    }
-  }
-
-  String getLockLabel() {
-    if (widget.note != null && widget.note!.isLocked) {
-      return "Unlock";
-    } else {
-      return "Lock";
     }
   }
 }
