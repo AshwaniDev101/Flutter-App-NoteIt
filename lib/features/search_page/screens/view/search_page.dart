@@ -44,70 +44,67 @@ class _SearchPageState extends ConsumerState<SearchPage> {
     return Scaffold(
       body: SafeArea(
         child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 800),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 8),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back),
-                        onPressed: () => context.pop(),
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Container(
-                          height: 52,
-                          decoration: BoxDecoration(
-                            color: colorScheme.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(26),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back),
+                      onPressed: () => context.pop(),
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Container(
+                        height: 52,
+                        decoration: BoxDecoration(
+                          color: colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(26),
+                        ),
+                        child: TextField(
+                          controller: _searchController,
+                          autofocus: true,
+                          textInputAction: TextInputAction.search,
+                          decoration: InputDecoration(
+                            hintText: 'Search your notes...',
+                            border: InputBorder.none,
+                            prefixIcon: Icon(Icons.search, color: colorScheme.onSurfaceVariant),
+                            suffixIcon: _searchQuery.isNotEmpty
+                                ? IconButton(
+                              icon: Icon(Icons.close, color: colorScheme.onSurfaceVariant),
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() {
+                                  _searchQuery = '';
+                                });
+                              },
+                            )
+                                : null,
+                            contentPadding: const EdgeInsets.symmetric(vertical: 14),
                           ),
-                          child: TextField(
-                            controller: _searchController,
-                            autofocus: true,
-                            textInputAction: TextInputAction.search,
-                            decoration: InputDecoration(
-                              hintText: 'Search your notes...',
-                              border: InputBorder.none,
-                              prefixIcon: Icon(Icons.search, color: colorScheme.onSurfaceVariant),
-                              suffixIcon: _searchQuery.isNotEmpty
-                                  ? IconButton(
-                                icon: Icon(Icons.close, color: colorScheme.onSurfaceVariant),
-                                onPressed: () {
-                                  _searchController.clear();
-                                  setState(() {
-                                    _searchQuery = '';
-                                  });
-                                },
-                              )
-                                  : null,
-                              contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                            ),
-                            style: textTheme.bodyLarge,
-                            onChanged: (value) {
-                              setState(() {
-                                _searchQuery = value;
-                              });
-                            },
-                            onSubmitted: (value) => _saveSearchToHistory(value),
-                          ),
+                          style: textTheme.bodyLarge,
+                          onChanged: (value) {
+                            setState(() {
+                              _searchQuery = value;
+                            });
+                          },
+                          onSubmitted: (value) => _saveSearchToHistory(value),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                Expanded(
-                  child: _searchQuery.isEmpty
-                      ? _buildRecentSearches(colorScheme, textTheme)
-                      : _buildSearchResults(firestoreDatabase, colorScheme, textTheme),
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: _searchQuery.isEmpty
+                    ? _buildRecentSearches(colorScheme, textTheme)
+                    : _buildSearchResults(firestoreDatabase, colorScheme, textTheme),
+              ),
+            ],
           ),
         ),
       ),

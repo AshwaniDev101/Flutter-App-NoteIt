@@ -63,167 +63,164 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
       child: Scaffold(
         body: SafeArea(
           child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 800),
-              child: Column(
-                children: [
-                  const SizedBox(height: 8),
+            child: Column(
+              children: [
+                const SizedBox(height: 8),
 
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    child: Row(
-                      children: [
-                        IconButton(
-                          onPressed: () async {
-                            if (viewModelState.isEditing) {
-                              _saveNote(viewModel);
-                              viewModel.setEditing(false);
-                            } else if (context.mounted) {
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        onPressed: () async {
+                          if (viewModelState.isEditing) {
+                            _saveNote(viewModel);
+                            viewModel.setEditing(false);
+                          } else if (context.mounted) {
+                            Navigator.of(context).pop();
+                          }
+                        },
+                        icon: Icon(viewModelState.isEditing ? Icons.check : Icons.arrow_back),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextField(
+                          readOnly: !viewModelState.isEditing,
+                          controller: titleController,
+                          onTap: () {
+                            if (!viewModelState.isEditing) viewModel.setEditing(true);
+                          },
+                          decoration: const InputDecoration(
+                            hintText: "Title",
+                            border: InputBorder.none,
+                            isDense: true,
+                          ),
+                          style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      PopupMenuButton<String>(
+                        icon: const Icon(Icons.more_vert_rounded),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        onSelected: (String value) {
+                          if (value == 'toggle_lock' && widget.note != null) {
+                            bool isCurrentlyLocked = widget.note!.isLocked;
+                            viewModel.lockNote(widget.note!.id, isLocked: !isCurrentlyLocked);
+
+                            if (!isCurrentlyLocked) {
                               Navigator.of(context).pop();
                             }
-                          },
-                          icon: Icon(viewModelState.isEditing ? Icons.check : Icons.arrow_back),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextField(
-                            readOnly: !viewModelState.isEditing,
-                            controller: titleController,
-                            onTap: () {
-                              if (!viewModelState.isEditing) viewModel.setEditing(true);
-                            },
-                            decoration: const InputDecoration(
-                              hintText: "Title",
-                              border: InputBorder.none,
-                              isDense: true,
-                            ),
-                            style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        PopupMenuButton<String>(
-                          icon: const Icon(Icons.more_vert_rounded),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          onSelected: (String value) {
-                            if (value == 'toggle_lock' && widget.note != null) {
-                              bool isCurrentlyLocked = widget.note!.isLocked;
-                              viewModel.lockNote(widget.note!.id, isLocked: !isCurrentlyLocked);
-
-                              if (!isCurrentlyLocked) {
-                                Navigator.of(context).pop();
-                              }
-                            }
-                          },
-                          itemBuilder: (BuildContext context) {
-                            bool isLocked = widget.note?.isLocked ?? false;
-                            return [
-                              PopupMenuItem<String>(
-                                value: 'toggle_lock',
-                                child: Row(
-                                  children: [
-                                    Icon(isLocked ? Icons.lock_open : Icons.lock_outline, size: 20),
-                                    const SizedBox(width: 12),
-                                    Text(isLocked ? 'Unlock Note' : 'Lock Note'),
-                                  ],
-                                ),
-                              ),
-                            ];
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 4.0),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: viewModelState.isEditing
-                                ? colorScheme.primaryContainer
-                                : colorScheme.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            viewModelState.isEditing ? "Editing" : "Saved",
-                            style: textTheme.labelSmall?.copyWith(
-                              color: viewModelState.isEditing
-                                  ? colorScheme.onPrimaryContainer
-                                  : colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ),
-                        const Spacer(),
-                        Text(
-                          _getFormattedDate(),
-                          style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                      child: TextField(
-                        readOnly: !viewModelState.isEditing,
-                        controller: contentController,
-                        undoController: _undoController,
-                        maxLines: null,
-                        expands: true,
-                        keyboardType: TextInputType.multiline,
-                        textCapitalization: TextCapitalization.sentences,
-                        onTap: () {
-                          if (!viewModelState.isEditing) viewModel.setEditing(true);
+                          }
                         },
-                        decoration: const InputDecoration(
-                          hintText: "Start writing your note...",
-                          border: InputBorder.none,
-                        ),
-                        style: textTheme.bodyLarge?.copyWith(height: 1.5),
+                        itemBuilder: (BuildContext context) {
+                          bool isLocked = widget.note?.isLocked ?? false;
+                          return [
+                            PopupMenuItem<String>(
+                              value: 'toggle_lock',
+                              child: Row(
+                                children: [
+                                  Icon(isLocked ? Icons.lock_open : Icons.lock_outline, size: 20),
+                                  const SizedBox(width: 12),
+                                  Text(isLocked ? 'Unlock Note' : 'Lock Note'),
+                                ],
+                              ),
+                            ),
+                          ];
+                        },
                       ),
+                    ],
+                  ),
+                ),
+
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 4.0),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: viewModelState.isEditing
+                              ? colorScheme.primaryContainer
+                              : colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          viewModelState.isEditing ? "Editing" : "Saved",
+                          style: textTheme.labelSmall?.copyWith(
+                            color: viewModelState.isEditing
+                                ? colorScheme.onPrimaryContainer
+                                : colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        _getFormattedDate(),
+                        style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                      ),
+                    ],
+                  ),
+                ),
+
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: TextField(
+                      readOnly: !viewModelState.isEditing,
+                      controller: contentController,
+                      undoController: _undoController,
+                      maxLines: null,
+                      expands: true,
+                      keyboardType: TextInputType.multiline,
+                      textCapitalization: TextCapitalization.sentences,
+                      onTap: () {
+                        if (!viewModelState.isEditing) viewModel.setEditing(true);
+                      },
+                      decoration: const InputDecoration(
+                        hintText: "Start writing your note...",
+                        border: InputBorder.none,
+                      ),
+                      style: textTheme.bodyLarge?.copyWith(height: 1.5),
                     ),
                   ),
+                ),
 
-                  if (viewModelState.isEditing)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: colorScheme.surfaceContainer,
-                        border: Border(
-                          top: BorderSide(color: colorScheme.outlineVariant.withOpacity(0.5)),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          ValueListenableBuilder<UndoHistoryValue>(
-                            valueListenable: _undoController,
-                            builder: (context, value, child) {
-                              return IconButton(
-                                onPressed: value.canUndo ? () => _undoController.undo() : null,
-                                icon: const Icon(Icons.undo),
-                                tooltip: 'Undo',
-                              );
-                            },
-                          ),
-                          const SizedBox(width: 16),
-                          ValueListenableBuilder<UndoHistoryValue>(
-                            valueListenable: _undoController,
-                            builder: (context, value, child) {
-                              return IconButton(
-                                onPressed: value.canRedo ? () => _undoController.redo() : null,
-                                icon: const Icon(Icons.redo),
-                                tooltip: 'Redo',
-                              );
-                            },
-                          ),
-                        ],
+                if (viewModelState.isEditing)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainer,
+                      border: Border(
+                        top: BorderSide(color: colorScheme.outlineVariant.withOpacity(0.5)),
                       ),
                     ),
-                ],
-              ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ValueListenableBuilder<UndoHistoryValue>(
+                          valueListenable: _undoController,
+                          builder: (context, value, child) {
+                            return IconButton(
+                              onPressed: value.canUndo ? () => _undoController.undo() : null,
+                              icon: const Icon(Icons.undo),
+                              tooltip: 'Undo',
+                            );
+                          },
+                        ),
+                        const SizedBox(width: 16),
+                        ValueListenableBuilder<UndoHistoryValue>(
+                          valueListenable: _undoController,
+                          builder: (context, value, child) {
+                            return IconButton(
+                              onPressed: value.canRedo ? () => _undoController.redo() : null,
+                              icon: const Icon(Icons.redo),
+                              tooltip: 'Redo',
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
             ),
           ),
         ),

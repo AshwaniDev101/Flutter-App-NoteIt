@@ -89,102 +89,103 @@ class _HomePageState extends ConsumerState<HomePage> {
       ),
 
       body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1000),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
 
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                child: ChoiceChip(
-                  label: const Text('Sort by: Name'),
-                  selected: true,
-                  onSelected: (value) {},
-                  avatar: const Icon(Icons.sort_by_alpha, size: 16),
-                ),
+        // ConstrainedBox(
+        //   constraints: const BoxConstraints(maxWidth: 1000),
+
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: ChoiceChip(
+                label: const Text('Sort by: Name'),
+                selected: true,
+                onSelected: (value) {},
+                avatar: const Icon(Icons.sort_by_alpha, size: 16),
               ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 3.0),
-                  child: StreamBuilder<List<NoteModel>>(
-                    stream: firestoreDatabase.watchNotes(),
-                    builder: (BuildContext context, AsyncSnapshot<List<NoteModel>> snapshot) {
-                      if (!snapshot.hasData) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 3.0),
+                child: StreamBuilder<List<NoteModel>>(
+                  stream: firestoreDatabase.watchNotes(),
+                  builder: (BuildContext context, AsyncSnapshot<List<NoteModel>> snapshot) {
+                    if (!snapshot.hasData) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
 
-                      final data = snapshot.data!;
+                    final data = snapshot.data!;
 
-                      if (data.isEmpty) {
-                        return const Center(
-                          child: Text('No notes yet. Tap + to add one!'),
-                        );
-                      }
-
-                      return GridView.builder(
-                        padding: const EdgeInsets.only(bottom: 80),
-                        gridDelegate: defaultTargetPlatform == TargetPlatform.android && !kIsWeb
-                        // Android, Strict 3 columns
-                            ? const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                          crossAxisSpacing: 0.0,
-                          mainAxisSpacing: 0.0,
-                          childAspectRatio: 0.85,
-                        )
-                        // Dynamic width for everything else
-                            : const SliverGridDelegateWithMaxCrossAxisExtent(
-                          maxCrossAxisExtent: 220,
-                          crossAxisSpacing:0.0,
-                          mainAxisSpacing: 0.0,
-                          childAspectRatio: 0.85 ,
-                        ),
-                        itemCount: data.length,
-                        itemBuilder: (context, index) {
-                          final isSelected = noteIds.contains(data[index].id);
-                          return _SelectableCard(
-                            onTap: () {
-                              if (isSelectMode) {
-                                setState(() {
-                                  if (isSelected) {
-                                    noteIds.remove(data[index].id);
-                                    if (noteIds.isEmpty) {
-                                      isSelectMode = false;
-                                    }
-                                  } else {
-                                    noteIds.add(data[index].id);
-                                  }
-                                });
-                              } else {
-                                if (data[index].isLocked) {
-                                  _promptForPassword(context, data[index]);
-                                } else {
-                                  context.push(
-                                    AppRoutes.edit,
-                                    extra: data[index],
-                                  );
-                                }
-                              }
-                            },
-                            onLongPress: () {
-                              if (!isSelectMode) {
-                                setState(() {
-                                  isSelectMode = true;
-                                  noteIds.add(data[index].id);
-                                });
-                              }
-                            },
-                            isSelected: isSelected,
-                            child: _Card(note: data[index], isSelected: isSelected),
-                          );
-                        },
+                    if (data.isEmpty) {
+                      return const Center(
+                        child: Text('No notes yet. Tap + to add one!'),
                       );
-                    },
-                  ),
+                    }
+
+                    return GridView.builder(
+                      padding: const EdgeInsets.only(bottom: 80),
+                      gridDelegate: defaultTargetPlatform == TargetPlatform.android && !kIsWeb
+                      // Android, Strict 3 columns
+                          ? const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        crossAxisSpacing: 0.0,
+                        mainAxisSpacing: 0.0,
+                        childAspectRatio: 0.85,
+                      )
+                      // Dynamic width for everything else
+                          : const SliverGridDelegateWithMaxCrossAxisExtent(
+                        maxCrossAxisExtent: 220,
+                        crossAxisSpacing:0.0,
+                        mainAxisSpacing: 0.0,
+                        childAspectRatio: 0.85 ,
+                      ),
+                      itemCount: data.length,
+                      itemBuilder: (context, index) {
+                        final isSelected = noteIds.contains(data[index].id);
+                        return _SelectableCard(
+                          onTap: () {
+                            if (isSelectMode) {
+                              setState(() {
+                                if (isSelected) {
+                                  noteIds.remove(data[index].id);
+                                  if (noteIds.isEmpty) {
+                                    isSelectMode = false;
+                                  }
+                                } else {
+                                  noteIds.add(data[index].id);
+                                }
+                              });
+                            } else {
+                              if (data[index].isLocked) {
+                                _promptForPassword(context, data[index]);
+                              } else {
+                                context.push(
+                                  AppRoutes.edit,
+                                  extra: data[index],
+                                );
+                              }
+                            }
+                          },
+                          onLongPress: () {
+                            if (!isSelectMode) {
+                              setState(() {
+                                isSelectMode = true;
+                                noteIds.add(data[index].id);
+                              });
+                            }
+                          },
+                          isSelected: isSelected,
+                          child: _Card(note: data[index], isSelected: isSelected),
+                        );
+                      },
+                    );
+                  },
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
