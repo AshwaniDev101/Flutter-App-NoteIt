@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -105,7 +106,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               ),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 3.0),
                   child: StreamBuilder<List<NoteModel>>(
                     stream: firestoreDatabase.watchNotes(),
                     builder: (BuildContext context, AsyncSnapshot<List<NoteModel>> snapshot) {
@@ -123,11 +124,20 @@ class _HomePageState extends ConsumerState<HomePage> {
 
                       return GridView.builder(
                         padding: const EdgeInsets.only(bottom: 80),
-                        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                        gridDelegate: defaultTargetPlatform == TargetPlatform.android && !kIsWeb
+                        // Android, Strict 3 columns
+                            ? const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          crossAxisSpacing: 0.0,
+                          mainAxisSpacing: 0.0,
+                          childAspectRatio: 0.85,
+                        )
+                        // Dynamic width for everything else
+                            : const SliverGridDelegateWithMaxCrossAxisExtent(
                           maxCrossAxisExtent: 220,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
-                          childAspectRatio: 0.9,
+                          crossAxisSpacing:0.0,
+                          mainAxisSpacing: 0.0,
+                          childAspectRatio: 0.85 ,
                         ),
                         itemCount: data.length,
                         itemBuilder: (context, index) {
@@ -263,7 +273,7 @@ class _Card extends StatelessWidget {
       elevation: isSelected ? 1 : 0,
       color: noteTheme.cardContentBackground,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(8),
         side: BorderSide(
           color: isSelected
               ? colorScheme.primary
@@ -272,13 +282,13 @@ class _Card extends StatelessWidget {
         ),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
 
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               color: noteTheme.cardTitleBackground ?? colorScheme.surfaceContainerHigh,
               child: Text(
                 note.title.isEmpty ? "Untitled" : note.title,
