@@ -7,38 +7,34 @@ class Themes {
     useMaterial3: true,
     colorScheme: const ColorScheme(
       brightness: Brightness.light,
-      primary: Color(0xFF111827),
+      primary: Color(0xFFF59E0B),
       onPrimary: Color(0xFFFFFFFF),
-      secondary: Color(0xFF344871),
-      onSecondary: Color(0xFFE4E4E4),
+      secondary: Color(0xFFD97706),
+      onSecondary: Color(0xFFFFFFFF),
       error: Color(0xFFEF4444),
       onError: Colors.white,
-      surface: Color(0xFFFAFAFA),
-      onSurface: Color(0xFF111827),
-      outlineVariant: Color(0xFFEAFFD0),
+      surface: Color(0xFFFFFDF8),
+      onSurface: Color(0xFF1C1917),
+      outlineVariant: Color(0xFFFDE68A),
     ),
     appBarTheme: const AppBarTheme(
-      backgroundColor: Color(0xFF2C3947),
-      foregroundColor: Color(0xFFFBFBFB),
+      backgroundColor: Color(0xFFF59E0B),
+      foregroundColor: Color(0xFFFFFFFF),
       elevation: 0,
       systemOverlayStyle: SystemUiOverlayStyle(
-        statusBarColor: Color(0xFF212935),
-        statusBarIconBrightness: Brightness.light,
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
         statusBarBrightness: Brightness.light,
       ),
     ),
     extensions: const [
       NoteTheme(
-        selectedAppBar: Color(0xFF73C566),
-        selectedCheckColor: Color(0xFF73C566),
-
-        // cardTitleBackground: Color(0xFF111827),
-        cardTitleBackground: Color(0xFFF6F6F6),
-        cardTitleForeground: Color(0xFF111827),
-
-        cardContentBackground: Color(0xFFF6F6F6),
-        cardContentForeground: Color(0xFF111827),
-
+        selectedAppBar: Color(0xFFD97706),
+        selectedCheckColor: Color(0xFFD97706),
+        cardTitleBackground: Color(0xFFFEF3C7),
+        cardTitleForeground: Color(0xFF1C1917),
+        cardContentBackground: Color(0xFFFFFFFF),
+        cardContentForeground: Color(0xFF3F3F46),
       )
     ],
   );
@@ -48,19 +44,19 @@ class Themes {
     brightness: Brightness.dark,
     colorScheme: const ColorScheme(
       brightness: Brightness.dark,
-      primary: Color(0xFFAD5C71),
-      onPrimary: Colors.white,
-      secondary: Color(0xFF72BAA9),
-      onSecondary: Color(0xFF1C1917),
+      primary: Color(0xFF818CF8),
+      onPrimary: Color(0xFF1E1B4B),
+      secondary: Color(0xFF34D399),
+      onSecondary: Color(0xFF022C22),
       error: Color(0xFFF87171),
       onError: Colors.black,
-      surface: Color(0xFF241F21),
-      onSurface: Color(0xFFF5F5F4),
-      outlineVariant: Color(0xFF44403C),
+      surface: Color(0xFF0F172A),
+      onSurface: Color(0xFFF8FAFC),
+      outlineVariant: Color(0xFF334155),
     ),
     appBarTheme: const AppBarTheme(
-      backgroundColor: Color(0xFF241F21),
-      foregroundColor: Color(0xFFAD5C71),
+      backgroundColor: Color(0xFF0F172A),
+      foregroundColor: Color(0xFF818CF8),
       elevation: 0,
       systemOverlayStyle: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
@@ -70,15 +66,12 @@ class Themes {
     ),
     extensions: const [
       NoteTheme(
-        selectedAppBar: Color(0xFF73C566),
-        selectedCheckColor: Color(0xFF73C566),
-
-        cardTitleBackground: Color(0xFF111827),
-        cardTitleForeground: Color(0xFF111827),
-
-        cardContentBackground: Color(0xFFFFF8B1),
-        cardContentForeground: Color(0xFF374151),
-
+        selectedAppBar: Color(0xFF818CF8),
+        selectedCheckColor: Color(0xFF34D399),
+        cardTitleBackground: Color(0xFF1E293B),
+        cardTitleForeground: Color(0xFFF8FAFC),
+        cardContentBackground: Color(0xFF1E293B),
+        cardContentForeground: Color(0xFFCBD5E1),
       )
     ],
   );
