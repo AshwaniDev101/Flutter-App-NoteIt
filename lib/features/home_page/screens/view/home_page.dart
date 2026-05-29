@@ -9,6 +9,7 @@ import 'package:noteit/database/firebase/firebase_database.dart';
 import 'package:noteit/models/note_model.dart';
 
 import '../../../password_page/screens/view/password_page.dart';
+import '../core/sort.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -26,6 +27,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     final firestoreDatabase = ref.watch(noteFirebaseDatabaseProvider);
     final noteTheme = Theme.of(context).extension<NoteTheme>()!;
     final colorScheme = Theme.of(context).colorScheme;
+    final currentSortOption = ref.watch(noteSortOptionProvider);
 
     return Scaffold(
       appBar: isSelectMode
@@ -99,12 +101,30 @@ class _HomePageState extends ConsumerState<HomePage> {
 
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: ChoiceChip(
-                label: const Text('Sort by: Name'),
-                selected: true,
-                onSelected: (value) {},
-                avatar: const Icon(Icons.sort_by_alpha, size: 16),
-              ),
+              child: Row(
+                children: [
+                  ChoiceChip(
+                    label: const Text('Created'),
+                    selected: currentSortOption == NoteSortOption.createdAt,
+                    onSelected: (_) => ref.read(noteSortOptionProvider.notifier).updateSort(NoteSortOption.createdAt),
+                    avatar: const Icon(Icons.access_time, size: 16),
+                  ),
+                  const SizedBox(width: 8),
+                  ChoiceChip(
+                    label: const Text('Name'),
+                    selected: currentSortOption == NoteSortOption.name,
+                    onSelected: (_) => ref.read(noteSortOptionProvider.notifier).updateSort(NoteSortOption.name),
+                    avatar: const Icon(Icons.sort_by_alpha, size: 16),
+                  ),
+                  const SizedBox(width: 8),
+                  ChoiceChip(
+                    label: const Text('Last Updated'),
+                    selected: currentSortOption == NoteSortOption.updatedAt,
+                    onSelected: (_) => ref.read(noteSortOptionProvider.notifier).updateSort(NoteSortOption.updatedAt),
+                    avatar: const Icon(Icons.update, size: 16),
+                  ),
+                ],
+              )
             ),
             Expanded(
               child: Padding(
