@@ -108,6 +108,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     selected: currentSortOption == NoteSortOption.createdAt,
                     onSelected: (_) => ref.read(noteSortOptionProvider.notifier).updateSort(NoteSortOption.createdAt),
                     avatar: const Icon(Icons.access_time, size: 16),
+                    showCheckmark: false,
                   ),
                   const SizedBox(width: 8),
                   ChoiceChip(
@@ -115,6 +116,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     selected: currentSortOption == NoteSortOption.name,
                     onSelected: (_) => ref.read(noteSortOptionProvider.notifier).updateSort(NoteSortOption.name),
                     avatar: const Icon(Icons.sort_by_alpha, size: 16),
+                    showCheckmark: false,
                   ),
                   const SizedBox(width: 8),
                   ChoiceChip(
@@ -122,6 +124,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     selected: currentSortOption == NoteSortOption.updatedAt,
                     onSelected: (_) => ref.read(noteSortOptionProvider.notifier).updateSort(NoteSortOption.updatedAt),
                     avatar: const Icon(Icons.update, size: 16),
+                    showCheckmark: false,
                   ),
                 ],
               )
@@ -129,15 +132,11 @@ class _HomePageState extends ConsumerState<HomePage> {
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 3.0),
-                child: StreamBuilder<List<NoteModel>>(
-                  stream: firestoreDatabase.watchNotes(),
-                  builder: (BuildContext context, AsyncSnapshot<List<NoteModel>> snapshot) {
-                    if (!snapshot.hasData) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-
-                    final data = snapshot.data!;
-
+                // Watch the sorted provider instead of the raw database stream
+                child: ref.watch(sortedNotesProvider).when(
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                  error: (error, stack) => Center(child: Text('Error: $error')),
+                  data: (data) {
                     if (data.isEmpty) {
                       return const Center(
                         child: Text('No notes yet. Tap + to add one!'),
@@ -157,9 +156,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                       // Dynamic width for everything else
                           : const SliverGridDelegateWithMaxCrossAxisExtent(
                         maxCrossAxisExtent: 220,
-                        crossAxisSpacing:0.0,
+                        crossAxisSpacing: 0.0,
                         mainAxisSpacing: 0.0,
-                        childAspectRatio: 0.85 ,
+                        childAspectRatio: 0.85,
                       ),
                       itemCount: data.length,
                       itemBuilder: (context, index) {
