@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:noteit/core/routing/routing.dart';
 import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
 import 'package:noteit/firebase_options.dart';
@@ -17,7 +18,9 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-
+  await GoogleSignIn.instance.initialize(
+    clientId: '707715729232-ulbe4pm7fn9jbn11usgqtrkn3ov11q2h.apps.googleusercontent.com',
+  );
   runApp(
     const ProviderScope(
       child: _MyApp(),
