@@ -1,39 +1,40 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // Added Riverpod
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+import 'package:google_sign_in_all_platforms/google_sign_in_all_platforms.dart'; // Updated import
 import 'package:noteit/core/routing/routing.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 
-class SettingsPage extends StatelessWidget {
+
+class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
 
-
-
-  Future<void> _signInWithGoogle() async {
+  // Pass WidgetRef to access Riverpod providers
+  Future<void> _signInWithGoogle(WidgetRef ref) async {
     try {
-      if (kIsWeb) {
-        // Firebase Auth natively handles the popup on Web, bypassing the GIS button restriction.
-        GoogleAuthProvider authProvider = GoogleAuthProvider();
-        await FirebaseAuth.instance.signInWithPopup(authProvider);
-      } else {
-        // --- MOBILE FLOW (Android/iOS) ---
-        final GoogleSignInAccount? googleUser = await GoogleSignIn.instance.authenticate();
-        if (googleUser == null) return; // User canceled
+      // Access the universal Google Sign In instance
+      final googleSignIn = ref.read(googleSignInProvider);
 
-        final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-        final AuthCredential credential = GoogleAuthProvider.credential(
-          idToken: googleAuth.idToken,
-        );
+      // Triggers the correct flow (Browser/Popup/Local Server) based on platform
+      final GoogleSignInCredentials? credentials = await googleSignIn.signInOnline();
 
-        await FirebaseAuth.instance.signInWithCredential(credential);
-      }
+      if (credentials == null) return; // User canceled
+
+      // Pass the retrieved tokens directly to Firebase
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: credentials.accessToken,
+        idToken: credentials.idToken,
+      );
+
+      await FirebaseAuth.instance.signInWithCredential(credential);
+
     } catch (e) {
       debugPrint('Google Sign-In failed: $e');
     }
   }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) { // Added WidgetRef
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
@@ -47,7 +48,6 @@ class SettingsPage extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
           children: [
-
             // Account
             Padding(
               padding: const EdgeInsets.only(left: 8.0, bottom: 8.0),
@@ -125,8 +125,9 @@ class SettingsPage extends StatelessWidget {
                             child: isSignedIn
                                 ? OutlinedButton.icon(
                               onPressed: () async {
-                                // Use GoogleSignIn.instance here as well
-                                await GoogleSignIn.instance.signOut();
+                                // Update sign out to use the provider as well
+                                final googleSignIn = ref.read(googleSignInProvider);
+                                await googleSignIn.signOut();
                                 await FirebaseAuth.instance.signOut();
                               },
                               icon: const Icon(Icons.logout),
@@ -137,7 +138,7 @@ class SettingsPage extends StatelessWidget {
                               ),
                             )
                                 : FilledButton.icon(
-                              onPressed: _signInWithGoogle,
+                              onPressed: () => _signInWithGoogle(ref), // Pass ref here
                               icon: const Icon(Icons.login),
                               label: const Text('Sign in with Google'),
                             ),
@@ -188,14 +189,12 @@ class SettingsPage extends StatelessWidget {
                 ],
               ),
             )
-
           ],
         ),
       ),
     );
   }
 }
-
 
 class SettingsTile extends StatelessWidget {
   final IconData icon;
@@ -219,7 +218,6 @@ class SettingsTile extends StatelessWidget {
 
     return Center(
       child: ConstrainedBox(
-        // Caps the width on wide screens to maintain a clean desktop/web layout
         constraints: const BoxConstraints(maxWidth: 800),
         child: ListTile(
           contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
