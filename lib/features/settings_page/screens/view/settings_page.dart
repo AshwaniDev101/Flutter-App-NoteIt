@@ -5,6 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in_all_platforms/google_sign_in_all_platforms.dart'; // Updated import
 import 'package:noteit/core/routing/routing.dart';
 
+import '../../../../core/provider/provider.dart';
+
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
