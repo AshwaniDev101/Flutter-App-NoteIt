@@ -8,6 +8,8 @@ import 'package:noteit/shared/snack_bar_manager.dart';
 
 import 'core/theme/app_theme.dart';
 
+// Build Command: flutter build windows
+// Built location: build\windows\x64\runner\Release\noteit.exe
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 

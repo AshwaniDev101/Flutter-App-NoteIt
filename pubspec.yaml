@@ -25,11 +25,13 @@ dependencies:
   analysis_server_plugin: ^0.3.7
 
 #  Firebase dependencies
-  firebase_core: ^4.7.0
-  cloud_firestore: ^6.3.0
-  firebase_auth: ^6.4.0
+  firebase_core: ^4.11.0
+  cloud_firestore: ^6.6.0
+  firebase_auth: ^6.5.3
 
-#  Navigation dependencies
+
+
+  #  Navigation dependencies
   go_router: ^17.2.2
   riverpod_annotation: ^4.0.2
   shared_preferences: ^2.5.5

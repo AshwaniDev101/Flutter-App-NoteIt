@@ -20,6 +20,7 @@ class AppRoutes {
 final routerProvider = Provider((ref) {
   return GoRouter(
     initialLocation: AppRoutes.home,
+    // initialLocation: AppRoutes.search,
     routes: <RouteBase>[
       GoRoute(path: AppRoutes.home, builder: (context, state) => const HomePage()),
       GoRoute(
