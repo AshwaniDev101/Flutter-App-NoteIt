@@ -10,6 +10,9 @@ import 'core/theme/app_theme.dart';
 
 // Build Command: flutter build windows
 // Built location: build\windows\x64\runner\Release\noteit.exe
+// Get git diff: git diff HEAD | clip
+
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -39,6 +42,7 @@ class _MyApp extends ConsumerWidget {
       title: 'NoteIt',
       theme: Themes.lightThemeData,
       darkTheme: Themes.darkThemeData,
+      // themeMode: ThemeMode.light,
       themeMode: ThemeMode.dark,
     );
   }

@@ -32,7 +32,8 @@ class _HomePageState extends ConsumerState<HomePage> {
     return Scaffold(
       appBar: isSelectMode
           ? AppBar(
-        backgroundColor: noteTheme.selectedAppBar ?? colorScheme.primaryContainer,
+        backgroundColor: noteTheme.selectedAppBar,
+        foregroundColor: Colors.white,
         leading: IconButton(
           onPressed: () {
             setState(() {
@@ -44,7 +45,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         ),
         title: Text(
           '${noteIds.length} Selected',
-          style: TextStyle(color: colorScheme.onPrimaryContainer),
+          style: TextStyle(color: Colors.white),
         ),
         actions: [
           IconButton(
