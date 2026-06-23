@@ -45,6 +45,93 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _colorMeta = const VerificationMeta('color');
+  @override
+  late final GeneratedColumn<int> color = GeneratedColumn<int>(
+    'color',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0xFFFFFFFF),
+  );
+  static const VerificationMeta _isPinnedMeta = const VerificationMeta(
+    'isPinned',
+  );
+  @override
+  late final GeneratedColumn<bool> isPinned = GeneratedColumn<bool>(
+    'is_pinned',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_pinned" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _isArchivedMeta = const VerificationMeta(
+    'isArchived',
+  );
+  @override
+  late final GeneratedColumn<bool> isArchived = GeneratedColumn<bool>(
+    'is_archived',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_archived" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _isLockedMeta = const VerificationMeta(
+    'isLocked',
+  );
+  @override
+  late final GeneratedColumn<bool> isLocked = GeneratedColumn<bool>(
+    'is_locked',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_locked" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _positionMeta = const VerificationMeta(
+    'position',
+  );
+  @override
+  late final GeneratedColumn<int> position = GeneratedColumn<int>(
+    'position',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _tagsMeta = const VerificationMeta('tags');
+  @override
+  late final GeneratedColumn<String> tags = GeneratedColumn<String>(
+    'tags',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _reminderAtMeta = const VerificationMeta(
+    'reminderAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> reminderAt = GeneratedColumn<DateTime>(
+    'reminder_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -111,6 +198,13 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
     id,
     title,
     content,
+    color,
+    isPinned,
+    isArchived,
+    isLocked,
+    position,
+    tags,
+    reminderAt,
     createdAt,
     updatedAt,
     firestoreId,
@@ -147,6 +241,48 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
       );
     } else if (isInserting) {
       context.missing(_contentMeta);
+    }
+    if (data.containsKey('color')) {
+      context.handle(
+        _colorMeta,
+        color.isAcceptableOrUnknown(data['color']!, _colorMeta),
+      );
+    }
+    if (data.containsKey('is_pinned')) {
+      context.handle(
+        _isPinnedMeta,
+        isPinned.isAcceptableOrUnknown(data['is_pinned']!, _isPinnedMeta),
+      );
+    }
+    if (data.containsKey('is_archived')) {
+      context.handle(
+        _isArchivedMeta,
+        isArchived.isAcceptableOrUnknown(data['is_archived']!, _isArchivedMeta),
+      );
+    }
+    if (data.containsKey('is_locked')) {
+      context.handle(
+        _isLockedMeta,
+        isLocked.isAcceptableOrUnknown(data['is_locked']!, _isLockedMeta),
+      );
+    }
+    if (data.containsKey('position')) {
+      context.handle(
+        _positionMeta,
+        position.isAcceptableOrUnknown(data['position']!, _positionMeta),
+      );
+    }
+    if (data.containsKey('tags')) {
+      context.handle(
+        _tagsMeta,
+        tags.isAcceptableOrUnknown(data['tags']!, _tagsMeta),
+      );
+    }
+    if (data.containsKey('reminder_at')) {
+      context.handle(
+        _reminderAtMeta,
+        reminderAt.isAcceptableOrUnknown(data['reminder_at']!, _reminderAtMeta),
+      );
     }
     if (data.containsKey('created_at')) {
       context.handle(
@@ -202,6 +338,34 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
         DriftSqlType.string,
         data['${effectivePrefix}content'],
       )!,
+      color: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}color'],
+      )!,
+      isPinned: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_pinned'],
+      )!,
+      isArchived: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_archived'],
+      )!,
+      isLocked: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_locked'],
+      )!,
+      position: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}position'],
+      )!,
+      tags: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tags'],
+      ),
+      reminderAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}reminder_at'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -235,6 +399,13 @@ class Note extends DataClass implements Insertable<Note> {
   final int id;
   final String title;
   final String content;
+  final int color;
+  final bool isPinned;
+  final bool isArchived;
+  final bool isLocked;
+  final int position;
+  final String? tags;
+  final DateTime? reminderAt;
   final DateTime createdAt;
   final DateTime? updatedAt;
   final String? firestoreId;
@@ -244,6 +415,13 @@ class Note extends DataClass implements Insertable<Note> {
     required this.id,
     required this.title,
     required this.content,
+    required this.color,
+    required this.isPinned,
+    required this.isArchived,
+    required this.isLocked,
+    required this.position,
+    this.tags,
+    this.reminderAt,
     required this.createdAt,
     this.updatedAt,
     this.firestoreId,
@@ -256,6 +434,17 @@ class Note extends DataClass implements Insertable<Note> {
     map['id'] = Variable<int>(id);
     map['title'] = Variable<String>(title);
     map['content'] = Variable<String>(content);
+    map['color'] = Variable<int>(color);
+    map['is_pinned'] = Variable<bool>(isPinned);
+    map['is_archived'] = Variable<bool>(isArchived);
+    map['is_locked'] = Variable<bool>(isLocked);
+    map['position'] = Variable<int>(position);
+    if (!nullToAbsent || tags != null) {
+      map['tags'] = Variable<String>(tags);
+    }
+    if (!nullToAbsent || reminderAt != null) {
+      map['reminder_at'] = Variable<DateTime>(reminderAt);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     if (!nullToAbsent || updatedAt != null) {
       map['updated_at'] = Variable<DateTime>(updatedAt);
@@ -273,6 +462,15 @@ class Note extends DataClass implements Insertable<Note> {
       id: Value(id),
       title: Value(title),
       content: Value(content),
+      color: Value(color),
+      isPinned: Value(isPinned),
+      isArchived: Value(isArchived),
+      isLocked: Value(isLocked),
+      position: Value(position),
+      tags: tags == null && nullToAbsent ? const Value.absent() : Value(tags),
+      reminderAt: reminderAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reminderAt),
       createdAt: Value(createdAt),
       updatedAt: updatedAt == null && nullToAbsent
           ? const Value.absent()
@@ -294,6 +492,13 @@ class Note extends DataClass implements Insertable<Note> {
       id: serializer.fromJson<int>(json['id']),
       title: serializer.fromJson<String>(json['title']),
       content: serializer.fromJson<String>(json['content']),
+      color: serializer.fromJson<int>(json['color']),
+      isPinned: serializer.fromJson<bool>(json['isPinned']),
+      isArchived: serializer.fromJson<bool>(json['isArchived']),
+      isLocked: serializer.fromJson<bool>(json['isLocked']),
+      position: serializer.fromJson<int>(json['position']),
+      tags: serializer.fromJson<String?>(json['tags']),
+      reminderAt: serializer.fromJson<DateTime?>(json['reminderAt']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime?>(json['updatedAt']),
       firestoreId: serializer.fromJson<String?>(json['firestoreId']),
@@ -308,6 +513,13 @@ class Note extends DataClass implements Insertable<Note> {
       'id': serializer.toJson<int>(id),
       'title': serializer.toJson<String>(title),
       'content': serializer.toJson<String>(content),
+      'color': serializer.toJson<int>(color),
+      'isPinned': serializer.toJson<bool>(isPinned),
+      'isArchived': serializer.toJson<bool>(isArchived),
+      'isLocked': serializer.toJson<bool>(isLocked),
+      'position': serializer.toJson<int>(position),
+      'tags': serializer.toJson<String?>(tags),
+      'reminderAt': serializer.toJson<DateTime?>(reminderAt),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime?>(updatedAt),
       'firestoreId': serializer.toJson<String?>(firestoreId),
@@ -320,6 +532,13 @@ class Note extends DataClass implements Insertable<Note> {
     int? id,
     String? title,
     String? content,
+    int? color,
+    bool? isPinned,
+    bool? isArchived,
+    bool? isLocked,
+    int? position,
+    Value<String?> tags = const Value.absent(),
+    Value<DateTime?> reminderAt = const Value.absent(),
     DateTime? createdAt,
     Value<DateTime?> updatedAt = const Value.absent(),
     Value<String?> firestoreId = const Value.absent(),
@@ -329,6 +548,13 @@ class Note extends DataClass implements Insertable<Note> {
     id: id ?? this.id,
     title: title ?? this.title,
     content: content ?? this.content,
+    color: color ?? this.color,
+    isPinned: isPinned ?? this.isPinned,
+    isArchived: isArchived ?? this.isArchived,
+    isLocked: isLocked ?? this.isLocked,
+    position: position ?? this.position,
+    tags: tags.present ? tags.value : this.tags,
+    reminderAt: reminderAt.present ? reminderAt.value : this.reminderAt,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt.present ? updatedAt.value : this.updatedAt,
     firestoreId: firestoreId.present ? firestoreId.value : this.firestoreId,
@@ -340,6 +566,17 @@ class Note extends DataClass implements Insertable<Note> {
       id: data.id.present ? data.id.value : this.id,
       title: data.title.present ? data.title.value : this.title,
       content: data.content.present ? data.content.value : this.content,
+      color: data.color.present ? data.color.value : this.color,
+      isPinned: data.isPinned.present ? data.isPinned.value : this.isPinned,
+      isArchived: data.isArchived.present
+          ? data.isArchived.value
+          : this.isArchived,
+      isLocked: data.isLocked.present ? data.isLocked.value : this.isLocked,
+      position: data.position.present ? data.position.value : this.position,
+      tags: data.tags.present ? data.tags.value : this.tags,
+      reminderAt: data.reminderAt.present
+          ? data.reminderAt.value
+          : this.reminderAt,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       firestoreId: data.firestoreId.present
@@ -358,6 +595,13 @@ class Note extends DataClass implements Insertable<Note> {
           ..write('id: $id, ')
           ..write('title: $title, ')
           ..write('content: $content, ')
+          ..write('color: $color, ')
+          ..write('isPinned: $isPinned, ')
+          ..write('isArchived: $isArchived, ')
+          ..write('isLocked: $isLocked, ')
+          ..write('position: $position, ')
+          ..write('tags: $tags, ')
+          ..write('reminderAt: $reminderAt, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('firestoreId: $firestoreId, ')
@@ -372,6 +616,13 @@ class Note extends DataClass implements Insertable<Note> {
     id,
     title,
     content,
+    color,
+    isPinned,
+    isArchived,
+    isLocked,
+    position,
+    tags,
+    reminderAt,
     createdAt,
     updatedAt,
     firestoreId,
@@ -385,6 +636,13 @@ class Note extends DataClass implements Insertable<Note> {
           other.id == this.id &&
           other.title == this.title &&
           other.content == this.content &&
+          other.color == this.color &&
+          other.isPinned == this.isPinned &&
+          other.isArchived == this.isArchived &&
+          other.isLocked == this.isLocked &&
+          other.position == this.position &&
+          other.tags == this.tags &&
+          other.reminderAt == this.reminderAt &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.firestoreId == this.firestoreId &&
@@ -396,6 +654,13 @@ class NotesCompanion extends UpdateCompanion<Note> {
   final Value<int> id;
   final Value<String> title;
   final Value<String> content;
+  final Value<int> color;
+  final Value<bool> isPinned;
+  final Value<bool> isArchived;
+  final Value<bool> isLocked;
+  final Value<int> position;
+  final Value<String?> tags;
+  final Value<DateTime?> reminderAt;
   final Value<DateTime> createdAt;
   final Value<DateTime?> updatedAt;
   final Value<String?> firestoreId;
@@ -405,6 +670,13 @@ class NotesCompanion extends UpdateCompanion<Note> {
     this.id = const Value.absent(),
     this.title = const Value.absent(),
     this.content = const Value.absent(),
+    this.color = const Value.absent(),
+    this.isPinned = const Value.absent(),
+    this.isArchived = const Value.absent(),
+    this.isLocked = const Value.absent(),
+    this.position = const Value.absent(),
+    this.tags = const Value.absent(),
+    this.reminderAt = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.firestoreId = const Value.absent(),
@@ -415,6 +687,13 @@ class NotesCompanion extends UpdateCompanion<Note> {
     this.id = const Value.absent(),
     required String title,
     required String content,
+    this.color = const Value.absent(),
+    this.isPinned = const Value.absent(),
+    this.isArchived = const Value.absent(),
+    this.isLocked = const Value.absent(),
+    this.position = const Value.absent(),
+    this.tags = const Value.absent(),
+    this.reminderAt = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.firestoreId = const Value.absent(),
@@ -426,6 +705,13 @@ class NotesCompanion extends UpdateCompanion<Note> {
     Expression<int>? id,
     Expression<String>? title,
     Expression<String>? content,
+    Expression<int>? color,
+    Expression<bool>? isPinned,
+    Expression<bool>? isArchived,
+    Expression<bool>? isLocked,
+    Expression<int>? position,
+    Expression<String>? tags,
+    Expression<DateTime>? reminderAt,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<String>? firestoreId,
@@ -436,6 +722,13 @@ class NotesCompanion extends UpdateCompanion<Note> {
       if (id != null) 'id': id,
       if (title != null) 'title': title,
       if (content != null) 'content': content,
+      if (color != null) 'color': color,
+      if (isPinned != null) 'is_pinned': isPinned,
+      if (isArchived != null) 'is_archived': isArchived,
+      if (isLocked != null) 'is_locked': isLocked,
+      if (position != null) 'position': position,
+      if (tags != null) 'tags': tags,
+      if (reminderAt != null) 'reminder_at': reminderAt,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (firestoreId != null) 'firestore_id': firestoreId,
@@ -448,6 +741,13 @@ class NotesCompanion extends UpdateCompanion<Note> {
     Value<int>? id,
     Value<String>? title,
     Value<String>? content,
+    Value<int>? color,
+    Value<bool>? isPinned,
+    Value<bool>? isArchived,
+    Value<bool>? isLocked,
+    Value<int>? position,
+    Value<String?>? tags,
+    Value<DateTime?>? reminderAt,
     Value<DateTime>? createdAt,
     Value<DateTime?>? updatedAt,
     Value<String?>? firestoreId,
@@ -458,6 +758,13 @@ class NotesCompanion extends UpdateCompanion<Note> {
       id: id ?? this.id,
       title: title ?? this.title,
       content: content ?? this.content,
+      color: color ?? this.color,
+      isPinned: isPinned ?? this.isPinned,
+      isArchived: isArchived ?? this.isArchived,
+      isLocked: isLocked ?? this.isLocked,
+      position: position ?? this.position,
+      tags: tags ?? this.tags,
+      reminderAt: reminderAt ?? this.reminderAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       firestoreId: firestoreId ?? this.firestoreId,
@@ -477,6 +784,27 @@ class NotesCompanion extends UpdateCompanion<Note> {
     }
     if (content.present) {
       map['content'] = Variable<String>(content.value);
+    }
+    if (color.present) {
+      map['color'] = Variable<int>(color.value);
+    }
+    if (isPinned.present) {
+      map['is_pinned'] = Variable<bool>(isPinned.value);
+    }
+    if (isArchived.present) {
+      map['is_archived'] = Variable<bool>(isArchived.value);
+    }
+    if (isLocked.present) {
+      map['is_locked'] = Variable<bool>(isLocked.value);
+    }
+    if (position.present) {
+      map['position'] = Variable<int>(position.value);
+    }
+    if (tags.present) {
+      map['tags'] = Variable<String>(tags.value);
+    }
+    if (reminderAt.present) {
+      map['reminder_at'] = Variable<DateTime>(reminderAt.value);
     }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
@@ -502,6 +830,13 @@ class NotesCompanion extends UpdateCompanion<Note> {
           ..write('id: $id, ')
           ..write('title: $title, ')
           ..write('content: $content, ')
+          ..write('color: $color, ')
+          ..write('isPinned: $isPinned, ')
+          ..write('isArchived: $isArchived, ')
+          ..write('isLocked: $isLocked, ')
+          ..write('position: $position, ')
+          ..write('tags: $tags, ')
+          ..write('reminderAt: $reminderAt, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('firestoreId: $firestoreId, ')
@@ -528,6 +863,13 @@ typedef $$NotesTableCreateCompanionBuilder =
       Value<int> id,
       required String title,
       required String content,
+      Value<int> color,
+      Value<bool> isPinned,
+      Value<bool> isArchived,
+      Value<bool> isLocked,
+      Value<int> position,
+      Value<String?> tags,
+      Value<DateTime?> reminderAt,
       Value<DateTime> createdAt,
       Value<DateTime?> updatedAt,
       Value<String?> firestoreId,
@@ -539,6 +881,13 @@ typedef $$NotesTableUpdateCompanionBuilder =
       Value<int> id,
       Value<String> title,
       Value<String> content,
+      Value<int> color,
+      Value<bool> isPinned,
+      Value<bool> isArchived,
+      Value<bool> isLocked,
+      Value<int> position,
+      Value<String?> tags,
+      Value<DateTime?> reminderAt,
       Value<DateTime> createdAt,
       Value<DateTime?> updatedAt,
       Value<String?> firestoreId,
@@ -567,6 +916,41 @@ class $$NotesTableFilterComposer
 
   ColumnFilters<String> get content => $composableBuilder(
     column: $table.content,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get color => $composableBuilder(
+    column: $table.color,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isPinned => $composableBuilder(
+    column: $table.isPinned,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isArchived => $composableBuilder(
+    column: $table.isArchived,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isLocked => $composableBuilder(
+    column: $table.isLocked,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get position => $composableBuilder(
+    column: $table.position,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tags => $composableBuilder(
+    column: $table.tags,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get reminderAt => $composableBuilder(
+    column: $table.reminderAt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -620,6 +1004,41 @@ class $$NotesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get color => $composableBuilder(
+    column: $table.color,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isPinned => $composableBuilder(
+    column: $table.isPinned,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isArchived => $composableBuilder(
+    column: $table.isArchived,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isLocked => $composableBuilder(
+    column: $table.isLocked,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get position => $composableBuilder(
+    column: $table.position,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tags => $composableBuilder(
+    column: $table.tags,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get reminderAt => $composableBuilder(
+    column: $table.reminderAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -663,6 +1082,31 @@ class $$NotesTableAnnotationComposer
 
   GeneratedColumn<String> get content =>
       $composableBuilder(column: $table.content, builder: (column) => column);
+
+  GeneratedColumn<int> get color =>
+      $composableBuilder(column: $table.color, builder: (column) => column);
+
+  GeneratedColumn<bool> get isPinned =>
+      $composableBuilder(column: $table.isPinned, builder: (column) => column);
+
+  GeneratedColumn<bool> get isArchived => $composableBuilder(
+    column: $table.isArchived,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isLocked =>
+      $composableBuilder(column: $table.isLocked, builder: (column) => column);
+
+  GeneratedColumn<int> get position =>
+      $composableBuilder(column: $table.position, builder: (column) => column);
+
+  GeneratedColumn<String> get tags =>
+      $composableBuilder(column: $table.tags, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get reminderAt => $composableBuilder(
+    column: $table.reminderAt,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -715,6 +1159,13 @@ class $$NotesTableTableManager
                 Value<int> id = const Value.absent(),
                 Value<String> title = const Value.absent(),
                 Value<String> content = const Value.absent(),
+                Value<int> color = const Value.absent(),
+                Value<bool> isPinned = const Value.absent(),
+                Value<bool> isArchived = const Value.absent(),
+                Value<bool> isLocked = const Value.absent(),
+                Value<int> position = const Value.absent(),
+                Value<String?> tags = const Value.absent(),
+                Value<DateTime?> reminderAt = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime?> updatedAt = const Value.absent(),
                 Value<String?> firestoreId = const Value.absent(),
@@ -724,6 +1175,13 @@ class $$NotesTableTableManager
                 id: id,
                 title: title,
                 content: content,
+                color: color,
+                isPinned: isPinned,
+                isArchived: isArchived,
+                isLocked: isLocked,
+                position: position,
+                tags: tags,
+                reminderAt: reminderAt,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 firestoreId: firestoreId,
@@ -735,6 +1193,13 @@ class $$NotesTableTableManager
                 Value<int> id = const Value.absent(),
                 required String title,
                 required String content,
+                Value<int> color = const Value.absent(),
+                Value<bool> isPinned = const Value.absent(),
+                Value<bool> isArchived = const Value.absent(),
+                Value<bool> isLocked = const Value.absent(),
+                Value<int> position = const Value.absent(),
+                Value<String?> tags = const Value.absent(),
+                Value<DateTime?> reminderAt = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime?> updatedAt = const Value.absent(),
                 Value<String?> firestoreId = const Value.absent(),
@@ -744,6 +1209,13 @@ class $$NotesTableTableManager
                 id: id,
                 title: title,
                 content: content,
+                color: color,
+                isPinned: isPinned,
+                isArchived: isArchived,
+                isLocked: isLocked,
+                position: position,
+                tags: tags,
+                reminderAt: reminderAt,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 firestoreId: firestoreId,

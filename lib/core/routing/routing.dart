@@ -2,10 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:noteit/features/edit_note_page/screens/view/edit_note_page.dart';
 import 'package:noteit/features/home_page/screens/view/home_page.dart';
-import 'package:noteit/features/search_page/screens/view/search_page.dart';
 import 'package:noteit/features/settings_page/screens/view/settings_page.dart';
-import 'package:noteit/models/note_model.dart';
 
+import '../../database/drift/drift_database.dart';
 import '../../features/settings_page/screens/view/options/master_password_page.dart';
 
 class AppRoutes {
@@ -25,18 +24,11 @@ final routerProvider = Provider((ref) {
       GoRoute(
         path: AppRoutes.edit,
         builder: (context, state) {
-          final note = state.extra as NoteModel?;
-
-          return EditNotePage(note: note);
+          final note = state.extra as Note?;
+          return EditNotePage(existingNote: note);
         },
       ),
 
-      GoRoute(
-        path: AppRoutes.search,
-        builder: (context, state) {
-          return SearchPage();
-        },
-      ),
 
       GoRoute(
         path: AppRoutes.settings,
