@@ -6,7 +6,6 @@ import 'package:noteit/features/search_page/screens/view/search_page.dart';
 import 'package:noteit/features/settings_page/screens/view/settings_page.dart';
 import 'package:noteit/models/note_model.dart';
 
-import '../../database/drift/drift_database.dart';
 import '../../features/settings_page/screens/view/options/master_password_page.dart';
 
 class AppRoutes {
