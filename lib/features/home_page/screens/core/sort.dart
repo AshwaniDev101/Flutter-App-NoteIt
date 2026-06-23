@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../database/drift/drift_database.dart';
+import 'package:noteit/database/drift/drift_database.dart';
 
 
 enum NoteSortOption { name, createdAt, updatedAt }

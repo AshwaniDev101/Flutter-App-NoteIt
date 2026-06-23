@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,9 +6,9 @@ import 'package:go_router/go_router.dart';
 import 'package:noteit/core/routing/routing.dart';
 import 'package:noteit/core/theme/note_theme.dart';
 
-import '../../../../database/drift/drift_database.dart';
-import '../../../password_page/screens/view/password_page.dart';
-import '../core/sort.dart';
+import 'package:noteit/database/drift/drift_database.dart';
+import 'package:noteit/features/password_page/screens/view/password_page.dart';
+import 'package:noteit/features/home_page/screens/core/sort.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});

@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:noteit/shared/snack_bar_manager.dart';
-import '../../../../database/drift/drift_database.dart';
 import '../view_model/edit_note_view_model.dart';
+import 'package:noteit/database/drift/drift_database.dart';
 
 class EditNotePage extends ConsumerStatefulWidget {
   final Note? existingNote;

@@ -4,7 +4,7 @@ import 'package:noteit/features/edit_note_page/screens/view/edit_note_page.dart'
 import 'package:noteit/features/home_page/screens/view/home_page.dart';
 import 'package:noteit/features/settings_page/screens/view/settings_page.dart';
 
-import '../../database/drift/drift_database.dart';
+import 'package:noteit/database/drift/drift_database.dart';
 import '../../features/settings_page/screens/view/options/master_password_page.dart';
 
 class AppRoutes {
