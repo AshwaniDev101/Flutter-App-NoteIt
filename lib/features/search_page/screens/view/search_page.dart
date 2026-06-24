@@ -210,7 +210,7 @@
 //               color: colorScheme.surfaceContainerLow,
 //               shape: RoundedRectangleBorder(
 //                 borderRadius: BorderRadius.circular(12),
-//                 side: BorderSide(color: colorScheme.outlineVariant.withOpacity(0.5)),
+//                 side: BorderSide(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
 //               ),
 //               child: ListTile(
 //                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

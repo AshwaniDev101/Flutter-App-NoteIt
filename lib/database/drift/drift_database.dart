@@ -23,6 +23,9 @@ class NoteDriftDatabase extends _$NoteDriftDatabase {
     ),
   );
 
+
+
+
   @override
   int get schemaVersion => 1;
 

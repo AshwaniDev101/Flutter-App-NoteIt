@@ -71,7 +71,7 @@ class SettingsPage extends ConsumerWidget {
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
-                      side: BorderSide(color: colorScheme.outlineVariant.withOpacity(0.5)),
+                      side: BorderSide(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
                     ),
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
@@ -136,7 +136,7 @@ class SettingsPage extends ConsumerWidget {
                               label: const Text('Sign Out'),
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: colorScheme.error,
-                                side: BorderSide(color: colorScheme.error.withOpacity(0.5)),
+                                side: BorderSide(color: colorScheme.error.withValues(alpha: 0.5)),
                               ),
                             )
                                 : FilledButton.icon(
@@ -169,7 +169,7 @@ class SettingsPage extends ConsumerWidget {
               elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: colorScheme.outlineVariant.withOpacity(0.5)),
+                side: BorderSide(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
               ),
               child: Column(
                 children: [
@@ -180,7 +180,7 @@ class SettingsPage extends ConsumerWidget {
                     subtitle: 'Manage alerts and sounds',
                     onTap: () {},
                   ),
-                  Divider(height: 1, indent: 64, color: colorScheme.outlineVariant.withOpacity(0.5)),
+                  Divider(height: 1, indent: 64, color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
                   SettingsTile(
                     icon: Icons.lock_outline,
                     iconColor: Colors.orange,
@@ -223,14 +223,14 @@ class SettingsTile extends StatelessWidget {
         constraints: const BoxConstraints(maxWidth: 800),
         child: ListTile(
           contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
-          hoverColor: theme.colorScheme.primary.withOpacity(0.04),
+          hoverColor: theme.colorScheme.primary.withValues(alpha: 0.04),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
           leading: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
+              color: iconColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: iconColor, size: 22),

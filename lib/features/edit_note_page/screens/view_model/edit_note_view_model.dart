@@ -66,6 +66,20 @@ class EditNoteViewModel extends Notifier<EditNoteState> {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
+
+  // Completes the CRUD cycle by removing the target note from the Drift database
+  Future<void> deleteNote(int id) async {
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+
+      // await ref.read(noteDriftDatabaseProvider).deleteNote(id);
+      await ref.read(noteDriftDatabaseProvider).softDeleteNotes([id]);
+      state = state.copyWith(isLoading: false);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
+  }
 }
 
 final editNoteViewModelProvider = NotifierProvider<EditNoteViewModel, EditNoteState>(

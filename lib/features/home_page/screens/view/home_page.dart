@@ -37,7 +37,6 @@ class _HomePageState extends ConsumerState<HomePage> {
     final driftDatabase = ref.watch(noteDriftDatabaseProvider);
     final noteTheme = Theme.of(context).extension<NoteTheme>()!;
     final currentSortOption = ref.watch(noteSortOptionProvider);
-    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       // Dynamic AppBar Logic

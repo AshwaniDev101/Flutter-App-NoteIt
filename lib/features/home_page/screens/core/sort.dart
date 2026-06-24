@@ -24,19 +24,16 @@ final noteSortOptionProvider = NotifierProvider<NoteSortNotifier, NoteSortOption
 });
 
 
-final sortedNotesProvider = StreamProvider.autoDispose<List<Note>>((ref) {
-
-
+final sortedNotesProvider = StreamProvider<List<Note>>((ref) {
   final driftDatabase = ref.watch(noteDriftDatabaseProvider);
   final sortOption = ref.watch(noteSortOptionProvider);
 
-
   return driftDatabase.watchAllNotes().map((notes) {
+    // Debug: Add this print to verify data flow in the console
+    print("### Stream received ${notes.length} total notes from Drift");
 
-    // CRITICAL: Filter out notes that are soft-deleted before sorting
     final activeNotes = notes.where((note) => !note.isDeleted).toList();
 
-    // Sort the remaining active notes
     switch (sortOption) {
       case NoteSortOption.name:
         activeNotes.sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
