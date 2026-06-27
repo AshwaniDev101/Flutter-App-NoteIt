@@ -10,6 +10,8 @@ import 'package:noteit/database/drift/drift_database.dart';
 import 'package:noteit/features/password_page/screens/view/password_page.dart';
 import 'package:noteit/features/home_page/screens/core/sort.dart';
 
+import '../../../../database/sync_manager/sync_manager.dart';
+
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
@@ -25,6 +27,16 @@ class _HomePageState extends ConsumerState<HomePage> {
   bool isSearchMode = false;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Trigger the new Delta Sync engine on startup
+      ref.read(syncManagerProvider).executeFullSync();
+    });
+  }
 
   @override
   void dispose() {
@@ -60,7 +72,13 @@ class _HomePageState extends ConsumerState<HomePage> {
         actions: [
           IconButton(
             onPressed: () async {
+              // Soft delete locally
               await driftDatabase.softDeleteNotes(noteIds);
+
+              // Trigger background sync to push deletes to the cloud
+              ref.read(syncManagerProvider).executeFullSync();
+
+              // Update UI state
               setState(() {
                 isSelectMode = false;
                 noteIds.clear();
@@ -126,6 +144,17 @@ class _HomePageState extends ConsumerState<HomePage> {
           IconButton(
             onPressed: () {},
             icon: const Icon(Icons.grid_view_rounded),
+          ),
+          // NEW: Manual Sync Button
+          IconButton(
+            onPressed: () {
+              // Show a quick snack bar so the user knows it's syncing
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Syncing notes...'), duration: Duration(seconds: 1)),
+              );
+              ref.read(syncManagerProvider).executeFullSync();
+            },
+            icon: const Icon(Icons.sync),
           ),
           IconButton(
             onPressed: () {

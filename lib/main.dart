@@ -11,7 +11,7 @@ import 'core/theme/app_theme.dart';
 // Build Command: flutter build windows
 // Built location: build\windows\x64\runner\Release\noteit.exe
 // Get Git Diff : git diff HEAD | clip
-
+// Build drift db : dart run build_runner build -d
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

@@ -306,7 +306,7 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
-                        isNewNote ? 'New' : 'Update',
+                        isNewNote ? 'New' : 'Updating...',
                         style: textTheme.labelSmall?.copyWith(
                           color: isNewNote ? colorScheme.onPrimaryContainer : colorScheme.onTertiaryContainer,
                           fontWeight: FontWeight.bold,

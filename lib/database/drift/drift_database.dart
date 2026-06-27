@@ -23,11 +23,10 @@ class NoteDriftDatabase extends _$NoteDriftDatabase {
     ),
   );
 
-
-
-
   @override
   int get schemaVersion => 1;
+  
+  // STANDARD LOCAL CRUD OPERATIONS
 
   Future<int> addNote({
     required String title,
@@ -39,7 +38,8 @@ class NoteDriftDatabase extends _$NoteDriftDatabase {
       NotesCompanion.insert(
         title: title,
         content: content,
-        // syncStatus defaults to 0 and createdAt defaults to now automatically based on our table definition
+        // Enforce UTC for accurate multi-device syncing
+        createdAt: Value(DateTime.now().toUtc()),
       ),
     );
   }
@@ -57,14 +57,14 @@ class NoteDriftDatabase extends _$NoteDriftDatabase {
         NotesCompanion(
           title: Value(title),
           content: Value(content),
-          syncStatus: const Value(0), // Trigger the SyncService
-          updatedAt: Value(DateTime.now()), // Update timestamp for sorting
+          syncStatus: const Value(0), // Trigger the SyncManager
+          updatedAt: Value(DateTime.now().toUtc()), // Enforce UTC
         )
     ) > 0;
   }
 
   Future<int> deleteNote(int id) async {
-    // This is the "Hard Delete" used by the SyncService once Firebase confirms deletion
+    // This is the "Hard Delete"
     return await (delete(notes)..where((t) => t.id.equals(id))).go();
   }
 
@@ -73,20 +73,75 @@ class NoteDriftDatabase extends _$NoteDriftDatabase {
     await (update(notes)..where((t) => t.id.isIn(ids))).write(
       NotesCompanion(
         isDeleted: const Value(true),
-        syncStatus: const Value(0), // Mark as pending sync so Firebase knows to delete it
-        updatedAt: Value(DateTime.now()),
+        syncStatus: const Value(0), // Trigger the SyncManager
+        updatedAt: Value(DateTime.now().toUtc()), // Enforce UTC
       ),
     );
   }
 
-  // LockNote method required by your ViewModel
   Future<bool> lockNote(int id, {required bool isLocked}) async {
     return await (update(notes)..where((t) => t.id.equals(id))).write(
       NotesCompanion(
         isLocked: Value(isLocked),
-        syncStatus: const Value(0), // Trigger the SyncService
-        updatedAt: Value(DateTime.now()),
+        syncStatus: const Value(0), // Trigger the SyncManager
+        updatedAt: Value(DateTime.now().toUtc()), // Enforce UTC
       ),
     ) > 0;
+  }
+
+  // SYNC MANAGER HELPER METHODS
+
+  /// PUSH: Get all local notes waiting to be pushed to Firebase
+  Future<List<Note>> getPendingNotes() {
+    return (select(notes)..where((t) => t.syncStatus.equals(0))).get();
+  }
+
+  /// MERGE: Upsert (Update or Insert) notes pulled down from Firebase
+  Future<void> upsertNoteFromCloud(Map<String, dynamic> cloudNote, String firestoreId) async {
+    final noteCompanion = NotesCompanion(
+      title: Value(cloudNote['title'] as String),
+      content: Value(cloudNote['content'] as String),
+      color: Value(cloudNote['color'] as int? ?? 0xFFFFFFFF),
+      isPinned: Value(cloudNote['isPinned'] as bool? ?? false),
+      isArchived: Value(cloudNote['isArchived'] as bool? ?? false),
+      isLocked: Value(cloudNote['isLocked'] as bool? ?? false),
+      isDeleted: Value(cloudNote['isDeleted'] as bool? ?? false),
+      position: Value(cloudNote['position'] as int? ?? 0),
+      tags: Value(cloudNote['tags'] as String?),
+      syncStatus: const Value(1), // Already synced!
+      firestoreId: Value(firestoreId),
+      // Safely parse timestamps
+      reminderAt: cloudNote['reminderAt'] != null
+          ? Value(DateTime.fromMillisecondsSinceEpoch(cloudNote['reminderAt'] as int, isUtc: true))
+          : const Value.absent(),
+      updatedAt: Value(DateTime.fromMillisecondsSinceEpoch(cloudNote['updatedAt'] as int, isUtc: true)),
+      createdAt: Value(DateTime.fromMillisecondsSinceEpoch(cloudNote['createdAt'] as int, isUtc: true)),
+    );
+
+    final existingNote = await (select(notes)..where((t) => t.firestoreId.equals(firestoreId))).getSingleOrNull();
+
+    if (existingNote != null) {
+      await (update(notes)..where((t) => t.id.equals(existingNote.id))).write(noteCompanion);
+    } else {
+      await into(notes).insert(noteCompanion);
+    }
+  }
+
+  /// CONFIRM: Mark local notes as successfully pushed to Firebase
+  Future<void> markAsSynced(Iterable<int> localIds, Map<int, String> newFirestoreIds) async {
+    // Run in a transaction so they all update securely at once
+    await transaction(() async {
+      for (final id in localIds) {
+        final assignedFirestoreId = newFirestoreIds[id];
+        if (assignedFirestoreId != null) {
+          await (update(notes)..where((t) => t.id.equals(id))).write(
+            NotesCompanion(
+              syncStatus: const Value(1),
+              firestoreId: Value(assignedFirestoreId),
+            ),
+          );
+        }
+      }
+    });
   }
 }
