@@ -35,6 +35,20 @@ class NoteFirestoreDatabase {
     return querySnapshot.docs;
   }
 
+
+  /// STREAM: Listen strictly for new remote changes while the app is actively running
+  Stream<List<DocumentSnapshot<Map<String, dynamic>>>> watchForRemoteChanges(int sessionStartTime) {
+    return _notesRef
+    // Only listen for changes that happen AFTER the app was opened
+        .where('updatedAt', isGreaterThan: sessionStartTime)
+        .snapshots()
+        .map((snapshot) => snapshot.docChanges
+    // Only care about Adds and Modifies, not local removals
+        .where((change) => change.type != DocumentChangeType.removed)
+        .map((change) => change.doc)
+        .toList());
+  }
+
   /// PUSH: Send all pending local changes to Firebase in a single atomic batch
   Future<Map<int, String>> pushBatch(List<Note> pendingNotes) async {
     final batch = _firestore.batch();

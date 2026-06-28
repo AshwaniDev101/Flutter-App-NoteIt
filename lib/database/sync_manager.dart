@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'drift/drift_database.dart';
 import 'firebase/firebase_database.dart';
@@ -13,13 +15,37 @@ class SyncNotifier extends Notifier<bool> {
   late final NoteFirestoreDatabase _firebaseDb;
   late final SharedPreferenceManager _prefs;
 
+  StreamSubscription? _remoteSubscription;
+
   @override
   bool build() {
     _driftDb = ref.watch(noteDriftDatabaseProvider);
     _firebaseDb = ref.watch(noteFirebaseDatabaseProvider);
     _prefs = ref.watch(sharedPreferenceProvider);
 
+    // Start listening to Firebase in the background!
+    _startActiveSessionListener();
+
     return false; // initial state: not syncing
+  }
+
+  void _startActiveSessionListener() {
+    // Only listen for things that change from THIS moment forward
+    final sessionStartTime = DateTime.now().toUtc().millisecondsSinceEpoch;
+
+    _remoteSubscription = _firebaseDb.watchForRemoteChanges(sessionStartTime).listen((newDocs) async {
+      if (newDocs.isEmpty) return;
+
+      print("### SyncManager: Real-time remote changes detected!");
+      for (final doc in newDocs) {
+        // Silently merge them into Drift.
+        // Your UI StreamProvider will see the Drift update and rebuild automatically!
+        await _driftDb.upsertNoteFromCloud(doc.data()!, doc.id);
+      }
+
+      // Update the bookmark so the next full sync doesn't pull these again
+      await _prefs.setLastSyncTime(DateTime.now().toUtc().millisecondsSinceEpoch);
+    });
   }
 
   /// Execute full sync and manage loading state internally
