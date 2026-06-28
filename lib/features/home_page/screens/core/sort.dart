@@ -1,7 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import 'package:noteit/database/drift/drift_database.dart';
-
 
 enum NoteSortOption { name, createdAt, updatedAt }
 
@@ -23,7 +21,6 @@ final noteSortOptionProvider = NotifierProvider<NoteSortNotifier, NoteSortOption
   return NoteSortNotifier();
 });
 
-
 final sortedNotesProvider = StreamProvider<List<Note>>((ref) {
   final driftDatabase = ref.watch(noteDriftDatabaseProvider);
   final sortOption = ref.watch(noteSortOptionProvider);
@@ -32,13 +29,15 @@ final sortedNotesProvider = StreamProvider<List<Note>>((ref) {
     // Debug: Add this print to verify data flow in the console
     print("### Stream received ${notes.length} total notes from Drift");
 
-    final activeNotes = notes.where((note) => !note.isDeleted).toList();
+    // UPDATED: Use deletedAt == null instead of !isDeleted
+    final activeNotes = notes.where((note) => note.deletedAt == null).toList();
 
     switch (sortOption) {
       case NoteSortOption.name:
         activeNotes.sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
         break;
       case NoteSortOption.createdAt:
+      // These are UTC timestamps now, which is perfect for accurate sorting!
         activeNotes.sort((a, b) => b.createdAt.compareTo(a.createdAt));
         break;
       case NoteSortOption.updatedAt:

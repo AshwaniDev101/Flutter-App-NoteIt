@@ -12,6 +12,7 @@ import 'core/theme/app_theme.dart';
 // Built location: build\windows\x64\runner\Release\noteit.exe
 // Get Git Diff : git diff HEAD | clip
 // Build drift db : dart run build_runner build -d
+// Drift database location Windows : C:\Users\Ashwin\Documents\my_notes_db.sqlite
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

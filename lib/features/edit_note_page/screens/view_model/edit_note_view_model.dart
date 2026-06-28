@@ -1,6 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/database/drift/drift_database.dart';
 
+import '../../../../core/helpers/device_helper.dart';
+import '../../../../database/sync_manager.dart';
+
+
 class EditNoteState {
   final bool isLoading;
   final String? error;
@@ -34,10 +38,19 @@ class EditNoteViewModel extends Notifier<EditNoteState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
+      // 1. Fetch metadata before saving
+      final deviceInfo = await DeviceHelper.getDeviceInfo();
+
+      // 2. Save locally with the new device data
       await ref.read(noteDriftDatabaseProvider).addNote(
         title: title,
         content: content,
+        creationPlatform: deviceInfo['platform'],
+        creationDevice: deviceInfo['deviceName'],
       );
+
+      // 3. Fire background sync
+      ref.read(syncNotifierProvider.notifier).executeFullSync();
 
       state = state.copyWith(isLoading: false);
     } catch (e) {
@@ -50,6 +63,10 @@ class EditNoteViewModel extends Notifier<EditNoteState> {
 
     try {
       await ref.read(noteDriftDatabaseProvider).updateNote(id, title, content);
+
+      // Fire background sync
+      ref.read(syncNotifierProvider.notifier).executeFullSync();
+
       state = state.copyWith(isLoading: false);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
@@ -61,20 +78,26 @@ class EditNoteViewModel extends Notifier<EditNoteState> {
 
     try {
       await ref.read(noteDriftDatabaseProvider).lockNote(id, isLocked: isLocked);
+
+      // Fire background sync
+      ref.read(syncNotifierProvider.notifier).executeFullSync();
+
       state = state.copyWith(isLoading: false);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
 
-  // Completes the CRUD cycle by removing the target note from the Drift database
+  // Completes the CRUD cycle by soft-deleting the target note
   Future<void> deleteNote(int id) async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-
-      // await ref.read(noteDriftDatabaseProvider).deleteNote(id);
       await ref.read(noteDriftDatabaseProvider).softDeleteNotes([id]);
+
+      // Fire background sync to update the cloud's trash state
+      ref.read(syncNotifierProvider.notifier).executeFullSync();
+
       state = state.copyWith(isLoading: false);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());

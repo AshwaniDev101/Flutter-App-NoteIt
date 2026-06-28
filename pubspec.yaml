@@ -36,6 +36,7 @@ dependencies:
   riverpod_annotation: ^4.0.2
   shared_preferences: ^2.5.5
   google_sign_in_all_platforms: ^2.0.3
+  device_info_plus: ^13.2.0
 
 dev_dependencies:
   flutter_test:

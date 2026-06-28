@@ -178,20 +178,38 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
-  static const VerificationMeta _isDeletedMeta = const VerificationMeta(
-    'isDeleted',
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
   );
   @override
-  late final GeneratedColumn<bool> isDeleted = GeneratedColumn<bool>(
-    'is_deleted',
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
     aliasedName,
-    false,
-    type: DriftSqlType.bool,
+    true,
+    type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("is_deleted" IN (0, 1))',
-    ),
-    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _creationPlatformMeta = const VerificationMeta(
+    'creationPlatform',
+  );
+  @override
+  late final GeneratedColumn<String> creationPlatform = GeneratedColumn<String>(
+    'creation_platform',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _creationDeviceMeta = const VerificationMeta(
+    'creationDevice',
+  );
+  @override
+  late final GeneratedColumn<String> creationDevice = GeneratedColumn<String>(
+    'creation_device',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
   );
   @override
   List<GeneratedColumn> get $columns => [
@@ -209,7 +227,9 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
     updatedAt,
     firestoreId,
     syncStatus,
-    isDeleted,
+    deletedAt,
+    creationPlatform,
+    creationDevice,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -311,10 +331,28 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
         syncStatus.isAcceptableOrUnknown(data['sync_status']!, _syncStatusMeta),
       );
     }
-    if (data.containsKey('is_deleted')) {
+    if (data.containsKey('deleted_at')) {
       context.handle(
-        _isDeletedMeta,
-        isDeleted.isAcceptableOrUnknown(data['is_deleted']!, _isDeletedMeta),
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    if (data.containsKey('creation_platform')) {
+      context.handle(
+        _creationPlatformMeta,
+        creationPlatform.isAcceptableOrUnknown(
+          data['creation_platform']!,
+          _creationPlatformMeta,
+        ),
+      );
+    }
+    if (data.containsKey('creation_device')) {
+      context.handle(
+        _creationDeviceMeta,
+        creationDevice.isAcceptableOrUnknown(
+          data['creation_device']!,
+          _creationDeviceMeta,
+        ),
       );
     }
     return context;
@@ -382,10 +420,18 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
         DriftSqlType.int,
         data['${effectivePrefix}sync_status'],
       )!,
-      isDeleted: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_deleted'],
-      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+      creationPlatform: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}creation_platform'],
+      ),
+      creationDevice: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}creation_device'],
+      ),
     );
   }
 
@@ -410,7 +456,9 @@ class Note extends DataClass implements Insertable<Note> {
   final DateTime? updatedAt;
   final String? firestoreId;
   final int syncStatus;
-  final bool isDeleted;
+  final DateTime? deletedAt;
+  final String? creationPlatform;
+  final String? creationDevice;
   const Note({
     required this.id,
     required this.title,
@@ -426,7 +474,9 @@ class Note extends DataClass implements Insertable<Note> {
     this.updatedAt,
     this.firestoreId,
     required this.syncStatus,
-    required this.isDeleted,
+    this.deletedAt,
+    this.creationPlatform,
+    this.creationDevice,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -453,7 +503,15 @@ class Note extends DataClass implements Insertable<Note> {
       map['firestore_id'] = Variable<String>(firestoreId);
     }
     map['sync_status'] = Variable<int>(syncStatus);
-    map['is_deleted'] = Variable<bool>(isDeleted);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || creationPlatform != null) {
+      map['creation_platform'] = Variable<String>(creationPlatform);
+    }
+    if (!nullToAbsent || creationDevice != null) {
+      map['creation_device'] = Variable<String>(creationDevice);
+    }
     return map;
   }
 
@@ -479,7 +537,15 @@ class Note extends DataClass implements Insertable<Note> {
           ? const Value.absent()
           : Value(firestoreId),
       syncStatus: Value(syncStatus),
-      isDeleted: Value(isDeleted),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      creationPlatform: creationPlatform == null && nullToAbsent
+          ? const Value.absent()
+          : Value(creationPlatform),
+      creationDevice: creationDevice == null && nullToAbsent
+          ? const Value.absent()
+          : Value(creationDevice),
     );
   }
 
@@ -503,7 +569,9 @@ class Note extends DataClass implements Insertable<Note> {
       updatedAt: serializer.fromJson<DateTime?>(json['updatedAt']),
       firestoreId: serializer.fromJson<String?>(json['firestoreId']),
       syncStatus: serializer.fromJson<int>(json['syncStatus']),
-      isDeleted: serializer.fromJson<bool>(json['isDeleted']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      creationPlatform: serializer.fromJson<String?>(json['creationPlatform']),
+      creationDevice: serializer.fromJson<String?>(json['creationDevice']),
     );
   }
   @override
@@ -524,7 +592,9 @@ class Note extends DataClass implements Insertable<Note> {
       'updatedAt': serializer.toJson<DateTime?>(updatedAt),
       'firestoreId': serializer.toJson<String?>(firestoreId),
       'syncStatus': serializer.toJson<int>(syncStatus),
-      'isDeleted': serializer.toJson<bool>(isDeleted),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'creationPlatform': serializer.toJson<String?>(creationPlatform),
+      'creationDevice': serializer.toJson<String?>(creationDevice),
     };
   }
 
@@ -543,7 +613,9 @@ class Note extends DataClass implements Insertable<Note> {
     Value<DateTime?> updatedAt = const Value.absent(),
     Value<String?> firestoreId = const Value.absent(),
     int? syncStatus,
-    bool? isDeleted,
+    Value<DateTime?> deletedAt = const Value.absent(),
+    Value<String?> creationPlatform = const Value.absent(),
+    Value<String?> creationDevice = const Value.absent(),
   }) => Note(
     id: id ?? this.id,
     title: title ?? this.title,
@@ -559,7 +631,13 @@ class Note extends DataClass implements Insertable<Note> {
     updatedAt: updatedAt.present ? updatedAt.value : this.updatedAt,
     firestoreId: firestoreId.present ? firestoreId.value : this.firestoreId,
     syncStatus: syncStatus ?? this.syncStatus,
-    isDeleted: isDeleted ?? this.isDeleted,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    creationPlatform: creationPlatform.present
+        ? creationPlatform.value
+        : this.creationPlatform,
+    creationDevice: creationDevice.present
+        ? creationDevice.value
+        : this.creationDevice,
   );
   Note copyWithCompanion(NotesCompanion data) {
     return Note(
@@ -585,7 +663,13 @@ class Note extends DataClass implements Insertable<Note> {
       syncStatus: data.syncStatus.present
           ? data.syncStatus.value
           : this.syncStatus,
-      isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      creationPlatform: data.creationPlatform.present
+          ? data.creationPlatform.value
+          : this.creationPlatform,
+      creationDevice: data.creationDevice.present
+          ? data.creationDevice.value
+          : this.creationDevice,
     );
   }
 
@@ -606,7 +690,9 @@ class Note extends DataClass implements Insertable<Note> {
           ..write('updatedAt: $updatedAt, ')
           ..write('firestoreId: $firestoreId, ')
           ..write('syncStatus: $syncStatus, ')
-          ..write('isDeleted: $isDeleted')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('creationPlatform: $creationPlatform, ')
+          ..write('creationDevice: $creationDevice')
           ..write(')'))
         .toString();
   }
@@ -627,7 +713,9 @@ class Note extends DataClass implements Insertable<Note> {
     updatedAt,
     firestoreId,
     syncStatus,
-    isDeleted,
+    deletedAt,
+    creationPlatform,
+    creationDevice,
   );
   @override
   bool operator ==(Object other) =>
@@ -647,7 +735,9 @@ class Note extends DataClass implements Insertable<Note> {
           other.updatedAt == this.updatedAt &&
           other.firestoreId == this.firestoreId &&
           other.syncStatus == this.syncStatus &&
-          other.isDeleted == this.isDeleted);
+          other.deletedAt == this.deletedAt &&
+          other.creationPlatform == this.creationPlatform &&
+          other.creationDevice == this.creationDevice);
 }
 
 class NotesCompanion extends UpdateCompanion<Note> {
@@ -665,7 +755,9 @@ class NotesCompanion extends UpdateCompanion<Note> {
   final Value<DateTime?> updatedAt;
   final Value<String?> firestoreId;
   final Value<int> syncStatus;
-  final Value<bool> isDeleted;
+  final Value<DateTime?> deletedAt;
+  final Value<String?> creationPlatform;
+  final Value<String?> creationDevice;
   const NotesCompanion({
     this.id = const Value.absent(),
     this.title = const Value.absent(),
@@ -681,7 +773,9 @@ class NotesCompanion extends UpdateCompanion<Note> {
     this.updatedAt = const Value.absent(),
     this.firestoreId = const Value.absent(),
     this.syncStatus = const Value.absent(),
-    this.isDeleted = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.creationPlatform = const Value.absent(),
+    this.creationDevice = const Value.absent(),
   });
   NotesCompanion.insert({
     this.id = const Value.absent(),
@@ -698,7 +792,9 @@ class NotesCompanion extends UpdateCompanion<Note> {
     this.updatedAt = const Value.absent(),
     this.firestoreId = const Value.absent(),
     this.syncStatus = const Value.absent(),
-    this.isDeleted = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.creationPlatform = const Value.absent(),
+    this.creationDevice = const Value.absent(),
   }) : title = Value(title),
        content = Value(content);
   static Insertable<Note> custom({
@@ -716,7 +812,9 @@ class NotesCompanion extends UpdateCompanion<Note> {
     Expression<DateTime>? updatedAt,
     Expression<String>? firestoreId,
     Expression<int>? syncStatus,
-    Expression<bool>? isDeleted,
+    Expression<DateTime>? deletedAt,
+    Expression<String>? creationPlatform,
+    Expression<String>? creationDevice,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -733,7 +831,9 @@ class NotesCompanion extends UpdateCompanion<Note> {
       if (updatedAt != null) 'updated_at': updatedAt,
       if (firestoreId != null) 'firestore_id': firestoreId,
       if (syncStatus != null) 'sync_status': syncStatus,
-      if (isDeleted != null) 'is_deleted': isDeleted,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (creationPlatform != null) 'creation_platform': creationPlatform,
+      if (creationDevice != null) 'creation_device': creationDevice,
     });
   }
 
@@ -752,7 +852,9 @@ class NotesCompanion extends UpdateCompanion<Note> {
     Value<DateTime?>? updatedAt,
     Value<String?>? firestoreId,
     Value<int>? syncStatus,
-    Value<bool>? isDeleted,
+    Value<DateTime?>? deletedAt,
+    Value<String?>? creationPlatform,
+    Value<String?>? creationDevice,
   }) {
     return NotesCompanion(
       id: id ?? this.id,
@@ -769,7 +871,9 @@ class NotesCompanion extends UpdateCompanion<Note> {
       updatedAt: updatedAt ?? this.updatedAt,
       firestoreId: firestoreId ?? this.firestoreId,
       syncStatus: syncStatus ?? this.syncStatus,
-      isDeleted: isDeleted ?? this.isDeleted,
+      deletedAt: deletedAt ?? this.deletedAt,
+      creationPlatform: creationPlatform ?? this.creationPlatform,
+      creationDevice: creationDevice ?? this.creationDevice,
     );
   }
 
@@ -818,8 +922,14 @@ class NotesCompanion extends UpdateCompanion<Note> {
     if (syncStatus.present) {
       map['sync_status'] = Variable<int>(syncStatus.value);
     }
-    if (isDeleted.present) {
-      map['is_deleted'] = Variable<bool>(isDeleted.value);
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (creationPlatform.present) {
+      map['creation_platform'] = Variable<String>(creationPlatform.value);
+    }
+    if (creationDevice.present) {
+      map['creation_device'] = Variable<String>(creationDevice.value);
     }
     return map;
   }
@@ -841,7 +951,9 @@ class NotesCompanion extends UpdateCompanion<Note> {
           ..write('updatedAt: $updatedAt, ')
           ..write('firestoreId: $firestoreId, ')
           ..write('syncStatus: $syncStatus, ')
-          ..write('isDeleted: $isDeleted')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('creationPlatform: $creationPlatform, ')
+          ..write('creationDevice: $creationDevice')
           ..write(')'))
         .toString();
   }
@@ -874,7 +986,9 @@ typedef $$NotesTableCreateCompanionBuilder =
       Value<DateTime?> updatedAt,
       Value<String?> firestoreId,
       Value<int> syncStatus,
-      Value<bool> isDeleted,
+      Value<DateTime?> deletedAt,
+      Value<String?> creationPlatform,
+      Value<String?> creationDevice,
     });
 typedef $$NotesTableUpdateCompanionBuilder =
     NotesCompanion Function({
@@ -892,7 +1006,9 @@ typedef $$NotesTableUpdateCompanionBuilder =
       Value<DateTime?> updatedAt,
       Value<String?> firestoreId,
       Value<int> syncStatus,
-      Value<bool> isDeleted,
+      Value<DateTime?> deletedAt,
+      Value<String?> creationPlatform,
+      Value<String?> creationDevice,
     });
 
 class $$NotesTableFilterComposer
@@ -974,8 +1090,18 @@ class $$NotesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<bool> get isDeleted => $composableBuilder(
-    column: $table.isDeleted,
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get creationPlatform => $composableBuilder(
+    column: $table.creationPlatform,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get creationDevice => $composableBuilder(
+    column: $table.creationDevice,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -1059,8 +1185,18 @@ class $$NotesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<bool> get isDeleted => $composableBuilder(
-    column: $table.isDeleted,
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get creationPlatform => $composableBuilder(
+    column: $table.creationPlatform,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get creationDevice => $composableBuilder(
+    column: $table.creationDevice,
     builder: (column) => ColumnOrderings(column),
   );
 }
@@ -1124,8 +1260,18 @@ class $$NotesTableAnnotationComposer
     builder: (column) => column,
   );
 
-  GeneratedColumn<bool> get isDeleted =>
-      $composableBuilder(column: $table.isDeleted, builder: (column) => column);
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get creationPlatform => $composableBuilder(
+    column: $table.creationPlatform,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get creationDevice => $composableBuilder(
+    column: $table.creationDevice,
+    builder: (column) => column,
+  );
 }
 
 class $$NotesTableTableManager
@@ -1170,7 +1316,9 @@ class $$NotesTableTableManager
                 Value<DateTime?> updatedAt = const Value.absent(),
                 Value<String?> firestoreId = const Value.absent(),
                 Value<int> syncStatus = const Value.absent(),
-                Value<bool> isDeleted = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> creationPlatform = const Value.absent(),
+                Value<String?> creationDevice = const Value.absent(),
               }) => NotesCompanion(
                 id: id,
                 title: title,
@@ -1186,7 +1334,9 @@ class $$NotesTableTableManager
                 updatedAt: updatedAt,
                 firestoreId: firestoreId,
                 syncStatus: syncStatus,
-                isDeleted: isDeleted,
+                deletedAt: deletedAt,
+                creationPlatform: creationPlatform,
+                creationDevice: creationDevice,
               ),
           createCompanionCallback:
               ({
@@ -1204,7 +1354,9 @@ class $$NotesTableTableManager
                 Value<DateTime?> updatedAt = const Value.absent(),
                 Value<String?> firestoreId = const Value.absent(),
                 Value<int> syncStatus = const Value.absent(),
-                Value<bool> isDeleted = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> creationPlatform = const Value.absent(),
+                Value<String?> creationDevice = const Value.absent(),
               }) => NotesCompanion.insert(
                 id: id,
                 title: title,
@@ -1220,7 +1372,9 @@ class $$NotesTableTableManager
                 updatedAt: updatedAt,
                 firestoreId: firestoreId,
                 syncStatus: syncStatus,
-                isDeleted: isDeleted,
+                deletedAt: deletedAt,
+                creationPlatform: creationPlatform,
+                creationDevice: creationDevice,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

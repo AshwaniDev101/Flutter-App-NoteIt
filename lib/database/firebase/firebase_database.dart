@@ -61,10 +61,13 @@ class NoteFirestoreDatabase {
         'isPinned': note.isPinned,
         'isArchived': note.isArchived,
         'isLocked': note.isLocked,
-        'isDeleted': note.isDeleted,
         'position': note.position,
         'tags': note.tags,
-        // Convert all nullable and non-nullable times to UTC milliseconds
+
+        'creationPlatform': note.creationPlatform,
+        'creationDevice': note.creationDevice,
+
+        'deletedAt': note.deletedAt?.toUtc().millisecondsSinceEpoch,
         'reminderAt': note.reminderAt?.toUtc().millisecondsSinceEpoch,
         'createdAt': note.createdAt.toUtc().millisecondsSinceEpoch,
         'updatedAt': note.updatedAt?.toUtc().millisecondsSinceEpoch ?? note.createdAt.toUtc().millisecondsSinceEpoch,

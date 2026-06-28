@@ -27,5 +27,9 @@ class Notes extends Table {
   // Firebase Sync Engine Columns
   TextColumn get firestoreId => text().nullable()();
   IntColumn get syncStatus => integer().withDefault(const Constant(0))(); // 0 = Pending, 1 = Synced
-  BoolColumn get isDeleted => boolean().withDefault(const Constant(false))(); // True if soft-deleted offline
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+
+  // Meta Data
+  TextColumn get creationPlatform => text().nullable()();
+  TextColumn get creationDevice => text().nullable()();
 }

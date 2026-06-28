@@ -6,12 +6,15 @@ import 'notes_table.dart';
 
 part 'drift_database.g.dart';
 
+// Drift database location Windows : C:\Users\Ashwin\Documents\my_notes_db.sqlite
+
 final noteDriftDatabaseProvider = Provider((ref) {
   return NoteDriftDatabase();
 });
 
 @DriftDatabase(tables: [Notes])
 class NoteDriftDatabase extends _$NoteDriftDatabase {
+
   NoteDriftDatabase()
       : super(
     driftDatabase(
@@ -25,20 +28,21 @@ class NoteDriftDatabase extends _$NoteDriftDatabase {
 
   @override
   int get schemaVersion => 1;
-  
+
   // STANDARD LOCAL CRUD OPERATIONS
 
   Future<int> addNote({
     required String title,
     required String content,
+    String? creationPlatform,
+    String? creationDevice,
   }) async {
-    print("### NoteDriftDatabase Note Added!");
-
     return await into(notes).insert(
       NotesCompanion.insert(
         title: title,
         content: content,
-        // Enforce UTC for accurate multi-device syncing
+        creationPlatform: Value(creationPlatform),
+        creationDevice: Value(creationDevice),
         createdAt: Value(DateTime.now().toUtc()),
       ),
     );
@@ -72,9 +76,10 @@ class NoteDriftDatabase extends _$NoteDriftDatabase {
     // This is the "Soft Delete" used by the UI
     await (update(notes)..where((t) => t.id.isIn(ids))).write(
       NotesCompanion(
-        isDeleted: const Value(true),
-        syncStatus: const Value(0), // Trigger the SyncManager
-        updatedAt: Value(DateTime.now().toUtc()), // Enforce UTC
+        // NEW: Swapped boolean for UTC Timestamp
+        deletedAt: Value(DateTime.now().toUtc()),
+        syncStatus: const Value(0),
+        updatedAt: Value(DateTime.now().toUtc()),
       ),
     );
   }
@@ -83,8 +88,8 @@ class NoteDriftDatabase extends _$NoteDriftDatabase {
     return await (update(notes)..where((t) => t.id.equals(id))).write(
       NotesCompanion(
         isLocked: Value(isLocked),
-        syncStatus: const Value(0), // Trigger the SyncManager
-        updatedAt: Value(DateTime.now().toUtc()), // Enforce UTC
+        syncStatus: const Value(0),
+        updatedAt: Value(DateTime.now().toUtc()),
       ),
     ) > 0;
   }
@@ -105,12 +110,21 @@ class NoteDriftDatabase extends _$NoteDriftDatabase {
       isPinned: Value(cloudNote['isPinned'] as bool? ?? false),
       isArchived: Value(cloudNote['isArchived'] as bool? ?? false),
       isLocked: Value(cloudNote['isLocked'] as bool? ?? false),
-      isDeleted: Value(cloudNote['isDeleted'] as bool? ?? false),
       position: Value(cloudNote['position'] as int? ?? 0),
       tags: Value(cloudNote['tags'] as String?),
+
+      // Parse metadata and deletedAt timestamp
+      creationPlatform: Value(cloudNote['creationPlatform'] as String?),
+      creationDevice: Value(cloudNote['creationDevice'] as String?),
+      deletedAt: Value(
+        cloudNote['deletedAt'] != null
+            ? DateTime.fromMillisecondsSinceEpoch(cloudNote['deletedAt'] as int, isUtc: true)
+            : null,
+      ),
+
       syncStatus: const Value(1), // Already synced!
       firestoreId: Value(firestoreId),
-      // Safely parse timestamps
+
       reminderAt: cloudNote['reminderAt'] != null
           ? Value(DateTime.fromMillisecondsSinceEpoch(cloudNote['reminderAt'] as int, isUtc: true))
           : const Value.absent(),
@@ -129,7 +143,6 @@ class NoteDriftDatabase extends _$NoteDriftDatabase {
 
   /// CONFIRM: Mark local notes as successfully pushed to Firebase
   Future<void> markAsSynced(Iterable<int> localIds, Map<int, String> newFirestoreIds) async {
-    // Run in a transaction so they all update securely at once
     await transaction(() async {
       for (final id in localIds) {
         final assignedFirestoreId = newFirestoreIds[id];
