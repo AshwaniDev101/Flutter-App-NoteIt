@@ -10,7 +10,6 @@ final syncNotifierProvider = NotifierProvider<SyncNotifier, bool>(
 );
 
 class SyncNotifier extends Notifier<bool> {
-
   late final NoteDriftDatabase _driftDb;
   late final NoteFirestoreDatabase _firebaseDb;
   late final SharedPreferenceManager _prefs;
@@ -23,41 +22,37 @@ class SyncNotifier extends Notifier<bool> {
     _firebaseDb = ref.watch(noteFirebaseDatabaseProvider);
     _prefs = ref.watch(sharedPreferenceProvider);
 
-    // Start listening to Firebase in the background!
     _startActiveSessionListener();
 
-    return false; // initial state: not syncing
+    return false;
   }
 
   void _startActiveSessionListener() {
-    // Only listen for things that change from THIS moment forward
     final sessionStartTime = DateTime.now().toUtc().millisecondsSinceEpoch;
 
     _remoteSubscription = _firebaseDb.watchForRemoteChanges(sessionStartTime).listen((newDocs) async {
       if (newDocs.isEmpty) return;
 
-      print("### SyncManager: Real-time remote changes detected!");
+      print("### SyncManager [STREAM]: Real-time remote changes detected!");
       for (final doc in newDocs) {
-        // Silently merge them into Drift.
-        // Your UI StreamProvider will see the Drift update and rebuild automatically!
         await _driftDb.upsertNoteFromCloud(doc.data()!, doc.id);
       }
 
-      // Update the bookmark so the next full sync doesn't pull these again
       await _prefs.setLastSyncTime(DateTime.now().toUtc().millisecondsSinceEpoch);
     });
   }
 
-  /// Execute full sync and manage loading state internally
   Future<void> executeFullSync() async {
-    if (state) return; // Prevent overlapping syncs
+    if (state) return;
 
-    state = true; // Start loading / animation
+    state = true;
 
     try {
       print("### SyncManager: Starting Delta Sync...");
 
       final int lastSyncTime = _prefs.lastSyncTime;
+      // Note: We still use local time for the bookmark, which is perfectly safe
+      // now because Firebase is handling the document ordering on its end.
       final int newSyncTime = DateTime.now().toUtc().millisecondsSinceEpoch;
 
       // PULL
@@ -75,6 +70,7 @@ class SyncNotifier extends Notifier<bool> {
 
       if (pendingNotes.isNotEmpty) {
         final newIds = await _firebaseDb.pushBatch(pendingNotes);
+
         await _driftDb.markAsSynced(
           pendingNotes.map((n) => n.id),
           newIds,
@@ -90,7 +86,7 @@ class SyncNotifier extends Notifier<bool> {
     } catch (e) {
       print("### SyncManager: Sync Failed: $e");
     } finally {
-      state = false; // Always stop loading
+      state = false;
     }
   }
 }

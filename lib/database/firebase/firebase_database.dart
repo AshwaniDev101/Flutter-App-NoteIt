@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/provider/provider.dart';
-import '../drift/drift_database.dart'; // Needed for the Drift Note model
+import '../drift/drift_database.dart';
 
 final noteFirebaseDatabaseProvider = Provider((ref) {
   final firestore = ref.watch(firestoreProvider);
@@ -15,8 +15,6 @@ final noteFirebaseDatabaseProvider = Provider((ref) {
 class NoteFirestoreDatabase {
   final FirebaseFirestore _firestore;
 
-  // Note: Once you add authentication, you will likely change this path
-  // to something like 'users/${userId}/notes' to keep data private.
   static const String _collectionPath = 'notes';
 
   NoteFirestoreDatabase({
@@ -26,24 +24,26 @@ class NoteFirestoreDatabase {
   CollectionReference<Map<String, dynamic>> get _notesRef =>
       _firestore.collection(_collectionPath);
 
-  /// PULL: Fetch all remote notes updated since the last sync timestamp
+  /// PULL: Fetch all remote notes that ARRIVED on the server since the last sync
   Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>> pullChanges(int lastSyncTime) async {
+    // Convert your local integer timestamp into a Firebase Timestamp
+    final syncTimestamp = Timestamp.fromMillisecondsSinceEpoch(lastSyncTime);
+
     final querySnapshot = await _notesRef
-        .where('updatedAt', isGreaterThan: lastSyncTime)
+        .where('cloudUpdatedAt', isGreaterThan: syncTimestamp)
         .get();
 
     return querySnapshot.docs;
   }
 
-
   /// STREAM: Listen strictly for new remote changes while the app is actively running
   Stream<List<DocumentSnapshot<Map<String, dynamic>>>> watchForRemoteChanges(int sessionStartTime) {
+    final sessionTimestamp = Timestamp.fromMillisecondsSinceEpoch(sessionStartTime);
+
     return _notesRef
-    // Only listen for changes that happen AFTER the app was opened
-        .where('updatedAt', isGreaterThan: sessionStartTime)
+        .where('cloudUpdatedAt', isGreaterThan: sessionTimestamp)
         .snapshots()
         .map((snapshot) => snapshot.docChanges
-    // Only care about Adds and Modifies, not local removals
         .where((change) => change.type != DocumentChangeType.removed)
         .map((change) => change.doc)
         .toList());
@@ -57,8 +57,6 @@ class NoteFirestoreDatabase {
     for (final note in pendingNotes) {
       DocumentReference docRef;
 
-      // If it already has a Firestore ID, target that document.
-      // Otherwise, auto-generate a new one.
       if (note.firestoreId != null && note.firestoreId!.isNotEmpty) {
         docRef = _notesRef.doc(note.firestoreId);
       } else {
@@ -67,7 +65,6 @@ class NoteFirestoreDatabase {
 
       assignedIds[note.id] = docRef.id;
 
-      // Map the complete Drift Note model to Firestore
       final data = {
         'title': note.title,
         'content': note.content,
@@ -77,17 +74,19 @@ class NoteFirestoreDatabase {
         'isLocked': note.isLocked,
         'position': note.position,
         'tags': note.tags,
-
         'creationPlatform': note.creationPlatform,
         'creationDevice': note.creationDevice,
 
+        // Preserve the exact local times for the UI
         'deletedAt': note.deletedAt?.toUtc().millisecondsSinceEpoch,
         'reminderAt': note.reminderAt?.toUtc().millisecondsSinceEpoch,
         'createdAt': note.createdAt.toUtc().millisecondsSinceEpoch,
         'updatedAt': note.updatedAt?.toUtc().millisecondsSinceEpoch ?? note.createdAt.toUtc().millisecondsSinceEpoch,
+
+        // Let Firebase dictate the exact sync timeline!
+        'cloudUpdatedAt': FieldValue.serverTimestamp(),
       };
 
-      // Use SetOptions(merge: true) to safely upsert without wiping out other potential fields
       batch.set(docRef, data, SetOptions(merge: true));
     }
 
