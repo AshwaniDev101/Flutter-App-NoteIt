@@ -6,10 +6,13 @@ import 'package:noteit/core/routing/routing.dart';
 import 'package:noteit/core/theme/note_theme.dart';
 
 import 'package:noteit/database/drift/drift_database.dart';
+import 'package:noteit/features/home_page/screens/view/widgets/homepage_card.dart';
+import 'package:noteit/features/home_page/screens/view/widgets/homepage_drawer.dart';
 import 'package:noteit/features/password_page/screens/view/password_page.dart';
 import 'package:noteit/features/home_page/screens/core/sort.dart';
 
 import '../../../../database/sync_manager.dart';
+import '../../../../shared/selectable_card.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -50,6 +53,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     return Scaffold(
       // Dynamic AppBar Logic
+      drawer: const HomepageDrawer(),
       appBar: isSelectMode
           ? AppBar(
               backgroundColor: noteTheme.selectedAppBar,
@@ -266,7 +270,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                             final currentNote = displayedNotes[index]; // Updated to use filtered list
                             final isSelected = noteIds.contains(currentNote.id);
 
-                            return _SelectableCard(
+                            return SelectableCard(
                               onTap: () {
                                 if (isSelectMode) {
                                   setState(() {
@@ -296,7 +300,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                 }
                               },
                               isSelected: isSelected,
-                              child: _Card(note: currentNote, isSelected: isSelected),
+                              child: HomepageCard(note: currentNote, isSelected: isSelected),
                             );
                           },
                         );
@@ -331,135 +335,8 @@ class _HomePageState extends ConsumerState<HomePage> {
       }
     }
   }
+
+
+
 }
 
-class _SelectableCard extends StatelessWidget {
-  final Widget child;
-  final bool isSelected;
-  final void Function() onTap;
-  final void Function() onLongPress;
-
-  const _SelectableCard({
-    required this.child,
-    required this.isSelected,
-    required this.onTap,
-    required this.onLongPress,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      onLongPress: onLongPress,
-      borderRadius: BorderRadius.circular(16),
-      child: AnimatedScale(
-        scale: isSelected ? 0.95 : 1.0,
-        duration: const Duration(milliseconds: 150),
-        child: Stack(
-          children: [
-            child,
-            if (isSelected)
-              Positioned(
-                top: 12,
-                right: 12,
-                child: Icon(Icons.check_circle, color: Theme.of(context).colorScheme.primary, size: 22),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _Card extends StatelessWidget {
-  final Note note;
-  final bool isSelected;
-
-  const _Card({required this.note, required this.isSelected});
-
-  @override
-  Widget build(BuildContext context) {
-    final noteTheme = Theme.of(context).extension<NoteTheme>()!;
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Card(
-      elevation: isSelected ? 1 : 0,
-      color: noteTheme.cardContentBackground,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-        side: BorderSide(
-          color: isSelected ? colorScheme.primary : colorScheme.outlineVariant.withValues(alpha: 0.3),
-          width: isSelected ? 2 : 1,
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              color: noteTheme.cardTitleBackground ?? colorScheme.surfaceContainerHigh,
-              child: Text(
-                note.title.isEmpty ? "Untitled" : note.title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                  color: noteTheme.cardTitleForeground ?? colorScheme.onSurface,
-                ),
-              ),
-            ),
-
-            //Content
-            Expanded(
-              child: Stack(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: note.isLocked
-                        ? Center(
-                            child: Icon(
-                              Icons.lock_outlined,
-                              size: 32,
-                              color: (noteTheme.cardContentForeground ?? colorScheme.onSurfaceVariant).withValues(
-                                alpha: 0.4,
-                              ),
-                            ),
-                          )
-                        : Text(
-                            note.content,
-                            maxLines: 5,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 13,
-                              height: 1.4,
-                              color: noteTheme.cardContentForeground ?? colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                  ),
-
-                  Positioned(bottom: 8, right: 8, child: getPlatformIcon(note)),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget getPlatformIcon(Note note) {
-    final platform = note.creationPlatform?.toLowerCase();
-
-    switch (platform) {
-      case "android":
-        return const Icon(Icons.phone_android_rounded, size: 14, color: Colors.green,);
-      case "windows":
-        return const Icon(Icons.desktop_windows_rounded, size: 14, color: Colors.lightBlue,);
-      default:
-        return const SizedBox.shrink();
-    }
-  }
-}
