@@ -34,17 +34,23 @@ class _MyApp extends ConsumerWidget {
   const _MyApp({super.key});
 
   @override
-  Widget build(BuildContext context, ref) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
+
+    //  Watch the active theme state from your provider
+    final activeTheme = ref.watch(themeProvider);
+
     return MaterialApp.router(
       scaffoldMessengerKey: scaffoldMessengerKey,
       routerConfig: router,
       debugShowCheckedModeBanner: false,
       title: 'NoteIt',
-      theme: Themes.lightThemeData,
-      darkTheme: Themes.darkThemeData,
-      // themeMode: ThemeMode.light,
-      themeMode: ThemeMode.dark,
+
+      // Resolve the ThemeData dynamically using your unified Themes class
+      theme: Themes.getThemeData(activeTheme),
+
+      // Since the ThemeData is now explicitly set by the line above,
+      // we don't need 'darkTheme' or 'themeMode' anymore!
     );
   }
 }

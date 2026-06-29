@@ -1,5 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart'; // Added Riverpod
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Riverpod Provider for consistent dependency injection
 final sharedPreferenceProvider = Provider<SharedPreferenceManager>((ref) {
@@ -20,7 +20,9 @@ class SharedPreferenceManager {
   static const String _keyViewType = 'view_type';
   static const String _keyLastSyncTime = 'last_sync_time';
   static const String _keyMasterPassword = 'master_password';
-  static const String _keyIsDarkMode = 'is_dark_mode';
+
+  // NEW: Changed from boolean to String to support multiple themes
+  static const String _keyThemeType = 'theme_type';
 
   // --- View Type ---
   int get viewType => _prefs.getInt(_keyViewType) ?? 0;
@@ -34,7 +36,6 @@ class SharedPreferenceManager {
     return await _prefs.setInt(_keyLastSyncTime, timestamp);
   }
 
-  // Added to allow forcing a full re-sync without wiping all user settings
   Future<bool> clearSyncTime() async {
     return await _prefs.remove(_keyLastSyncTime);
   }
@@ -49,10 +50,12 @@ class SharedPreferenceManager {
     return await _prefs.remove(_keyMasterPassword);
   }
 
-  // --- Theme ---
-  bool get isDarkMode => _prefs.getBool(_keyIsDarkMode) ?? false;
-  Future<bool> setIsDarkMode(bool value) async {
-    return await _prefs.setBool(_keyIsDarkMode, value);
+  // --- Theme  ---
+  // Defaults to 'dark'
+  String get themeType => _prefs.getString(_keyThemeType) ?? 'dark';
+
+  Future<bool> setThemeType(String value) async {
+    return await _prefs.setString(_keyThemeType, value);
   }
 
   // --- Global ---
