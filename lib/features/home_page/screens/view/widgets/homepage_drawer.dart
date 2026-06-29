@@ -172,7 +172,8 @@ class HomepageDrawer extends ConsumerWidget {
                   icon: Icons.settings_outlined,
                   title: 'Settings',
                   onTap: () {
-                    Navigator.pop(context);
+                    // Navigator.pop(context);
+                    context.push(AppRoutes.settings);
                     // context.push(AppRoutes.settings);
                   },
                 ),

@@ -134,7 +134,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                   },
                   icon: const Icon(Icons.search),
                 ),
-                IconButton(onPressed: () {}, icon: const Icon(Icons.grid_view_rounded)),
+                // IconButton(onPressed: () {}, icon: const Icon(Icons.grid_view_rounded)),
 
                 // Manual Sync Button
                 // IconButton(
@@ -170,12 +170,12 @@ class _HomePageState extends ConsumerState<HomePage> {
                     );
                   },
                 ),
-                IconButton(
-                  onPressed: () {
-                    context.push(AppRoutes.settings);
-                  },
-                  icon: const Icon(Icons.settings_outlined),
-                ),
+                // IconButton(
+                //   onPressed: () {
+                //
+                //   },
+                //   icon: const Icon(Icons.settings_outlined),
+                // ),
               ],
             ),
       floatingActionButton: FloatingActionButton(
