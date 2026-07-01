@@ -276,7 +276,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         autofocus: true,
         textInputAction: TextInputAction.search,
         decoration: const InputDecoration(hintText: 'Search notes...', border: InputBorder.none),
-        // FIX: Use the updateQuery() method instead of mutating state directly
+
         onChanged: (value) => ref.read(searchQueryProvider.notifier).updateQuery(value),
       ),
       actions: [
@@ -294,13 +294,52 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   PreferredSizeWidget _buildDefaultAppBar() {
+    // Determine if we are on Android
+    final isAndroid = defaultTargetPlatform == TargetPlatform.android;
+
     return AppBar(
       title: const Text('Note-it', style: TextStyle(fontWeight: FontWeight.bold)),
       actions: [
-        IconButton(
-          icon: const Icon(Icons.search),
-          onPressed: () => setState(() => isSearchMode = true),
-        ),
+
+        // WINDOWS / DESKTOP MODE: Show the inline TextField
+        if (!isAndroid)
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: SizedBox(
+              width: 250,
+              child: TextField(
+                controller: _searchController, // Wired to your controller
+                style: const TextStyle(fontSize: 16),
+                decoration: InputDecoration(
+                  hintText: 'Search...',
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
+                  //  Add a small clear button inside the text field
+                  suffixIcon: ref.watch(searchQueryProvider).isNotEmpty
+                      ? IconButton(
+                    icon: const Icon(Icons.close, size: 16),
+                    onPressed: () {
+                      _searchController.clear();
+                      ref.read(searchQueryProvider.notifier).clear();
+                    },
+                  )
+                      : null,
+                ),
+                // Wired to your Riverpod search state
+                onChanged: (value) => ref.read(searchQueryProvider.notifier).updateQuery(value),
+              ),
+            ),
+          ),
+
+        // ANDROID MODE: Show the Search Icon to trigger the Search AppBar
+        if (isAndroid)
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () => setState(() => isSearchMode = true),
+          ),
+
+        // BOTH PLATFORMS: Show the Sync Button
         Consumer(
           builder: (context, ref, child) {
             final isSyncing = ref.watch(syncNotifierProvider);
