@@ -89,9 +89,9 @@ class HomepageCard extends StatelessWidget {
 
     switch (platform) {
       case "android":
-        return const Icon(Icons.phone_android_rounded, size: 14, color: Colors.green);
+        return const Icon(Icons.phone_android_rounded, size: 14, color: Colors.grey);
       case "windows":
-        return const Icon(Icons.desktop_windows_rounded, size: 14, color: Colors.lightBlue);
+        return const Icon(Icons.desktop_windows_rounded, size: 14, color: Colors.grey);
       default:
         return const SizedBox.shrink();
     }

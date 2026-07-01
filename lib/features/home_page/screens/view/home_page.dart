@@ -12,6 +12,12 @@ import 'widgets/homepage_drawer.dart';
 import '../../../../database/sync_manager.dart';
 import '../../../../shared/selectable_card.dart';
 
+
+// STATE MANAGEMENT & PROVIDERS  --------------------------
+
+enum PlatformFilter { all, android, windows }
+enum MenuOption { sortCreated, sortName, sortUpdated, filterPhone, filterWindows }
+
 class SearchQueryNotifier extends Notifier<String> {
   @override
   String build() => '';
@@ -29,20 +35,52 @@ final searchQueryProvider = NotifierProvider<SearchQueryNotifier, String>(
   SearchQueryNotifier.new,
 );
 
+class PlatformFilterNotifier extends Notifier<PlatformFilter> {
+  @override
+  PlatformFilter build() => PlatformFilter.all;
+
+  void toggleFilter(PlatformFilter filter) {
+    if (state == filter) {
+      state = PlatformFilter.all;
+    } else {
+      state = filter;
+    }
+  }
+}
+
+final platformFilterProvider = NotifierProvider<PlatformFilterNotifier, PlatformFilter>(
+  PlatformFilterNotifier.new,
+);
+
 final filteredNotesProvider = Provider<AsyncValue<List<Note>>>((ref) {
   final sortedNotesAsync = ref.watch(sortedNotesProvider);
   final searchQuery = ref.watch(searchQueryProvider).toLowerCase().trim();
+  final platformFilter = ref.watch(platformFilterProvider);
 
   return sortedNotesAsync.whenData((notes) {
-    if (searchQuery.isEmpty) return notes;
+    List<Note> result = notes;
 
-    return notes.where((note) {
-      final matchesTitle = note.title.toLowerCase().contains(searchQuery);
-      final matchesContent = !note.isLocked && note.content.toLowerCase().contains(searchQuery);
-      return matchesTitle || matchesContent;
-    }).toList();
+    if (platformFilter != PlatformFilter.all) {
+      final targetPlatform = platformFilter == PlatformFilter.android ? 'android' : 'windows';
+      result = result.where((note) {
+        return note.creationPlatform?.toLowerCase() == targetPlatform;
+      }).toList();
+    }
+
+    if (searchQuery.isNotEmpty) {
+      result = result.where((note) {
+        final matchesTitle = note.title.toLowerCase().contains(searchQuery);
+        final matchesContent = !note.isLocked && note.content.toLowerCase().contains(searchQuery);
+        return matchesTitle || matchesContent;
+      }).toList();
+    }
+
+    return result;
   });
 });
+
+
+// DESKTOP/WINDOWS UI COMPONENTS  -----------------------------
 
 class SortOptionsBar extends ConsumerWidget {
   const SortOptionsBar({super.key});
@@ -50,39 +88,69 @@ class SortOptionsBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentSortOption = ref.watch(noteSortOptionProvider);
+    final currentPlatformFilter = ref.watch(platformFilterProvider);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: Row(
-        children: [
-          ChoiceChip(
-            label: const Text('Created'),
-            selected: currentSortOption == NoteSortOption.createdAt,
-            onSelected: (_) => ref.read(noteSortOptionProvider.notifier).updateSort(NoteSortOption.createdAt),
-            avatar: const Icon(Icons.access_time, size: 16),
-            showCheckmark: false,
-          ),
-          const SizedBox(width: 8),
-          ChoiceChip(
-            label: const Text('Name'),
-            selected: currentSortOption == NoteSortOption.name,
-            onSelected: (_) => ref.read(noteSortOptionProvider.notifier).updateSort(NoteSortOption.name),
-            avatar: const Icon(Icons.sort_by_alpha, size: 16),
-            showCheckmark: false,
-          ),
-          const SizedBox(width: 8),
-          ChoiceChip(
-            label: const Text('Last Updated'),
-            selected: currentSortOption == NoteSortOption.updatedAt,
-            onSelected: (_) => ref.read(noteSortOptionProvider.notifier).updateSort(NoteSortOption.updatedAt),
-            avatar: const Icon(Icons.update, size: 16),
-            showCheckmark: false,
-          ),
-        ],
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            ChoiceChip(
+              label: const Text('Created'),
+              selected: currentSortOption == NoteSortOption.createdAt,
+              onSelected: (_) => ref.read(noteSortOptionProvider.notifier).updateSort(NoteSortOption.createdAt),
+              avatar: const Icon(Icons.access_time, size: 16),
+              showCheckmark: false,
+            ),
+            const SizedBox(width: 8),
+            ChoiceChip(
+              label: const Text('Name'),
+              selected: currentSortOption == NoteSortOption.name,
+              onSelected: (_) => ref.read(noteSortOptionProvider.notifier).updateSort(NoteSortOption.name),
+              avatar: const Icon(Icons.sort_by_alpha, size: 16),
+              showCheckmark: false,
+            ),
+            const SizedBox(width: 8),
+            ChoiceChip(
+              label: const Text('Last Updated'),
+              selected: currentSortOption == NoteSortOption.updatedAt,
+              onSelected: (_) => ref.read(noteSortOptionProvider.notifier).updateSort(NoteSortOption.updatedAt),
+              avatar: const Icon(Icons.update, size: 16),
+              showCheckmark: false,
+            ),
+
+            Container(
+                width: 1,
+                height: 24,
+                color: Colors.grey.withValues(alpha: 0.3),
+                margin: const EdgeInsets.symmetric(horizontal: 8)
+            ),
+
+            ChoiceChip(
+              label: const Text('Phone'),
+              selected: currentPlatformFilter == PlatformFilter.android,
+              onSelected: (_) => ref.read(platformFilterProvider.notifier).toggleFilter(PlatformFilter.android),
+              avatar: const Icon(Icons.phone_android_outlined, size: 16, color: Colors.grey),
+              showCheckmark: false,
+            ),
+            const SizedBox(width: 8),
+            ChoiceChip(
+              label: const Text('Windows'),
+              selected: currentPlatformFilter == PlatformFilter.windows,
+              onSelected: (_) => ref.read(platformFilterProvider.notifier).toggleFilter(PlatformFilter.windows),
+              avatar: const Icon(Icons.desktop_windows_outlined, size: 16, color: Colors.grey),
+              showCheckmark: false,
+            ),
+          ],
+        ),
       ),
     );
   }
 }
+
+
+// SHARED UI COMPONENTS -----------------------
 
 class NotesGridView extends ConsumerWidget {
   final bool isSelectMode;
@@ -114,44 +182,54 @@ class NotesGridView extends ConsumerWidget {
             return const Center(child: Text('No notes found.'));
           }
 
-          return GridView.builder(
-            padding: const EdgeInsets.only(bottom: 80),
-            gridDelegate: defaultTargetPlatform == TargetPlatform.android && !kIsWeb
-                ? const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3, childAspectRatio: 0.85)
-                : const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 220, childAspectRatio: 0.85),
-            itemCount: notes.length,
-            itemBuilder: (context, index) {
-              final currentNote = notes[index];
-              final isSelected = noteIds.contains(currentNote.id);
+          return RefreshIndicator(
+              onRefresh: () async {
+                // Trigger sync logic and wait for it to complete
+                await ref.read(syncNotifierProvider.notifier).executeFullSync();
+              },
+            child: GridView.builder(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.only(bottom: 80),
+              gridDelegate: defaultTargetPlatform == TargetPlatform.android && !kIsWeb
+                  ? const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3, childAspectRatio: 0.85)
+                  : const SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: 220, childAspectRatio: 0.85),
+              itemCount: notes.length,
+              itemBuilder: (context, index) {
+                final currentNote = notes[index];
+                final isSelected = noteIds.contains(currentNote.id);
 
-              return SelectableCard(
-                isSelected: isSelected,
-                onTap: () {
-                  if (isSelectMode) {
-                    onToggleSelection(currentNote.id);
-                  } else if (currentNote.isLocked) {
-                    onPromptPassword(context, currentNote);
-                  } else {
-                    context.push(AppRoutes.edit, extra: currentNote);
-                  }
-                },
-                onLongPress: () {
-                  if (!isSelectMode) {
-                    onEnableSelectMode();
-                    onToggleSelection(currentNote.id);
-                  }
-                },
-                child: HomepageCard(note: currentNote, isSelected: isSelected),
-              );
-            },
+                return SelectableCard(
+                  isSelected: isSelected,
+                  onTap: () {
+                    if (isSelectMode) {
+                      onToggleSelection(currentNote.id);
+                    } else if (currentNote.isLocked) {
+                      onPromptPassword(context, currentNote);
+                    } else {
+                      context.push(AppRoutes.edit, extra: currentNote);
+                    }
+                  },
+                  onLongPress: () {
+                    if (!isSelectMode) {
+                      onEnableSelectMode();
+                      onToggleSelection(currentNote.id);
+                    }
+                  },
+                  child: HomepageCard(note: currentNote, isSelected: isSelected),
+                );
+              },
+            ),
           );
         },
       ),
     );
   }
 }
+
+
+// MAIN SCREEN ------------------------
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -194,9 +272,11 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final isAndroid = defaultTargetPlatform == TargetPlatform.android;
+
     return Scaffold(
       drawer: const HomepageDrawer(),
-      appBar: _buildAppBar(),
+      appBar: _buildAppBar(isAndroid),
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.push(AppRoutes.edit),
         child: const Icon(Icons.add),
@@ -205,7 +285,8 @@ class _HomePageState extends ConsumerState<HomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (!isSearchMode) const SortOptionsBar(),
+            // Render ChoiceChips only in non-search mode and on desktop/web environments
+            if (!isSearchMode && !isAndroid) const SortOptionsBar(),
             Expanded(
               child: NotesGridView(
                 isSelectMode: isSelectMode,
@@ -221,12 +302,12 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  // --- APPBAR LOGIC  ---
-
-  PreferredSizeWidget _buildAppBar() {
+  
+  // APPBAR CONFIGURATION ------------------
+  PreferredSizeWidget _buildAppBar(bool isAndroid) {
     if (isSelectMode) return _buildSelectAppBar();
     if (isSearchMode) return _buildSearchAppBar();
-    return _buildDefaultAppBar();
+    return _buildDefaultAppBar(isAndroid);
   }
 
   PreferredSizeWidget _buildSelectAppBar() {
@@ -266,7 +347,6 @@ class _HomePageState extends ConsumerState<HomePage> {
         icon: const Icon(Icons.arrow_back),
         onPressed: () {
           _searchController.clear();
-
           ref.read(searchQueryProvider.notifier).clear();
           setState(() => isSearchMode = false);
         },
@@ -276,7 +356,6 @@ class _HomePageState extends ConsumerState<HomePage> {
         autofocus: true,
         textInputAction: TextInputAction.search,
         decoration: const InputDecoration(hintText: 'Search notes...', border: InputBorder.none),
-
         onChanged: (value) => ref.read(searchQueryProvider.notifier).updateQuery(value),
       ),
       actions: [
@@ -285,7 +364,6 @@ class _HomePageState extends ConsumerState<HomePage> {
             icon: const Icon(Icons.close),
             onPressed: () {
               _searchController.clear();
-
               ref.read(searchQueryProvider.notifier).clear();
             },
           ),
@@ -293,29 +371,30 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  PreferredSizeWidget _buildDefaultAppBar() {
-    // Determine if we are on Android
-    final isAndroid = defaultTargetPlatform == TargetPlatform.android;
+  PreferredSizeWidget _buildDefaultAppBar(bool isAndroid) {
+    final currentSortOption = ref.watch(noteSortOptionProvider);
+    final currentPlatformFilter = ref.watch(platformFilterProvider);
+
+    final colorScheme = Theme.of(context).colorScheme;
 
     return AppBar(
       title: const Text('Note-it', style: TextStyle(fontWeight: FontWeight.bold)),
       actions: [
 
-        // WINDOWS / DESKTOP MODE: Show the inline TextField
+        // Desktop Search TextField
         if (!isAndroid)
           Padding(
             padding: const EdgeInsets.only(right: 8),
             child: SizedBox(
               width: 250,
               child: TextField(
-                controller: _searchController, // Wired to your controller
+                controller: _searchController,
                 style: const TextStyle(fontSize: 16),
                 decoration: InputDecoration(
                   hintText: 'Search...',
                   isDense: true,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
-                  //  Add a small clear button inside the text field
                   suffixIcon: ref.watch(searchQueryProvider).isNotEmpty
                       ? IconButton(
                     icon: const Icon(Icons.close, size: 16),
@@ -326,39 +405,178 @@ class _HomePageState extends ConsumerState<HomePage> {
                   )
                       : null,
                 ),
-                // Wired to your Riverpod search state
                 onChanged: (value) => ref.read(searchQueryProvider.notifier).updateQuery(value),
               ),
             ),
           ),
 
-        // ANDROID MODE: Show the Search Icon to trigger the Search AppBar
+        // Mobile Search Toggle
         if (isAndroid)
           IconButton(
             icon: const Icon(Icons.search),
             onPressed: () => setState(() => isSearchMode = true),
           ),
 
-        // BOTH PLATFORMS: Show the Sync Button
-        Consumer(
-          builder: (context, ref, child) {
-            final isSyncing = ref.watch(syncNotifierProvider);
-            if (isSyncing) {
-              return const Padding(
-                padding: EdgeInsets.all(16.0),
-                child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
+        // Manual Sync (Desktop Only)
+        if (!isAndroid)
+          Consumer(
+            builder: (context, ref, child) {
+              final isSyncing = ref.watch(syncNotifierProvider);
+              if (isSyncing) {
+                return const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
+                );
+              }
+              return IconButton(
+                icon: const Icon(Icons.sync),
+                onPressed: () => ref.read(syncNotifierProvider.notifier).executeFullSync(),
               );
-            }
-            return IconButton(
-              icon: const Icon(Icons.sync),
-              onPressed: () => ref.read(syncNotifierProvider.notifier).executeFullSync(),
-            );
-          },
-        ),
+            },
+          ),
+
+        // Mobile Sort & Filter Options Menu
+        if (isAndroid)
+          PopupMenuButton<MenuOption>(
+            icon: const Icon(Icons.filter_list),
+            tooltip: 'Sort & Filter',
+            onSelected: (MenuOption value) {
+              switch (value) {
+                case MenuOption.sortCreated:
+                  ref.read(noteSortOptionProvider.notifier).updateSort(NoteSortOption.createdAt);
+                  break;
+                case MenuOption.sortName:
+                  ref.read(noteSortOptionProvider.notifier).updateSort(NoteSortOption.name);
+                  break;
+                case MenuOption.sortUpdated:
+                  ref.read(noteSortOptionProvider.notifier).updateSort(NoteSortOption.updatedAt);
+                  break;
+                case MenuOption.filterPhone:
+                  ref.read(platformFilterProvider.notifier).toggleFilter(PlatformFilter.android);
+                  break;
+                case MenuOption.filterWindows:
+                  ref.read(platformFilterProvider.notifier).toggleFilter(PlatformFilter.windows);
+                  break;
+              }
+            },
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<MenuOption>>[
+
+              // --- SORTING SECTION (Radios) ---
+              const PopupMenuItem<MenuOption>(
+                enabled: false,
+                child: Text('SORT BY', style: TextStyle(fontSize: 12, color: Colors.grey)),
+              ),
+              const PopupMenuItem<MenuOption>(
+                enabled: false,
+                child: Text('SORT BY', style: TextStyle(fontSize: 12, color: Colors.grey)),
+              ),
+              PopupMenuItem<MenuOption>(
+                value: MenuOption.sortCreated,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Created'),
+                    // Visual indicator instead of the deprecated Radio widget
+                    Icon(
+                      currentSortOption == NoteSortOption.createdAt
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
+                      size: 20,
+                      color: currentSortOption == NoteSortOption.createdAt ? colorScheme.primary : Colors.grey,
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuItem<MenuOption>(
+                value: MenuOption.sortName,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Name'),
+                    Icon(
+                      currentSortOption == NoteSortOption.name
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
+                      size: 20,
+                      color: currentSortOption == NoteSortOption.name ? colorScheme.primary : Colors.grey,
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuItem<MenuOption>(
+                value: MenuOption.sortUpdated,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Last Updated'),
+                    Icon(
+                      currentSortOption == NoteSortOption.updatedAt
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
+                      size: 20,
+                      color: currentSortOption == NoteSortOption.updatedAt ? colorScheme.primary : Colors.grey,
+                    ),
+                  ],
+                ),
+              ),
+
+              const PopupMenuDivider(),
+
+              // --- FILTERING SECTION (Checkboxes) ---
+              const PopupMenuItem<MenuOption>(
+                enabled: false,
+                child: Text('FILTER PLATFORM', style: TextStyle(fontSize: 12, color: Colors.grey)),
+              ),
+              PopupMenuItem<MenuOption>(
+                value: MenuOption.filterPhone,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: const [
+                        Icon(Icons.phone_android_outlined, size: 18, color: Colors.grey),
+                        SizedBox(width: 8),
+                        Text('Phone'),
+                      ],
+                    ),
+                    IgnorePointer(
+                      child: Checkbox(
+                        value: currentPlatformFilter == PlatformFilter.android,
+                        onChanged: (_) {},
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuItem<MenuOption>(
+                value: MenuOption.filterWindows,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: const [
+                        Icon(Icons.desktop_windows_outlined, size: 18, color: Colors.grey),
+                        SizedBox(width: 8),
+                        Text('Windows'),
+                      ],
+                    ),
+                    IgnorePointer(
+                      child: Checkbox(
+                        value: currentPlatformFilter == PlatformFilter.windows,
+                        onChanged: (_) {},
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
       ],
     );
   }
 
+  
+  // DIALOG CONTROLLERS --------------------------
   Future<void> _promptForPassword(BuildContext context, Note note) async {
     final String? enteredPassword = await showGeneralDialog<String>(
       context: context,
