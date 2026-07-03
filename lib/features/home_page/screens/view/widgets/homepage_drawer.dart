@@ -108,8 +108,8 @@ class HomepageDrawer extends ConsumerWidget {
                   icon: Icons.delete_outline_rounded,
                   title: 'Trash',
                   onTap: () {
-                    Navigator.pop(context);
-                    // context.push(AppRoutes.trash);
+                    // Navigator.pop(context);
+                    context.push(AppRoutes.trash);
                   },
                 ),
 

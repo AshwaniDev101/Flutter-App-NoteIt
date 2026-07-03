@@ -109,4 +109,32 @@ class NoteFirestoreDatabase {
     await batch.commit();
     return assignedIds;
   }
+
+
+  // Hard delete  -----------------------------
+
+  /// EMPTY TRASH (REMOTE): Hard delete a batch of documents from Firestore
+  Future<void> deleteBatch(List<String> firestoreIds) async {
+    if (firestoreIds.isEmpty) return;
+
+    // Note: Firestore limits a WriteBatch to 500 operations. 
+    // If a user has more than 500 notes in the trash, we need to chunk them.
+    final chunks = <List<String>>[];
+    for (var i = 0; i < firestoreIds.length; i += 500) {
+      chunks.add(firestoreIds.sublist(
+          i, i + 500 > firestoreIds.length ? firestoreIds.length : i + 500));
+    }
+
+    for (final chunk in chunks) {
+      final batch = _firestore.batch();
+
+      for (final docId in chunk) {
+        batch.delete(_notesRef.doc(docId));
+      }
+
+      await batch.commit();
+      print("Firestore: Hard deleted a batch of ${chunk.length} notes.");
+    }
+  }
+
 }

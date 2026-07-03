@@ -6,6 +6,7 @@ import 'package:noteit/features/home_page/screens/view/theme_page.dart';
 import 'package:noteit/features/settings_page/screens/view/settings_page.dart';
 
 import 'package:noteit/database/drift/drift_database.dart';
+import 'package:noteit/features/trash_page/trash_page.dart';
 import '../../features/settings_page/screens/view/options/master_password_page.dart';
 
 class AppRoutes {
@@ -15,6 +16,7 @@ class AppRoutes {
   static const String themes = '/themes';
   static const String settings = '/settings';
   static const String masterPassword = '/master-password';
+  static const String trash = '/trash';
 }
 
 final routerProvider = Provider((ref) {
@@ -50,6 +52,13 @@ final routerProvider = Provider((ref) {
         path: AppRoutes.masterPassword,
         builder: (context, state) {
           return const MasterPasswordPage();
+        },
+      ),
+
+      GoRoute(
+        path: AppRoutes.trash,
+        builder: (context, state) {
+          return const TrashPage();
         },
       ),
     ],
