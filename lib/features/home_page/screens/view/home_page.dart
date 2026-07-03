@@ -274,6 +274,12 @@ class _HomePageState extends ConsumerState<HomePage> {
   Widget build(BuildContext context) {
     final isAndroid = defaultTargetPlatform == TargetPlatform.android;
 
+
+    // This forces Riverpod to keep the SyncManager and its Auth listeners fully awake
+    // the entire time the user is on the Home Screen.
+    ref.watch(syncNotifierProvider);
+
+
     return Scaffold(
       drawer: const HomepageDrawer(),
       appBar: _buildAppBar(isAndroid),
@@ -375,6 +381,10 @@ class _HomePageState extends ConsumerState<HomePage> {
     final currentSortOption = ref.watch(noteSortOptionProvider);
     final currentPlatformFilter = ref.watch(platformFilterProvider);
 
+
+    // Capture the state here instead of just calling the watch blindly
+    final isSyncing = ref.watch(syncNotifierProvider);
+
     final colorScheme = Theme.of(context).colorScheme;
 
     return AppBar(
@@ -418,21 +428,16 @@ class _HomePageState extends ConsumerState<HomePage> {
           ),
 
         // Manual Sync (Desktop Only)
+
         if (!isAndroid)
-          Consumer(
-            builder: (context, ref, child) {
-              final isSyncing = ref.watch(syncNotifierProvider);
-              if (isSyncing) {
-                return const Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
-                );
-              }
-              return IconButton(
-                icon: const Icon(Icons.sync),
-                onPressed: () => ref.read(syncNotifierProvider.notifier).executeFullSync(),
-              );
-            },
+          isSyncing
+              ? const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
+          )
+              : IconButton(
+            icon: const Icon(Icons.sync),
+            onPressed: () => ref.read(syncNotifierProvider.notifier).executeFullSync(),
           ),
 
         // Mobile Sort & Filter Options Menu

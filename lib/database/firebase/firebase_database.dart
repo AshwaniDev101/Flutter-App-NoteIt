@@ -4,25 +4,41 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/provider/provider.dart';
 import '../drift/drift_database.dart';
 
-final noteFirebaseDatabaseProvider = Provider((ref) {
+// final noteFirebaseDatabaseProvider = Provider((ref) {
+//   final firestore = ref.watch(firestoreProvider);
+//
+//   return NoteFirestoreDatabase(
+//     firestore: firestore,
+//   );
+// });
+
+final noteFirebaseDatabaseProvider = Provider<NoteFirestoreDatabase?>((ref) {
   final firestore = ref.watch(firestoreProvider);
+  final authUser = ref.watch(authStateProvider).value;
+
+  // If nobody is logged in, no database instance is created
+  if (authUser == null) {
+    return null;
+  }
 
   return NoteFirestoreDatabase(
     firestore: firestore,
+    userId: authUser.uid,
   );
 });
 
+
 class NoteFirestoreDatabase {
   final FirebaseFirestore _firestore;
-
-  static const String _collectionPath = 'notes';
+  final String userId;
 
   NoteFirestoreDatabase({
     required FirebaseFirestore firestore,
+    required this.userId,
   }) : _firestore = firestore;
 
   CollectionReference<Map<String, dynamic>> get _notesRef =>
-      _firestore.collection(_collectionPath);
+      _firestore.collection('users').doc(userId).collection('notes');
 
   /// PULL: Fetch all remote notes that ARRIVED on the server since the last sync
   Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>> pullChanges(int lastSyncTime) async {

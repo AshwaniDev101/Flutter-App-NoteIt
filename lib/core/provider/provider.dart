@@ -1,9 +1,24 @@
 import 'dart:io' show Platform;
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in_all_platforms/google_sign_in_all_platforms.dart';
 import 'package:noteit/core/secrets/app_secrets.dart';
+
+
+
+// Provides the FirebaseAuth instance
+// Provides the FirebaseAuth instance
+final firebaseAuthProvider = Provider<FirebaseAuth>((ref) {
+  return FirebaseAuth.instance;
+});
+
+//  Listens to login/logout events automatically
+final authStateProvider = StreamProvider<User?>((ref) {
+  return ref.watch(firebaseAuthProvider).authStateChanges();
+});
+
 
 final googleSignInProvider = Provider<GoogleSignIn>((ref) {
   // Determine if we are running on Windows Desktop
