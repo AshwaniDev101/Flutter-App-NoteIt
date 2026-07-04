@@ -72,14 +72,14 @@ class NoteDriftDatabase extends _$NoteDriftDatabase {
     return await (delete(notes)..where((t) => t.id.equals(id))).go();
   }
 
-  Future<void> softDeleteNotes(Iterable<int> ids) async {
+  Future<void> softDeleteNotes(Iterable<int> ids, {required String platform}) async {
     // This is the "Soft Delete" used by the UI
     await (update(notes)..where((t) => t.id.isIn(ids))).write(
       NotesCompanion(
-        // NEW: Swapped boolean for UTC Timestamp
         deletedAt: Value(DateTime.now().toUtc()),
         syncStatus: const Value(0),
         updatedAt: Value(DateTime.now().toUtc()),
+        deletedPlatform: Value(platform), // NEW: Stamping the platform
       ),
     );
   }

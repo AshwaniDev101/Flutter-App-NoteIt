@@ -143,32 +143,67 @@ class TrashPage extends ConsumerWidget {
                   // For now, we'll just return false to prevent accidental swipes
                   return false;
                 },
-                child: Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  child: ListTile(
-                    title: Text(
-                      note.title.isNotEmpty ? note.title : 'Untitled Note',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+                  child: Card(
+                    margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    child: ListTile(
+                      title: Text(
+                        note.title.isNotEmpty ? note.title : 'Untitled Note',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Text(
+                        note.content,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min, // CRITICAL: Prevents layout crashes
+                        children: [
+
+                          // Show the platform icon if we have the data
+                          if (note.deletedPlatform != null)
+                            Tooltip(
+                              message: 'Deleted on ${note.deletedPlatform}',
+                              child: Icon(
+                                _getPlatformIcon(note.deletedPlatform),
+                                size: 20,
+                                color: Colors.grey,
+                              ),
+                            ),
+
+                          IconButton(
+                            icon: const Icon(Icons.restore),
+                            tooltip: 'Restore',
+                            onPressed: () => _restoreNote(context, ref, note.id),
+                          ),
+                        ],
+                      ),
                     ),
-                    subtitle: Text(
-                      note.content,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.restore),
-                      tooltip: 'Restore',
-                      onPressed: () => _restoreNote(context, ref, note.id),
-                    ),
-                  ),
-                ),
+                  )
               );
             },
           );
         },
       ),
     );
+  }
+
+
+  IconData _getPlatformIcon(String? platform) {
+    switch (platform?.toLowerCase()) {
+      case 'android':
+        return Icons.phone_android_outlined;
+      case 'ios':
+        return Icons.phone_iphone_outlined;
+      case 'windows':
+        return Icons.desktop_windows_outlined;
+      case 'macos':
+        return Icons.desktop_mac_outlined;
+      case 'web':
+        return Icons.language_outlined;
+      default:
+        return Icons.device_unknown_outlined; // Fallback for null or unknown
+    }
   }
 }

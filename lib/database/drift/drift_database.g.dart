@@ -132,6 +132,81 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _hasAttachmentsMeta = const VerificationMeta(
+    'hasAttachments',
+  );
+  @override
+  late final GeneratedColumn<bool> hasAttachments = GeneratedColumn<bool>(
+    'has_attachments',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("has_attachments" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _contentTypeMeta = const VerificationMeta(
+    'contentType',
+  );
+  @override
+  late final GeneratedColumn<String> contentType = GeneratedColumn<String>(
+    'content_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('plain_text'),
+  );
+  static const VerificationMeta _isSharedMeta = const VerificationMeta(
+    'isShared',
+  );
+  @override
+  late final GeneratedColumn<bool> isShared = GeneratedColumn<bool>(
+    'is_shared',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_shared" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _folderIdMeta = const VerificationMeta(
+    'folderId',
+  );
+  @override
+  late final GeneratedColumn<String> folderId = GeneratedColumn<String>(
+    'folder_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _ownerUidMeta = const VerificationMeta(
+    'ownerUid',
+  );
+  @override
+  late final GeneratedColumn<String> ownerUid = GeneratedColumn<String>(
+    'owner_uid',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _ownerEmailMeta = const VerificationMeta(
+    'ownerEmail',
+  );
+  @override
+  late final GeneratedColumn<String> ownerEmail = GeneratedColumn<String>(
+    'owner_email',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -150,6 +225,17 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
   @override
   late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
     'updated_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
     aliasedName,
     true,
     type: DriftSqlType.dateTime,
@@ -178,16 +264,17 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
-  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
-    'deletedAt',
+  static const VerificationMeta _versionCounterMeta = const VerificationMeta(
+    'versionCounter',
   );
   @override
-  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
-    'deleted_at',
+  late final GeneratedColumn<int> versionCounter = GeneratedColumn<int>(
+    'version_counter',
     aliasedName,
-    true,
-    type: DriftSqlType.dateTime,
+    false,
+    type: DriftSqlType.int,
     requiredDuringInsert: false,
+    defaultValue: const Constant(1),
   );
   static const VerificationMeta _creationPlatformMeta = const VerificationMeta(
     'creationPlatform',
@@ -211,6 +298,28 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _lastEditedDeviceMeta = const VerificationMeta(
+    'lastEditedDevice',
+  );
+  @override
+  late final GeneratedColumn<String> lastEditedDevice = GeneratedColumn<String>(
+    'last_edited_device',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _deletedPlatformMeta = const VerificationMeta(
+    'deletedPlatform',
+  );
+  @override
+  late final GeneratedColumn<String> deletedPlatform = GeneratedColumn<String>(
+    'deleted_platform',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -223,13 +332,22 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
     position,
     tags,
     reminderAt,
+    hasAttachments,
+    contentType,
+    isShared,
+    folderId,
+    ownerUid,
+    ownerEmail,
     createdAt,
     updatedAt,
+    deletedAt,
     firestoreId,
     syncStatus,
-    deletedAt,
+    versionCounter,
     creationPlatform,
     creationDevice,
+    lastEditedDevice,
+    deletedPlatform,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -304,6 +422,48 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
         reminderAt.isAcceptableOrUnknown(data['reminder_at']!, _reminderAtMeta),
       );
     }
+    if (data.containsKey('has_attachments')) {
+      context.handle(
+        _hasAttachmentsMeta,
+        hasAttachments.isAcceptableOrUnknown(
+          data['has_attachments']!,
+          _hasAttachmentsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('content_type')) {
+      context.handle(
+        _contentTypeMeta,
+        contentType.isAcceptableOrUnknown(
+          data['content_type']!,
+          _contentTypeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_shared')) {
+      context.handle(
+        _isSharedMeta,
+        isShared.isAcceptableOrUnknown(data['is_shared']!, _isSharedMeta),
+      );
+    }
+    if (data.containsKey('folder_id')) {
+      context.handle(
+        _folderIdMeta,
+        folderId.isAcceptableOrUnknown(data['folder_id']!, _folderIdMeta),
+      );
+    }
+    if (data.containsKey('owner_uid')) {
+      context.handle(
+        _ownerUidMeta,
+        ownerUid.isAcceptableOrUnknown(data['owner_uid']!, _ownerUidMeta),
+      );
+    }
+    if (data.containsKey('owner_email')) {
+      context.handle(
+        _ownerEmailMeta,
+        ownerEmail.isAcceptableOrUnknown(data['owner_email']!, _ownerEmailMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -314,6 +474,12 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
       context.handle(
         _updatedAtMeta,
         updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
       );
     }
     if (data.containsKey('firestore_id')) {
@@ -331,10 +497,13 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
         syncStatus.isAcceptableOrUnknown(data['sync_status']!, _syncStatusMeta),
       );
     }
-    if (data.containsKey('deleted_at')) {
+    if (data.containsKey('version_counter')) {
       context.handle(
-        _deletedAtMeta,
-        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+        _versionCounterMeta,
+        versionCounter.isAcceptableOrUnknown(
+          data['version_counter']!,
+          _versionCounterMeta,
+        ),
       );
     }
     if (data.containsKey('creation_platform')) {
@@ -352,6 +521,24 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
         creationDevice.isAcceptableOrUnknown(
           data['creation_device']!,
           _creationDeviceMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_edited_device')) {
+      context.handle(
+        _lastEditedDeviceMeta,
+        lastEditedDevice.isAcceptableOrUnknown(
+          data['last_edited_device']!,
+          _lastEditedDeviceMeta,
+        ),
+      );
+    }
+    if (data.containsKey('deleted_platform')) {
+      context.handle(
+        _deletedPlatformMeta,
+        deletedPlatform.isAcceptableOrUnknown(
+          data['deleted_platform']!,
+          _deletedPlatformMeta,
         ),
       );
     }
@@ -404,6 +591,30 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}reminder_at'],
       ),
+      hasAttachments: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}has_attachments'],
+      )!,
+      contentType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content_type'],
+      )!,
+      isShared: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_shared'],
+      )!,
+      folderId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}folder_id'],
+      ),
+      ownerUid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_uid'],
+      ),
+      ownerEmail: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_email'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -411,6 +622,10 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
       updatedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
+      ),
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
       ),
       firestoreId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -420,10 +635,10 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
         DriftSqlType.int,
         data['${effectivePrefix}sync_status'],
       )!,
-      deletedAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}deleted_at'],
-      ),
+      versionCounter: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}version_counter'],
+      )!,
       creationPlatform: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}creation_platform'],
@@ -431,6 +646,14 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
       creationDevice: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}creation_device'],
+      ),
+      lastEditedDevice: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_edited_device'],
+      ),
+      deletedPlatform: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}deleted_platform'],
       ),
     );
   }
@@ -452,13 +675,22 @@ class Note extends DataClass implements Insertable<Note> {
   final int position;
   final String? tags;
   final DateTime? reminderAt;
+  final bool hasAttachments;
+  final String contentType;
+  final bool isShared;
+  final String? folderId;
+  final String? ownerUid;
+  final String? ownerEmail;
   final DateTime createdAt;
   final DateTime? updatedAt;
+  final DateTime? deletedAt;
   final String? firestoreId;
   final int syncStatus;
-  final DateTime? deletedAt;
+  final int versionCounter;
   final String? creationPlatform;
   final String? creationDevice;
+  final String? lastEditedDevice;
+  final String? deletedPlatform;
   const Note({
     required this.id,
     required this.title,
@@ -470,13 +702,22 @@ class Note extends DataClass implements Insertable<Note> {
     required this.position,
     this.tags,
     this.reminderAt,
+    required this.hasAttachments,
+    required this.contentType,
+    required this.isShared,
+    this.folderId,
+    this.ownerUid,
+    this.ownerEmail,
     required this.createdAt,
     this.updatedAt,
+    this.deletedAt,
     this.firestoreId,
     required this.syncStatus,
-    this.deletedAt,
+    required this.versionCounter,
     this.creationPlatform,
     this.creationDevice,
+    this.lastEditedDevice,
+    this.deletedPlatform,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -495,22 +736,41 @@ class Note extends DataClass implements Insertable<Note> {
     if (!nullToAbsent || reminderAt != null) {
       map['reminder_at'] = Variable<DateTime>(reminderAt);
     }
+    map['has_attachments'] = Variable<bool>(hasAttachments);
+    map['content_type'] = Variable<String>(contentType);
+    map['is_shared'] = Variable<bool>(isShared);
+    if (!nullToAbsent || folderId != null) {
+      map['folder_id'] = Variable<String>(folderId);
+    }
+    if (!nullToAbsent || ownerUid != null) {
+      map['owner_uid'] = Variable<String>(ownerUid);
+    }
+    if (!nullToAbsent || ownerEmail != null) {
+      map['owner_email'] = Variable<String>(ownerEmail);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     if (!nullToAbsent || updatedAt != null) {
       map['updated_at'] = Variable<DateTime>(updatedAt);
+    }
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
     }
     if (!nullToAbsent || firestoreId != null) {
       map['firestore_id'] = Variable<String>(firestoreId);
     }
     map['sync_status'] = Variable<int>(syncStatus);
-    if (!nullToAbsent || deletedAt != null) {
-      map['deleted_at'] = Variable<DateTime>(deletedAt);
-    }
+    map['version_counter'] = Variable<int>(versionCounter);
     if (!nullToAbsent || creationPlatform != null) {
       map['creation_platform'] = Variable<String>(creationPlatform);
     }
     if (!nullToAbsent || creationDevice != null) {
       map['creation_device'] = Variable<String>(creationDevice);
+    }
+    if (!nullToAbsent || lastEditedDevice != null) {
+      map['last_edited_device'] = Variable<String>(lastEditedDevice);
+    }
+    if (!nullToAbsent || deletedPlatform != null) {
+      map['deleted_platform'] = Variable<String>(deletedPlatform);
     }
     return map;
   }
@@ -529,23 +789,42 @@ class Note extends DataClass implements Insertable<Note> {
       reminderAt: reminderAt == null && nullToAbsent
           ? const Value.absent()
           : Value(reminderAt),
+      hasAttachments: Value(hasAttachments),
+      contentType: Value(contentType),
+      isShared: Value(isShared),
+      folderId: folderId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(folderId),
+      ownerUid: ownerUid == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ownerUid),
+      ownerEmail: ownerEmail == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ownerEmail),
       createdAt: Value(createdAt),
       updatedAt: updatedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
       firestoreId: firestoreId == null && nullToAbsent
           ? const Value.absent()
           : Value(firestoreId),
       syncStatus: Value(syncStatus),
-      deletedAt: deletedAt == null && nullToAbsent
-          ? const Value.absent()
-          : Value(deletedAt),
+      versionCounter: Value(versionCounter),
       creationPlatform: creationPlatform == null && nullToAbsent
           ? const Value.absent()
           : Value(creationPlatform),
       creationDevice: creationDevice == null && nullToAbsent
           ? const Value.absent()
           : Value(creationDevice),
+      lastEditedDevice: lastEditedDevice == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastEditedDevice),
+      deletedPlatform: deletedPlatform == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedPlatform),
     );
   }
 
@@ -565,13 +844,22 @@ class Note extends DataClass implements Insertable<Note> {
       position: serializer.fromJson<int>(json['position']),
       tags: serializer.fromJson<String?>(json['tags']),
       reminderAt: serializer.fromJson<DateTime?>(json['reminderAt']),
+      hasAttachments: serializer.fromJson<bool>(json['hasAttachments']),
+      contentType: serializer.fromJson<String>(json['contentType']),
+      isShared: serializer.fromJson<bool>(json['isShared']),
+      folderId: serializer.fromJson<String?>(json['folderId']),
+      ownerUid: serializer.fromJson<String?>(json['ownerUid']),
+      ownerEmail: serializer.fromJson<String?>(json['ownerEmail']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime?>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
       firestoreId: serializer.fromJson<String?>(json['firestoreId']),
       syncStatus: serializer.fromJson<int>(json['syncStatus']),
-      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      versionCounter: serializer.fromJson<int>(json['versionCounter']),
       creationPlatform: serializer.fromJson<String?>(json['creationPlatform']),
       creationDevice: serializer.fromJson<String?>(json['creationDevice']),
+      lastEditedDevice: serializer.fromJson<String?>(json['lastEditedDevice']),
+      deletedPlatform: serializer.fromJson<String?>(json['deletedPlatform']),
     );
   }
   @override
@@ -588,13 +876,22 @@ class Note extends DataClass implements Insertable<Note> {
       'position': serializer.toJson<int>(position),
       'tags': serializer.toJson<String?>(tags),
       'reminderAt': serializer.toJson<DateTime?>(reminderAt),
+      'hasAttachments': serializer.toJson<bool>(hasAttachments),
+      'contentType': serializer.toJson<String>(contentType),
+      'isShared': serializer.toJson<bool>(isShared),
+      'folderId': serializer.toJson<String?>(folderId),
+      'ownerUid': serializer.toJson<String?>(ownerUid),
+      'ownerEmail': serializer.toJson<String?>(ownerEmail),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime?>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
       'firestoreId': serializer.toJson<String?>(firestoreId),
       'syncStatus': serializer.toJson<int>(syncStatus),
-      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'versionCounter': serializer.toJson<int>(versionCounter),
       'creationPlatform': serializer.toJson<String?>(creationPlatform),
       'creationDevice': serializer.toJson<String?>(creationDevice),
+      'lastEditedDevice': serializer.toJson<String?>(lastEditedDevice),
+      'deletedPlatform': serializer.toJson<String?>(deletedPlatform),
     };
   }
 
@@ -609,13 +906,22 @@ class Note extends DataClass implements Insertable<Note> {
     int? position,
     Value<String?> tags = const Value.absent(),
     Value<DateTime?> reminderAt = const Value.absent(),
+    bool? hasAttachments,
+    String? contentType,
+    bool? isShared,
+    Value<String?> folderId = const Value.absent(),
+    Value<String?> ownerUid = const Value.absent(),
+    Value<String?> ownerEmail = const Value.absent(),
     DateTime? createdAt,
     Value<DateTime?> updatedAt = const Value.absent(),
+    Value<DateTime?> deletedAt = const Value.absent(),
     Value<String?> firestoreId = const Value.absent(),
     int? syncStatus,
-    Value<DateTime?> deletedAt = const Value.absent(),
+    int? versionCounter,
     Value<String?> creationPlatform = const Value.absent(),
     Value<String?> creationDevice = const Value.absent(),
+    Value<String?> lastEditedDevice = const Value.absent(),
+    Value<String?> deletedPlatform = const Value.absent(),
   }) => Note(
     id: id ?? this.id,
     title: title ?? this.title,
@@ -627,17 +933,30 @@ class Note extends DataClass implements Insertable<Note> {
     position: position ?? this.position,
     tags: tags.present ? tags.value : this.tags,
     reminderAt: reminderAt.present ? reminderAt.value : this.reminderAt,
+    hasAttachments: hasAttachments ?? this.hasAttachments,
+    contentType: contentType ?? this.contentType,
+    isShared: isShared ?? this.isShared,
+    folderId: folderId.present ? folderId.value : this.folderId,
+    ownerUid: ownerUid.present ? ownerUid.value : this.ownerUid,
+    ownerEmail: ownerEmail.present ? ownerEmail.value : this.ownerEmail,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt.present ? updatedAt.value : this.updatedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
     firestoreId: firestoreId.present ? firestoreId.value : this.firestoreId,
     syncStatus: syncStatus ?? this.syncStatus,
-    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    versionCounter: versionCounter ?? this.versionCounter,
     creationPlatform: creationPlatform.present
         ? creationPlatform.value
         : this.creationPlatform,
     creationDevice: creationDevice.present
         ? creationDevice.value
         : this.creationDevice,
+    lastEditedDevice: lastEditedDevice.present
+        ? lastEditedDevice.value
+        : this.lastEditedDevice,
+    deletedPlatform: deletedPlatform.present
+        ? deletedPlatform.value
+        : this.deletedPlatform,
   );
   Note copyWithCompanion(NotesCompanion data) {
     return Note(
@@ -655,21 +974,42 @@ class Note extends DataClass implements Insertable<Note> {
       reminderAt: data.reminderAt.present
           ? data.reminderAt.value
           : this.reminderAt,
+      hasAttachments: data.hasAttachments.present
+          ? data.hasAttachments.value
+          : this.hasAttachments,
+      contentType: data.contentType.present
+          ? data.contentType.value
+          : this.contentType,
+      isShared: data.isShared.present ? data.isShared.value : this.isShared,
+      folderId: data.folderId.present ? data.folderId.value : this.folderId,
+      ownerUid: data.ownerUid.present ? data.ownerUid.value : this.ownerUid,
+      ownerEmail: data.ownerEmail.present
+          ? data.ownerEmail.value
+          : this.ownerEmail,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
       firestoreId: data.firestoreId.present
           ? data.firestoreId.value
           : this.firestoreId,
       syncStatus: data.syncStatus.present
           ? data.syncStatus.value
           : this.syncStatus,
-      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      versionCounter: data.versionCounter.present
+          ? data.versionCounter.value
+          : this.versionCounter,
       creationPlatform: data.creationPlatform.present
           ? data.creationPlatform.value
           : this.creationPlatform,
       creationDevice: data.creationDevice.present
           ? data.creationDevice.value
           : this.creationDevice,
+      lastEditedDevice: data.lastEditedDevice.present
+          ? data.lastEditedDevice.value
+          : this.lastEditedDevice,
+      deletedPlatform: data.deletedPlatform.present
+          ? data.deletedPlatform.value
+          : this.deletedPlatform,
     );
   }
 
@@ -686,19 +1026,28 @@ class Note extends DataClass implements Insertable<Note> {
           ..write('position: $position, ')
           ..write('tags: $tags, ')
           ..write('reminderAt: $reminderAt, ')
+          ..write('hasAttachments: $hasAttachments, ')
+          ..write('contentType: $contentType, ')
+          ..write('isShared: $isShared, ')
+          ..write('folderId: $folderId, ')
+          ..write('ownerUid: $ownerUid, ')
+          ..write('ownerEmail: $ownerEmail, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
           ..write('firestoreId: $firestoreId, ')
           ..write('syncStatus: $syncStatus, ')
-          ..write('deletedAt: $deletedAt, ')
+          ..write('versionCounter: $versionCounter, ')
           ..write('creationPlatform: $creationPlatform, ')
-          ..write('creationDevice: $creationDevice')
+          ..write('creationDevice: $creationDevice, ')
+          ..write('lastEditedDevice: $lastEditedDevice, ')
+          ..write('deletedPlatform: $deletedPlatform')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     title,
     content,
@@ -709,14 +1058,23 @@ class Note extends DataClass implements Insertable<Note> {
     position,
     tags,
     reminderAt,
+    hasAttachments,
+    contentType,
+    isShared,
+    folderId,
+    ownerUid,
+    ownerEmail,
     createdAt,
     updatedAt,
+    deletedAt,
     firestoreId,
     syncStatus,
-    deletedAt,
+    versionCounter,
     creationPlatform,
     creationDevice,
-  );
+    lastEditedDevice,
+    deletedPlatform,
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -731,13 +1089,22 @@ class Note extends DataClass implements Insertable<Note> {
           other.position == this.position &&
           other.tags == this.tags &&
           other.reminderAt == this.reminderAt &&
+          other.hasAttachments == this.hasAttachments &&
+          other.contentType == this.contentType &&
+          other.isShared == this.isShared &&
+          other.folderId == this.folderId &&
+          other.ownerUid == this.ownerUid &&
+          other.ownerEmail == this.ownerEmail &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt &&
           other.firestoreId == this.firestoreId &&
           other.syncStatus == this.syncStatus &&
-          other.deletedAt == this.deletedAt &&
+          other.versionCounter == this.versionCounter &&
           other.creationPlatform == this.creationPlatform &&
-          other.creationDevice == this.creationDevice);
+          other.creationDevice == this.creationDevice &&
+          other.lastEditedDevice == this.lastEditedDevice &&
+          other.deletedPlatform == this.deletedPlatform);
 }
 
 class NotesCompanion extends UpdateCompanion<Note> {
@@ -751,13 +1118,22 @@ class NotesCompanion extends UpdateCompanion<Note> {
   final Value<int> position;
   final Value<String?> tags;
   final Value<DateTime?> reminderAt;
+  final Value<bool> hasAttachments;
+  final Value<String> contentType;
+  final Value<bool> isShared;
+  final Value<String?> folderId;
+  final Value<String?> ownerUid;
+  final Value<String?> ownerEmail;
   final Value<DateTime> createdAt;
   final Value<DateTime?> updatedAt;
+  final Value<DateTime?> deletedAt;
   final Value<String?> firestoreId;
   final Value<int> syncStatus;
-  final Value<DateTime?> deletedAt;
+  final Value<int> versionCounter;
   final Value<String?> creationPlatform;
   final Value<String?> creationDevice;
+  final Value<String?> lastEditedDevice;
+  final Value<String?> deletedPlatform;
   const NotesCompanion({
     this.id = const Value.absent(),
     this.title = const Value.absent(),
@@ -769,13 +1145,22 @@ class NotesCompanion extends UpdateCompanion<Note> {
     this.position = const Value.absent(),
     this.tags = const Value.absent(),
     this.reminderAt = const Value.absent(),
+    this.hasAttachments = const Value.absent(),
+    this.contentType = const Value.absent(),
+    this.isShared = const Value.absent(),
+    this.folderId = const Value.absent(),
+    this.ownerUid = const Value.absent(),
+    this.ownerEmail = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
     this.firestoreId = const Value.absent(),
     this.syncStatus = const Value.absent(),
-    this.deletedAt = const Value.absent(),
+    this.versionCounter = const Value.absent(),
     this.creationPlatform = const Value.absent(),
     this.creationDevice = const Value.absent(),
+    this.lastEditedDevice = const Value.absent(),
+    this.deletedPlatform = const Value.absent(),
   });
   NotesCompanion.insert({
     this.id = const Value.absent(),
@@ -788,13 +1173,22 @@ class NotesCompanion extends UpdateCompanion<Note> {
     this.position = const Value.absent(),
     this.tags = const Value.absent(),
     this.reminderAt = const Value.absent(),
+    this.hasAttachments = const Value.absent(),
+    this.contentType = const Value.absent(),
+    this.isShared = const Value.absent(),
+    this.folderId = const Value.absent(),
+    this.ownerUid = const Value.absent(),
+    this.ownerEmail = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
     this.firestoreId = const Value.absent(),
     this.syncStatus = const Value.absent(),
-    this.deletedAt = const Value.absent(),
+    this.versionCounter = const Value.absent(),
     this.creationPlatform = const Value.absent(),
     this.creationDevice = const Value.absent(),
+    this.lastEditedDevice = const Value.absent(),
+    this.deletedPlatform = const Value.absent(),
   }) : title = Value(title),
        content = Value(content);
   static Insertable<Note> custom({
@@ -808,13 +1202,22 @@ class NotesCompanion extends UpdateCompanion<Note> {
     Expression<int>? position,
     Expression<String>? tags,
     Expression<DateTime>? reminderAt,
+    Expression<bool>? hasAttachments,
+    Expression<String>? contentType,
+    Expression<bool>? isShared,
+    Expression<String>? folderId,
+    Expression<String>? ownerUid,
+    Expression<String>? ownerEmail,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
     Expression<String>? firestoreId,
     Expression<int>? syncStatus,
-    Expression<DateTime>? deletedAt,
+    Expression<int>? versionCounter,
     Expression<String>? creationPlatform,
     Expression<String>? creationDevice,
+    Expression<String>? lastEditedDevice,
+    Expression<String>? deletedPlatform,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -827,13 +1230,22 @@ class NotesCompanion extends UpdateCompanion<Note> {
       if (position != null) 'position': position,
       if (tags != null) 'tags': tags,
       if (reminderAt != null) 'reminder_at': reminderAt,
+      if (hasAttachments != null) 'has_attachments': hasAttachments,
+      if (contentType != null) 'content_type': contentType,
+      if (isShared != null) 'is_shared': isShared,
+      if (folderId != null) 'folder_id': folderId,
+      if (ownerUid != null) 'owner_uid': ownerUid,
+      if (ownerEmail != null) 'owner_email': ownerEmail,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
       if (firestoreId != null) 'firestore_id': firestoreId,
       if (syncStatus != null) 'sync_status': syncStatus,
-      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (versionCounter != null) 'version_counter': versionCounter,
       if (creationPlatform != null) 'creation_platform': creationPlatform,
       if (creationDevice != null) 'creation_device': creationDevice,
+      if (lastEditedDevice != null) 'last_edited_device': lastEditedDevice,
+      if (deletedPlatform != null) 'deleted_platform': deletedPlatform,
     });
   }
 
@@ -848,13 +1260,22 @@ class NotesCompanion extends UpdateCompanion<Note> {
     Value<int>? position,
     Value<String?>? tags,
     Value<DateTime?>? reminderAt,
+    Value<bool>? hasAttachments,
+    Value<String>? contentType,
+    Value<bool>? isShared,
+    Value<String?>? folderId,
+    Value<String?>? ownerUid,
+    Value<String?>? ownerEmail,
     Value<DateTime>? createdAt,
     Value<DateTime?>? updatedAt,
+    Value<DateTime?>? deletedAt,
     Value<String?>? firestoreId,
     Value<int>? syncStatus,
-    Value<DateTime?>? deletedAt,
+    Value<int>? versionCounter,
     Value<String?>? creationPlatform,
     Value<String?>? creationDevice,
+    Value<String?>? lastEditedDevice,
+    Value<String?>? deletedPlatform,
   }) {
     return NotesCompanion(
       id: id ?? this.id,
@@ -867,13 +1288,22 @@ class NotesCompanion extends UpdateCompanion<Note> {
       position: position ?? this.position,
       tags: tags ?? this.tags,
       reminderAt: reminderAt ?? this.reminderAt,
+      hasAttachments: hasAttachments ?? this.hasAttachments,
+      contentType: contentType ?? this.contentType,
+      isShared: isShared ?? this.isShared,
+      folderId: folderId ?? this.folderId,
+      ownerUid: ownerUid ?? this.ownerUid,
+      ownerEmail: ownerEmail ?? this.ownerEmail,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
       firestoreId: firestoreId ?? this.firestoreId,
       syncStatus: syncStatus ?? this.syncStatus,
-      deletedAt: deletedAt ?? this.deletedAt,
+      versionCounter: versionCounter ?? this.versionCounter,
       creationPlatform: creationPlatform ?? this.creationPlatform,
       creationDevice: creationDevice ?? this.creationDevice,
+      lastEditedDevice: lastEditedDevice ?? this.lastEditedDevice,
+      deletedPlatform: deletedPlatform ?? this.deletedPlatform,
     );
   }
 
@@ -910,11 +1340,32 @@ class NotesCompanion extends UpdateCompanion<Note> {
     if (reminderAt.present) {
       map['reminder_at'] = Variable<DateTime>(reminderAt.value);
     }
+    if (hasAttachments.present) {
+      map['has_attachments'] = Variable<bool>(hasAttachments.value);
+    }
+    if (contentType.present) {
+      map['content_type'] = Variable<String>(contentType.value);
+    }
+    if (isShared.present) {
+      map['is_shared'] = Variable<bool>(isShared.value);
+    }
+    if (folderId.present) {
+      map['folder_id'] = Variable<String>(folderId.value);
+    }
+    if (ownerUid.present) {
+      map['owner_uid'] = Variable<String>(ownerUid.value);
+    }
+    if (ownerEmail.present) {
+      map['owner_email'] = Variable<String>(ownerEmail.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
     }
     if (firestoreId.present) {
       map['firestore_id'] = Variable<String>(firestoreId.value);
@@ -922,14 +1373,20 @@ class NotesCompanion extends UpdateCompanion<Note> {
     if (syncStatus.present) {
       map['sync_status'] = Variable<int>(syncStatus.value);
     }
-    if (deletedAt.present) {
-      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    if (versionCounter.present) {
+      map['version_counter'] = Variable<int>(versionCounter.value);
     }
     if (creationPlatform.present) {
       map['creation_platform'] = Variable<String>(creationPlatform.value);
     }
     if (creationDevice.present) {
       map['creation_device'] = Variable<String>(creationDevice.value);
+    }
+    if (lastEditedDevice.present) {
+      map['last_edited_device'] = Variable<String>(lastEditedDevice.value);
+    }
+    if (deletedPlatform.present) {
+      map['deleted_platform'] = Variable<String>(deletedPlatform.value);
     }
     return map;
   }
@@ -947,13 +1404,22 @@ class NotesCompanion extends UpdateCompanion<Note> {
           ..write('position: $position, ')
           ..write('tags: $tags, ')
           ..write('reminderAt: $reminderAt, ')
+          ..write('hasAttachments: $hasAttachments, ')
+          ..write('contentType: $contentType, ')
+          ..write('isShared: $isShared, ')
+          ..write('folderId: $folderId, ')
+          ..write('ownerUid: $ownerUid, ')
+          ..write('ownerEmail: $ownerEmail, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
           ..write('firestoreId: $firestoreId, ')
           ..write('syncStatus: $syncStatus, ')
-          ..write('deletedAt: $deletedAt, ')
+          ..write('versionCounter: $versionCounter, ')
           ..write('creationPlatform: $creationPlatform, ')
-          ..write('creationDevice: $creationDevice')
+          ..write('creationDevice: $creationDevice, ')
+          ..write('lastEditedDevice: $lastEditedDevice, ')
+          ..write('deletedPlatform: $deletedPlatform')
           ..write(')'))
         .toString();
   }
@@ -982,13 +1448,22 @@ typedef $$NotesTableCreateCompanionBuilder =
       Value<int> position,
       Value<String?> tags,
       Value<DateTime?> reminderAt,
+      Value<bool> hasAttachments,
+      Value<String> contentType,
+      Value<bool> isShared,
+      Value<String?> folderId,
+      Value<String?> ownerUid,
+      Value<String?> ownerEmail,
       Value<DateTime> createdAt,
       Value<DateTime?> updatedAt,
+      Value<DateTime?> deletedAt,
       Value<String?> firestoreId,
       Value<int> syncStatus,
-      Value<DateTime?> deletedAt,
+      Value<int> versionCounter,
       Value<String?> creationPlatform,
       Value<String?> creationDevice,
+      Value<String?> lastEditedDevice,
+      Value<String?> deletedPlatform,
     });
 typedef $$NotesTableUpdateCompanionBuilder =
     NotesCompanion Function({
@@ -1002,13 +1477,22 @@ typedef $$NotesTableUpdateCompanionBuilder =
       Value<int> position,
       Value<String?> tags,
       Value<DateTime?> reminderAt,
+      Value<bool> hasAttachments,
+      Value<String> contentType,
+      Value<bool> isShared,
+      Value<String?> folderId,
+      Value<String?> ownerUid,
+      Value<String?> ownerEmail,
       Value<DateTime> createdAt,
       Value<DateTime?> updatedAt,
+      Value<DateTime?> deletedAt,
       Value<String?> firestoreId,
       Value<int> syncStatus,
-      Value<DateTime?> deletedAt,
+      Value<int> versionCounter,
       Value<String?> creationPlatform,
       Value<String?> creationDevice,
+      Value<String?> lastEditedDevice,
+      Value<String?> deletedPlatform,
     });
 
 class $$NotesTableFilterComposer
@@ -1070,6 +1554,36 @@ class $$NotesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<bool> get hasAttachments => $composableBuilder(
+    column: $table.hasAttachments,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get contentType => $composableBuilder(
+    column: $table.contentType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isShared => $composableBuilder(
+    column: $table.isShared,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get folderId => $composableBuilder(
+    column: $table.folderId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ownerUid => $composableBuilder(
+    column: $table.ownerUid,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ownerEmail => $composableBuilder(
+    column: $table.ownerEmail,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnFilters(column),
@@ -1077,6 +1591,11 @@ class $$NotesTableFilterComposer
 
   ColumnFilters<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1090,8 +1609,8 @@ class $$NotesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
-    column: $table.deletedAt,
+  ColumnFilters<int> get versionCounter => $composableBuilder(
+    column: $table.versionCounter,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1102,6 +1621,16 @@ class $$NotesTableFilterComposer
 
   ColumnFilters<String> get creationDevice => $composableBuilder(
     column: $table.creationDevice,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lastEditedDevice => $composableBuilder(
+    column: $table.lastEditedDevice,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deletedPlatform => $composableBuilder(
+    column: $table.deletedPlatform,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -1165,6 +1694,36 @@ class $$NotesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get hasAttachments => $composableBuilder(
+    column: $table.hasAttachments,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get contentType => $composableBuilder(
+    column: $table.contentType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isShared => $composableBuilder(
+    column: $table.isShared,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get folderId => $composableBuilder(
+    column: $table.folderId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ownerUid => $composableBuilder(
+    column: $table.ownerUid,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ownerEmail => $composableBuilder(
+    column: $table.ownerEmail,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -1172,6 +1731,11 @@ class $$NotesTableOrderingComposer
 
   ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -1185,8 +1749,8 @@ class $$NotesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
-    column: $table.deletedAt,
+  ColumnOrderings<int> get versionCounter => $composableBuilder(
+    column: $table.versionCounter,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -1197,6 +1761,16 @@ class $$NotesTableOrderingComposer
 
   ColumnOrderings<String> get creationDevice => $composableBuilder(
     column: $table.creationDevice,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lastEditedDevice => $composableBuilder(
+    column: $table.lastEditedDevice,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deletedPlatform => $composableBuilder(
+    column: $table.deletedPlatform,
     builder: (column) => ColumnOrderings(column),
   );
 }
@@ -1244,11 +1818,38 @@ class $$NotesTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<bool> get hasAttachments => $composableBuilder(
+    column: $table.hasAttachments,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get contentType => $composableBuilder(
+    column: $table.contentType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isShared =>
+      $composableBuilder(column: $table.isShared, builder: (column) => column);
+
+  GeneratedColumn<String> get folderId =>
+      $composableBuilder(column: $table.folderId, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerUid =>
+      $composableBuilder(column: $table.ownerUid, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerEmail => $composableBuilder(
+    column: $table.ownerEmail,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
 
   GeneratedColumn<String> get firestoreId => $composableBuilder(
     column: $table.firestoreId,
@@ -1260,8 +1861,10 @@ class $$NotesTableAnnotationComposer
     builder: (column) => column,
   );
 
-  GeneratedColumn<DateTime> get deletedAt =>
-      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+  GeneratedColumn<int> get versionCounter => $composableBuilder(
+    column: $table.versionCounter,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get creationPlatform => $composableBuilder(
     column: $table.creationPlatform,
@@ -1270,6 +1873,16 @@ class $$NotesTableAnnotationComposer
 
   GeneratedColumn<String> get creationDevice => $composableBuilder(
     column: $table.creationDevice,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get lastEditedDevice => $composableBuilder(
+    column: $table.lastEditedDevice,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get deletedPlatform => $composableBuilder(
+    column: $table.deletedPlatform,
     builder: (column) => column,
   );
 }
@@ -1312,13 +1925,22 @@ class $$NotesTableTableManager
                 Value<int> position = const Value.absent(),
                 Value<String?> tags = const Value.absent(),
                 Value<DateTime?> reminderAt = const Value.absent(),
+                Value<bool> hasAttachments = const Value.absent(),
+                Value<String> contentType = const Value.absent(),
+                Value<bool> isShared = const Value.absent(),
+                Value<String?> folderId = const Value.absent(),
+                Value<String?> ownerUid = const Value.absent(),
+                Value<String?> ownerEmail = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime?> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
                 Value<String?> firestoreId = const Value.absent(),
                 Value<int> syncStatus = const Value.absent(),
-                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> versionCounter = const Value.absent(),
                 Value<String?> creationPlatform = const Value.absent(),
                 Value<String?> creationDevice = const Value.absent(),
+                Value<String?> lastEditedDevice = const Value.absent(),
+                Value<String?> deletedPlatform = const Value.absent(),
               }) => NotesCompanion(
                 id: id,
                 title: title,
@@ -1330,13 +1952,22 @@ class $$NotesTableTableManager
                 position: position,
                 tags: tags,
                 reminderAt: reminderAt,
+                hasAttachments: hasAttachments,
+                contentType: contentType,
+                isShared: isShared,
+                folderId: folderId,
+                ownerUid: ownerUid,
+                ownerEmail: ownerEmail,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
+                deletedAt: deletedAt,
                 firestoreId: firestoreId,
                 syncStatus: syncStatus,
-                deletedAt: deletedAt,
+                versionCounter: versionCounter,
                 creationPlatform: creationPlatform,
                 creationDevice: creationDevice,
+                lastEditedDevice: lastEditedDevice,
+                deletedPlatform: deletedPlatform,
               ),
           createCompanionCallback:
               ({
@@ -1350,13 +1981,22 @@ class $$NotesTableTableManager
                 Value<int> position = const Value.absent(),
                 Value<String?> tags = const Value.absent(),
                 Value<DateTime?> reminderAt = const Value.absent(),
+                Value<bool> hasAttachments = const Value.absent(),
+                Value<String> contentType = const Value.absent(),
+                Value<bool> isShared = const Value.absent(),
+                Value<String?> folderId = const Value.absent(),
+                Value<String?> ownerUid = const Value.absent(),
+                Value<String?> ownerEmail = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime?> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
                 Value<String?> firestoreId = const Value.absent(),
                 Value<int> syncStatus = const Value.absent(),
-                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> versionCounter = const Value.absent(),
                 Value<String?> creationPlatform = const Value.absent(),
                 Value<String?> creationDevice = const Value.absent(),
+                Value<String?> lastEditedDevice = const Value.absent(),
+                Value<String?> deletedPlatform = const Value.absent(),
               }) => NotesCompanion.insert(
                 id: id,
                 title: title,
@@ -1368,13 +2008,22 @@ class $$NotesTableTableManager
                 position: position,
                 tags: tags,
                 reminderAt: reminderAt,
+                hasAttachments: hasAttachments,
+                contentType: contentType,
+                isShared: isShared,
+                folderId: folderId,
+                ownerUid: ownerUid,
+                ownerEmail: ownerEmail,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
+                deletedAt: deletedAt,
                 firestoreId: firestoreId,
                 syncStatus: syncStatus,
-                deletedAt: deletedAt,
+                versionCounter: versionCounter,
                 creationPlatform: creationPlatform,
                 creationDevice: creationDevice,
+                lastEditedDevice: lastEditedDevice,
+                deletedPlatform: deletedPlatform,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

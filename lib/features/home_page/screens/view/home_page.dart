@@ -335,7 +335,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         IconButton(
           icon: const Icon(Icons.delete_outline),
           onPressed: () async {
-            await driftDatabase.softDeleteNotes(noteIds);
+            await driftDatabase.softDeleteNotes(noteIds, platform: defaultTargetPlatform.name);
             ref.read(syncNotifierProvider.notifier).executeFullSync();
             setState(() {
               isSelectMode = false;

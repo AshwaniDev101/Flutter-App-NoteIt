@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/database/drift/drift_database.dart';
 
@@ -93,7 +94,11 @@ class EditNoteViewModel extends Notifier<EditNoteState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      await ref.read(noteDriftDatabaseProvider).softDeleteNotes([id]);
+
+      await ref.read(noteDriftDatabaseProvider).softDeleteNotes(
+        [id],
+        platform: defaultTargetPlatform.name,
+      );
 
       // Fire background sync to update the cloud's trash state
       ref.read(syncNotifierProvider.notifier).executeFullSync();
