@@ -218,7 +218,11 @@ class NotesGridView extends ConsumerWidget {
                   child: HomepageCard(
                     note: currentNote,
                     isSelected: isSelected,
-                    onDelete: () => _deleteNote(ref, currentNote.id),
+                      onSelect: () {
+                        onEnableSelectMode();
+                        onToggleSelection(currentNote.id);
+                      },
+                      onDelete: () => _deleteNote(ref, currentNote.id),
                   ),
                 );
               },
@@ -318,6 +322,14 @@ class _HomePageState extends ConsumerState<HomePage> {
     final noteTheme = Theme.of(context).extension<NoteTheme>()!;
     final driftDatabase = ref.watch(noteDriftDatabaseProvider);
 
+
+    // Get the current list of filtered notes to know what "All" means
+    final currentNotesState = ref.watch(filteredNotesProvider);
+    final currentNotes = currentNotesState.value ?? [];
+
+    // Determine if everything is currently selected
+    final isAllSelected = currentNotes.isNotEmpty && noteIds.length == currentNotes.length;
+
     return AppBar(
       backgroundColor: noteTheme.selectedAppBar,
       foregroundColor: Colors.white,
@@ -330,6 +342,36 @@ class _HomePageState extends ConsumerState<HomePage> {
       ),
       title: Text('${noteIds.length} Selected', style: const TextStyle(color: Colors.white)),
       actions: [
+
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 10.0),
+          child: OutlinedButton(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.white, // Text and ripple color
+              side: const BorderSide(color: Colors.white, width: 1.5), // Border color and thickness
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.0), // Rounded corners
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+            ),
+            onPressed: () {
+              setState(() {
+                if (isAllSelected) {
+                  // Deselect all
+                  noteIds.clear();
+                  isSelectMode = false;
+                } else {
+                  // Select all visible notes
+                  noteIds.addAll(currentNotes.map((note) => note.id));
+                }
+              });
+            },
+            child: Text(
+              isAllSelected ? 'Deselect All' : 'Select All',
+            ),
+          ),
+        ),
+
         IconButton(
           icon: const Icon(Icons.delete_outline),
           onPressed: () async {

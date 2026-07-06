@@ -3,22 +3,20 @@ import 'package:flutter/material.dart';
 import '../../../../../core/theme/note_theme.dart';
 import '../../../../../database/drift/drift_database.dart';
 
-
-
 class HomepageCard extends StatefulWidget {
   final Note note;
   final bool isSelected;
 
+  final VoidCallback onSelect;
   final VoidCallback onDelete;
 
-  const HomepageCard({super.key, required this.note, required this.isSelected, required  this.onDelete});
+  const HomepageCard({super.key, required this.note, required this.isSelected, required this.onSelect, required this.onDelete});
 
   @override
   State<HomepageCard> createState() => _HomepageCardState();
 }
 
 class _HomepageCardState extends State<HomepageCard> {
-
   bool _isHovering = false;
 
   @override
@@ -27,8 +25,8 @@ class _HomepageCardState extends State<HomepageCard> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return MouseRegion(
-        onEnter: (_) => setState(() => _isHovering = true),
-        onExit: (_) => setState(() => _isHovering = false),
+      onEnter: (_) => setState(() => _isHovering = true),
+      onExit: (_) => setState(() => _isHovering = false),
       cursor: SystemMouseCursors.click,
       child: Card(
         elevation: widget.isSelected ? 1 : 0,
@@ -42,77 +40,87 @@ class _HomepageCardState extends State<HomepageCard> {
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+          child: Stack(
             children: [
-              Row(
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    color: noteTheme.cardTitleBackground ?? colorScheme.surfaceContainerHigh,
-                    child: Text(
-                      widget.note.title.isEmpty ? "Untitled" : widget.note.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        color: noteTheme.cardTitleForeground ?? colorScheme.onSurface,
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        color: noteTheme.cardTitleBackground ?? colorScheme.surfaceContainerHigh,
+                        child: Text(
+                          widget.note.title.isEmpty ? "Untitled" : widget.note.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: noteTheme.cardTitleForeground ?? colorScheme.onSurface,
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
 
-                  const Spacer(),
+                  //Content
+                  Expanded(
+                    child: Stack(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: widget.note.isLocked
+                              ? Center(
+                                  child: Icon(
+                                    Icons.lock_outlined,
+                                    size: 32,
+                                    color: (noteTheme.cardContentForeground ?? colorScheme.onSurfaceVariant).withValues(
+                                      alpha: 0.4,
+                                    ),
+                                  ),
+                                )
+                              : Text(
+                                  widget.note.content,
+                                  maxLines: 5,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    height: 1.4,
+                                    color: noteTheme.cardContentForeground ?? colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                        ),
 
-                  // if in focus, like mouse hovering over card
-                  if (_isHovering)
-                    IconButton(
-                      icon: Icon(
-                        Icons.delete_outline,
-                        size: 18,
-                        color: Colors.red,
-                      ),
-                      visualDensity: VisualDensity.compact,
-                      // padding: const EdgeInsets.symmetric(horizontal: 8),
-                      // constraints: const BoxConstraints(),
-                      onPressed: widget.onDelete,
+                        Positioned(bottom: 8, right: 8, child: getPlatformIcon(widget.note)),
+                      ],
                     ),
-
+                  ),
                 ],
               ),
 
-              //Content
-              Expanded(
-                child: Stack(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: widget.note.isLocked
-                          ? Center(
-                              child: Icon(
-                                Icons.lock_outlined,
-                                size: 32,
-                                color: (noteTheme.cardContentForeground ?? colorScheme.onSurfaceVariant).withValues(
-                                  alpha: 0.4,
-                                ),
-                              ),
-                            )
-                          : Text(
-                              widget.note.content,
-                              maxLines: 5,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 13,
-                                height: 1.4,
-                                color: noteTheme.cardContentForeground ?? colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                    ),
+              // if in focus, like mouse hovering over card
+              if (_isHovering &&  !widget.isSelected)
+                Positioned(
+                  top: 0,
+                  right: 3,
+                  child: Column(
+                    children: [
+                        IconButton(
+                          icon: Icon(Icons.check_circle_outline_rounded, size: 18, color: colorScheme.primary),
+                          visualDensity: VisualDensity.compact,
 
-                    Positioned(bottom: 8, right: 8, child: getPlatformIcon(widget.note)),
-                  ],
+                          onPressed: widget.onSelect,
+                        ),
+                      IconButton(
+                        icon: Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
+                        visualDensity: VisualDensity.compact,
+                        // padding: const EdgeInsets.symmetric(horizontal: 8),
+                        onPressed: widget.onDelete,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
             ],
           ),
         ),
