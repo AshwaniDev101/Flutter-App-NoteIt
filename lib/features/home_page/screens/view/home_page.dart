@@ -12,10 +12,10 @@ import 'widgets/homepage_drawer.dart';
 import '../../../../database/sync_manager.dart';
 import '../../../../shared/selectable_card.dart';
 
-
 // STATE MANAGEMENT & PROVIDERS  --------------------------
 
 enum PlatformFilter { all, android, windows }
+
 enum MenuOption { sortCreated, sortName, sortUpdated, filterPhone, filterWindows }
 
 class SearchQueryNotifier extends Notifier<String> {
@@ -31,9 +31,7 @@ class SearchQueryNotifier extends Notifier<String> {
   }
 }
 
-final searchQueryProvider = NotifierProvider<SearchQueryNotifier, String>(
-  SearchQueryNotifier.new,
-);
+final searchQueryProvider = NotifierProvider<SearchQueryNotifier, String>(SearchQueryNotifier.new);
 
 class PlatformFilterNotifier extends Notifier<PlatformFilter> {
   @override
@@ -48,9 +46,7 @@ class PlatformFilterNotifier extends Notifier<PlatformFilter> {
   }
 }
 
-final platformFilterProvider = NotifierProvider<PlatformFilterNotifier, PlatformFilter>(
-  PlatformFilterNotifier.new,
-);
+final platformFilterProvider = NotifierProvider<PlatformFilterNotifier, PlatformFilter>(PlatformFilterNotifier.new);
 
 final filteredNotesProvider = Provider<AsyncValue<List<Note>>>((ref) {
   final sortedNotesAsync = ref.watch(sortedNotesProvider);
@@ -78,7 +74,6 @@ final filteredNotesProvider = Provider<AsyncValue<List<Note>>>((ref) {
     return result;
   });
 });
-
 
 // DESKTOP/WINDOWS UI COMPONENTS  -----------------------------
 
@@ -121,10 +116,10 @@ class SortOptionsBar extends ConsumerWidget {
             ),
 
             Container(
-                width: 1,
-                height: 24,
-                color: Colors.grey.withValues(alpha: 0.3),
-                margin: const EdgeInsets.symmetric(horizontal: 8)
+              width: 1,
+              height: 24,
+              color: Colors.grey.withValues(alpha: 0.3),
+              margin: const EdgeInsets.symmetric(horizontal: 8),
             ),
 
             ChoiceChip(
@@ -149,7 +144,6 @@ class SortOptionsBar extends ConsumerWidget {
   }
 }
 
-
 // SHARED UI COMPONENTS -----------------------
 
 class NotesGridView extends ConsumerWidget {
@@ -168,6 +162,12 @@ class NotesGridView extends ConsumerWidget {
     required this.onPromptPassword,
   });
 
+  Future<void> _deleteNote(WidgetRef ref, int id) async {
+    final driftDatabase = ref.read(noteDriftDatabaseProvider);
+    await driftDatabase.softDeleteNotes({id}, platform: defaultTargetPlatform.name);
+    ref.read(syncNotifierProvider.notifier).executeFullSync();
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notesState = ref.watch(filteredNotesProvider);
@@ -183,18 +183,16 @@ class NotesGridView extends ConsumerWidget {
           }
 
           return RefreshIndicator(
-              onRefresh: () async {
-                // Trigger sync logic and wait for it to complete
-                await ref.read(syncNotifierProvider.notifier).executeFullSync();
-              },
+            onRefresh: () async {
+              // Trigger sync logic and wait for it to complete
+              await ref.read(syncNotifierProvider.notifier).executeFullSync();
+            },
             child: GridView.builder(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.only(bottom: 80),
               gridDelegate: defaultTargetPlatform == TargetPlatform.android && !kIsWeb
-                  ? const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3, childAspectRatio: 0.85)
-                  : const SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: 220, childAspectRatio: 0.85),
+                  ? const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, childAspectRatio: 0.85)
+                  : const SliverGridDelegateWithMaxCrossAxisExtent(maxCrossAxisExtent: 220, childAspectRatio: 0.85),
               itemCount: notes.length,
               itemBuilder: (context, index) {
                 final currentNote = notes[index];
@@ -217,7 +215,11 @@ class NotesGridView extends ConsumerWidget {
                       onToggleSelection(currentNote.id);
                     }
                   },
-                  child: HomepageCard(note: currentNote, isSelected: isSelected),
+                  child: HomepageCard(
+                    note: currentNote,
+                    isSelected: isSelected,
+                    onDelete: () => _deleteNote(ref, currentNote.id),
+                  ),
                 );
               },
             ),
@@ -227,7 +229,6 @@ class NotesGridView extends ConsumerWidget {
     );
   }
 }
-
 
 // MAIN SCREEN ------------------------
 
@@ -274,11 +275,9 @@ class _HomePageState extends ConsumerState<HomePage> {
   Widget build(BuildContext context) {
     final isAndroid = defaultTargetPlatform == TargetPlatform.android;
 
-
     // This forces Riverpod to keep the SyncManager and its Auth listeners fully awake
     // the entire time the user is on the Home Screen.
     ref.watch(syncNotifierProvider);
-
 
     return Scaffold(
       drawer: const HomepageDrawer(),
@@ -308,7 +307,6 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  
   // APPBAR CONFIGURATION ------------------
   PreferredSizeWidget _buildAppBar(bool isAndroid) {
     if (isSelectMode) return _buildSelectAppBar();
@@ -381,7 +379,6 @@ class _HomePageState extends ConsumerState<HomePage> {
     final currentSortOption = ref.watch(noteSortOptionProvider);
     final currentPlatformFilter = ref.watch(platformFilterProvider);
 
-
     // Capture the state here instead of just calling the watch blindly
     final isSyncing = ref.watch(syncNotifierProvider);
 
@@ -390,7 +387,6 @@ class _HomePageState extends ConsumerState<HomePage> {
     return AppBar(
       title: const Text('Note-it', style: TextStyle(fontWeight: FontWeight.bold)),
       actions: [
-
         // Desktop Search TextField
         if (!isAndroid)
           Padding(
@@ -407,12 +403,12 @@ class _HomePageState extends ConsumerState<HomePage> {
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
                   suffixIcon: ref.watch(searchQueryProvider).isNotEmpty
                       ? IconButton(
-                    icon: const Icon(Icons.close, size: 16),
-                    onPressed: () {
-                      _searchController.clear();
-                      ref.read(searchQueryProvider.notifier).clear();
-                    },
-                  )
+                          icon: const Icon(Icons.close, size: 16),
+                          onPressed: () {
+                            _searchController.clear();
+                            ref.read(searchQueryProvider.notifier).clear();
+                          },
+                        )
                       : null,
                 ),
                 onChanged: (value) => ref.read(searchQueryProvider.notifier).updateQuery(value),
@@ -421,24 +417,19 @@ class _HomePageState extends ConsumerState<HomePage> {
           ),
 
         // Mobile Search Toggle
-        if (isAndroid)
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () => setState(() => isSearchMode = true),
-          ),
+        if (isAndroid) IconButton(icon: const Icon(Icons.search), onPressed: () => setState(() => isSearchMode = true)),
 
         // Manual Sync (Desktop Only)
-
         if (!isAndroid)
           isSyncing
               ? const Padding(
-            padding: EdgeInsets.all(16.0),
-            child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
-          )
+                  padding: EdgeInsets.all(16.0),
+                  child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
+                )
               : IconButton(
-            icon: const Icon(Icons.sync),
-            onPressed: () => ref.read(syncNotifierProvider.notifier).executeFullSync(),
-          ),
+                  icon: const Icon(Icons.sync),
+                  onPressed: () => ref.read(syncNotifierProvider.notifier).executeFullSync(),
+                ),
 
         // Mobile Sort & Filter Options Menu
         if (isAndroid)
@@ -465,7 +456,6 @@ class _HomePageState extends ConsumerState<HomePage> {
               }
             },
             itemBuilder: (BuildContext context) => <PopupMenuEntry<MenuOption>>[
-
               // --- SORTING SECTION (Radios) ---
               const PopupMenuItem<MenuOption>(
                 enabled: false,
@@ -545,10 +535,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                       ],
                     ),
                     IgnorePointer(
-                      child: Checkbox(
-                        value: currentPlatformFilter == PlatformFilter.android,
-                        onChanged: (_) {},
-                      ),
+                      child: Checkbox(value: currentPlatformFilter == PlatformFilter.android, onChanged: (_) {}),
                     ),
                   ],
                 ),
@@ -566,10 +553,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                       ],
                     ),
                     IgnorePointer(
-                      child: Checkbox(
-                        value: currentPlatformFilter == PlatformFilter.windows,
-                        onChanged: (_) {},
-                      ),
+                      child: Checkbox(value: currentPlatformFilter == PlatformFilter.windows, onChanged: (_) {}),
                     ),
                   ],
                 ),
@@ -580,7 +564,6 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  
   // DIALOG CONTROLLERS --------------------------
   Future<void> _promptForPassword(BuildContext context, Note note) async {
     final String? enteredPassword = await showGeneralDialog<String>(

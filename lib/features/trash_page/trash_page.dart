@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Adjust these imports to match your actual project structure
+import '../../core/theme/note_theme.dart';
 import '../../database/drift/drift_database.dart';
 import '../../database/firebase/firebase_database.dart';
 import '../../database/sync_manager.dart';
@@ -23,10 +25,7 @@ class TrashPage extends ConsumerWidget {
         title: const Text('Empty Trash?'),
         content: const Text('This will permanently delete all items in the trash. This action cannot be undone.'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.of(context).pop(true),
@@ -41,10 +40,7 @@ class TrashPage extends ConsumerWidget {
       final firebaseDb = ref.read(noteFirebaseDatabaseProvider);
 
       try {
-        // Show a loading indicator if you have a global one, otherwise let it run
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Emptying trash...')),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Emptying trash...')));
 
         // 1. Delete locally and get the orphaned Firebase IDs
         final cloudIdsToDelete = await driftDb.emptyLocalTrash();
@@ -55,15 +51,11 @@ class TrashPage extends ConsumerWidget {
         }
 
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Trash emptied successfully.')),
-          );
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Trash emptied successfully.')));
         }
       } catch (e) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error emptying trash: $e')),
-          );
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error emptying trash: $e')));
         }
       }
     }
@@ -80,9 +72,7 @@ class TrashPage extends ConsumerWidget {
     ref.read(syncNotifierProvider.notifier).executeFullSync();
 
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Note restored.')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Note restored.')));
     }
   }
 
@@ -90,105 +80,163 @@ class TrashPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final trashState = ref.watch(trashNotesProvider);
 
+    final noteTheme = Theme.of(context).extension<NoteTheme>()!;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
+      backgroundColor: Colors.grey,
       appBar: AppBar(
         title: const Text('Trash'),
         actions: [
           trashState.maybeWhen(
             data: (notes) => notes.isNotEmpty
                 ? IconButton(
-              icon: const Icon(Icons.delete_sweep),
-              tooltip: 'Empty Trash',
-              onPressed: () => _handleEmptyTrash(context, ref),
-            )
+                    icon: const Icon(Icons.delete_sweep),
+                    tooltip: 'Empty Trash',
+                    onPressed: () => _handleEmptyTrash(context, ref),
+                  )
                 : const SizedBox.shrink(),
             orElse: () => const SizedBox.shrink(),
           ),
         ],
       ),
-      body: trashState.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(child: Text('Error: $error')),
-        data: (notes) {
-          if (notes.isEmpty) {
-            return const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.delete_outline, size: 64, color: Colors.grey),
-                  SizedBox(height: 16),
-                  Text('Trash is empty', style: TextStyle(color: Colors.grey, fontSize: 18)),
-                ],
-              ),
-            );
-          }
-
-          return ListView.builder(
-            itemCount: notes.length,
-            itemBuilder: (context, index) {
-              final note = notes[index];
-
-              // Wrapping in Dismissible allows users to swipe to permanently delete individual notes
-              return Dismissible(
-                key: ValueKey(note.id),
-                direction: DismissDirection.endToStart,
-                background: Container(
-                  color: Colors.red,
-                  alignment: Alignment.centerRight,
-                  padding: const EdgeInsets.only(right: 20),
-                  child: const Icon(Icons.delete_forever, color: Colors.white),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 3.0),
+        child: trashState.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, stack) => Center(child: Text('Error: $error')),
+          data: (notes) {
+            if (notes.isEmpty) {
+              return const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.delete_outline, size: 64, color: Colors.grey),
+                    SizedBox(height: 16),
+                    Text('Trash is empty', style: TextStyle(color: Colors.grey, fontSize: 18)),
+                  ],
                 ),
-                confirmDismiss: (direction) async {
-                  // Individual hard delete logic could go here if you want it
-                  // For now, we'll just return false to prevent accidental swipes
-                  return false;
-                },
+              );
+            }
+
+            return GridView.builder(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.only(bottom: 80, top: 8),
+              // EXACT SAME RESPONSIVE GRID DELEGATE FROM HOMEPAGE
+              gridDelegate: defaultTargetPlatform == TargetPlatform.android && !kIsWeb
+                  ? const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, childAspectRatio: 0.85)
+                  : const SliverGridDelegateWithMaxCrossAxisExtent(maxCrossAxisExtent: 220, childAspectRatio: 0.85),
+              itemCount: notes.length,
+              itemBuilder: (context, index) {
+                final note = notes[index];
+
+                return Dismissible(
+                  key: ValueKey(note.id),
+                  direction: DismissDirection.endToStart,
+                  background: Container(
+                    margin: const EdgeInsets.all(4.0),
+                    decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(12)),
+                    alignment: Alignment.center,
+                    child: const Icon(Icons.delete_forever, color: Colors.white, size: 32),
+                  ),
+                  confirmDismiss: (direction) async {
+                    // Prevent accidental swipe deletes for now
+                    return false;
+                  },
                   child: Card(
-                    margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    child: ListTile(
-                      title: Text(
-                        note.title.isNotEmpty ? note.title : 'Untitled Note',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: Text(
-                        note.content,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min, // CRITICAL: Prevents layout crashes
+                    elevation: 0, // Matches your unselected homepage card
+                    color: noteTheme.cardContentBackground,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      side: BorderSide(color: colorScheme.outlineVariant.withValues(alpha: 0.3), width: 1),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
+                          // TITLE HEADER (Matches Homepage exactly)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            color: noteTheme.cardTitleBackground ?? colorScheme.surfaceContainerHigh,
+                            child: Stack(
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(
+                                      note.title.isEmpty ? "Untitled" : note.title,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                        color: noteTheme.cardTitleForeground ?? colorScheme.onSurface,
+                                      ),
+                                    ),
 
-                          // Show the platform icon if we have the data
-                          if (note.deletedPlatform != null)
-                            Tooltip(
-                              message: 'Deleted on ${note.deletedPlatform}',
-                              child: Icon(
-                                _getPlatformIcon(note.deletedPlatform),
-                                size: 20,
-                                color: Colors.grey,
-                              ),
+                                    Spacer(),
+                                    IconButton(
+                                      icon: const Icon(Icons.restore),
+                                      tooltip: 'Restore',
+                                      constraints: const BoxConstraints(),
+                                      // Removes default massive padding
+                                      padding: const EdgeInsets.all(4),
+                                      onPressed: () => _restoreNote(context, ref, note.id),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
+                          ),
 
-                          IconButton(
-                            icon: const Icon(Icons.restore),
-                            tooltip: 'Restore',
-                            onPressed: () => _restoreNote(context, ref, note.id),
+                          // CONTENT AREA
+                          Expanded(
+                            child: Stack(
+                              children: [
+                                Padding(
+                                  // Added right padding so text doesn't flow under the restore button
+                                  padding: const EdgeInsets.only(left: 12.0, top: 12.0, right: 32.0, bottom: 12.0),
+                                  child: Text(
+                                    note.content,
+                                    maxLines: 5,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      height: 1.4,
+                                      color: noteTheme.cardContentForeground ?? colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ),
+
+                                // PLATFORM ICON (Bottom Right)
+                                if (note.deletedPlatform != null)
+                                  Positioned(
+                                    bottom: 8,
+                                    right: 8,
+                                    child: Tooltip(
+                                      message: 'Deleted on ${note.deletedPlatform}',
+                                      child: Icon(
+                                        _getPlatformIcon(note.deletedPlatform),
+                                        size: 14, // Scaled down to match homepage size
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
                     ),
-                  )
-              );
-            },
-          );
-        },
+                  ),
+                );
+              },
+            );
+          },
+        ),
       ),
     );
   }
-
 
   IconData _getPlatformIcon(String? platform) {
     switch (platform?.toLowerCase()) {
