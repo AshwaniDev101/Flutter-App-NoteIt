@@ -8,6 +8,7 @@ import 'package:noteit/features/home_page/screens/view/widgets/homepage_card.dar
 import 'package:noteit/core/theme/note_theme.dart';
 import 'package:noteit/database/drift/drift_database.dart';
 import 'package:noteit/features/password_page/screens/view/password_page.dart';
+import '../../../../shared/note_card.dart';
 import 'widgets/homepage_drawer.dart';
 import '../../../../database/sync_manager.dart';
 import '../../../../shared/selectable_card.dart';
@@ -171,6 +172,7 @@ class NotesGridView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notesState = ref.watch(filteredNotesProvider);
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 3.0),
@@ -184,7 +186,6 @@ class NotesGridView extends ConsumerWidget {
 
           return RefreshIndicator(
             onRefresh: () async {
-              // Trigger sync logic and wait for it to complete
               await ref.read(syncNotifierProvider.notifier).executeFullSync();
             },
             child: GridView.builder(
@@ -215,14 +216,25 @@ class NotesGridView extends ConsumerWidget {
                       onToggleSelection(currentNote.id);
                     }
                   },
-                  child: HomepageCard(
+                  child: NoteCard(
                     note: currentNote,
                     isSelected: isSelected,
-                      onSelect: () {
-                        onEnableSelectMode();
-                        onToggleSelection(currentNote.id);
-                      },
-                      onDelete: () => _deleteNote(ref, currentNote.id),
+                    hoverActions: [
+                      IconButton(
+                        icon: Icon(Icons.radio_button_unchecked_rounded, size: 18, color: colorScheme.primary),
+                        visualDensity: VisualDensity.compact,
+                        onPressed: () {
+                          // <-- Fixed function map
+                          onEnableSelectMode();
+                          onToggleSelection(currentNote.id);
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
+                        visualDensity: VisualDensity.compact,
+                        onPressed: () => _deleteNote(ref, currentNote.id), // <-- Fixed function map
+                      ),
+                    ],
                   ),
                 );
               },
@@ -322,7 +334,6 @@ class _HomePageState extends ConsumerState<HomePage> {
     final noteTheme = Theme.of(context).extension<NoteTheme>()!;
     final driftDatabase = ref.watch(noteDriftDatabaseProvider);
 
-
     // Get the current list of filtered notes to know what "All" means
     final currentNotesState = ref.watch(filteredNotesProvider);
     final currentNotes = currentNotesState.value ?? [];
@@ -342,7 +353,6 @@ class _HomePageState extends ConsumerState<HomePage> {
       ),
       title: Text('${noteIds.length} Selected', style: const TextStyle(color: Colors.white)),
       actions: [
-
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 10.0),
           child: OutlinedButton(
@@ -366,9 +376,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 }
               });
             },
-            child: Text(
-              isAllSelected ? 'Deselect All' : 'Select All',
-            ),
+            child: Text(isAllSelected ? 'Deselect All' : 'Select All'),
           ),
         ),
 

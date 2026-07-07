@@ -7,6 +7,7 @@ import '../../core/theme/note_theme.dart';
 import '../../database/drift/drift_database.dart';
 import '../../database/firebase/firebase_database.dart';
 import '../../database/sync_manager.dart';
+import '../../shared/note_card.dart';
 
 // Create a StreamProvider specifically for the Trash UI
 final trashNotesProvider = StreamProvider.autoDispose<List<Note>>((ref) {
@@ -80,9 +81,6 @@ class TrashPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final trashState = ref.watch(trashNotesProvider);
 
-    final noteTheme = Theme.of(context).extension<NoteTheme>()!;
-    final colorScheme = Theme.of(context).colorScheme;
-
     return Scaffold(
       backgroundColor: Colors.grey,
       appBar: AppBar(
@@ -130,106 +128,105 @@ class TrashPage extends ConsumerWidget {
               itemBuilder: (context, index) {
                 final note = notes[index];
 
-                return Dismissible(
-                  key: ValueKey(note.id),
-                  direction: DismissDirection.endToStart,
-                  background: Container(
-                    margin: const EdgeInsets.all(4.0),
-                    decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(12)),
-                    alignment: Alignment.center,
-                    child: const Icon(Icons.delete_forever, color: Colors.white, size: 32),
-                  ),
-                  confirmDismiss: (direction) async {
-                    // Prevent accidental swipe deletes for now
-                    return false;
-                  },
-                  child: Card(
-                    elevation: 0, // Matches your unselected homepage card
-                    color: noteTheme.cardContentBackground,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      side: BorderSide(color: colorScheme.outlineVariant.withValues(alpha: 0.3), width: 1),
+                return NoteCard(
+                  note: note,
+                  hoverActions: [
+                    IconButton(
+                      icon: const Icon(Icons.restore, size: 18),
+                      visualDensity: VisualDensity.compact,
+                      tooltip: 'Restore',
+                      onPressed: () => _restoreNote(context, ref, note.id),
                     ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          // TITLE HEADER (Matches Homepage exactly)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            color: noteTheme.cardTitleBackground ?? colorScheme.surfaceContainerHigh,
-                            child: Stack(
-                              children: [
-                                Row(
-                                  children: [
-                                    Text(
-                                      note.title.isEmpty ? "Untitled" : note.title,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14,
-                                        color: noteTheme.cardTitleForeground ?? colorScheme.onSurface,
-                                      ),
-                                    ),
-
-                                    Spacer(),
-                                    IconButton(
-                                      icon: const Icon(Icons.restore),
-                                      tooltip: 'Restore',
-                                      constraints: const BoxConstraints(),
-                                      // Removes default massive padding
-                                      padding: const EdgeInsets.all(4),
-                                      onPressed: () => _restoreNote(context, ref, note.id),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          // CONTENT AREA
-                          Expanded(
-                            child: Stack(
-                              children: [
-                                Padding(
-                                  // Added right padding so text doesn't flow under the restore button
-                                  padding: const EdgeInsets.only(left: 12.0, top: 12.0, right: 32.0, bottom: 12.0),
-                                  child: Text(
-                                    note.content,
-                                    maxLines: 5,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      height: 1.4,
-                                      color: noteTheme.cardContentForeground ?? colorScheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ),
-
-                                // PLATFORM ICON (Bottom Right)
-                                if (note.deletedPlatform != null)
-                                  Positioned(
-                                    bottom: 8,
-                                    right: 8,
-                                    child: Tooltip(
-                                      message: 'Deleted on ${note.deletedPlatform}',
-                                      child: Icon(
-                                        _getPlatformIcon(note.deletedPlatform),
-                                        size: 14, // Scaled down to match homepage size
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                  ],
                 );
+
+                // child: Card(
+                //   elevation: 0, // Matches your unselected homepage card
+                //   color: noteTheme.cardContentBackground,
+                //   shape: RoundedRectangleBorder(
+                //     borderRadius: BorderRadius.circular(8),
+                //     side: BorderSide(color: colorScheme.outlineVariant.withValues(alpha: 0.3), width: 1),
+                //   ),
+                //   child: ClipRRect(
+                //     borderRadius: BorderRadius.circular(8),
+                //     child: Column(
+                //       crossAxisAlignment: CrossAxisAlignment.stretch,
+                //       children: [
+                //         // TITLE HEADER (Matches Homepage exactly)
+                //         Container(
+                //           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                //           color: noteTheme.cardTitleBackground ?? colorScheme.surfaceContainerHigh,
+                //           child: Stack(
+                //             children: [
+                //               Row(
+                //                 children: [
+                //                   Text(
+                //                     note.title.isEmpty ? "Untitled" : note.title,
+                //                     maxLines: 1,
+                //                     overflow: TextOverflow.ellipsis,
+                //                     style: TextStyle(
+                //                       fontWeight: FontWeight.bold,
+                //                       fontSize: 14,
+                //                       color: noteTheme.cardTitleForeground ?? colorScheme.onSurface,
+                //                     ),
+                //                   ),
+                //
+                //                   Spacer(),
+                //                   IconButton(
+                //                     icon: const Icon(Icons.restore),
+                //                     tooltip: 'Restore',
+                //                     constraints: const BoxConstraints(),
+                //                     // Removes default massive padding
+                //                     padding: const EdgeInsets.all(4),
+                //                     onPressed: () => _restoreNote(context, ref, note.id),
+                //                   ),
+                //                 ],
+                //               ),
+                //             ],
+                //           ),
+                //         ),
+                //
+                //         // CONTENT AREA
+                //         Expanded(
+                //           child: Stack(
+                //             children: [
+                //               Padding(
+                //                 // Added right padding so text doesn't flow under the restore button
+                //                 padding: const EdgeInsets.only(left: 12.0, top: 12.0, right: 32.0, bottom: 12.0),
+                //                 child: Text(
+                //                   note.content,
+                //                   maxLines: 5,
+                //                   overflow: TextOverflow.ellipsis,
+                //                   style: TextStyle(
+                //                     fontSize: 13,
+                //                     height: 1.4,
+                //                     color: noteTheme.cardContentForeground ?? colorScheme.onSurfaceVariant,
+                //                   ),
+                //                 ),
+                //               ),
+                //
+                //               // PLATFORM ICON (Bottom Right)
+                //               if (note.deletedPlatform != null)
+                //                 Positioned(
+                //                   bottom: 8,
+                //                   right: 8,
+                //                   child: Tooltip(
+                //                     message: 'Deleted on ${note.deletedPlatform}',
+                //                     child: Icon(
+                //                       _getPlatformIcon(note.deletedPlatform),
+                //                       size: 14, // Scaled down to match homepage size
+                //                       color: Colors.grey,
+                //                     ),
+                //                   ),
+                //                 ),
+                //             ],
+                //           ),
+                //         ),
+                //       ],
+                //     ),
+                //   ),
+                // ),
+                //                 )},
               },
             );
           },

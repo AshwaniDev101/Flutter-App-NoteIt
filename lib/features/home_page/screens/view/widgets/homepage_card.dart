@@ -107,7 +107,7 @@ class _HomepageCardState extends State<HomepageCard> {
                   child: Column(
                     children: [
                         IconButton(
-                          icon: Icon(Icons.check_circle_outline_rounded, size: 18, color: colorScheme.primary),
+                          icon: Icon(Icons.radio_button_unchecked_rounded, size: 18, color: colorScheme.primary),
                           visualDensity: VisualDensity.compact,
 
                           onPressed: widget.onSelect,
