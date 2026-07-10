@@ -303,11 +303,7 @@ class _TrashPageState extends ConsumerState<TrashPage> {
                     hoverActions: [
                       // Selection Radio Button
                       IconButton(
-                        icon: Icon(
-                          isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked_rounded,
-                          size: 18,
-                          color: colorScheme.primary,
-                        ),
+                        icon: Icon(Icons.radio_button_unchecked_rounded, size: 18, color: colorScheme.primary),
                         visualDensity: VisualDensity.compact,
                         onPressed: () {
                           if (!isSelectMode) setState(() => isSelectMode = true);
@@ -315,7 +311,6 @@ class _TrashPageState extends ConsumerState<TrashPage> {
                         },
                       ),
 
-                      // Restore Button (hidden in bulk-select mode to prevent confusion)
                       if (!isSelectMode)
                         IconButton(
                           icon: const Icon(Icons.restore, size: 18),
