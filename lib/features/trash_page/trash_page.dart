@@ -2,14 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-
 import '../../core/theme/note_theme.dart';
 import '../../database/drift/drift_database.dart';
 import '../../database/firebase/firebase_database.dart';
 import '../../database/sync_manager.dart';
 import '../../shared/note_card.dart';
 import '../../shared/selectable_card.dart';
-
 
 final trashNotesProvider = StreamProvider.autoDispose<List<Note>>((ref) {
   final driftDb = ref.watch(noteDriftDatabaseProvider);
@@ -93,14 +91,15 @@ class _TrashPageState extends ConsumerState<TrashPage> {
     }
   }
 
-
-// Handle deleting ONLY the selected notes permanently
+  // Handle deleting ONLY the selected notes permanently
   Future<void> _handleDeleteSelected(List<Note> allTrashNotes) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Permanently?'),
-        content: Text('This will permanently delete the ${noteIds.length} selected items. This action cannot be undone.'),
+        content: Text(
+          'This will permanently delete the ${noteIds.length} selected items. This action cannot be undone.',
+        ),
         actions: [
           TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
           FilledButton(
@@ -151,6 +150,7 @@ class _TrashPageState extends ConsumerState<TrashPage> {
   // App Bar Builder (Handles Default vs Select Mode)
   PreferredSizeWidget _buildAppBar(List<Note> currentNotes) {
     final noteTheme = Theme.of(context).extension<NoteTheme>();
+    final colorScheme = Theme.of(context).colorScheme;
 
     if (isSelectMode) {
       final isAllSelected = currentNotes.isNotEmpty && noteIds.length == currentNotes.length;
@@ -214,16 +214,32 @@ class _TrashPageState extends ConsumerState<TrashPage> {
       );
     }
 
-    // Default App Bar
+    final showLabel = kIsWeb || defaultTargetPlatform == TargetPlatform.windows;
+
+// Default App Bar
     return AppBar(
-      title: const Text('Trash'),
+      title: const Text('Trash Bin'),
       actions: [
         if (currentNotes.isNotEmpty)
-          IconButton(
-            icon: const Icon(Icons.delete_sweep),
-            tooltip: 'Empty Trash',
+          showLabel
+              ? OutlinedButton.icon(
             onPressed: _handleEmptyTrash,
+            icon: const Icon(Icons.delete_sweep_outlined),
+            label: const Text('Empty Trash'),
+            style: OutlinedButton.styleFrom(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              side: BorderSide(color: colorScheme.primary, width: 1),
+            ),
+          )
+              : IconButton(
+            onPressed: _handleEmptyTrash,
+            icon: const Icon(Icons.delete_sweep_outlined),
+            tooltip: 'Empty Trash',
           ),
+        // Adding a little padding to the right so it doesn't touch the edge
+        const SizedBox(width: 8),
       ],
     );
   }
@@ -234,7 +250,7 @@ class _TrashPageState extends ConsumerState<TrashPage> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: Colors.grey,
+      backgroundColor: colorScheme.surface,
       appBar: _buildAppBar(trashState.value ?? []),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 3.0),
