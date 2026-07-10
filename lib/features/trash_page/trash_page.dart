@@ -238,7 +238,7 @@ class _TrashPageState extends ConsumerState<TrashPage> {
             icon: const Icon(Icons.delete_sweep_outlined),
             tooltip: 'Empty Trash',
           ),
-        // Adding a little padding to the right so it doesn't touch the edge
+
         const SizedBox(width: 8),
       ],
     );

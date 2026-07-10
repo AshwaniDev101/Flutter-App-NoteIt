@@ -4,7 +4,6 @@ import 'package:noteit/features/home_page/screens/core/sort.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:noteit/core/routing/routing.dart';
-import 'package:noteit/features/home_page/screens/view/widgets/homepage_card.dart';
 import 'package:noteit/core/theme/note_theme.dart';
 import 'package:noteit/database/drift/drift_database.dart';
 import 'package:noteit/features/password_page/screens/view/password_page.dart';
@@ -477,10 +476,22 @@ class _HomePageState extends ConsumerState<HomePage> {
                   padding: EdgeInsets.all(16.0),
                   child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
                 )
-              : IconButton(
-                  icon: const Icon(Icons.sync),
+              : TextButton(
+                  child: Row(
+                    children: [
+                      Icon(Icons.sync),
+                      SizedBox(width: 8),
+                      if (!isAndroid)...[
+                        Text("Sync"),
+
+                      ]
+
+                    ],
+                  ),
+
                   onPressed: () => ref.read(syncNotifierProvider.notifier).executeFullSync(),
                 ),
+        SizedBox(width: 8),
 
         // Mobile Sort & Filter Options Menu
         if (isAndroid)
