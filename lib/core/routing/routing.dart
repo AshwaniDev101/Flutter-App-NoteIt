@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:noteit/features/edit_note_page/screens/view/edit_note_page.dart';
 import 'package:noteit/features/home_page/screens/view/home_page.dart';
-import 'package:noteit/features/home_page/screens/view/theme_page.dart';
+import 'package:noteit/features/themes_page/view/theme_page.dart';
 import 'package:noteit/features/settings_page/screens/view/settings_page.dart';
 
 import 'package:noteit/database/drift/drift_database.dart';
