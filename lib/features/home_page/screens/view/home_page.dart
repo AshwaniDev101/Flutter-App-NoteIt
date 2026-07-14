@@ -218,6 +218,7 @@ class NotesGridView extends ConsumerWidget {
                   child: NoteCard(
                     note: currentNote,
                     isSelected: isSelected,
+                    searchQuery: ref.read(searchQueryProvider),
                     hoverActions: [
                       IconButton(
                         icon: Icon(Icons.radio_button_unchecked_rounded, size: 18, color: colorScheme.primary),

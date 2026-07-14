@@ -3,10 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/theme/note_theme.dart';
 import '../database/drift/drift_database.dart';
+import 'highlighted_text.dart';
 
 class NoteCard extends ConsumerStatefulWidget {
   final Note note;
   final bool isSelected;
+  final String searchQuery;
 
   /// We Pass the icons here (e.g., Delete, Restore, Select)
   final List<Widget> hoverActions;
@@ -15,6 +17,7 @@ class NoteCard extends ConsumerStatefulWidget {
     super.key,
     required this.note,
     this.isSelected = false,
+    this.searchQuery = '',
     this.hoverActions = const [],
   });
 
@@ -31,6 +34,10 @@ class _NoteCardState extends ConsumerState<NoteCard> {
     final colorScheme = Theme.of(context).colorScheme;
 
     final platform = widget.note.deletedPlatform ?? widget.note.creationPlatform;
+
+    // Define the highlight background color based on the current theme
+    final highlightColor = colorScheme.primaryContainer;
+    final onHighlightColor = colorScheme.onPrimaryContainer;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovering = true),
@@ -61,16 +68,22 @@ class _NoteCardState extends ConsumerState<NoteCard> {
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                     color: noteTheme.cardTitleBackground ?? colorScheme.surfaceContainerHigh,
                     child: Padding(
-                      // Pushes text away from the right edge so stacked icons don't cover it
                       padding: EdgeInsets.only(right: widget.hoverActions.isNotEmpty ? 24.0 : 0.0),
-                      child: Text(
-                        widget.note.title.isEmpty ? "Untitled" : widget.note.title,
+                      child: HighlightedText(
+                        text: widget.note.title.isEmpty ? "Untitled" : widget.note.title,
+                        query: widget.searchQuery,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
+                        normalStyle: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
                           color: noteTheme.cardTitleForeground ?? colorScheme.onSurface,
+                        ),
+                        highlightStyle: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          backgroundColor: highlightColor,
+                          color: onHighlightColor,
                         ),
                       ),
                     ),
@@ -91,14 +104,21 @@ class _NoteCardState extends ConsumerState<NoteCard> {
                                   .withValues(alpha: 0.4),
                             ),
                           )
-                              : Text(
-                            widget.note.content,
+                              : HighlightedText(
+                            text: widget.note.content,
+                            query: widget.searchQuery,
                             maxLines: 5,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
+                            normalStyle: TextStyle(
                               fontSize: 13,
                               height: 1.4,
                               color: noteTheme.cardContentForeground ?? colorScheme.onSurfaceVariant,
+                            ),
+                            highlightStyle: TextStyle(
+                              fontSize: 13,
+                              height: 1.4,
+                              backgroundColor: highlightColor,
+                              color: onHighlightColor,
                             ),
                           ),
                         ),
