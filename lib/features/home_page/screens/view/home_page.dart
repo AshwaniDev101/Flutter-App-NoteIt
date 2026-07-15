@@ -128,6 +128,12 @@ class SortOptionsBar extends ConsumerWidget {
               color: Colors.grey.withValues(alpha: 0.3),
               margin: const EdgeInsets.symmetric(horizontal: 8),
             ),
+            Container(
+              width: 1,
+              height: 24,
+              color: Colors.grey.withValues(alpha: 0.3),
+              margin: const EdgeInsets.symmetric(horizontal: 8),
+            ),
 
             ChoiceChip(
               label: const Text('Phone'),
@@ -144,6 +150,11 @@ class SortOptionsBar extends ConsumerWidget {
               avatar: const Icon(Icons.desktop_windows_outlined, size: 16, color: Colors.grey),
               showCheckmark: false,
             ),
+            const SizedBox(width: 8),
+
+            // TODO: remove it on release only for testing
+            IconButton(icon: const Icon(Icons.bug_report,color: Colors.redAccent), onPressed: () {context.push(AppRoutes.dev);}),
+
           ],
         ),
       ),
@@ -327,23 +338,10 @@ class _HomePageState extends ConsumerState<HomePage> {
       drawer: const HomepageDrawer(),
       appBar: _buildAppBar(isAndroid),
 
-      floatingActionButton: Column(
-        children: [
-          FloatingActionButton(
-            onPressed: () async {
-              // Temp clean the master password
-              await ref.read(sharedPreferenceProvider).removeMasterPassword();
-              ref.read(lockManagerProvider.notifier).clearAllSessions();
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(const SnackBar(content: Text('Password wiped! You can set a new one now.')));
-            },
-            child: const Icon(Icons.lock_reset),
-          ),
+      floatingActionButton:
 
-          FloatingActionButton(onPressed: () => context.push(AppRoutes.edit), child: const Icon(Icons.add)),
-        ],
-      ),
+      FloatingActionButton(onPressed: () => context.push(AppRoutes.edit), child: const Icon(Icons.add)),
+
 
       body: Center(
         child: Column(
@@ -531,6 +529,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                   onPressed: () => ref.read(syncNotifierProvider.notifier).executeFullSync(),
                 ),
         SizedBox(width: 8),
+
+
+
+
 
         // Mobile Sort & Filter Options Menu
         if (isAndroid)

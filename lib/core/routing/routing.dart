@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:noteit/features/dev_page/dev_page.dart';
 import 'package:noteit/features/edit_note_page/screens/view/edit_note_page.dart';
 import 'package:noteit/features/home_page/screens/view/home_page.dart';
 import 'package:noteit/features/themes_page/view/theme_page.dart';
@@ -17,6 +18,7 @@ class AppRoutes {
   static const String settings = '/settings';
   static const String masterPassword = '/master-password';
   static const String trash = '/trash';
+  static const String dev = '/dev';
 }
 
 final routerProvider = Provider((ref) {
@@ -59,6 +61,13 @@ final routerProvider = Provider((ref) {
         path: AppRoutes.trash,
         builder: (context, state) {
           return const TrashPage();
+        },
+      ),
+
+      GoRoute(
+        path: AppRoutes.dev,
+        builder: (context, state) {
+          return const DevPage();
         },
       ),
     ],
