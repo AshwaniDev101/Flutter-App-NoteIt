@@ -7,10 +7,12 @@ import 'package:noteit/core/routing/routing.dart';
 import 'package:noteit/core/theme/note_theme.dart';
 import 'package:noteit/database/drift/drift_database.dart';
 import 'package:noteit/features/password_page/screens/view/password_page.dart';
-import '../../../../shared/note_card.dart';
+import '../../../../database/shared_preference/shared_preference_manager.dart';
+import '../../../../shared/managers/lock_manger/lock_manager.dart';
+import '../../../../shared/widgets/note_card.dart';
 import 'widgets/homepage_drawer.dart';
 import '../../../../database/sync_manager.dart';
-import '../../../../shared/selectable_card.dart';
+import '../../../../shared/widgets/selectable_card.dart';
 
 // STATE MANAGEMENT & PROVIDERS  --------------------------
 
@@ -53,6 +55,8 @@ final filteredNotesProvider = Provider<AsyncValue<List<Note>>>((ref) {
   final searchQuery = ref.watch(searchQueryProvider).toLowerCase().trim();
   final platformFilter = ref.watch(platformFilterProvider);
 
+  final lockState = ref.watch(lockManagerProvider);
+
   return sortedNotesAsync.whenData((notes) {
     List<Note> result = notes;
 
@@ -66,7 +70,10 @@ final filteredNotesProvider = Provider<AsyncValue<List<Note>>>((ref) {
     if (searchQuery.isNotEmpty) {
       result = result.where((note) {
         final matchesTitle = note.title.toLowerCase().contains(searchQuery);
-        final matchesContent = !note.isLocked && note.content.toLowerCase().contains(searchQuery);
+
+        final canReadContent = !note.isLocked || lockState.sessionUnlockedNoteIds.contains(note.id);
+        final matchesContent = canReadContent && note.content.toLowerCase().contains(searchQuery);
+        // final matchesContent = !note.isLocked && note.content.toLowerCase().contains(searchQuery);
         return matchesTitle || matchesContent;
       }).toList();
     }
@@ -145,7 +152,6 @@ class SortOptionsBar extends ConsumerWidget {
 }
 
 // SHARED UI COMPONENTS -----------------------
-
 class NotesGridView extends ConsumerWidget {
   final bool isSelectMode;
   final Set<int> noteIds;
@@ -198,12 +204,18 @@ class NotesGridView extends ConsumerWidget {
                 final currentNote = notes[index];
                 final isSelected = noteIds.contains(currentNote.id);
 
+                final isSessionUnlocked = ref
+                    .watch(lockManagerProvider)
+                    .sessionUnlockedNoteIds
+                    .contains(currentNote.id);
+                final displayAsLocked = currentNote.isLocked && !isSessionUnlocked;
+
                 return SelectableCard(
                   isSelected: isSelected,
                   onTap: () {
                     if (isSelectMode) {
                       onToggleSelection(currentNote.id);
-                    } else if (currentNote.isLocked) {
+                    } else if (displayAsLocked) {
                       onPromptPassword(context, currentNote);
                     } else {
                       context.push(AppRoutes.edit, extra: currentNote);
@@ -229,22 +241,27 @@ class NotesGridView extends ConsumerWidget {
                         },
                       ),
 
-                      if (!isSelectMode)...[
+                      if (!isSelectMode) ...[
                         IconButton(
                           icon: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
                           visualDensity: VisualDensity.compact,
                           onPressed: () => _deleteNote(ref, currentNote.id),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.lock, size: 18, color: Colors.grey),
-                          visualDensity: VisualDensity.compact,
-                          // onPressed: () => _deleteNote(ref, currentNote.id),
-                          onPressed: () {}
-                        ),
-
-
-                      ]
-
+                        if (currentNote.isLocked && isSessionUnlocked)
+                          IconButton(
+                            icon: const Icon(Icons.lock_open, size: 18, color: Colors.green),
+                            visualDensity: VisualDensity.compact,
+                            onPressed: () {
+                              ref.read(lockManagerProvider.notifier).lockSessionNote(currentNote.id);
+                            },
+                          )
+                        else if (currentNote.isLocked && !isSessionUnlocked)
+                          IconButton(
+                            icon: const Icon(Icons.lock, size: 18, color: Colors.grey),
+                            visualDensity: VisualDensity.compact,
+                            onPressed: () => onPromptPassword(context, currentNote),
+                          ),
+                      ],
                     ],
                   ),
                 );
@@ -309,10 +326,25 @@ class _HomePageState extends ConsumerState<HomePage> {
     return Scaffold(
       drawer: const HomepageDrawer(),
       appBar: _buildAppBar(isAndroid),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push(AppRoutes.edit),
-        child: const Icon(Icons.add),
+
+      floatingActionButton: Column(
+        children: [
+          FloatingActionButton(
+            onPressed: () async {
+              // Temp clean the master password
+              await ref.read(sharedPreferenceProvider).removeMasterPassword();
+              ref.read(lockManagerProvider.notifier).clearAllSessions();
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(const SnackBar(content: Text('Password wiped! You can set a new one now.')));
+            },
+            child: const Icon(Icons.lock_reset),
+          ),
+
+          FloatingActionButton(onPressed: () => context.push(AppRoutes.edit), child: const Icon(Icons.add)),
+        ],
       ),
+
       body: Center(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -492,11 +524,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     children: [
                       Icon(Icons.sync),
                       SizedBox(width: 8),
-                      if (!isAndroid)...[
-                        Text("Sync"),
-
-                      ]
-
+                      if (!isAndroid) ...[Text("Sync")],
                     ],
                   ),
 
@@ -651,8 +679,26 @@ class _HomePageState extends ConsumerState<HomePage> {
       },
     );
 
-    if (enteredPassword != null && enteredPassword == "1234" && context.mounted) {
-      context.push(AppRoutes.edit, extra: note);
+    if (enteredPassword != null && enteredPassword.isNotEmpty && context.mounted) {
+      final lockManager = ref.read(lockManagerProvider.notifier);
+
+      // NEW: If no password exists, treat this input as creating the new password!
+      if (!lockManager.hasMasterPassword) {
+        await lockManager.setupMasterPassword(enteredPassword);
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('New Master Password Set!'))
+        );
+      }
+
+      final success = lockManager.verifyAndSessionUnlock(note.id, enteredPassword);
+
+      if (success) {
+        context.push(AppRoutes.edit, extra: note);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Incorrect Password'))
+        );
+      }
     }
   }
 }

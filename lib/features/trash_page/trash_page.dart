@@ -6,8 +6,8 @@ import '../../core/theme/note_theme.dart';
 import '../../database/drift/drift_database.dart';
 import '../../database/firebase/firebase_database.dart';
 import '../../database/sync_manager.dart';
-import '../../shared/note_card.dart';
-import '../../shared/selectable_card.dart';
+import '../../shared/widgets/note_card.dart';
+import '../../shared/widgets/selectable_card.dart';
 
 final trashNotesProvider = StreamProvider.autoDispose<List<Note>>((ref) {
   final driftDb = ref.watch(noteDriftDatabaseProvider);

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
-import 'package:noteit/shared/snack_bar_manager.dart';
+import '../../../../shared/managers/lock_manger/lock_manager.dart';
+import '../../../../shared/widgets/snack_bar_manager.dart';
+import '../../../password_page/screens/view/password_page.dart';
 import '../view_model/edit_note_view_model.dart';
 import 'package:noteit/database/drift/drift_database.dart';
 
@@ -125,17 +126,45 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
     return PopupMenuButton<String>(
       icon: const Icon(Icons.more_vert_rounded),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      onSelected: (String value) {
-        // Handle locking mechanism
+      onSelected: (String value) async {
+
         if (value == 'toggle_lock') {
           bool isCurrentlyLocked = widget.existingNote!.isLocked;
-          ref.read(editNoteViewModelProvider.notifier).lockNote(
-            widget.existingNote!.id,
-            isLocked: !isCurrentlyLocked,
+          final lockManager = ref.read(lockManagerProvider.notifier);
+
+          final String? enteredPassword = await showGeneralDialog<String>(
+            context: context,
+            barrierDismissible: true,
+            barrierLabel: 'Dismiss',
+            barrierColor: Colors.black45,
+            pageBuilder: (context, animation, secondaryAnimation) => const PasswordPage(),
           );
 
-          if (!isCurrentlyLocked) {
-            context.pop();
+          if (enteredPassword != null && enteredPassword.isNotEmpty) {
+
+            // NEW: Set the password if it was wiped
+            if (!lockManager.hasMasterPassword) {
+              await lockManager.setupMasterPassword(enteredPassword);
+              if (context.mounted) {
+                SnackBarManager.show(msg: 'New Master Password Set!');
+              }
+            }
+
+            final success = await lockManager.togglePersistentLock(
+              widget.existingNote!.id,
+              enteredPassword,
+              shouldLock: !isCurrentlyLocked,
+            );
+
+            if (success) {
+              if (!isCurrentlyLocked && context.mounted) {
+                context.pop();
+              }
+            } else {
+              if (context.mounted) {
+                SnackBarManager.show(msg: 'Incorrect Password');
+              }
+            }
           }
         }
         // Handle discard: immediately pop the route without triggering the save lifecycle

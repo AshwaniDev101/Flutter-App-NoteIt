@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../core/theme/note_theme.dart';
-import '../database/drift/drift_database.dart';
+import '../../core/theme/note_theme.dart';
+import '../../database/drift/drift_database.dart';
+import '../managers/lock_manger/lock_manager.dart';
 import 'highlighted_text.dart';
 
 class NoteCard extends ConsumerStatefulWidget {
@@ -39,6 +40,10 @@ class _NoteCardState extends ConsumerState<NoteCard> {
     final highlightColor = colorScheme.primaryContainer;
     final onHighlightColor = colorScheme.onPrimaryContainer;
 
+    // Lock handling
+    final isSessionUnlocked = ref.watch(lockManagerProvider).sessionUnlockedNoteIds.contains(widget.note.id);
+    final displayAsLocked = widget.note.isLocked && !isSessionUnlocked;
+
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovering = true),
       onExit: (_) => setState(() => _isHovering = false),
@@ -69,7 +74,17 @@ class _NoteCardState extends ConsumerState<NoteCard> {
                     color: noteTheme.cardTitleBackground ?? colorScheme.surfaceContainerHigh,
                     child: Padding(
                       padding: EdgeInsets.only(right: widget.hoverActions.isNotEmpty ? 24.0 : 0.0),
-                      child: HighlightedText(
+                      child:  displayAsLocked?
+                      Center(
+                        child: Icon(
+                          Icons.lock_outlined,
+                          size: 32,
+                          color: (noteTheme.cardContentForeground ?? colorScheme.onSurfaceVariant)
+                              .withValues(alpha: 0.4),
+                        ),
+                      ):
+
+                      HighlightedText(
                         text: widget.note.title.isEmpty ? "Untitled" : widget.note.title,
                         query: widget.searchQuery,
                         maxLines: 1,
