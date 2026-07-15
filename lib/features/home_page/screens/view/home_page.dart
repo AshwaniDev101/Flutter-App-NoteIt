@@ -229,12 +229,22 @@ class NotesGridView extends ConsumerWidget {
                         },
                       ),
 
-                      if (!isSelectMode)
+                      if (!isSelectMode)...[
                         IconButton(
                           icon: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
                           visualDensity: VisualDensity.compact,
-                          onPressed: () => _deleteNote(ref, currentNote.id), // <-- Fixed function map
+                          onPressed: () => _deleteNote(ref, currentNote.id),
                         ),
+                        IconButton(
+                          icon: const Icon(Icons.lock, size: 18, color: Colors.grey),
+                          visualDensity: VisualDensity.compact,
+                          // onPressed: () => _deleteNote(ref, currentNote.id),
+                          onPressed: () {}
+                        ),
+
+
+                      ]
+
                     ],
                   ),
                 );
