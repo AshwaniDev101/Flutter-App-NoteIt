@@ -1,0 +1,99 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/database/drift/drift_database.dart';
+import 'package:noteit/database/sync_manager.dart';
+
+import '../../../database/shared_preference/shared_preference_manager.dart';
+
+@immutable
+class LockState {
+  final Set<int> sessionUnlockedNoteIds;
+  final bool isAuthenticating;
+  final String? error;
+
+  const LockState({this.sessionUnlockedNoteIds = const {}, this.isAuthenticating = false, this.error});
+
+  LockState copyWith({Set<int>? sessionUnlockedNoteIds, bool? isAuthenticating, String? error}) {
+    return LockState(
+      sessionUnlockedNoteIds: sessionUnlockedNoteIds ?? this.sessionUnlockedNoteIds,
+      isAuthenticating: isAuthenticating ?? this.isAuthenticating,
+      error: error ?? this.error,
+    );
+  }
+}
+
+class LockManager extends Notifier<LockState> {
+  @override
+  LockState build() => const LockState();
+
+  bool get hasMasterPassword => ref.read(sharedPreferenceProvider).hasMasterPassword;
+
+  bool isNoteSessionUnlocked(int id) {
+    return state.sessionUnlockedNoteIds.contains(id);
+  }
+
+  bool verifyPassword(String password) {
+    final savedPassword = ref.read(sharedPreferenceProvider).masterPassword;
+    return savedPassword != null && savedPassword == password;
+  }
+
+  bool verifyAndSessionUnlock(int id, String password) {
+    if (verifyPassword(password)) {
+      final updatedSet = Set<int>.from(state.sessionUnlockedNoteIds)..add(id);
+      state = state.copyWith(sessionUnlockedNoteIds: updatedSet, error: null);
+      return true;
+    } else {
+      state = state.copyWith(error: 'Incorrect Password');
+      return false;
+    }
+  }
+
+  Future<bool> setupMasterPassword(String password) async {
+    state = state.copyWith(isAuthenticating: true, error: null);
+    try {
+      final success = await ref.read(sharedPreferenceProvider).setMasterPassword(password);
+      state = state.copyWith(isAuthenticating: false);
+      return success;
+    } catch (e) {
+      state = state.copyWith(isAuthenticating: false, error: 'Failed to save password');
+      return false;
+    }
+  }
+
+  /// Clears all decrypted notes from memory (relocking them for the current session).
+  void clearAllSessions() {
+    state = state.copyWith(sessionUnlockedNoteIds: const {});
+  }
+
+  void lockSessionNote(int id) {
+    final updatedSet = Set<int>.from(state.sessionUnlockedNoteIds)..remove(id);
+    state = state.copyWith(sessionUnlockedNoteIds: updatedSet);
+  }
+
+  Future<bool> togglePersistentLock(int id, String password, {required bool shouldLock}) async {
+    if (!verifyPassword(password)) {
+      state = state.copyWith(error: 'Incorrect Password');
+      return false;
+    }
+
+    try {
+      await ref.read(noteDriftDatabaseProvider).lockNote(id, isLocked: shouldLock);
+
+      final updatedSet = Set<int>.from(state.sessionUnlockedNoteIds);
+      if (shouldLock) {
+        updatedSet.add(id);
+      } else {
+        updatedSet.remove(id);
+      }
+
+      state = state.copyWith(sessionUnlockedNoteIds: updatedSet);
+      ref.read(syncNotifierProvider.notifier).executeFullSync();
+      return true;
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+      return false;
+    }
+  }
+}
+
+final lockManagerProvider = NotifierProvider<LockManager, LockState>(() => LockManager());
