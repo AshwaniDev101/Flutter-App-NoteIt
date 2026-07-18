@@ -7,7 +7,6 @@ import 'package:noteit/core/routing/routing.dart';
 import 'package:noteit/core/theme/note_theme.dart';
 import 'package:noteit/database/drift/drift_database.dart';
 import 'package:noteit/features/password_page/screens/view/password_page.dart';
-import '../../../../database/shared_preference/shared_preference_manager.dart';
 import '../../../../shared/managers/lock_manger/lock_manager.dart';
 import '../../../../shared/widgets/note_card.dart';
 import 'widgets/homepage_drawer.dart';
@@ -334,31 +333,52 @@ class _HomePageState extends ConsumerState<HomePage> {
     // the entire time the user is on the Home Screen.
     ref.watch(syncNotifierProvider);
 
-    return Scaffold(
-      drawer: const HomepageDrawer(),
-      appBar: _buildAppBar(isAndroid),
+    return PopScope(
+      canPop: !isSelectMode && !isSearchMode,
+      onPopInvokedWithResult: (bool didPop, Object? result) {
+        if (didPop) return; // If it already popped, do nothing
 
-      floatingActionButton:
+        // If in selection mode, exit selection mode
+        if (isSelectMode) {
+          setState(() {
+            isSelectMode = false;
+            noteIds.clear();
+          });
+        }
+        // Also intercept back button to exit search mode
+        else if (isSearchMode) {
+          _searchController.clear();
+          ref.read(searchQueryProvider.notifier).clear();
+          setState(() => isSearchMode = false);
+        }
+      },
 
-      FloatingActionButton(onPressed: () => context.push(AppRoutes.edit), child: const Icon(Icons.add)),
+      child: Scaffold(
+        drawer: const HomepageDrawer(),
+        appBar: _buildAppBar(isAndroid),
+
+        floatingActionButton:
+
+        FloatingActionButton(onPressed: () => context.push(AppRoutes.edit), child: const Icon(Icons.add)),
 
 
-      body: Center(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Render ChoiceChips only in non-search mode and on desktop/web environments
-            if (!isSearchMode && !isAndroid) const SortOptionsBar(),
-            Expanded(
-              child: NotesGridView(
-                isSelectMode: isSelectMode,
-                noteIds: noteIds,
-                onToggleSelection: _toggleSelection,
-                onEnableSelectMode: () => setState(() => isSelectMode = true),
-                onPromptPassword: _promptForPassword,
+        body: Center(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Render ChoiceChips only in non-search mode and on desktop/web environments
+              if (!isSearchMode && !isAndroid) const SortOptionsBar(),
+              Expanded(
+                child: NotesGridView(
+                  isSelectMode: isSelectMode,
+                  noteIds: noteIds,
+                  onToggleSelection: _toggleSelection,
+                  onEnableSelectMode: () => setState(() => isSelectMode = true),
+                  onPromptPassword: _promptForPassword,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
