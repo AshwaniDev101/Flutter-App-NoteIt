@@ -54,13 +54,12 @@ class _NoteCardState extends ConsumerState<NoteCard> {
         child: Card(
           elevation: widget.isSelected ? 1 : 0,
           color: noteTheme.cardContentBackground,
-          clipBehavior: Clip.antiAlias, // Ensures the InkWell ripple stays inside corners
+          clipBehavior: Clip.antiAlias,
+          // Ensures the InkWell ripple stays inside corners
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
             side: BorderSide(
-              color: widget.isSelected
-                  ? colorScheme.primary
-                  : colorScheme.outlineVariant.withValues(alpha: 0.3),
+              color: widget.isSelected ? colorScheme.primary : colorScheme.outlineVariant.withValues(alpha: 0.3),
               width: widget.isSelected ? 2 : 1,
             ),
           ),
@@ -75,21 +74,12 @@ class _NoteCardState extends ConsumerState<NoteCard> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // TITLE HEADER
-                    Container(
+                    Ink(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                       color: noteTheme.cardTitleBackground ?? colorScheme.surfaceContainerHigh,
                       child: Padding(
                         padding: EdgeInsets.only(right: widget.hoverActions.isNotEmpty ? 24.0 : 0.0),
-                        child: displayAsLocked
-                            ? Center(
-                          child: Icon(
-                            Icons.lock_outlined,
-                            size: 32,
-                            color: (noteTheme.cardContentForeground ?? colorScheme.onSurfaceVariant)
-                                .withValues(alpha: 0.4),
-                          ),
-                        )
-                            : HighlightedText(
+                        child: HighlightedText(
                           text: widget.note.title.isEmpty ? "Untitled" : widget.note.title,
                           query: widget.searchQuery,
                           maxLines: 1,
@@ -117,30 +107,30 @@ class _NoteCardState extends ConsumerState<NoteCard> {
                             padding: const EdgeInsets.only(left: 12.0, top: 12.0, right: 32.0, bottom: 12.0),
                             child: widget.note.isLocked
                                 ? Center(
-                              child: Icon(
-                                Icons.lock_outlined,
-                                size: 32,
-                                color: (noteTheme.cardContentForeground ?? colorScheme.onSurfaceVariant)
-                                    .withValues(alpha: 0.4),
-                              ),
-                            )
+                                    child: Icon(
+                                      Icons.lock_outlined,
+                                      size: 32,
+                                      color: (noteTheme.cardContentForeground ?? colorScheme.onSurfaceVariant)
+                                          .withValues(alpha: 0.4),
+                                    ),
+                                  )
                                 : HighlightedText(
-                              text: widget.note.content,
-                              query: widget.searchQuery,
-                              maxLines: 5,
-                              overflow: TextOverflow.ellipsis,
-                              normalStyle: TextStyle(
-                                fontSize: 13,
-                                height: 1.4,
-                                color: noteTheme.cardContentForeground ?? colorScheme.onSurfaceVariant,
-                              ),
-                              highlightStyle: TextStyle(
-                                fontSize: 13,
-                                height: 1.4,
-                                backgroundColor: highlightColor,
-                                color: onHighlightColor,
-                              ),
-                            ),
+                                    text: widget.note.content,
+                                    query: widget.searchQuery,
+                                    maxLines: 5,
+                                    overflow: TextOverflow.ellipsis,
+                                    normalStyle: TextStyle(
+                                      fontSize: 13,
+                                      height: 1.4,
+                                      color: noteTheme.cardContentForeground ?? colorScheme.onSurfaceVariant,
+                                    ),
+                                    highlightStyle: TextStyle(
+                                      fontSize: 13,
+                                      height: 1.4,
+                                      backgroundColor: highlightColor,
+                                      color: onHighlightColor,
+                                    ),
+                                  ),
                           ),
 
                           // PLATFORM ICON
@@ -167,10 +157,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
                     top: 2,
                     right: 2,
                     // selection icon and hover actions are in ONE unified column
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: widget.hoverActions,
-                    ),
+                    child: Column(mainAxisSize: MainAxisSize.min, children: widget.hoverActions),
                   ),
               ],
             ),
