@@ -11,7 +11,6 @@ import '../../../../shared/managers/lock_manger/lock_manager.dart';
 import '../../../../shared/widgets/note_card.dart';
 import 'widgets/homepage_drawer.dart';
 import '../../../../database/sync_manager.dart';
-import '../../../../shared/widgets/selectable_card.dart';
 
 // STATE MANAGEMENT & PROVIDERS  --------------------------
 
@@ -220,8 +219,10 @@ class NotesGridView extends ConsumerWidget {
                     .contains(currentNote.id);
                 final displayAsLocked = currentNote.isLocked && !isSessionUnlocked;
 
-                return SelectableCard(
+                return NoteCard(
+                  note: currentNote,
                   isSelected: isSelected,
+                  searchQuery: ref.read(searchQueryProvider),
                   onTap: () {
                     if (isSelectMode) {
                       onToggleSelection(currentNote.id);
@@ -237,43 +238,42 @@ class NotesGridView extends ConsumerWidget {
                       onToggleSelection(currentNote.id);
                     }
                   },
-                  child: NoteCard(
-                    note: currentNote,
-                    isSelected: isSelected,
-                    searchQuery: ref.read(searchQueryProvider),
-                    hoverActions: [
-                      IconButton(
-                        icon: Icon(Icons.radio_button_unchecked_rounded, size: 18, color: colorScheme.primary),
-                        visualDensity: VisualDensity.compact,
-                        onPressed: () {
-                          onEnableSelectMode();
-                          onToggleSelection(currentNote.id);
-                        },
+                  hoverActions: [
+                    IconButton(
+                      icon: Icon(
+                        isSelected ? Icons.check_circle : Icons.radio_button_unchecked_rounded,
+                        size: 18,
+                        color: colorScheme.primary,
                       ),
+                      visualDensity: VisualDensity.compact,
+                      onPressed: () {
+                        if (!isSelectMode) onEnableSelectMode();
+                        onToggleSelection(currentNote.id);
+                      },
+                    ),
 
-                      if (!isSelectMode) ...[
+                    if (!isSelectMode) ...[
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
+                        visualDensity: VisualDensity.compact,
+                        onPressed: () => _deleteNote(ref, currentNote.id),
+                      ),
+                      if (currentNote.isLocked && isSessionUnlocked)
                         IconButton(
-                          icon: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
+                          icon: const Icon(Icons.lock_open, size: 18, color: Colors.green),
                           visualDensity: VisualDensity.compact,
-                          onPressed: () => _deleteNote(ref, currentNote.id),
+                          onPressed: () {
+                            ref.read(lockManagerProvider.notifier).lockSessionNote(currentNote.id);
+                          },
+                        )
+                      else if (currentNote.isLocked && !isSessionUnlocked)
+                        IconButton(
+                          icon: const Icon(Icons.lock, size: 18, color: Colors.grey),
+                          visualDensity: VisualDensity.compact,
+                          onPressed: () => onPromptPassword(context, currentNote),
                         ),
-                        if (currentNote.isLocked && isSessionUnlocked)
-                          IconButton(
-                            icon: const Icon(Icons.lock_open, size: 18, color: Colors.green),
-                            visualDensity: VisualDensity.compact,
-                            onPressed: () {
-                              ref.read(lockManagerProvider.notifier).lockSessionNote(currentNote.id);
-                            },
-                          )
-                        else if (currentNote.isLocked && !isSessionUnlocked)
-                          IconButton(
-                            icon: const Icon(Icons.lock, size: 18, color: Colors.grey),
-                            visualDensity: VisualDensity.compact,
-                            onPressed: () => onPromptPassword(context, currentNote),
-                          ),
-                      ],
                     ],
-                  ),
+                  ],
                 );
               },
             ),

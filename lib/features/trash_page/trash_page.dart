@@ -7,7 +7,6 @@ import '../../database/drift/drift_database.dart';
 import '../../database/firebase/firebase_database.dart';
 import '../../database/sync_manager.dart';
 import '../../shared/widgets/note_card.dart';
-import '../../shared/widgets/selectable_card.dart';
 
 final trashNotesProvider = StreamProvider.autoDispose<List<Note>>((ref) {
   final driftDb = ref.watch(noteDriftDatabaseProvider);
@@ -282,13 +281,15 @@ class _TrashPageState extends ConsumerState<TrashPage> {
                 final note = notes[index];
                 final isSelected = noteIds.contains(note.id);
 
-                return SelectableCard(
+                // Return NoteCard directly
+                return NoteCard(
+                  note: note,
                   isSelected: isSelected,
                   onTap: () {
                     if (isSelectMode) {
                       _toggleSelection(note.id);
                     } else {
-                      // Optional: Open a read-only view of the trashed note
+                      // Todo: Open a read-only view of the trashed note
                     }
                   },
                   onLongPress: () {
@@ -297,29 +298,29 @@ class _TrashPageState extends ConsumerState<TrashPage> {
                       _toggleSelection(note.id);
                     }
                   },
-                  child: NoteCard(
-                    note: note,
-                    isSelected: isSelected,
-                    hoverActions: [
-                      // Selection Radio Button
-                      IconButton(
-                        icon: Icon(Icons.radio_button_unchecked_rounded, size: 18, color: colorScheme.primary),
-                        visualDensity: VisualDensity.compact,
-                        onPressed: () {
-                          if (!isSelectMode) setState(() => isSelectMode = true);
-                          _toggleSelection(note.id);
-                        },
+                  hoverActions: [
+                    // Dynamic Selection Radio/Checkmark Button
+                    IconButton(
+                      icon: Icon(
+                          isSelected ? Icons.check_circle : Icons.radio_button_unchecked_rounded,
+                          size: 18,
+                          color: colorScheme.primary
                       ),
+                      visualDensity: VisualDensity.compact,
+                      onPressed: () {
+                        if (!isSelectMode) setState(() => isSelectMode = true);
+                        _toggleSelection(note.id);
+                      },
+                    ),
 
-                      if (!isSelectMode)
-                        IconButton(
-                          icon: const Icon(Icons.restore, size: 18),
-                          visualDensity: VisualDensity.compact,
-                          tooltip: 'Restore',
-                          onPressed: () => _restoreNote(note.id),
-                        ),
-                    ],
-                  ),
+                    if (!isSelectMode)
+                      IconButton(
+                        icon: const Icon(Icons.restore, size: 18),
+                        visualDensity: VisualDensity.compact,
+                        tooltip: 'Restore',
+                        onPressed: () => _restoreNote(note.id),
+                      ),
+                  ],
                 );
               },
             );
