@@ -151,8 +151,12 @@ class SortOptionsBar extends ConsumerWidget {
             const SizedBox(width: 8),
 
             // TODO: remove it on release only for testing
-            IconButton(icon: const Icon(Icons.bug_report,color: Colors.redAccent), onPressed: () {context.push(AppRoutes.dev);}),
-
+            IconButton(
+              icon: const Icon(Icons.bug_report, color: Colors.redAccent),
+              onPressed: () {
+                context.push(AppRoutes.dev);
+              },
+            ),
           ],
         ),
       ),
@@ -258,20 +262,45 @@ class NotesGridView extends ConsumerWidget {
                         visualDensity: VisualDensity.compact,
                         onPressed: () => _deleteNote(ref, currentNote.id),
                       ),
-                      if (currentNote.isLocked && isSessionUnlocked)
+
+                      // ONLY SHOW LOCK ICON IF NOTE IS UNLOCKED
+                      if (!currentNote.isLocked)
                         IconButton(
-                          icon: const Icon(Icons.lock_open, size: 18, color: Colors.green),
+                          icon: const Icon(Icons.lock_outline_rounded, size: 18, color: Colors.grey),
                           visualDensity: VisualDensity.compact,
-                          onPressed: () {
-                            ref.read(lockManagerProvider.notifier).lockSessionNote(currentNote.id);
+                          onPressed: () async {
+                            final lockManager = ref.read(lockManagerProvider.notifier);
+
+                            //  Ensure they have a master password set before letting them lock a note
+                            if (!lockManager.hasMasterPassword) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Tap the note to set a Master Password first!'))
+                              );
+                              return;
+                            }
+
+                            // Update the note using your dedicated lockNote method!
+                            final driftDatabase = ref.read(noteDriftDatabaseProvider);
+                            await driftDatabase.lockNote(currentNote.id, isLocked: true);
+
+                            // Sync the change visually and to the cloud
+                            ref.read(syncNotifierProvider.notifier).executeFullSync();
                           },
-                        )
-                      else if (currentNote.isLocked && !isSessionUnlocked)
-                        IconButton(
-                          icon: const Icon(Icons.lock, size: 18, color: Colors.grey),
-                          visualDensity: VisualDensity.compact,
-                          onPressed: () => onPromptPassword(context, currentNote),
                         ),
+                      // if (currentNote.isLocked && isSessionUnlocked)
+                      //   IconButton(
+                      //     icon: const Icon(Icons.lock_open_rounded, size: 18, color: Colors.green),
+                      //     visualDensity: VisualDensity.compact,
+                      //     onPressed: () {
+                      //       ref.read(lockManagerProvider.notifier).lockSessionNote(currentNote.id);
+                      //     },
+                      //   )
+                      // else if (currentNote.isLocked && !isSessionUnlocked)
+                      //   IconButton(
+                      //     icon: const Icon(Icons.lock_outline_rounded, size: 18, color: Colors.grey),
+                      //     visualDensity: VisualDensity.compact,
+                      //     onPressed: () => onPromptPassword(context, currentNote),
+                      //   ),
                     ],
                   ],
                 );
@@ -357,10 +386,10 @@ class _HomePageState extends ConsumerState<HomePage> {
         drawer: const HomepageDrawer(),
         appBar: _buildAppBar(isAndroid),
 
-        floatingActionButton:
-
-        FloatingActionButton(onPressed: () => context.push(AppRoutes.edit), child: const Icon(Icons.add)),
-
+        floatingActionButton: FloatingActionButton(
+          onPressed: () => context.push(AppRoutes.edit),
+          child: const Icon(Icons.add),
+        ),
 
         body: Center(
           child: Column(
@@ -550,10 +579,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ),
         SizedBox(width: 8),
 
-
-
-
-
         // Mobile Sort & Filter Options Menu
         if (isAndroid)
           PopupMenuButton<MenuOption>(
@@ -707,9 +732,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       // NEW: If no password exists, treat this input as creating the new password!
       if (!lockManager.hasMasterPassword) {
         await lockManager.setupMasterPassword(enteredPassword);
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('New Master Password Set!'))
-        );
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('New Master Password Set!')));
       }
 
       final success = lockManager.verifyAndSessionUnlock(note.id, enteredPassword);
@@ -717,9 +740,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       if (success) {
         context.push(AppRoutes.edit, extra: note);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Incorrect Password'))
-        );
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Incorrect Password')));
       }
     }
   }

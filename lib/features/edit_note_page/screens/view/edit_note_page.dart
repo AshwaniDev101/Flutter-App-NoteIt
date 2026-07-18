@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../shared/managers/lock_manger/lock_manager.dart';
 import '../../../../shared/widgets/snack_bar_manager.dart';
 import '../../../password_page/screens/view/password_page.dart';
+import '../../../password_page/screens/view/setup_password_page.dart';
 import '../view_model/edit_note_view_model.dart';
 import 'package:noteit/database/drift/drift_database.dart';
 
@@ -131,25 +132,36 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
         if (value == 'toggle_lock') {
           bool isCurrentlyLocked = widget.existingNote!.isLocked;
           final lockManager = ref.read(lockManagerProvider.notifier);
+          String? enteredPassword;
 
-          final String? enteredPassword = await showGeneralDialog<String>(
-            context: context,
-            barrierDismissible: true,
-            barrierLabel: 'Dismiss',
-            barrierColor: Colors.black45,
-            pageBuilder: (context, animation, secondaryAnimation) => const PasswordPage(),
-          );
+          // Branching the logic before showing UI
+          if (!lockManager.hasMasterPassword) {
+            // Showing the dedicated setup warning page
+            enteredPassword = await showGeneralDialog<String>(
+              context: context,
+              barrierDismissible: true,
+              barrierLabel: 'Dismiss',
+              barrierColor: Colors.black45,
+              pageBuilder: (context, anim1, anim2) => const SetupPasswordPage(),
+            );
 
-          if (enteredPassword != null && enteredPassword.isNotEmpty) {
-
-            // NEW: Set the password if it was wiped
-            if (!lockManager.hasMasterPassword) {
+            if (enteredPassword != null) {
               await lockManager.setupMasterPassword(enteredPassword);
-              if (context.mounted) {
-                SnackBarManager.show(msg: 'New Master Password Set!');
-              }
+              if (context.mounted) SnackBarManager.show(msg: 'Master Password Created!');
             }
+          } else {
+            // Showing standard unlock page
+            enteredPassword = await showGeneralDialog<String>(
+              context: context,
+              barrierDismissible: true,
+              barrierLabel: 'Dismiss',
+              barrierColor: Colors.black45,
+              pageBuilder: (context, anim1, anim2) => const PasswordPage(),
+            );
+          }
 
+          // Proceed with locking/unlocking if they didn't cancel the dialog
+          if (enteredPassword != null && enteredPassword.isNotEmpty) {
             final success = await lockManager.togglePersistentLock(
               widget.existingNote!.id,
               enteredPassword,
@@ -158,12 +170,10 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
 
             if (success) {
               if (!isCurrentlyLocked && context.mounted) {
-                context.pop();
+                context.pop(); // Kick them out of the editor if they just locked it
               }
             } else {
-              if (context.mounted) {
-                SnackBarManager.show(msg: 'Incorrect Password');
-              }
+              if (context.mounted) SnackBarManager.show(msg: 'Incorrect Password');
             }
           }
         }
