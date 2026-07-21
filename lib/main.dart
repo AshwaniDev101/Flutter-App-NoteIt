@@ -15,7 +15,10 @@ import 'core/theme/app_theme.dart';
 // Drift database location Windows : C:\Users\Ashwin\Documents\my_notes_db.sqlite
 
 
-// Theme master password is 'cake'
+// TODO:
+// 1. when lock is open during a session we still see the lock icon, there should be a tiny unlock icon on the lock when it lockable note but unlock during the session,
+// 2. when lock is open in editor, the message 'Unlock note' should be replaced with 'Remove Lock' and click that should not as for a master password as ur in the editor page because u already have the password,
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 

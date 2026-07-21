@@ -1,5 +1,4 @@
 import 'dart:ui';
-
 import 'package:flutter/material.dart';
 
 class PasswordPage extends StatefulWidget {
@@ -11,6 +10,9 @@ class PasswordPage extends StatefulWidget {
 
 class _PasswordPageState extends State<PasswordPage> {
   final TextEditingController _controller = TextEditingController();
+
+  // State variable for password visibility
+  bool _obscureText = true;
 
   @override
   void dispose() {
@@ -69,7 +71,7 @@ class _PasswordPageState extends State<PasswordPage> {
                     const SizedBox(height: 16),
                     TextField(
                       controller: _controller,
-                      obscureText: true,
+                      obscureText: _obscureText, // Bound to state
                       autofocus: true,
                       decoration: InputDecoration(
                         hintText: 'Password',
@@ -77,6 +79,18 @@ class _PasswordPageState extends State<PasswordPage> {
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
                           borderSide: BorderSide.none,
+                        ),
+                        // Added suffix icon toggle
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscureText ? Icons.visibility_off : Icons.visibility,
+                            color: Colors.grey,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscureText = !_obscureText;
+                            });
+                          },
                         ),
                       ),
                       onSubmitted: (_) => _unlock(),

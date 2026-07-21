@@ -201,9 +201,9 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
             value: 'toggle_lock',
             child: Row(
               children: [
-                Icon(isLocked ? Icons.lock_open : Icons.lock_outline, size: 20),
+                Icon(isLocked ? Icons.lock_clock_outlined: Icons.lock_outline, size: 20),
                 const SizedBox(width: 12),
-                Text(isLocked ? 'Unlock Note' : 'Lock Note'),
+                Text(isLocked ? 'Remove Lock' : 'Lock Note'),
               ],
             ),
           ),

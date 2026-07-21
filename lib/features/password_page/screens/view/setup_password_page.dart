@@ -13,6 +13,10 @@ class _SetupPasswordPageState extends State<SetupPasswordPage> {
   final TextEditingController _confirmController = TextEditingController();
   String? _errorMessage;
 
+  // State variables for password visibility
+  bool _obscurePass = true;
+  bool _obscureConfirm = true;
+
   @override
   void dispose() {
     _passController.dispose();
@@ -102,7 +106,7 @@ class _SetupPasswordPageState extends State<SetupPasswordPage> {
 
                     TextField(
                       controller: _passController,
-                      obscureText: true,
+                      obscureText: _obscurePass, // Bound to state
                       autofocus: true,
                       decoration: InputDecoration(
                         hintText: 'New Password',
@@ -111,12 +115,25 @@ class _SetupPasswordPageState extends State<SetupPasswordPage> {
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none,
                         ),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePass ? Icons.visibility_off : Icons.visibility,
+                            color: Colors.grey,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscurePass = !_obscurePass;
+                            });
+                          },
+                        ),
                       ),
                     ),
                     const SizedBox(height: 12),
+
+                    // Confirm Password Field
                     TextField(
                       controller: _confirmController,
-                      obscureText: true,
+                      obscureText: _obscureConfirm, // Bound to state
                       decoration: InputDecoration(
                         hintText: 'Confirm Password',
                         filled: true,
@@ -124,6 +141,17 @@ class _SetupPasswordPageState extends State<SetupPasswordPage> {
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none,
+                        ),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscureConfirm ? Icons.visibility_off : Icons.visibility,
+                            color: Colors.grey,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscureConfirm = !_obscureConfirm;
+                            });
+                          },
                         ),
                       ),
                       onSubmitted: (_) => _submit(),
