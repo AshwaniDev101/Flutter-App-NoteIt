@@ -20,9 +20,10 @@ class SharedPreferenceManager {
   static const String _keyViewType = 'view_type';
   static const String _keyLastSyncTime = 'last_sync_time';
   static const String _keyMasterPassword = 'master_password';
-
-  // NEW: Changed from boolean to String to support multiple themes
   static const String _keyThemeType = 'theme_type';
+
+  // Key for keeping notes unlocked during session
+  static const String _keyKeepUnlockedSession = 'keep_unlocked_session';
 
   // --- View Type ---
   int get viewType => _prefs.getInt(_keyViewType) ?? 0;
@@ -50,10 +51,15 @@ class SharedPreferenceManager {
     return await _prefs.remove(_keyMasterPassword);
   }
 
-  // --- Theme  ---
-  // Defaults to 'dark'
-  String get themeType => _prefs.getString(_keyThemeType) ?? 'dark';
+  // --- Session Lock Preference ---
+  // Defaults to false (strict mode)
+  bool get keepUnlockedDuringSession => _prefs.getBool(_keyKeepUnlockedSession) ?? false;
+  Future<bool> setKeepUnlockedDuringSession(bool value) async {
+    return await _prefs.setBool(_keyKeepUnlockedSession, value);
+  }
 
+  // --- Theme  ---
+  String get themeType => _prefs.getString(_keyThemeType) ?? 'dark';
   Future<bool> setThemeType(String value) async {
     return await _prefs.setString(_keyThemeType, value);
   }

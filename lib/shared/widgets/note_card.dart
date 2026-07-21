@@ -41,13 +41,13 @@ class _NoteCardState extends ConsumerState<NoteCard> {
     final onHighlightColor = colorScheme.onPrimaryContainer;
 
     final isSessionUnlocked = ref.watch(lockManagerProvider).sessionUnlockedNoteIds.contains(widget.note.id);
+    // This variable correctly determines if we should hide the content
     final displayAsLocked = widget.note.isLocked && !isSessionUnlocked;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovering = true),
       onExit: (_) => setState(() => _isHovering = false),
       cursor: SystemMouseCursors.click,
-      // Moved the AnimatedScale here from SelectableCard
       child: AnimatedScale(
         scale: widget.isSelected ? 0.95 : 1.0,
         duration: const Duration(milliseconds: 150),
@@ -55,7 +55,6 @@ class _NoteCardState extends ConsumerState<NoteCard> {
           elevation: widget.isSelected ? 1 : 0,
           color: noteTheme.cardContentBackground,
           clipBehavior: Clip.antiAlias,
-          // Ensures the InkWell ripple stays inside corners
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
             side: BorderSide(
@@ -63,13 +62,11 @@ class _NoteCardState extends ConsumerState<NoteCard> {
               width: widget.isSelected ? 2 : 1,
             ),
           ),
-          // InkWell for taps
           child: InkWell(
             onTap: widget.onTap,
             onLongPress: widget.onLongPress,
             child: Stack(
               children: [
-                // BASE CARD CONTENT
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -105,33 +102,49 @@ class _NoteCardState extends ConsumerState<NoteCard> {
                         children: [
                           Padding(
                             padding: const EdgeInsets.only(left: 12.0, top: 12.0, right: 32.0, bottom: 12.0),
-                            child: widget.note.isLocked
+                            child: displayAsLocked
                                 ? Center(
-                                    child: Icon(
-                                      Icons.lock_outlined,
-                                      size: 32,
-                                      color: (noteTheme.cardContentForeground ?? colorScheme.onSurfaceVariant)
-                                          .withValues(alpha: 0.4),
-                                    ),
-                                  )
+                              child: Icon(
+                                Icons.lock_outlined,
+                                size: 32,
+                                color: (noteTheme.cardContentForeground ?? colorScheme.onSurfaceVariant)
+                                    .withValues(alpha: 0.4),
+                              ),
+                            )
                                 : HighlightedText(
-                                    text: widget.note.content,
-                                    query: widget.searchQuery,
-                                    maxLines: 5,
-                                    overflow: TextOverflow.ellipsis,
-                                    normalStyle: TextStyle(
-                                      fontSize: 13,
-                                      height: 1.4,
-                                      color: noteTheme.cardContentForeground ?? colorScheme.onSurfaceVariant,
-                                    ),
-                                    highlightStyle: TextStyle(
-                                      fontSize: 13,
-                                      height: 1.4,
-                                      backgroundColor: highlightColor,
-                                      color: onHighlightColor,
-                                    ),
-                                  ),
+                              text: widget.note.content,
+                              query: widget.searchQuery,
+                              maxLines: 5,
+                              overflow: TextOverflow.ellipsis,
+                              normalStyle: TextStyle(
+                                fontSize: 13,
+                                height: 1.4,
+                                color: noteTheme.cardContentForeground ?? colorScheme.onSurfaceVariant,
+                              ),
+                              highlightStyle: TextStyle(
+                                fontSize: 13,
+                                height: 1.4,
+                                backgroundColor: highlightColor,
+                                color: onHighlightColor,
+                              ),
+                            ),
                           ),
+
+                          // NEW: TINY UNLOCK ICON
+                          if (widget.note.isLocked && isSessionUnlocked)
+                            Positioned(
+                              bottom: 8,
+                              // Place it slightly left of the platform icon if it exists
+                              right: platform != null ? 28 : 8,
+                              child: Tooltip(
+                                message: 'Unlocked for this session',
+                                child: Icon(
+                                  Icons.lock_open_rounded,
+                                  size: 14,
+                                  color: colorScheme.primary, // Or Colors.green
+                                ),
+                              ),
+                            ),
 
                           // PLATFORM ICON
                           if (platform != null)
@@ -156,7 +169,6 @@ class _NoteCardState extends ConsumerState<NoteCard> {
                   Positioned(
                     top: 2,
                     right: 2,
-                    // selection icon and hover actions are in ONE unified column
                     child: Column(mainAxisSize: MainAxisSize.min, children: widget.hoverActions),
                   ),
               ],

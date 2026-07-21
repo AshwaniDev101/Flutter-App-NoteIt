@@ -10,23 +10,50 @@ class LockState {
   final Set<int> sessionUnlockedNoteIds;
   final bool isAuthenticating;
   final String? error;
+  final bool keepUnlockedDuringSession;
 
-  const LockState({this.sessionUnlockedNoteIds = const {}, this.isAuthenticating = false, this.error});
+  const LockState({
+    this.sessionUnlockedNoteIds = const {},
+    this.isAuthenticating = false,
+    this.error,
+    this.keepUnlockedDuringSession = false,
+  });
 
-  LockState copyWith({Set<int>? sessionUnlockedNoteIds, bool? isAuthenticating, String? error}) {
+  LockState copyWith({
+    Set<int>? sessionUnlockedNoteIds,
+    bool? isAuthenticating,
+    String? error,
+    bool? keepUnlockedDuringSession,
+  }) {
     return LockState(
       sessionUnlockedNoteIds: sessionUnlockedNoteIds ?? this.sessionUnlockedNoteIds,
       isAuthenticating: isAuthenticating ?? this.isAuthenticating,
       error: error ?? this.error,
+      keepUnlockedDuringSession: keepUnlockedDuringSession ?? this.keepUnlockedDuringSession,
     );
   }
 }
 
 class LockManager extends Notifier<LockState> {
   @override
-  LockState build() => const LockState();
+  LockState build() {
+    // Initialize the state using the saved preference
+    final keepUnlocked = ref.read(sharedPreferenceProvider).keepUnlockedDuringSession;
+    return LockState(keepUnlockedDuringSession: keepUnlocked);
+  }
 
   bool get hasMasterPassword => ref.read(sharedPreferenceProvider).hasMasterPassword;
+
+  // Update the preference both in memory and storage
+  Future<void> setKeepUnlockedPreference(bool keepUnlocked) async {
+    state = state.copyWith(keepUnlockedDuringSession: keepUnlocked);
+    await ref.read(sharedPreferenceProvider).setKeepUnlockedDuringSession(keepUnlocked);
+
+    // If the user turns the feature OFF, immediately clear all active sessions for security
+    if (!keepUnlocked) {
+      clearAllSessions();
+    }
+  }
 
   bool isNoteSessionUnlocked(int id) {
     return state.sessionUnlockedNoteIds.contains(id);
@@ -60,7 +87,6 @@ class LockManager extends Notifier<LockState> {
     }
   }
 
-  /// Clears all decrypted notes from memory (relocking them for the current session).
   void clearAllSessions() {
     state = state.copyWith(sessionUnlockedNoteIds: const {});
   }
