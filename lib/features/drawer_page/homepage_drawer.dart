@@ -5,8 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in_all_platforms/google_sign_in_all_platforms.dart';
 import 'package:noteit/core/routing/routing.dart';
 
-import '../../../../../core/provider/provider.dart';
-import '../../../../../core/theme/app_theme.dart';
+import '../../core/provider/provider.dart';
+import '../../core/theme/app_theme.dart';
 
 class HomepageDrawer extends ConsumerWidget {
   const HomepageDrawer({super.key});
@@ -175,6 +175,14 @@ class HomepageDrawer extends ConsumerWidget {
                     // Navigator.pop(context);
                     context.push(AppRoutes.settings);
                     // context.push(AppRoutes.settings);
+                  },
+                ),
+
+                _DrawerItem(
+                  icon: Icons.bug_report_outlined,
+                  title: 'Dev Tools',
+                  onTap: () {
+                    context.push(AppRoutes.dev);
                   },
                 ),
               ],

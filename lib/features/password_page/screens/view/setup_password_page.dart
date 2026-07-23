@@ -104,6 +104,7 @@ class _SetupPasswordPageState extends State<SetupPasswordPage> {
                     ),
                     const SizedBox(height: 20),
 
+                    // New Password
                     TextField(
                       controller: _passController,
                       obscureText: _obscurePass, // Bound to state

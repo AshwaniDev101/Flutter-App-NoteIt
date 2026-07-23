@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../shared/managers/lock_manger/lock_manager.dart';
 import '../../../../shared/widgets/snack_bar_manager.dart';
-import '../../../password_page/screens/view/password_page.dart';
 import '../../../password_page/screens/view/setup_password_page.dart';
 import '../view_model/edit_note_view_model.dart';
 import 'package:noteit/database/drift/drift_database.dart';

@@ -9,8 +9,8 @@ import 'package:noteit/database/drift/drift_database.dart';
 import 'package:noteit/features/password_page/screens/view/password_page.dart';
 import '../../../../shared/managers/lock_manger/lock_manager.dart';
 import '../../../../shared/widgets/note_card.dart';
-import 'widgets/homepage_drawer.dart';
 import '../../../../database/sync_manager.dart';
+import '../../../drawer_page/homepage_drawer.dart';
 
 // STATE MANAGEMENT & PROVIDERS  --------------------------
 
@@ -126,13 +126,6 @@ class SortOptionsBar extends ConsumerWidget {
               color: Colors.grey.withValues(alpha: 0.3),
               margin: const EdgeInsets.symmetric(horizontal: 8),
             ),
-            Container(
-              width: 1,
-              height: 24,
-              color: Colors.grey.withValues(alpha: 0.3),
-              margin: const EdgeInsets.symmetric(horizontal: 8),
-            ),
-
             ChoiceChip(
               label: const Text('Phone'),
               selected: currentPlatformFilter == PlatformFilter.android,
@@ -150,13 +143,6 @@ class SortOptionsBar extends ConsumerWidget {
             ),
             const SizedBox(width: 8),
 
-            // TODO: remove it on release only for testing
-            IconButton(
-              icon: const Icon(Icons.bug_report, color: Colors.redAccent),
-              onPressed: () {
-                context.push(AppRoutes.dev);
-              },
-            ),
           ],
         ),
       ),
