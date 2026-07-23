@@ -25,9 +25,12 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
 
   bool _isAutoSyncingTitle = false;
 
+  late bool _isLocked;
+
   @override
   void initState() {
     super.initState();
+    _isLocked = widget.existingNote?.isLocked ?? false;
     _titleController = TextEditingController(text: widget.existingNote?.title ?? '');
     _contentController = TextEditingController(text: widget.existingNote?.content ?? '');
     _titleFocusNode = FocusNode();
@@ -128,15 +131,15 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
       icon: const Icon(Icons.more_vert_rounded),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       onSelected: (String value) async {
-
         if (value == 'toggle_lock') {
-          bool isCurrentlyLocked = widget.existingNote!.isLocked;
+          bool isCurrentlyLocked = _isLocked;
           final lockManager = ref.read(lockManagerProvider.notifier);
-          String? enteredPassword;
 
-          // Branching the logic before showing UI
+          String? enteredPassword;
+          bool shouldProceed = false;
+
+          // Check if Master Password needs to be setup
           if (!lockManager.hasMasterPassword) {
-            // Showing the dedicated setup warning page
             enteredPassword = await showGeneralDialog<String>(
               context: context,
               barrierDismissible: true,
@@ -145,12 +148,21 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
               pageBuilder: (context, anim1, anim2) => const SetupPasswordPage(),
             );
 
-            if (enteredPassword != null) {
+            if (enteredPassword != null && enteredPassword.isNotEmpty) {
               await lockManager.setupMasterPassword(enteredPassword);
-              if (context.mounted) SnackBarManager.show(msg: 'Master Password Created!');
+              if (context.mounted) {
+                SnackBarManager.show(msg: 'Master Password Created!');
+              }
+              shouldProceed = true;
             }
-          } else {
-            // Showing standard unlock page
+          }
+          // If we just want to LOCK the note, skip the password page
+          else if (!isCurrentlyLocked) {
+            enteredPassword = ''; // Pass an empty string since we are just locking
+            shouldProceed = true;
+          }
+          // If we want to UNLOCK the note, ask for the password
+          else {
             enteredPassword = await showGeneralDialog<String>(
               context: context,
               barrierDismissible: true,
@@ -158,19 +170,31 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
               barrierColor: Colors.black45,
               pageBuilder: (context, anim1, anim2) => const PasswordPage(),
             );
+
+            if (enteredPassword != null && enteredPassword.isNotEmpty) {
+              shouldProceed = true;
+            }
           }
 
-          // Proceed with locking/unlocking if they didn't cancel the dialog
-          if (enteredPassword != null && enteredPassword.isNotEmpty) {
+          // Proceed with locking/unlocking if authorized to do so
+          if (shouldProceed) {
             final success = await lockManager.togglePersistentLock(
               widget.existingNote!.id,
-              enteredPassword,
+              enteredPassword ?? '',
               shouldLock: !isCurrentlyLocked,
             );
 
             if (success) {
-              if (!isCurrentlyLocked && context.mounted) {
-                context.pop(); // Kick them out of the editor if they just locked it
+              if (context.mounted) {
+
+                setState(() {
+                  _isLocked = !_isLocked;
+                });
+
+                if(!isCurrentlyLocked){
+                  context.pop();  // Kick them out of the editor if they just locked it
+                }
+
               }
             } else {
               if (context.mounted) SnackBarManager.show(msg: 'Incorrect Password');
@@ -193,7 +217,7 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
         }
       },
       itemBuilder: (BuildContext context) {
-        bool isLocked = widget.existingNote?.isLocked ?? false;
+        // bool isLocked = widget.existingNote?.isLocked ?? false;
         final colorScheme = Theme.of(context).colorScheme;
 
         return [
@@ -201,14 +225,14 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
             value: 'toggle_lock',
             child: Row(
               children: [
-                Icon(isLocked ? Icons.lock_clock_outlined: Icons.lock_outline, size: 20),
+                Icon(_isLocked ? Icons.lock_clock_outlined: Icons.lock_outline, size: 20),
                 const SizedBox(width: 12),
-                Text(isLocked ? 'Remove Lock' : 'Lock Note'),
+                Text(_isLocked ? 'Remove Lock' : 'Lock Note'),
               ],
             ),
           ),
 
-          // Discard action: Standard color mapping with an 'X' close icon
+          // Discard action
           PopupMenuItem<String>(
             value: 'discard',
             child: Row(
@@ -223,7 +247,7 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
             ),
           ),
 
-          // Delete action: Visual red warning indicators with a dustbin icon
+          // Delete action
           const PopupMenuItem<String>(
             value: 'delete',
             child: Row(
@@ -247,6 +271,7 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final isNewNote = widget.existingNote == null;
+    // bool isLocked = widget.existingNote?.isLocked ?? false;
 
     return PopScope(
       canPop: false,
@@ -353,6 +378,9 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
                       ),
                     ),
                     const Spacer(),
+                    if(_isLocked)
+                      Icon(Icons.lock_outline, size: 16, color: colorScheme.onSurfaceVariant),
+                      SizedBox(width: 10,),
                     Text(
                       _getFormattedDate(),
                       style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
