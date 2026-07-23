@@ -96,10 +96,10 @@ class LockManager extends Notifier<LockState> {
     state = state.copyWith(sessionUnlockedNoteIds: updatedSet);
   }
 
-  Future<bool> togglePersistentLock(int id, String password, {required bool shouldLock}) async {
+  Future<bool> togglePersistentLock(int id, String password, {required bool shouldLock, bool ignorePassword = false}) async {
 
-    // Only verify the password if we are UNLOCKING the note
-    if (!shouldLock) {
+    // Only verify the password if we are UNLOCKING, AND we aren't explicitly ignoring the password check
+    if (!shouldLock && !ignorePassword) {
       if (!verifyPassword(password)) {
         state = state.copyWith(error: 'Incorrect Password');
         return false;
@@ -110,9 +110,7 @@ class LockManager extends Notifier<LockState> {
       await ref.read(noteDriftDatabaseProvider).lockNote(id, isLocked: shouldLock);
 
       final updatedSet = Set<int>.from(state.sessionUnlockedNoteIds);
-
-      // Regardless of whether we are persistently locking or unlocking,
-      // we should remove it from the temporary session-unlocked set to keep the state clean.
+      // Remove it from temporary session memory to keep state clean
       updatedSet.remove(id);
 
       state = state.copyWith(sessionUnlockedNoteIds: updatedSet);

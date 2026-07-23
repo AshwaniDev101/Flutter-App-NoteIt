@@ -135,12 +135,11 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
           bool isCurrentlyLocked = _isLocked;
           final lockManager = ref.read(lockManagerProvider.notifier);
 
-          String? enteredPassword;
           bool shouldProceed = false;
 
-          // Check if Master Password needs to be setup
+          // Check if they need to setup a Master Password first
           if (!lockManager.hasMasterPassword) {
-            enteredPassword = await showGeneralDialog<String>(
+            final enteredPassword = await showGeneralDialog<String>(
               context: context,
               barrierDismissible: true,
               barrierLabel: 'Dismiss',
@@ -150,43 +149,27 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
 
             if (enteredPassword != null && enteredPassword.isNotEmpty) {
               await lockManager.setupMasterPassword(enteredPassword);
-              if (context.mounted) {
-                SnackBarManager.show(msg: 'Master Password Created!');
-              }
+              if (context.mounted) SnackBarManager.show(msg: 'Master Password Created!');
               shouldProceed = true;
             }
           }
-          // If we just want to LOCK the note, skip the password page
-          else if (!isCurrentlyLocked) {
-            enteredPassword = ''; // Pass an empty string since we are just locking
+          // If a password already exists, skip the dialog!
+          // They are inside the editor, so they are already authenticated.
+          else {
             shouldProceed = true;
           }
-          // If we want to UNLOCK the note, ask for the password
-          else {
-            enteredPassword = await showGeneralDialog<String>(
-              context: context,
-              barrierDismissible: true,
-              barrierLabel: 'Dismiss',
-              barrierColor: Colors.black45,
-              pageBuilder: (context, anim1, anim2) => const PasswordPage(),
-            );
 
-            if (enteredPassword != null && enteredPassword.isNotEmpty) {
-              shouldProceed = true;
-            }
-          }
-
-          // Proceed with locking/unlocking if authorized to do so
+          // Proceed with locking/unlocking instantly
           if (shouldProceed) {
             final success = await lockManager.togglePersistentLock(
               widget.existingNote!.id,
-              enteredPassword ?? '',
+              '', // Password is empty
               shouldLock: !isCurrentlyLocked,
+              ignorePassword: true, // Tell LockManager to trust this request
             );
 
             if (success) {
               if (context.mounted) {
-
                 setState(() {
                   _isLocked = !_isLocked;
                 });
@@ -194,10 +177,9 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
                 if(!isCurrentlyLocked){
                   context.pop();  // Kick them out of the editor if they just locked it
                 }
-
               }
             } else {
-              if (context.mounted) SnackBarManager.show(msg: 'Incorrect Password');
+              if (context.mounted) SnackBarManager.show(msg: 'Action failed');
             }
           }
         }
@@ -207,6 +189,7 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
             context.pop();
           }
         }
+        // Handle delete
         else if (value == 'delete') {
           if (widget.existingNote != null) {
             ref.read(editNoteViewModelProvider.notifier).deleteNote(widget.existingNote!.id);
@@ -217,7 +200,6 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
         }
       },
       itemBuilder: (BuildContext context) {
-        // bool isLocked = widget.existingNote?.isLocked ?? false;
         final colorScheme = Theme.of(context).colorScheme;
 
         return [
@@ -271,7 +253,6 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final isNewNote = widget.existingNote == null;
-    // bool isLocked = widget.existingNote?.isLocked ?? false;
 
     return PopScope(
       canPop: false,
