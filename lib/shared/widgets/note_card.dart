@@ -40,9 +40,10 @@ class _NoteCardState extends ConsumerState<NoteCard> {
     final highlightColor = colorScheme.primaryContainer;
     final onHighlightColor = colorScheme.onPrimaryContainer;
 
-    final isSessionUnlocked = ref.watch(lockManagerProvider).sessionUnlockedNoteIds.contains(widget.note.id);
+    // final isSessionUnlocked = ref.watch(lockManagerProvider).sessionUnlockedNoteIds.contains(widget.note.id);
     // This variable correctly determines if we should hide the content
-    final displayAsLocked = widget.note.isLocked && !isSessionUnlocked;
+    // final displayAsLocked = widget.note.isLocked && !isSessionUnlocked;
+    final displayAsLocked = widget.note.isLocked;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovering = true),
@@ -130,21 +131,21 @@ class _NoteCardState extends ConsumerState<NoteCard> {
                             ),
                           ),
 
-                          // NEW: TINY UNLOCK ICON
-                          if (widget.note.isLocked && isSessionUnlocked)
-                            Positioned(
-                              bottom: 8,
-                              // Place it slightly left of the platform icon if it exists
-                              right: platform != null ? 28 : 8,
-                              child: Tooltip(
-                                message: 'Unlocked for this session',
-                                child: Icon(
-                                  Icons.lock_open_rounded,
-                                  size: 14,
-                                  color: colorScheme.primary, // Or Colors.green
-                                ),
-                              ),
-                            ),
+                          // TINY UNLOCK ICON
+                          // if (widget.note.isLocked && isSessionUnlocked)
+                          //   Positioned(
+                          //     bottom: 8,
+                          //     // Place it slightly left of the platform icon if it exists
+                          //     right: platform != null ? 28 : 8,
+                          //     child: Tooltip(
+                          //       message: 'Unlocked for this session',
+                          //       child: Icon(
+                          //         Icons.lock_open_rounded,
+                          //         size: 14,
+                          //         color: colorScheme.primary, // Or Colors.green
+                          //       ),
+                          //     ),
+                          //   ),
 
                           // PLATFORM ICON
                           if (platform != null)

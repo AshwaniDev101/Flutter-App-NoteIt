@@ -217,11 +217,12 @@ class NotesGridView extends ConsumerWidget {
                 final currentNote = notes[index];
                 final isSelected = noteIds.contains(currentNote.id);
 
-                final isSessionUnlocked = ref
-                    .watch(lockManagerProvider)
-                    .sessionUnlockedNoteIds
-                    .contains(currentNote.id);
-                final displayAsLocked = currentNote.isLocked && !isSessionUnlocked;
+                // final isSessionUnlocked = ref
+                //     .watch(lockManagerProvider)
+                //     .sessionUnlockedNoteIds
+                //     .contains(currentNote.id);
+                // final displayAsLocked = currentNote.isLocked && !isSessionUnlocked;
+                final displayAsLocked = currentNote.isLocked;
 
                 return NoteCard(
                   note: currentNote,
@@ -231,18 +232,19 @@ class NotesGridView extends ConsumerWidget {
                     if (isSelectMode) {
                       onToggleSelection(currentNote.id);
                     } else if (displayAsLocked) {
-                      // Note is locked and not in session -> Ask for password
+                      // Note is locked
                       await onPromptPassword(context, currentNote);
-                    } else {
-                      // Note is unlocked -> Open editor
+                    }
+                    else {
+                      // Note is unlocked
                       await context.push(AppRoutes.edit, extra: currentNote);
 
-                      // ENFORCE PREFERENCE: We are back on the homepage now.
-                      // If they don't want to keep it unlocked, lock it instantly.
-                      final lockState = ref.read(lockManagerProvider);
-                      if (currentNote.isLocked && !lockState.keepUnlockedDuringSession) {
-                        ref.read(lockManagerProvider.notifier).lockSessionNote(currentNote.id);
-                      }
+                      // // ENFORCE PREFERENCE: We are back on the homepage now.
+                      // // If they don't want to keep it unlocked, lock it instantly.
+                      // final lockState = ref.read(lockManagerProvider);
+                      // if (currentNote.isLocked && !lockState.keepUnlockedDuringSession) {
+                      //   ref.read(lockManagerProvider.notifier).lockSessionNote(currentNote.id);
+                      // }
                     }
                   },
                   onLongPress: () {
@@ -272,46 +274,46 @@ class NotesGridView extends ConsumerWidget {
                         onPressed: () => _deleteNote(ref, currentNote.id),
                       ),
 
-                      // 1. Note is completely UNLOCKED -> Option to permanently lock it
-                      if (!currentNote.isLocked)
-                        IconButton(
-                          icon: const Icon(Icons.lock_outline_rounded, size: 18, color: Colors.grey),
-                          visualDensity: VisualDensity.compact,
-                          tooltip: 'Lock Note',
-                          onPressed: () async {
-                            final lockManager = ref.read(lockManagerProvider.notifier);
-                            if (!lockManager.hasMasterPassword) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Tap the note to set a Master Password first!'))
-                              );
-                              return;
-                            }
-                            final driftDatabase = ref.read(noteDriftDatabaseProvider);
-                            await driftDatabase.lockNote(currentNote.id, isLocked: true);
-                            ref.read(syncNotifierProvider.notifier).executeFullSync();
-                          },
-                        ),
+                      // Note is completely UNLOCKED -> Option to permanently lock it
+                      // if (!currentNote.isLocked)
+                      //   IconButton(
+                      //     icon: const Icon(Icons.lock_outline_rounded, size: 18, color: Colors.grey),
+                      //     visualDensity: VisualDensity.compact,
+                      //     tooltip: 'Lock Note',
+                      //     onPressed: () async {
+                      //       final lockManager = ref.read(lockManagerProvider.notifier);
+                      //       if (!lockManager.hasMasterPassword) {
+                      //         ScaffoldMessenger.of(context).showSnackBar(
+                      //             const SnackBar(content: Text('Tap the note to set a Master Password first!'))
+                      //         );
+                      //         return;
+                      //       }
+                      //       final driftDatabase = ref.read(noteDriftDatabaseProvider);
+                      //       await driftDatabase.lockNote(currentNote.id, isLocked: true);
+                      //       ref.read(syncNotifierProvider.notifier).executeFullSync();
+                      //     },
+                      //   ),
 
-                      // 2. Note is LOCKED, but UNLOCKED FOR SESSION -> Option to lock it immediately
-                      if (currentNote.isLocked && isSessionUnlocked)
-                        IconButton(
-                          icon: const Icon(Icons.lock_open_rounded, size: 18, color: Colors.green),
-                          visualDensity: VisualDensity.compact,
-                          tooltip: 'Lock instantly',
-                          onPressed: () {
-                            // Assuming your lock manager has a method to remove from the session list
-                            ref.read(lockManagerProvider.notifier).lockSessionNote(currentNote.id);
-                          },
-                        ),
+                      // If Note is LOCKED, but UNLOCKED FOR SESSION -> Option to lock it immediately
+                      // if (currentNote.isLocked && isSessionUnlocked)
+                      //   IconButton(
+                      //     icon: const Icon(Icons.lock_open_rounded, size: 18, color: Colors.green),
+                      //     visualDensity: VisualDensity.compact,
+                      //     tooltip: 'Lock instantly',
+                      //     onPressed: () {
+                      //       // Assuming your lock manager has a method to remove from the session list
+                      //       ref.read(lockManagerProvider.notifier).lockSessionNote(currentNote.id);
+                      //     },
+                      //   ),
 
-                      // 3. Note is LOCKED and LOCKED FOR SESSION -> Option to unlock directly from hover
-                      if (currentNote.isLocked && !isSessionUnlocked)
-                        IconButton(
-                          icon: const Icon(Icons.lock_rounded, size: 18, color: Colors.grey),
-                          visualDensity: VisualDensity.compact,
-                          tooltip: 'Unlock',
-                          onPressed: () => onPromptPassword(context, currentNote),
-                        ),
+                      //  Note is LOCKED and LOCKED FOR SESSION -> Option to unlock directly from hover
+                      // if (currentNote.isLocked && !isSessionUnlocked)
+                      //   IconButton(
+                      //     icon: const Icon(Icons.lock_rounded, size: 18, color: Colors.grey),
+                      //     visualDensity: VisualDensity.compact,
+                      //     tooltip: 'Unlock',
+                      //     onPressed: () => onPromptPassword(context, currentNote),
+                      //   ),
                     ],
                   ],
                 );
@@ -740,7 +742,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     if (enteredPassword != null && enteredPassword.isNotEmpty && context.mounted) {
       final lockManager = ref.read(lockManagerProvider.notifier);
 
-      // NEW: If no password exists, treat this input as creating the new password!
+      // If no password exists, treat this input as creating the new password!
       if (!lockManager.hasMasterPassword) {
         await lockManager.setupMasterPassword(enteredPassword);
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('New Master Password Set!')));
