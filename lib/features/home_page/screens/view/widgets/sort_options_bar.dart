@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/options.dart';
 import '../../core/providers.dart';
 import '../../core/sort.dart';
 import '../home_page.dart';
@@ -50,16 +51,16 @@ class SortOptionsBar extends ConsumerWidget {
             ),
             ChoiceChip(
               label: const Text('Phone'),
-              selected: currentPlatformFilter == PlatformFilter.android,
-              onSelected: (_) => ref.read(platformFilterProvider.notifier).toggleFilter(PlatformFilter.android),
+              selected: currentPlatformFilter == PlatformOptions.android,
+              onSelected: (_) => ref.read(platformFilterProvider.notifier).toggleFilter(PlatformOptions.android),
               avatar: const Icon(Icons.phone_android_outlined, size: 16, color: Colors.grey),
               showCheckmark: false,
             ),
             const SizedBox(width: 8),
             ChoiceChip(
               label: const Text('Windows'),
-              selected: currentPlatformFilter == PlatformFilter.windows,
-              onSelected: (_) => ref.read(platformFilterProvider.notifier).toggleFilter(PlatformFilter.windows),
+              selected: currentPlatformFilter == PlatformOptions.windows,
+              onSelected: (_) => ref.read(platformFilterProvider.notifier).toggleFilter(PlatformOptions.windows),
               avatar: const Icon(Icons.desktop_windows_outlined, size: 16, color: Colors.grey),
               showCheckmark: false,
             ),

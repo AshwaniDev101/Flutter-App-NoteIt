@@ -3,8 +3,9 @@ import 'package:noteit/features/home_page/screens/core/sort.dart';
 import '../../../../../database/drift/drift_database.dart';
 import '../../../../shared/managers/lock_manger/lock_manager.dart';
 import '../view/home_page.dart';
+import 'options.dart';
 
-final platformFilterProvider = NotifierProvider<PlatformFilterNotifier, PlatformFilter>(PlatformFilterNotifier.new);
+final platformFilterProvider = NotifierProvider<PlatformFilterNotifier, PlatformOptions>(PlatformFilterNotifier.new);
 
 final filteredNotesProvider = Provider<AsyncValue<List<Note>>>((ref) {
   final sortedNotesAsync = ref.watch(sortedNotesProvider);
@@ -16,8 +17,8 @@ final filteredNotesProvider = Provider<AsyncValue<List<Note>>>((ref) {
   return sortedNotesAsync.whenData((notes) {
     List<Note> result = notes;
 
-    if (platformFilter != PlatformFilter.all) {
-      final targetPlatform = platformFilter == PlatformFilter.android ? 'android' : 'windows';
+    if (platformFilter != PlatformOptions.all) {
+      final targetPlatform = platformFilter == PlatformOptions.android ? 'android' : 'windows';
       result = result.where((note) {
         return note.creationPlatform?.toLowerCase() == targetPlatform;
       }).toList();
@@ -40,13 +41,13 @@ final filteredNotesProvider = Provider<AsyncValue<List<Note>>>((ref) {
 
 final searchQueryProvider = NotifierProvider<SearchQueryNotifier, String>(SearchQueryNotifier.new);
 
-class PlatformFilterNotifier extends Notifier<PlatformFilter> {
+class PlatformFilterNotifier extends Notifier<PlatformOptions> {
   @override
-  PlatformFilter build() => PlatformFilter.all;
+  PlatformOptions build() => PlatformOptions.all;
 
-  void toggleFilter(PlatformFilter filter) {
+  void toggleFilter(PlatformOptions filter) {
     if (state == filter) {
-      state = PlatformFilter.all;
+      state = PlatformOptions.all;
     } else {
       state = filter;
     }
