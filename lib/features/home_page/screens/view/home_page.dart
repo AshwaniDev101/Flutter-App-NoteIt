@@ -7,12 +7,13 @@ import 'package:noteit/database/drift/drift_database.dart';
 import 'package:noteit/features/home_page/screens/view/widgets/notes_grid_view.dart';
 import 'package:noteit/features/home_page/screens/view/widgets/sort_options_bar.dart';
 import 'package:noteit/features/password_page/screens/view/password_page.dart';
+
 import '../../../../shared/managers/lock_manger/lock_manager.dart';
 import '../../../../database/sync_manager.dart';
 import '../../../drawer_page/homepage_drawer.dart';
 import '../core/home_app_bars.dart';
 import '../core/providers.dart';
-
+import '../viewmodel/home_view_model.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -22,10 +23,6 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
-  bool isSelectMode = false;
-  final Set<int> noteIds = {};
-
-  bool isSearchMode = false;
   final TextEditingController _searchController = TextEditingController();
 
   @override
@@ -42,50 +39,36 @@ class _HomePageState extends ConsumerState<HomePage> {
     super.dispose();
   }
 
-  void _toggleSelection(int id) {
-    setState(() {
-      if (noteIds.contains(id)) {
-        noteIds.remove(id);
-        if (noteIds.isEmpty) isSelectMode = false;
-      } else {
-        noteIds.add(id);
-      }
-    });
-  }
-
   void _exitSearchMode() {
     _searchController.clear();
     ref.read(searchQueryProvider.notifier).clear();
-    setState(() => isSearchMode = false);
-  }
-
-  void _clearSelection() {
-    setState(() {
-      isSelectMode = false;
-      noteIds.clear();
-    });
+    ref.read(homeViewModelProvider.notifier).exitSearchMode();
   }
 
   @override
   Widget build(BuildContext context) {
     final isAndroid = defaultTargetPlatform == TargetPlatform.android;
 
-    // Forces Riverpod to keep the SyncManager awake
+    // ViewModel State & Notifier
+    final homeState = ref.watch(homeViewModelProvider);
+    final viewModel = ref.read(homeViewModelProvider.notifier);
+
+    // Forces Riverpod to keep SyncManager awake
     ref.watch(syncNotifierProvider);
 
     return PopScope(
-      canPop: !isSelectMode && !isSearchMode,
+      canPop: !homeState.isSelectMode && !homeState.isSearchMode,
       onPopInvokedWithResult: (bool didPop, Object? result) {
         if (didPop) return;
-        if (isSelectMode) {
-          _clearSelection();
-        } else if (isSearchMode) {
+        if (homeState.isSelectMode) {
+          viewModel.clearSelection();
+        } else if (homeState.isSearchMode) {
           _exitSearchMode();
         }
       },
       child: Scaffold(
         drawer: const HomepageDrawer(),
-        appBar: _buildResponsiveAppBar(isAndroid),
+        appBar: _buildResponsiveAppBar(isAndroid, homeState, viewModel),
         floatingActionButton: FloatingActionButton(
           onPressed: () => context.push(AppRoutes.edit),
           child: const Icon(Icons.add),
@@ -94,13 +77,13 @@ class _HomePageState extends ConsumerState<HomePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (!isSearchMode && !isAndroid) const SortOptionsBar(),
+              if (!homeState.isSearchMode && !isAndroid) const SortOptionsBar(),
               Expanded(
                 child: NotesGridView(
-                  isSelectMode: isSelectMode,
-                  noteIds: noteIds,
-                  onToggleSelection: _toggleSelection,
-                  onEnableSelectMode: () => setState(() => isSelectMode = true),
+                  isSelectMode: homeState.isSelectMode,
+                  noteIds: homeState.selectedNoteIds,
+                  onToggleSelection: viewModel.toggleSelection,
+                  onEnableSelectMode: viewModel.enableSelectMode,
                   onPromptPassword: _promptForPassword,
                 ),
               ),
@@ -111,26 +94,24 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  PreferredSizeWidget _buildResponsiveAppBar(bool isAndroid) {
-    if (isSelectMode) {
+  PreferredSizeWidget _buildResponsiveAppBar(
+      bool isAndroid,
+      HomePageState state,
+      HomeViewModel viewModel,
+      ) {
+    if (state.isSelectMode) {
       return SelectModeAppBar(
-        noteIds: noteIds,
-        onClearSelection: _clearSelection,
+        noteIds: state.selectedNoteIds,
+        onClearSelection: viewModel.clearSelection,
         onSelectAll: () {
           final currentNotes = ref.read(filteredNotesProvider).value ?? [];
-          final isAllSelected = currentNotes.isNotEmpty && noteIds.length == currentNotes.length;
-          setState(() {
-            if (isAllSelected) {
-              _clearSelection();
-            } else {
-              noteIds.addAll(currentNotes.map((note) => note.id));
-            }
-          });
+          final allNoteIds = currentNotes.map((note) => note.id).toList();
+          viewModel.toggleSelectAll(allNoteIds);
         },
       );
     }
 
-    if (isSearchMode) {
+    if (state.isSearchMode) {
       return SearchModeAppBar(
         searchController: _searchController,
         onExitSearchMode: _exitSearchMode,
@@ -140,7 +121,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     return DefaultHomeAppBar(
       isAndroid: isAndroid,
       searchController: _searchController,
-      onEnterSearchMode: () => setState(() => isSearchMode = true),
+      onEnterSearchMode: viewModel.enterSearchMode,
     );
   }
 
@@ -162,14 +143,18 @@ class _HomePageState extends ConsumerState<HomePage> {
 
       if (!lockManager.hasMasterPassword) {
         await lockManager.setupMasterPassword(enteredPassword);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('New Master Password Set!')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('New Master Password Set!')),
+        );
       }
 
       final success = lockManager.verifyAndSessionUnlock(note.id, enteredPassword);
       if (success) {
         context.push(AppRoutes.edit, extra: note);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Incorrect Password')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Incorrect Password')),
+        );
       }
     }
   }
