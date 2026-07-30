@@ -160,14 +160,14 @@ class HomepageDrawer extends ConsumerWidget {
                     context.push(AppRoutes.themes);
                   },
                 ),
-                _DrawerItem(
-                  icon: Icons.lock_outline_rounded,
-                  title: 'Master Password',
-                  onTap: () {
-                    Navigator.pop(context);
-                    context.push(AppRoutes.masterPassword);
-                  },
-                ),
+                // _DrawerItem(
+                //   icon: Icons.lock_outline_rounded,
+                //   title: 'Master Password',
+                //   onTap: () {
+                //     Navigator.pop(context);
+                //     context.push(AppRoutes.masterPassword);
+                //   },
+                // ),
                 _DrawerItem(
                   icon: Icons.settings_outlined,
                   title: 'Settings',
