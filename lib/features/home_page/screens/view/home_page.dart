@@ -6,6 +6,7 @@ import 'package:noteit/core/routing/routing.dart';
 import 'package:noteit/database/drift/drift_database.dart';
 import 'package:noteit/features/home_page/screens/view/widgets/notes_grid_view.dart';
 import 'package:noteit/features/home_page/screens/view/widgets/sort_options_bar.dart';
+import 'package:noteit/features/home_page/screens/view/widgets/tab_view_state.dart';
 import 'package:noteit/features/password_page/screens/view/password_page.dart';
 
 import '../../../../shared/managers/lock_manger/lock_manager.dart';
@@ -49,12 +50,19 @@ class _HomePageState extends ConsumerState<HomePage> {
   Widget build(BuildContext context) {
     final isAndroid = defaultTargetPlatform == TargetPlatform.android;
 
-    // ViewModel State & Notifier
+    // ViewModel State & Notifiers
     final homeState = ref.watch(homeViewModelProvider);
     final viewModel = ref.read(homeViewModelProvider.notifier);
 
+    // Tab State & Notifiers
+    final tabState = ref.watch(tabViewModelProvider);
+    final tabViewModel = ref.read(tabViewModelProvider.notifier);
+
     // Forces Riverpod to keep SyncManager awake
     ref.watch(syncNotifierProvider);
+
+    // Determine if we should show the desktop tab view
+    final showTabView = !isAndroid && tabState.openTabs.isNotEmpty;
 
     return PopScope(
       canPop: !homeState.isSelectMode && !homeState.isSearchMode,
@@ -69,28 +77,111 @@ class _HomePageState extends ConsumerState<HomePage> {
       child: Scaffold(
         drawer: const HomepageDrawer(),
         appBar: _buildResponsiveAppBar(isAndroid, homeState, viewModel),
-        floatingActionButton: FloatingActionButton(
+        // Hide FloatingActionButton if we are in Tab View on desktop
+        floatingActionButton: showTabView
+            ? null
+            : FloatingActionButton(
           onPressed: () => context.push(AppRoutes.edit),
           child: const Icon(Icons.add),
         ),
-        body: Center(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (!homeState.isSearchMode && !isAndroid) const SortOptionsBar(),
-              Expanded(
-                child: NotesGridView(
-                  isSelectMode: homeState.isSelectMode,
-                  noteIds: homeState.selectedNoteIds,
-                  onToggleSelection: viewModel.toggleSelection,
-                  onEnableSelectMode: viewModel.enableSelectMode,
-                  onPromptPassword: _promptForPassword,
+        body: showTabView
+            ? _buildDesktopTabView(tabState, tabViewModel)
+            : _buildStandardGridView(homeState, viewModel, isAndroid),
+      ),
+    );
+  }
+
+  Widget _buildStandardGridView(HomePageState homeState, HomeViewModel viewModel, bool isAndroid) {
+    return Center(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (!homeState.isSearchMode && !isAndroid) const SortOptionsBar(),
+          Expanded(
+            child: NotesGridView(
+              isSelectMode: homeState.isSelectMode,
+              noteIds: homeState.selectedNoteIds,
+              onToggleSelection: viewModel.toggleSelection,
+              onEnableSelectMode: viewModel.enableSelectMode,
+              onPromptPassword: _promptForPassword,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDesktopTabView(TabViewState tabState, TabViewModel tabViewModel) {
+    return Column(
+      children: [
+        // Tab Strip
+        Container(
+          height: 40,
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: tabState.openTabs.length,
+            itemBuilder: (context, index) {
+              final note = tabState.openTabs[index];
+              final isActive = index == tabState.activeTabIndex;
+
+              return GestureDetector(
+                onTap: () => tabViewModel.switchTab(index),
+                child: Container(
+                  padding: const EdgeInsets.only(left: 16, right: 8),
+                  decoration: BoxDecoration(
+                    color: isActive
+                        ? Theme.of(context).colorScheme.surface
+                        : Colors.transparent,
+                    border: Border(
+                      bottom: BorderSide(
+                        color: isActive
+                            ? Theme.of(context).colorScheme.primary
+                            : Colors.transparent,
+                        width: 2,
+                      ),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Text(
+                        note.title.isEmpty ? 'Untitled' : note.title,
+                        style: TextStyle(
+                          fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                          color: isActive
+                              ? Theme.of(context).colorScheme.onSurface
+                              : Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 16),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        splashRadius: 16,
+                        onPressed: () => tabViewModel.closeTab(index),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              );
+            },
           ),
         ),
-      ),
+        // Active Editor
+        Expanded(
+          child: IndexedStack(
+            index: tabState.activeTabIndex,
+            children: tabState.openTabs.map((note) {
+              // TODO: Replace this placeholder with your actual Editor screen widget
+              // Example: return NoteEditorScreen(note: note);
+              return Center(
+                child: Text('Editor for: ${note.title.isEmpty ? 'Untitled' : note.title}'),
+              );
+            }).toList(),
+          ),
+        ),
+      ],
     );
   }
 
@@ -150,7 +241,15 @@ class _HomePageState extends ConsumerState<HomePage> {
 
       final success = lockManager.verifyAndSessionUnlock(note.id, enteredPassword);
       if (success) {
-        context.push(AppRoutes.edit, extra: note);
+        final isAndroid = defaultTargetPlatform == TargetPlatform.android;
+
+        if (!isAndroid) {
+          // Open in Tab View for Windows/Desktop
+          ref.read(tabViewModelProvider.notifier).openTab(note);
+        } else {
+          // Route to full screen for Mobile
+          context.push(AppRoutes.edit, extra: note);
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Incorrect Password')),
