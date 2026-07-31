@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:noteit/core/routing/routing.dart';
 import 'package:noteit/database/drift/drift_database.dart';
+import 'package:noteit/features/home_page/screens/view/widgets/home_app_bars.dart';
 import 'package:noteit/features/home_page/screens/view/widgets/notes_grid_view.dart';
 import 'package:noteit/features/home_page/screens/view/widgets/sort_options_bar.dart';
 import 'package:noteit/features/home_page/screens/view/widgets/tab_view_state.dart';
@@ -12,7 +13,6 @@ import 'package:noteit/features/password_page/screens/view/password_page.dart';
 import '../../../../shared/managers/lock_manger/lock_manager.dart';
 import '../../../../database/sync_manager.dart';
 import '../../../drawer_page/homepage_drawer.dart';
-import '../core/home_app_bars.dart';
 import '../core/providers.dart';
 import '../viewmodel/home_view_model.dart';
 
@@ -50,19 +50,18 @@ class _HomePageState extends ConsumerState<HomePage> {
   Widget build(BuildContext context) {
     final isAndroid = defaultTargetPlatform == TargetPlatform.android;
 
-    // ViewModel State & Notifiers
+    // ViewModel State & Notifier
     final homeState = ref.watch(homeViewModelProvider);
     final viewModel = ref.read(homeViewModelProvider.notifier);
 
-    // Tab State & Notifiers
+    // Tab State & Notifier
     final tabState = ref.watch(tabViewModelProvider);
     final tabViewModel = ref.read(tabViewModelProvider.notifier);
 
     // Forces Riverpod to keep SyncManager awake
     ref.watch(syncNotifierProvider);
 
-    // Determine if we should show the desktop tab view
-    final showTabView = !isAndroid && tabState.openTabs.isNotEmpty;
+    final showTabView = homeState.isTabViewMode;
 
     return PopScope(
       canPop: !homeState.isSelectMode && !homeState.isSearchMode,
@@ -77,17 +76,59 @@ class _HomePageState extends ConsumerState<HomePage> {
       child: Scaffold(
         drawer: const HomepageDrawer(),
         appBar: _buildResponsiveAppBar(isAndroid, homeState, viewModel),
-        // Hide FloatingActionButton if we are in Tab View on desktop
-        floatingActionButton: showTabView
-            ? null
-            : FloatingActionButton(
-          onPressed: () => context.push(AppRoutes.edit),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            if (showTabView) {
+              final emptyNote = Note(
+                id: DateTime.now().millisecondsSinceEpoch,
+                title: '',
+                content: '',
+                createdAt: DateTime.now(),
+                updatedAt: DateTime.now(),
+                isLocked: false,
+                isPinned: false,
+                color: 0,
+                // --- Add these missing required fields ---
+                isArchived: false,
+                position: 0,
+                hasAttachments: false,
+                contentType: 'text', // Change to 0 if this is an int in your database
+                isShared: false,
+                syncStatus: 0,       // Change to 'pending' or similar if this is a String
+                versionCounter: 1,
+              );
+              tabViewModel.openTab(emptyNote);
+            } else {
+              context.push(AppRoutes.edit);
+            }
+          },
           child: const Icon(Icons.add),
         ),
         body: showTabView
-            ? _buildDesktopTabView(tabState, tabViewModel)
+            ? _buildSplitTabView(homeState, viewModel, tabState, tabViewModel, isAndroid)
             : _buildStandardGridView(homeState, viewModel, isAndroid),
       ),
+    );
+  }
+
+  Widget _buildSplitTabView(
+      HomePageState homeState,
+      HomeViewModel viewModel,
+      TabViewState tabState,
+      TabViewModel tabViewModel,
+      bool isAndroid,
+      ) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 300,
+          child: _buildStandardGridView(homeState, viewModel, isAndroid),
+        ),
+        const VerticalDivider(width: 1, thickness: 1),
+        Expanded(
+          child: _buildDesktopTabView(tabState, tabViewModel),
+        ),
+      ],
     );
   }
 
@@ -112,9 +153,29 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   Widget _buildDesktopTabView(TabViewState tabState, TabViewModel tabViewModel) {
+    if (tabState.openTabs.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.edit_note, size: 64, color: Colors.grey.shade400),
+            const SizedBox(height: 16),
+            Text(
+              'No tabs open',
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 18),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Select a note from the sidebar or click + to start editing.',
+              style: TextStyle(color: Colors.grey.shade500),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Column(
       children: [
-        // Tab Strip
         Container(
           height: 40,
           color: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -168,13 +229,10 @@ class _HomePageState extends ConsumerState<HomePage> {
             },
           ),
         ),
-        // Active Editor
         Expanded(
           child: IndexedStack(
             index: tabState.activeTabIndex,
             children: tabState.openTabs.map((note) {
-              // TODO: Replace this placeholder with your actual Editor screen widget
-              // Example: return NoteEditorScreen(note: note);
               return Center(
                 child: Text('Editor for: ${note.title.isEmpty ? 'Untitled' : note.title}'),
               );
@@ -213,6 +271,8 @@ class _HomePageState extends ConsumerState<HomePage> {
       isAndroid: isAndroid,
       searchController: _searchController,
       onEnterSearchMode: viewModel.enterSearchMode,
+      isTabViewMode: state.isTabViewMode,
+      onToggleTabView: viewModel.toggleTabViewMode,
     );
   }
 
@@ -241,13 +301,10 @@ class _HomePageState extends ConsumerState<HomePage> {
 
       final success = lockManager.verifyAndSessionUnlock(note.id, enteredPassword);
       if (success) {
-        final isAndroid = defaultTargetPlatform == TargetPlatform.android;
-
-        if (!isAndroid) {
-          // Open in Tab View for Windows/Desktop
+        final homeState = ref.read(homeViewModelProvider);
+        if (homeState.isTabViewMode) {
           ref.read(tabViewModelProvider.notifier).openTab(note);
         } else {
-          // Route to full screen for Mobile
           context.push(AppRoutes.edit, extra: note);
         }
       } else {
