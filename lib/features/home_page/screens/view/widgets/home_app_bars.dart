@@ -14,16 +14,11 @@ class DefaultHomeAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final TextEditingController searchController;
   final VoidCallback onEnterSearchMode;
 
-  final bool isTabViewMode;
-  final VoidCallback onToggleTabView;
-
   const DefaultHomeAppBar({
     super.key,
     required this.isAndroid,
     required this.searchController,
     required this.onEnterSearchMode,
-    required this.isTabViewMode,
-    required this.onToggleTabView,
   });
 
   @override
@@ -71,13 +66,6 @@ class DefaultHomeAppBar extends ConsumerWidget implements PreferredSizeWidget {
               icon: const Icon(Icons.search),
               onPressed: onEnterSearchMode
           ),
-
-        if (!isAndroid)
-        IconButton(
-          icon: Icon(isTabViewMode ? Icons.view_sidebar : Icons.tab),
-          tooltip: isTabViewMode ? 'Switch to Grid View' : 'Switch to Tab View',
-          onPressed: onToggleTabView,
-        ),
         if (!isAndroid)
           isSyncing
               ? const Padding(

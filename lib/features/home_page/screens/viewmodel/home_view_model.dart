@@ -3,26 +3,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class HomePageState {
   final bool isSelectMode;
   final bool isSearchMode;
-  final bool isTabViewMode; // Added this
   final Set<int> selectedNoteIds;
 
   const HomePageState({
     this.isSelectMode = false,
     this.isSearchMode = false,
-    this.isTabViewMode = false, // Default to false
     this.selectedNoteIds = const {}
   });
 
   HomePageState copyWith({
     bool? isSelectMode,
     bool? isSearchMode,
-    bool? isTabViewMode,
     Set<int>? selectedNoteIds
   }) {
     return HomePageState(
       isSelectMode: isSelectMode ?? this.isSelectMode,
       isSearchMode: isSearchMode ?? this.isSearchMode,
-      isTabViewMode: isTabViewMode ?? this.isTabViewMode,
       selectedNoteIds: selectedNoteIds ?? this.selectedNoteIds,
     );
   }
@@ -31,11 +27,6 @@ class HomePageState {
 class HomeViewModel extends Notifier<HomePageState> {
   @override
   HomePageState build() => const HomePageState();
-
-  // Add this toggle method
-  void toggleTabViewMode() {
-    state = state.copyWith(isTabViewMode: !state.isTabViewMode);
-  }
 
   void toggleSelection(int id) {
     final currentSet = Set<int>.from(state.selectedNoteIds);

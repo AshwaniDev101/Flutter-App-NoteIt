@@ -9,6 +9,7 @@ import 'package:noteit/features/home_page/screens/view/widgets/notes_grid_view.d
 import 'package:noteit/features/home_page/screens/view/widgets/sort_options_bar.dart';
 import 'package:noteit/features/home_page/screens/view/widgets/tab_view_state.dart';
 import 'package:noteit/features/password_page/screens/view/password_page.dart';
+import 'package:noteit/features/edit_note_page/screens/view/edit_note_page.dart';
 
 import '../../../../shared/managers/lock_manger/lock_manager.dart';
 import '../../../../database/sync_manager.dart';
@@ -61,8 +62,6 @@ class _HomePageState extends ConsumerState<HomePage> {
     // Forces Riverpod to keep SyncManager awake
     ref.watch(syncNotifierProvider);
 
-    final showTabView = homeState.isTabViewMode;
-
     return PopScope(
       canPop: !homeState.isSelectMode && !homeState.isSearchMode,
       onPopInvokedWithResult: (bool didPop, Object? result) {
@@ -78,7 +77,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         appBar: _buildResponsiveAppBar(isAndroid, homeState, viewModel),
         floatingActionButton: FloatingActionButton(
           onPressed: () {
-            if (showTabView) {
+            if (!isAndroid) {
               final emptyNote = Note(
                 id: DateTime.now().millisecondsSinceEpoch,
                 title: '',
@@ -88,13 +87,12 @@ class _HomePageState extends ConsumerState<HomePage> {
                 isLocked: false,
                 isPinned: false,
                 color: 0,
-                // --- Add these missing required fields ---
                 isArchived: false,
                 position: 0,
                 hasAttachments: false,
-                contentType: 'text', // Change to 0 if this is an int in your database
+                contentType: 'text',
                 isShared: false,
-                syncStatus: 0,       // Change to 'pending' or similar if this is a String
+                syncStatus: 0,
                 versionCounter: 1,
               );
               tabViewModel.openTab(emptyNote);
@@ -104,7 +102,8 @@ class _HomePageState extends ConsumerState<HomePage> {
           },
           child: const Icon(Icons.add),
         ),
-        body: showTabView
+        // Permanently show Split View on Desktop/Web, Standard View on Android
+        body: !isAndroid
             ? _buildSplitTabView(homeState, viewModel, tabState, tabViewModel, isAndroid)
             : _buildStandardGridView(homeState, viewModel, isAndroid),
       ),
@@ -233,8 +232,10 @@ class _HomePageState extends ConsumerState<HomePage> {
           child: IndexedStack(
             index: tabState.activeTabIndex,
             children: tabState.openTabs.map((note) {
-              return Center(
-                child: Text('Editor for: ${note.title.isEmpty ? 'Untitled' : note.title}'),
+              // --- RENDER THE ACTUAL EDITOR HERE ---
+              return EditNotePage(
+                key: ValueKey(note.id), // Important: Key ensures state refreshes correctly when switching tabs
+                existingNote: note,
               );
             }).toList(),
           ),
@@ -271,8 +272,6 @@ class _HomePageState extends ConsumerState<HomePage> {
       isAndroid: isAndroid,
       searchController: _searchController,
       onEnterSearchMode: viewModel.enterSearchMode,
-      isTabViewMode: state.isTabViewMode,
-      onToggleTabView: viewModel.toggleTabViewMode,
     );
   }
 
@@ -300,9 +299,10 @@ class _HomePageState extends ConsumerState<HomePage> {
       }
 
       final success = lockManager.verifyAndSessionUnlock(note.id, enteredPassword);
+      final isAndroid = defaultTargetPlatform == TargetPlatform.android;
+
       if (success) {
-        final homeState = ref.read(homeViewModelProvider);
-        if (homeState.isTabViewMode) {
+        if (!isAndroid) {
           ref.read(tabViewModelProvider.notifier).openTab(note);
         } else {
           context.push(AppRoutes.edit, extra: note);
