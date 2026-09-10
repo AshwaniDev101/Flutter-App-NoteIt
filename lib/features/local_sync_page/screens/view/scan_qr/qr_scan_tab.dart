@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:noteit/features/local_sync_page/screens/view/scan_qr/widgets/shaded_overlay.dart';
 
-import '../../../provider/qr_provider.dart';
 
 class ScanQrTab extends ConsumerStatefulWidget {
   const ScanQrTab({super.key});
@@ -30,14 +29,16 @@ class _ScanQrTabState extends ConsumerState<ScanQrTab> {
 
   @override
   Widget build(BuildContext context) {
-    final scanStateProvider = ref.watch(qrScanStateNotifier);
+
+    // final scanStateProvider = ref.watch(qrScanStateNotifier);
 
     // When Some User is found show the Card
-    if (scanStateProvider.isUserFound) {
-      return Card(child: Text("place Holder"));
-    }
+    // if (scanStateProvider.isUserFound) {
+    //   return Card(child: Text("place Holder"),);
+    // }
 
     return Scaffold(
+
       body: Center(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -57,7 +58,7 @@ class _ScanQrTabState extends ConsumerState<ScanQrTab> {
 
               onDetect: (BarcodeCapture capture) async {
                 // this is the avoid qr detection spamming Snack bar
-                if (scanStateProvider.isCoolDown) return;
+                // if (scanStateProvider.isCoolDown) return;
 
                 final barcode = capture.barcodes.first;
                 final String? code = barcode.rawValue;
@@ -65,7 +66,7 @@ class _ScanQrTabState extends ConsumerState<ScanQrTab> {
                 // We have code
                 if (code != null && code.isNotEmpty) {
                   // print("==== Qr Detected $code");
-                  ref.read(qrScanStateNotifier.notifier).startCooldown();
+                  // ref.read(qrScanStateNotifier.notifier).startCooldown();
 
                   // Separating the appName (fullCode[0]) and userID (fullCode[1])
                   final fullCode = code.split('/');
@@ -73,6 +74,9 @@ class _ScanQrTabState extends ConsumerState<ScanQrTab> {
                   // Is this QR is for my own app?
                   // Yes
                   if (fullCode[0].contains("noteit random string")) {}
+
+
+
                 }
               },
             );

@@ -4,6 +4,7 @@ import 'package:noteit/database/drift/drift_database.dart';
 import 'package:noteit/features/home_page/screens/view/widgets/home_app_bars.dart';
 import 'package:noteit/features/home_page/screens/view/widgets/notes_grid_view.dart';
 import 'package:noteit/features/edit_note_page/screens/view/edit_note_page.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../../database/sync_manager.dart';
 import '../../../drawer_page/homepage_drawer.dart';
@@ -167,19 +168,41 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
     if (_activeNote == null) {
       return Center(
         child: Column(
+
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.edit_note, size: 64, color: Colors.grey.shade400),
-            const SizedBox(height: 16),
-            Text('No note selected', style: TextStyle(color: Colors.grey.shade600, fontSize: 18)),
+            Container(
+              color: Colors.white,
+              height: 200,
+              width: 200,
+              child: QrImageView(data: "919.9191.029"),
+            ),
+            const SizedBox(height: 8),
+            Text('Local wifi sync', style: TextStyle(color: Colors.grey.shade600, fontSize: 18)),
             const SizedBox(height: 4),
             Text(
-              'Select a note from the list or click + to start editing.',
+              'Scan the qr to sync your notes on local network',
               style: TextStyle(color: Colors.grey.shade500),
             ),
           ],
         ),
       );
+      // No note message placeholder
+      // return Center(
+      //   child: Column(
+      //     mainAxisAlignment: MainAxisAlignment.center,
+      //     children: [
+      //       Icon(Icons.edit_note, size: 64, color: Colors.grey.shade400),
+      //       const SizedBox(height: 16),
+      //       Text('No note selected', style: TextStyle(color: Colors.grey.shade600, fontSize: 18)),
+      //       const SizedBox(height: 4),
+      //       Text(
+      //         'Select a note from the list or click + to start editing.',
+      //         style: TextStyle(color: Colors.grey.shade500),
+      //       ),
+      //     ],
+      //   ),
+      // );
     }
     return EditNotePage(key: ValueKey(_activeNote!.id), existingNote: _activeNote);
   }
