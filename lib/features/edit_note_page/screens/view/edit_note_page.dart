@@ -11,6 +11,7 @@ import '../view_model/edit_note_view_model.dart';
 
 class EditNotePage extends ConsumerStatefulWidget {
   final Note? existingNote;
+
   const EditNotePage({super.key, this.existingNote});
 
   @override
@@ -18,7 +19,6 @@ class EditNotePage extends ConsumerStatefulWidget {
 }
 
 class _EditNotePageState extends ConsumerState<EditNotePage> {
-
   late final TextEditingController _titleController;
   late final TextEditingController _contentController;
   late final FocusNode _titleFocusNode;
@@ -30,8 +30,11 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
   bool _hasTriggeredFinalSave = false;
   bool _hasCreatedNewNote = false;
 
-  bool get _isNewNote => widget.existingNote == null ||
-      (widget.existingNote!.title.isEmpty && widget.existingNote!.content.isEmpty && widget.existingNote!.syncStatus == 0);
+  bool get _isNewNote =>
+      widget.existingNote == null ||
+      (widget.existingNote!.title.isEmpty &&
+          widget.existingNote!.content.isEmpty &&
+          widget.existingNote!.syncStatus == 0);
 
   @override
   void initState() {
@@ -111,12 +114,15 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
 
   String _getFormattedDate() {
     final now = widget.existingNote?.updatedAt ?? widget.existingNote?.createdAt ?? DateTime.now();
-    return _isNewNote ? "${now.month}/${now.day}/${now.year}" : "${now.month}/${now.day}/${now.year} ${now.hour}:${now.minute.toString().padLeft(2, '0')}";
+    return _isNewNote
+        ? "${now.month}/${now.day}/${now.year}"
+        : "${now.month}/${now.day}/${now.year} ${now.hour}:${now.minute.toString().padLeft(2, '0')}";
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDesktop = defaultTargetPlatform == TargetPlatform.windows ||
+    final isDesktop =
+        defaultTargetPlatform == TargetPlatform.windows ||
         defaultTargetPlatform == TargetPlatform.macOS ||
         defaultTargetPlatform == TargetPlatform.linux;
 
@@ -130,7 +136,6 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
     );
   }
 
-
   Widget _buildDesktopUI() {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
@@ -141,19 +146,12 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
         automaticallyImplyLeading: false, // No back button on desktop
         titleSpacing: 24,
         title: _buildTitleField(colorScheme, textTheme, maxWidth: 600),
-        actions: [
-
-          _buildUndoRedoButtons(),
-          if (!_isNewNote) _buildOptionMenu(),
-          const SizedBox(width: 16),
-        ],
+        actions: [_buildUndoRedoButtons(), if (!_isNewNote) _buildOptionMenu(), const SizedBox(width: 16)],
       ),
       body: Column(
         children: [
           _buildMetaDataRow(colorScheme, textTheme, padding: 24.0),
-          Expanded(
-            child: _buildContentField(textTheme, padding: 24.0),
-          ),
+          Expanded(child: _buildContentField(textTheme, padding: 24.0)),
         ],
       ),
     );
@@ -167,10 +165,7 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
       backgroundColor: colorScheme.surface,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: _handleMobileBack,
-        ),
+        leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: _handleMobileBack),
         titleSpacing: 0,
         // Pass showSaveIcon: false to hide it in mobile mode
         title: _buildTitleField(colorScheme, textTheme, showSaveIcon: false),
@@ -183,8 +178,8 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
       body: SafeArea(
         child: Column(
           children: [
-            _buildMetaDataRow(colorScheme, textTheme, padding: 18.0),
-            Expanded(child: _buildContentField(textTheme, padding: 20.0)),
+            _buildMetaDataRow(colorScheme, textTheme, padding: 16.0),
+            Expanded(child: _buildContentField(textTheme, padding: 16.0)),
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: _buildUndoRedoButtons(isMobileView: true),
@@ -222,18 +217,19 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
                 contentPadding: const EdgeInsets.symmetric(horizontal: 12),
                 suffixIcon: _titleFocusNode.hasFocus
                     ? ValueListenableBuilder<TextEditingValue>(
-                  valueListenable: _titleController,
-                  builder: (context, value, child) {
-                    if (value.text.isEmpty) return const SizedBox.shrink();
-                    return IconButton(
-                      icon: const Icon(Icons.close, size: 18),
-                      onPressed: () {
-                        _titleController.clear();
-                        _isAutoSyncingTitle = true;
-                      },
-                    );
-                  },
-                ) : const SizedBox.shrink(),
+                        valueListenable: _titleController,
+                        builder: (context, value, child) {
+                          if (value.text.isEmpty) return const SizedBox.shrink();
+                          return IconButton(
+                            icon: const Icon(Icons.close, size: 16),
+                            onPressed: () {
+                              _titleController.clear();
+                              _isAutoSyncingTitle = true;
+                            },
+                          );
+                        },
+                      )
+                    : const SizedBox.shrink(),
               ),
             ),
           ),
@@ -242,12 +238,14 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
         // Conditionally render the save icon based on the platform requirement
         if (showSaveIcon) ...[
           const SizedBox(width: 8),
-          IconButton(
-              icon: const Icon(Icons.save_outlined),
-              tooltip: 'Save Note',
-              onPressed: () => _executeSave(isManualSave: true)
+
+          TextButton.icon(
+            onPressed: () => _executeSave(isManualSave: true),
+            icon: Icon(Icons.save, color: Theme.of(context).colorScheme.primary),
+            label: Text("Save"),
+
           ),
-        ]
+        ],
       ],
     );
   }
@@ -263,7 +261,7 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
         textAlignVertical: TextAlignVertical.top,
         textCapitalization: TextCapitalization.sentences,
         decoration: const InputDecoration(border: InputBorder.none),
-        style: textTheme.bodyLarge?.copyWith(fontSize: 18, height: 1.6),
+        style: textTheme.bodyLarge?.copyWith(fontSize: 16, height: 1.6),
       ),
     );
   }
@@ -274,12 +272,24 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(color: _isNewNote ? colorScheme.primaryContainer : colorScheme.tertiaryContainer, borderRadius: BorderRadius.circular(4)),
-            child: Text(_isNewNote ? 'New' : 'Updating...', style: textTheme.labelSmall?.copyWith(color: _isNewNote ? colorScheme.onPrimaryContainer : colorScheme.onTertiaryContainer, fontWeight: FontWeight.bold)),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            decoration: BoxDecoration(
+              color: _isNewNote ? colorScheme.primaryContainer : colorScheme.tertiaryContainer,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              _isNewNote ? 'New' : 'Updating...',
+              style: textTheme.labelSmall?.copyWith(
+                color: _isNewNote ? colorScheme.onPrimaryContainer : colorScheme.onTertiaryContainer,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
           const Spacer(),
-          if (_isLocked) ...[Icon(Icons.lock_outline, size: 16, color: colorScheme.onSurfaceVariant), const SizedBox(width: 8)],
+          if (_isLocked) ...[
+            Icon(Icons.lock_outline, size: 16, color: colorScheme.onSurfaceVariant),
+            const SizedBox(width: 8),
+          ],
           Text(_getFormattedDate(), style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant)),
         ],
       ),
@@ -293,12 +303,24 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
       children: [
         ValueListenableBuilder<UndoHistoryValue>(
           valueListenable: _undoController,
-          builder: (context, value, child) => IconButton(onPressed: value.canUndo ? () => _undoController.undo() : null, icon: Icon(Icons.undo, size: isMobileView ? 24 : 20)),
+          builder: (context, value, child) => IconButton(
+            onPressed: value.canUndo ? () => _undoController.undo() : null,
+            style: IconButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.primary,
+            ),
+            icon: Icon(Icons.undo, size: isMobileView ? 24 : 20,)
+          ),
         ),
         SizedBox(width: isMobileView ? 24 : 0),
         ValueListenableBuilder<UndoHistoryValue>(
           valueListenable: _undoController,
-          builder: (context, value, child) => IconButton(onPressed: value.canRedo ? () => _undoController.redo() : null, icon: Icon(Icons.redo, size: isMobileView ? 24 : 20)),
+          builder: (context, value, child) => IconButton(
+            onPressed: value.canRedo ? () => _undoController.redo() : null,
+            style: IconButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.primary,
+            ),
+            icon: Icon(Icons.redo, size: isMobileView ? 24 : 20,)
+          ),
         ),
       ],
     );
@@ -306,7 +328,10 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
 
   Widget _buildOptionMenu() {
     return PopupMenuButton<String>(
-      icon: const Icon(Icons.more_vert_rounded),
+      style: IconButton.styleFrom(
+        foregroundColor: Theme.of(context).colorScheme.primary,
+      ),
+      icon: const Icon(Icons.more_vert_rounded, ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       onSelected: (String value) async {
         if (value == 'toggle_lock') {
@@ -342,7 +367,9 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
 
             if (success) {
               if (mounted) {
-                setState(() { _isLocked = !_isLocked; });
+                setState(() {
+                  _isLocked = !_isLocked;
+                });
 
                 // If we are on mobile, locking it boots you out.
                 // On desktop split view, we let them keep editing it.
@@ -368,20 +395,24 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
         final colorScheme = Theme.of(context).colorScheme;
         return [
           PopupMenuItem(
-              value: 'toggle_lock',
-              child: Row(children: [
-                Icon(_isLocked ? Icons.lock_clock_outlined : Icons.lock_outline, size: 20),
+            value: 'toggle_lock',
+            child: Row(
+              children: [
+                Icon(_isLocked ? Icons.lock_clock_outlined : Icons.lock_outline, size: 16),
                 const SizedBox(width: 12),
-                Text(_isLocked ? 'Remove Lock' : 'Lock Note')
-              ])
+                Text(_isLocked ? 'Remove Lock' : 'Lock Note'),
+              ],
+            ),
           ),
           const PopupMenuItem(
-              value: 'delete',
-              child: Row(children: [
-                Icon(Icons.delete_outline, size: 20, color: Colors.redAccent),
+            value: 'delete',
+            child: Row(
+              children: [
+                Icon(Icons.delete_outline, size: 16, color: Colors.redAccent),
                 SizedBox(width: 12),
-                Text('Delete Note', style: TextStyle(color: Colors.redAccent))
-              ])
+                Text('Delete Note', style: TextStyle(color: Colors.redAccent)),
+              ],
+            ),
           ),
         ];
       },

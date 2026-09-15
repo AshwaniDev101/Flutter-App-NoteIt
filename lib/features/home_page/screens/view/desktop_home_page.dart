@@ -70,31 +70,12 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
       child: Scaffold(
         drawer: const HomepageDrawer(),
         appBar: _buildAppBar(homeState, viewModel),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            // Instantiate an empty note draft. This won't be saved to the DB
-            // until the user actually interacts with the EditNotePage.
-            final emptyNote = Note(
-              id: DateTime.now().millisecondsSinceEpoch,
-              title: '',
-              content: '',
-              createdAt: DateTime.now(),
-              updatedAt: DateTime.now(),
-              isLocked: false,
-              isPinned: false,
-              color: 0,
-              isArchived: false,
-              position: 0,
-              hasAttachments: false,
-              contentType: 'text',
-              isShared: false,
-              syncStatus: 0,
-              versionCounter: 1,
-            );
-            setState(() => _activeNote = emptyNote);
-          },
-          child: const Icon(Icons.add),
-        ),
+        // floatingActionButton: FloatingActionButton(
+        //   onPressed: () {
+        //
+        //   },
+        //   child: const Icon(Icons.add),
+        // ),
         body: Row(
           children: [
             SizedBox(width: 340, child: _buildLeftPanel(homeState, viewModel)),
@@ -120,28 +101,56 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
       );
     }
     return AppBar(
-      title: const Text('Notes'),
+      title: const Text('Note-It'),
       elevation: 0,
       centerTitle: true,
       actions: [
-        IconButton(
-          icon: const Icon(Icons.sync),
-          tooltip: 'Sync Notes',
+
+
+
+
+        TextButton.icon(
+          onPressed: () {
+            // Instantiate an empty note draft. This won't be saved to the DB
+            // until the user actually interacts with the EditNotePage.
+            final emptyNote = Note(
+              id: DateTime.now().millisecondsSinceEpoch,
+              title: '',
+              content: '',
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+              isLocked: false,
+              isPinned: false,
+              color: 0,
+              isArchived: false,
+              position: 0,
+              hasAttachments: false,
+              contentType: 'text',
+              isShared: false,
+              syncStatus: 0,
+              versionCounter: 1,
+            );
+            setState(() => _activeNote = emptyNote);
+          },
+          icon: Icon(Icons.add, color: Theme.of(context).colorScheme.primary),
+          label: Text("New Note"),
+        ),
+
+        const SizedBox(width: 8),
+        TextButton.icon(
           onPressed: () {
             ref.read(syncNotifierProvider.notifier).executeFullSync();
             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Syncing notes...')));
           },
+          icon: Icon(Icons.sync, color: Theme.of(context).colorScheme.primary),
+          label: Text("Sync"),
         ),
+
         const SizedBox(width: 8),
+
+
       ],
     );
-  }
-
-  /// Clears the search input and exits search mode in the view model.
-  void _clearSearch() {
-    _searchController.clear();
-    ref.read(searchQueryProvider.notifier).clear();
-    ref.read(homeViewModelProvider.notifier).exitSearchMode();
   }
 
   // ==== Left panel ====
@@ -204,6 +213,13 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
         ),
       ],
     );
+  }
+
+  /// Clears the search input and exits search mode in the view model.
+  void _clearSearch() {
+    _searchController.clear();
+    ref.read(searchQueryProvider.notifier).clear();
+    ref.read(homeViewModelProvider.notifier).exitSearchMode();
   }
 
   /// Constructs the popup menu for sorting and filtering note lists.
