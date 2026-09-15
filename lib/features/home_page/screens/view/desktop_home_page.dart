@@ -304,7 +304,7 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
         children: [
           Row(
             children: [
-              Icon(icon, size: 18, color: Colors.grey),
+              Icon(icon, size: 16, color: Colors.grey),
               const SizedBox(width: 8),
               Text(label),
             ],
@@ -371,7 +371,7 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
           Icon(Icons.edit_note, size: 64, color: Colors.grey.shade400),
           const SizedBox(height: 16),
           Text('No note selected', style: TextStyle(color: Colors.grey.shade600, fontSize: 18)),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           Text(
             'Select a note from the list or click + to start editing.',
             style: TextStyle(color: Colors.grey.shade500),

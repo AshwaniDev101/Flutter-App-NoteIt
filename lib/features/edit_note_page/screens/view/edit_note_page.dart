@@ -145,8 +145,8 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
       appBar: AppBar(
         automaticallyImplyLeading: false, // No back button on desktop
         titleSpacing: 24,
-        title: _buildTitleField(colorScheme, textTheme, maxWidth: 600),
-        actions: [_buildUndoRedoButtons(), if (!_isNewNote) _buildOptionMenu(), const SizedBox(width: 16)],
+        title: _buildTitleField(colorScheme, textTheme, maxWidth: 300),
+        actions: [_buildUndoRedoButtons(), if (!_isNewNote) _buildOptionMenu(), const SizedBox(width: 8)],
       ),
       body: Column(
         children: [
@@ -200,11 +200,11 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
           child: Container(
             height: 40,
             constraints: maxWidth != null ? BoxConstraints(maxWidth: maxWidth) : null,
-            decoration: BoxDecoration(
-              color: colorScheme.surface,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.5), width: 1.2),
-            ),
+            // decoration: BoxDecoration(
+            //   color: colorScheme.surface,
+            //   borderRadius: BorderRadius.circular(8),
+            //   border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.5), width: 1.2),
+            // ),
             child: TextField(
               controller: _titleController,
               focusNode: _titleFocusNode,
@@ -213,8 +213,8 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
               decoration: InputDecoration(
                 isDense: true,
                 hintText: "Title",
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                // border: InputBorder.none,
+                // contentPadding: const EdgeInsets.symmetric(horizontal: 12),
                 suffixIcon: _titleFocusNode.hasFocus
                     ? ValueListenableBuilder<TextEditingValue>(
                         valueListenable: _titleController,
@@ -272,7 +272,7 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
             decoration: BoxDecoration(
               color: _isNewNote ? colorScheme.primaryContainer : colorScheme.tertiaryContainer,
               borderRadius: BorderRadius.circular(4),
