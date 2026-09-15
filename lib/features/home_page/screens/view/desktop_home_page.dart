@@ -14,6 +14,11 @@ import '../core/options.dart';
 import '../viewmodel/home_view_model.dart';
 import 'password_prompt_helper.dart';
 
+/// The main entry point for the desktop layout of the application.
+///
+/// Implements a responsive two-pane architecture:
+/// * Left pane: Search, filtering, and the notes grid.
+/// * Right pane: The active note editor
 class DesktopHomePage extends ConsumerStatefulWidget {
   const DesktopHomePage({super.key});
 
@@ -23,14 +28,22 @@ class DesktopHomePage extends ConsumerStatefulWidget {
 
 class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
   final TextEditingController _searchController = TextEditingController();
+
+  /// Tracks the currently selected note displayed in the right panel.
+  /// If null, the default QR sync placeholder is shown.
   Note? _activeNote;
 
   @override
   void initState() {
     super.initState();
+
+    // Defer the sync execution until after the first frame renders
+    // to prevent modifying provider states during the build phase.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(syncNotifierProvider.notifier).executeFullSync();
     });
+
+    // Rebuild the UI when search text changes to toggle the clear icon.
     _searchController.addListener(() => setState(() {}));
   }
 
@@ -40,31 +53,17 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
     super.dispose();
   }
 
-  void _clearSearch() {
-    _searchController.clear();
-    ref.read(searchQueryProvider.notifier).clear();
-    ref.read(homeViewModelProvider.notifier).exitSearchMode();
-  }
-
-  void _handleNoteTap(Note note) async {
-    if (note.isLocked) {
-      final success = await PasswordPromptHelper.promptAndVerify(context, ref, note);
-      if (success && mounted) {
-        setState(() => _activeNote = note);
-      }
-    } else {
-      setState(() => _activeNote = note);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final homeState = ref.watch(homeViewModelProvider);
     final viewModel = ref.read(homeViewModelProvider.notifier);
-    ref.watch(syncNotifierProvider); // Keeps sync manager alive
+    // Watched solely to keep the sync manager alive in the widget tree.
+    ref.watch(syncNotifierProvider);
 
     return PopScope(
+      // Prevent system back navigation if we are currently in multi-select mode.
       canPop: !homeState.isSelectMode,
+      // Intercept back presses to clear the selection instead of closing the app.
       onPopInvokedWithResult: (bool didPop, Object? result) {
         if (!didPop && homeState.isSelectMode) viewModel.clearSelection();
       },
@@ -73,6 +72,8 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
         appBar: _buildAppBar(homeState, viewModel),
         floatingActionButton: FloatingActionButton(
           onPressed: () {
+            // Instantiate an empty note draft. This won't be saved to the DB
+            // until the user actually interacts with the EditNotePage.
             final emptyNote = Note(
               id: DateTime.now().millisecondsSinceEpoch,
               title: '',
@@ -105,6 +106,47 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
     );
   }
 
+  // ==== App Bar ====
+  /// Dynamically generates the AppBar based on the current selection state.
+  PreferredSizeWidget _buildAppBar(HomePageState state, HomeViewModel viewModel) {
+    if (state.isSelectMode) {
+      return SelectModeAppBar(
+        noteIds: state.selectedNoteIds,
+        onClearSelection: viewModel.clearSelection,
+        onSelectAll: () {
+          final allNoteIds = (ref.read(filteredNotesProvider).value ?? []).map((n) => n.id).toList();
+          viewModel.toggleSelectAll(allNoteIds);
+        },
+      );
+    }
+    return AppBar(
+      title: const Text('Notes'),
+      elevation: 0,
+      centerTitle: true,
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.sync),
+          tooltip: 'Sync Notes',
+          onPressed: () {
+            ref.read(syncNotifierProvider.notifier).executeFullSync();
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Syncing notes...')));
+          },
+        ),
+        const SizedBox(width: 8),
+      ],
+    );
+  }
+
+  /// Clears the search input and exits search mode in the view model.
+  void _clearSearch() {
+    _searchController.clear();
+    ref.read(searchQueryProvider.notifier).clear();
+    ref.read(homeViewModelProvider.notifier).exitSearchMode();
+  }
+
+  // ==== Left panel ====
+  /// Builds the left-hand navigation pane containing the search bar,
+  /// filter controls, and the list of available notes.
   Widget _buildLeftPanel(HomePageState homeState, HomeViewModel viewModel) {
     final currentSortOption = ref.watch(noteSortOptionProvider);
     final currentPlatformFilter = ref.watch(platformFilterProvider);
@@ -164,78 +206,7 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
     );
   }
 
-  Widget _buildRightPanel() {
-    if (_activeNote == null) {
-      return Center(
-        child: Column(
-
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              color: Colors.white,
-              height: 200,
-              width: 200,
-              child: QrImageView(data: "919.9191.029"),
-            ),
-            const SizedBox(height: 8),
-            Text('Local wifi sync', style: TextStyle(color: Colors.grey.shade600, fontSize: 18)),
-            const SizedBox(height: 4),
-            Text(
-              'Scan the qr to sync your notes on local network',
-              style: TextStyle(color: Colors.grey.shade500),
-            ),
-          ],
-        ),
-      );
-      // No note message placeholder
-      // return Center(
-      //   child: Column(
-      //     mainAxisAlignment: MainAxisAlignment.center,
-      //     children: [
-      //       Icon(Icons.edit_note, size: 64, color: Colors.grey.shade400),
-      //       const SizedBox(height: 16),
-      //       Text('No note selected', style: TextStyle(color: Colors.grey.shade600, fontSize: 18)),
-      //       const SizedBox(height: 4),
-      //       Text(
-      //         'Select a note from the list or click + to start editing.',
-      //         style: TextStyle(color: Colors.grey.shade500),
-      //       ),
-      //     ],
-      //   ),
-      // );
-    }
-    return EditNotePage(key: ValueKey(_activeNote!.id), existingNote: _activeNote);
-  }
-
-  PreferredSizeWidget _buildAppBar(HomePageState state, HomeViewModel viewModel) {
-    if (state.isSelectMode) {
-      return SelectModeAppBar(
-        noteIds: state.selectedNoteIds,
-        onClearSelection: viewModel.clearSelection,
-        onSelectAll: () {
-          final allNoteIds = (ref.read(filteredNotesProvider).value ?? []).map((n) => n.id).toList();
-          viewModel.toggleSelectAll(allNoteIds);
-        },
-      );
-    }
-    return AppBar(
-      title: const Text('Notes'),
-      elevation: 0,
-      centerTitle: true,
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.sync),
-          tooltip: 'Sync Notes',
-          onPressed: () {
-            ref.read(syncNotifierProvider.notifier).executeFullSync();
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Syncing notes...')));
-          },
-        ),
-        const SizedBox(width: 8),
-      ],
-    );
-  }
-
+  /// Constructs the popup menu for sorting and filtering note lists.
   Widget _buildFilterMenu(
     NoteSortOption currentSortOption,
     PlatformOptions? currentPlatformFilter,
@@ -324,6 +295,70 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
           ),
           IgnorePointer(
             child: Checkbox(value: isSelected, onChanged: (_) {}),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ==== Right panel ====
+  /// Builds the right-hand content pane.
+  ///
+  /// Renders a QR code for local wifi sync when idle, or the [EditNotePage]
+  /// when a note is actively selected.
+  Widget _buildRightPanel() {
+    if (_activeNote == null) {
+      return homepagePlaceholder();
+      // QR page is not ready yet
+      // return Center(
+      //   child: Column(
+      //     mainAxisAlignment: MainAxisAlignment.center,
+      //     children: [
+      //       Container(
+      //         color: Colors.white,
+      //         height: 200,
+      //         width: 200,
+      //         child: QrImageView(data: "919.9191.029"),
+      //       ),
+      //       const SizedBox(height: 8),
+      //       Text('Local wifi sync', style: TextStyle(color: Colors.grey.shade600, fontSize: 18)),
+      //       const SizedBox(height: 4),
+      //       Text('Scan the qr to sync your notes on local network', style: TextStyle(color: Colors.grey.shade500)),
+      //     ],
+      //   ),
+      // );
+    }
+    // ValueKey is crucial here. It forces Flutter to tear down and rebuild
+    // the EditNotePage entirely when switching between different notes.
+    return EditNotePage(key: ValueKey(_activeNote!.id), existingNote: _activeNote);
+  }
+
+  /// Handles note selection, verifying passwords for locked notes
+  /// before revealing their contents in the editor pane.
+  void _handleNoteTap(Note note) async {
+    if (note.isLocked) {
+      final success = await PasswordPromptHelper.promptAndVerify(context, ref, note);
+      if (success && mounted) {
+        setState(() => _activeNote = note);
+      }
+    } else {
+      setState(() => _activeNote = note);
+    }
+  }
+
+  // Simple placeholder when no note is selected - Discarded! and replaced with qr code
+  Widget homepagePlaceholder() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.edit_note, size: 64, color: Colors.grey.shade400),
+          const SizedBox(height: 16),
+          Text('No note selected', style: TextStyle(color: Colors.grey.shade600, fontSize: 18)),
+          const SizedBox(height: 4),
+          Text(
+            'Select a note from the list or click + to start editing.',
+            style: TextStyle(color: Colors.grey.shade500),
           ),
         ],
       ),
