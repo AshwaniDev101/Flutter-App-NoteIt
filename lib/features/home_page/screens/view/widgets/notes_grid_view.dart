@@ -38,7 +38,7 @@ class NotesGridView extends ConsumerWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      padding: const EdgeInsets.symmetric(horizontal: 4.0),
       child: notesState.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(child: Text('Error: $error')),
@@ -55,7 +55,7 @@ class NotesGridView extends ConsumerWidget {
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.only(bottom: 80),
               gridDelegate: defaultTargetPlatform == TargetPlatform.android && !kIsWeb
-                  ? const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 8, childAspectRatio: 0.85)
+                  ? const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, childAspectRatio: 0.85)
                   : const SliverGridDelegateWithMaxCrossAxisExtent(maxCrossAxisExtent: 220, childAspectRatio: 0.85),
               itemCount: notes.length,
               itemBuilder: (context, index) {
@@ -105,6 +105,8 @@ class NotesGridView extends ConsumerWidget {
                     ],
                   ],
                 );
+
+                // final noteCard = Container(height: 200,width: 200,color: Colors.red,);
 
                 // If this note is currently open in the right-side editor, wrap it in a highlight border
                 if (isActive && !isSelectMode) {

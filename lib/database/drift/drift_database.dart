@@ -1,35 +1,41 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
 
 import 'notes_table.dart';
 
 part 'drift_database.g.dart';
 
-// Drift database location Windows : C:\Users\Ashwin\Documents\my_notes_db.sqlite
+/// Riverpod provider exposing a single, shared instance of [NoteDriftDatabase].
+///
+/// Automatically binds database lifecycle disposal to Riverpod's [Ref.onDispose],
+/// guaranteeing underlying SQLite file locks are cleanly released during app teardown or testing.
 
 final noteDriftDatabaseProvider = Provider((ref) {
   return NoteDriftDatabase();
 });
 
+
 @DriftDatabase(tables: [Notes])
 class NoteDriftDatabase extends _$NoteDriftDatabase {
-
   NoteDriftDatabase()
-      : super(
-    driftDatabase(
-      name: 'my_notes_db',
-      web: DriftWebOptions(
-        sqlite3Wasm: Uri.parse('sqlite3.wasm'),
-        driftWorker: Uri.parse('drift_worker.js'),
-      ),
-    ),
-  );
+    : super(
+        driftDatabase(
+          name: 'my_notes_db',
+          // Routes native persistent storage to the application's sandboxed support directory (`AppData` on Windows)
+          // to comply with MSIX packaging and avoid OneDrive locking collisions.
+          // Without this the 'my_notes_db' will be created in Windows Document folder
+          native: const DriftNativeOptions(databaseDirectory: getApplicationSupportDirectory),
+
+          web: DriftWebOptions(sqlite3Wasm: Uri.parse('sqlite3.wasm'), driftWorker: Uri.parse('drift_worker.js')),
+        ),
+      );
 
   @override
   int get schemaVersion => 1;
 
-  // STANDARD LOCAL CRUD OPERATIONS
+  // STANDARD LOCAL CRUD OPERATIONS =====================
 
   Future<int> addNote({
     required String title,
@@ -58,13 +64,14 @@ class NoteDriftDatabase extends _$NoteDriftDatabase {
 
   Future<bool> updateNote(int id, String title, String content) async {
     return await (update(notes)..where((t) => t.id.equals(id))).write(
-        NotesCompanion(
-          title: Value(title),
-          content: Value(content),
-          syncStatus: const Value(0), // Trigger the SyncManager
-          updatedAt: Value(DateTime.now().toUtc()), // Enforce UTC
-        )
-    ) > 0;
+          NotesCompanion(
+            title: Value(title),
+            content: Value(content),
+            syncStatus: const Value(0), // Trigger the SyncManager
+            updatedAt: Value(DateTime.now().toUtc()), // Enforce UTC
+          ),
+        ) >
+        0;
   }
 
   Future<int> deleteNote(int id) async {
@@ -84,16 +91,15 @@ class NoteDriftDatabase extends _$NoteDriftDatabase {
     );
   }
 
-
-
   Future<bool> lockNote(int id, {required bool isLocked}) async {
     return await (update(notes)..where((t) => t.id.equals(id))).write(
-      NotesCompanion(
-        isLocked: Value(isLocked),
-        syncStatus: const Value(0),
-        updatedAt: Value(DateTime.now().toUtc()),
-      ),
-    ) > 0;
+          NotesCompanion(
+            isLocked: Value(isLocked),
+            syncStatus: const Value(0),
+            updatedAt: Value(DateTime.now().toUtc()),
+          ),
+        ) >
+        0;
   }
 
   // SYNC MANAGER HELPER METHODS
@@ -123,7 +129,8 @@ class NoteDriftDatabase extends _$NoteDriftDatabase {
       creationPlatform: Value(cloudNote['creationPlatform'] as String?),
       creationDevice: Value(cloudNote['creationDevice'] as String?),
       deletedAt: Value(cloudDeletedAt),
-      syncStatus: const Value(1), // Already synced!
+      syncStatus: const Value(1),
+      // Already synced!
       firestoreId: Value(firestoreId),
       reminderAt: cloudNote['reminderAt'] != null
           ? Value(DateTime.fromMillisecondsSinceEpoch(cloudNote['reminderAt'] as int, isUtc: true))
@@ -158,37 +165,34 @@ class NoteDriftDatabase extends _$NoteDriftDatabase {
         final assignedFirestoreId = newFirestoreIds[id];
         if (assignedFirestoreId != null) {
           await (update(notes)..where((t) => t.id.equals(id))).write(
-            NotesCompanion(
-              syncStatus: const Value(1),
-              firestoreId: Value(assignedFirestoreId),
-            ),
+            NotesCompanion(syncStatus: const Value(1), firestoreId: Value(assignedFirestoreId)),
           );
         }
       }
     });
   }
 
-
   // TRASH PAGE METHODS  ----------------------------------------
 
   /// VIEW TRASH: Watch only notes that have a deletedAt timestamp
   Stream<List<Note>> watchTrashNotes() {
     return (select(notes)
-      ..where((t) => t.deletedAt.isNotNull())
-    // Sort trash by most recently deleted
-      ..orderBy([(t) => OrderingTerm(expression: t.deletedAt, mode: OrderingMode.desc)])
-    ).watch();
+          ..where((t) => t.deletedAt.isNotNull())
+          // Sort trash by most recently deleted
+          ..orderBy([(t) => OrderingTerm(expression: t.deletedAt, mode: OrderingMode.desc)]))
+        .watch();
   }
 
   /// RESTORE: Remove the deletedAt flag and trigger a sync
   Future<bool> restoreNote(int id) async {
     return await (update(notes)..where((t) => t.id.equals(id))).write(
-      NotesCompanion(
-        deletedAt: const Value(null), // Nullify the trash flag
-        syncStatus: const Value(0),   // Flag as pending sync
-        updatedAt: Value(DateTime.now().toUtc()), // Enforce Last-Write-Wins
-      ),
-    ) > 0;
+          NotesCompanion(
+            deletedAt: const Value(null), // Nullify the trash flag
+            syncStatus: const Value(0), // Flag as pending sync
+            updatedAt: Value(DateTime.now().toUtc()), // Enforce Last-Write-Wins
+          ),
+        ) >
+        0;
   }
 
   /// EMPTY TRASH (LOCAL): Hard delete all trashed notes and return their Firestore IDs

@@ -1,61 +1,59 @@
-# NoteIt
 
-A simple, fast, and secure cross-platform notepad application built with Flutter for Android and Web. It allows users to create and manage notes with automatic syncing and basic privacy protection.
+### * Android
+| Homepage | New Note | Search |
+| :---: | :---: | :---: |
+| <img src="docs/screenshots/android/android_homepage.jpg" width="250"/> | <img src="docs/screenshots/android/android_notepage.jpg" width="250"/> | <img src="docs/screenshots/android/android_search.jpg" width="250"/> |
 
-## Features
+| Sidebar | Theme Settings | Password Lock |
+| :---: | :---: | :---: |
+| <img src="docs/screenshots/android/android_sidebar.jpg" width="250"/> | <img src="docs/screenshots/android/android_theme_change.jpg" width="250"/> | <img src="docs/screenshots/android/android_enter_password.jpg" width="250"/> |
 
-- Create, edit, and delete notes
-- Automatic sync across Android and Web
-- Password protection for notes
-- Lightweight and responsive design
-- Clean and minimal user interface
+### * Windows
+| Desktop Homepage | Desktop Sidebar |
+| :---: | :---: |
+| <img src="docs/screenshots/windows/desktop_homepage.jpg" width="400"/> | <img src="docs/screenshots/windows/desktop_Sidebar.JPG" width="400"/> |
 
-## Tech Stack
 
-- Flutter
-- Dart
-- (Optional) Backend/Firebase for data synchronization
+# Note-It 
 
-## Platforms
+A minimal and fast cross-platform note-taking app that works seamlessly on Windows and Android. It syncs across platforms in real-time, and allows notes to be locked and password protected.
 
-- Android
-- Web
+It allows two types of sync: first using Firebase, and second using WebSockets on a local WiFi network. This means the app doesn't require an internet connection to sync locally.
 
-## Getting Started
+## # Features
 
-### Prerequisites
+- **Cross-Platform:** Smooth experience across Android and Windows.
+- **Secure:** Built-in password protection to keep your private notes safe.
+- **Google Integration:** Quick access via Google Sign-in.
+- **Organization:** Easily filter, search, and manage notes.
+- **Trash Bin:** Recover deleted notes before they're gone forever.
+- **Customizable:** Light and dark theme support (including the custom amber theme!).
 
-- Flutter SDK installed
-- Android Studio or Visual Studio Code
+## # Tech Stack & Core Dependencies
 
-### Installation
+This project relies on a robust set of packages to handle state, local storage, cloud syncing, and hardware interactions.
 
-```bash
-git clone https://github.com/your-username/noteit.git
-cd noteit
-flutter pub get
-flutter run
-```
+**Core & State Management**
+- [Flutter](https://flutter.dev/) (SDK ^3.10.7)
+- `flutter_riverpod` & `riverpod_annotation` - For predictable, compile-safe state management.
 
-## Security
+**Storage & Database**
+- `drift` & `drift_flutter` - Reactive, type-safe persistence for local SQLite databases.
+- `shared_preferences` - For lightweight local data and theme settings caching.
+- `path_provider` - For locating local file system paths.
 
-The application includes password protection to restrict access to notes. This is intended for basic privacy.
+**Backend & Authentication**
+- `firebase_core`, `cloud_firestore`, `firebase_auth` - Cloud data synchronization and backend infrastructure.
+- `google_sign_in_all_platforms` - Seamless OAuth integration.
 
-## Project Objective
+**Navigation**
+- `go_router` - Declarative routing and deep linking.
 
-The goal of this project is to build a minimal and efficient note-taking application while practicing cross-platform development, UI design, and data synchronization.
+**Hardware & Connectivity**
+- `mobile_scanner` & `qr_flutter` - For scanning and generating QR codes.
+- `web_socket_channel` & `nsd` - For real-time network service discovery and WebSocket communications.
+- `device_info_plus` - For fetching specific device metadata.
 
-## Future Improvements
-
-- Rich text editing
-- Dark mode support
-- Improved cloud sync
-- Search functionality
-
-## Contributing
-
-Contributions are welcome. Fork the repository and submit a pull request for any improvements.
-
-## License
-
-This project is licensed under the MIT License.
+**Dev Dependencies**
+- `build_runner` & `drift_dev` - Code generation.
+- `flutter_launcher_icons` - Automated app icon generation.
