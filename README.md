@@ -8,11 +8,27 @@
 | :---: | :---: | :---: |
 | <img src="docs/screenshots/android/android_sidebar.jpg" width="250"/> | <img src="docs/screenshots/android/android_theme_change.jpg" width="250"/> | <img src="docs/screenshots/android/android_enter_password.jpg" width="250"/> |
 
+| Google Sign-In | Filters | Trash Bin |
+| :---: | :---: | :---: |
+| <img src="docs/screenshots/android/android_google_signin.jpg" width="250"/> | <img src="docs/screenshots/android/android_filters.jpg" width="250"/> | <img src="docs/screenshots/android/andorid_white_trash_page.jpg" width="250"/> |
+
+| Light Homepage | Light Sidebar | Light Settings |
+| :---: | :---: | :---: |
+| <img src="docs/screenshots/android/android_homepage_white.jpg" width="250"/> | <img src="docs/screenshots/android/android_white_sidebar.jpg" width="250"/> | <img src="docs/screenshots/android/android_white_settings.jpg" width="250"/> |
+
+
 ### * Windows
 | Desktop Homepage | Desktop Sidebar |
 | :---: | :---: |
 | <img src="docs/screenshots/windows/desktop_homepage.jpg" width="400"/> | <img src="docs/screenshots/windows/desktop_Sidebar.JPG" width="400"/> |
 
+| Open Note | New Note |
+| :---: | :---: |
+| <img src="docs/screenshots/windows/desktop_homepage_note.JPG" width="400"/> | <img src="docs/screenshots/windows/desktop_new_note.JPG" width="400"/> |
+
+| Themes | Trash Bin |
+| :---: | :---: |
+| <img src="docs/screenshots/windows/desktop_Themes.JPG" width="400"/> | <img src="docs/screenshots/windows/desktop_trashbin.JPG" width="400"/> |
 
 # Note-It 
 
