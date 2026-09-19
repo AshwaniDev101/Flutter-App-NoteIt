@@ -4,6 +4,7 @@ import 'package:noteit/features/dev_page/dev_page.dart';
 import 'package:noteit/features/edit_note_page/screens/view/edit_note_page.dart';
 import 'package:noteit/features/home_page/screens/view/home_page.dart';
 import 'package:noteit/features/local_sync_page/screens/view/qr_page.dart';
+import 'package:noteit/features/local_sync_page/screens/view/qr_scanner/qr_scanner_page.dart';
 import 'package:noteit/features/themes_page/view/theme_page.dart';
 import 'package:noteit/features/settings_page/screens/view/settings_page.dart';
 
@@ -21,6 +22,7 @@ class AppRoutes {
   static const String trash = '/trash';
   static const String dev = '/dev';
   static const String qr = '/qr';
+  static const String scan = '/qr-scan';
 }
 
 final routerProvider = Provider((ref) {
@@ -77,6 +79,13 @@ final routerProvider = Provider((ref) {
         path: AppRoutes.qr,
         builder: (context, state) {
           return const QrCodePage();
+        },
+      ),
+
+      GoRoute(
+        path: AppRoutes.scan,
+        builder: (context, state) {
+          return const QrScannerPage();
         },
       ),
     ],

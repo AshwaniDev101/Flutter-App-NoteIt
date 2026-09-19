@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:network_info_plus/network_info_plus.dart';
+import 'package:noteit/core/routing/routing.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:device_info_plus/device_info_plus.dart';
-import 'package:shelf/shelf_io.dart' as shelf_io;
-import 'package:shelf_web_socket/shelf_web_socket.dart';
+
+import '../../../../core/provider/sync_server_provider.dart';
 
 /// Create a FutureProvider to fetch cross-platform device info asynchronously
 final deviceInfoProvider = FutureProvider<BaseDeviceInfo>((ref) async {
@@ -20,31 +22,7 @@ final localIPProvide = FutureProvider<String?>((ref) async {
   return await NetworkInfo().getWifiIP();
 });
 
-// .family allow dev to pass a parameter to the FutureProvider,
-// first value is normal return type of the future provide while the second value is the input parameter
-final syncServerProvider = FutureProvider.family<void, String>((ref, ip) async {
-  // Listen for incoming sync payloads from the scanning device
-  var handler = webSocketHandler((webSocket, _) {
-    print('Client connected to Host!');
 
-    // Listen for incoming sync payloads from the scanning device
-    webSocket.stream.listen((message) {
-      print('Received from client: $message');
-
-      // TODO: Implement Drift Last-Write-Wins comparison here
-
-      // Send data back to the client
-      webSocket.sink.add('Echo from Host: Received your payload');
-    });
-  });
-
-  // Start the server on port 8080
-  final server = await shelf_io.serve(handler, ip, 8080);
-  print('Sync server hosting at ws://${server.address.host}:${server.port}');
-
-  // Gracefully shut down the server if the user leaves the QR Code page
-  ref.onDispose(() => server.close());
-});
 
 class QrCodePage extends ConsumerWidget {
   const QrCodePage({super.key});
@@ -54,6 +32,7 @@ class QrCodePage extends ConsumerWidget {
     // Watch the FutureProvider
     final deviceInfoAsync = ref.watch(deviceInfoProvider);
     final localIpAsync = ref.watch(localIPProvide);
+
 
     return Scaffold(
       appBar: AppBar(
@@ -78,7 +57,7 @@ class QrCodePage extends ConsumerWidget {
               }
 
               // Fire up the WebSocket server in the background using the discovered IP
-              ref.read(syncServerProvider(ip));
+              ref.read(syncServerProvider.notifier).startHosting(ip);
 
               final deviceName = extractDeviceName(info);
 
@@ -125,7 +104,7 @@ class QrCodePage extends ConsumerWidget {
                     ),
                     ElevatedButton(
                       onPressed: () {
-                        // context.push(AppRoute.qrScan);
+                        context.push(AppRoutes.scan);
                       },
                       child: const Text("Scan QR"),
                     ),
