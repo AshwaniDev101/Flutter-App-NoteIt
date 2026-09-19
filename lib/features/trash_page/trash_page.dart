@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/note_theme.dart';
 import '../../database/drift/drift_database.dart';
 import '../../database/firebase/firebase_database.dart';
-import '../../database/sync_manager.dart';
+import '../../database/sync_orchestrator.dart';
 import '../../shared/widgets/note_card.dart';
 
 final trashNotesProvider = StreamProvider.autoDispose<List<Note>>((ref) {
@@ -22,15 +22,16 @@ class TrashPage extends ConsumerStatefulWidget {
 
 class _TrashPageState extends ConsumerState<TrashPage> {
   bool isSelectMode = false;
-  final Set<int> noteIds = {};
 
-  void _toggleSelection(int id) {
+  final Set<String> noteIds = {};
+
+  void _toggleSelection(String uuid) {
     setState(() {
-      if (noteIds.contains(id)) {
-        noteIds.remove(id);
+      if (noteIds.contains(uuid)) {
+        noteIds.remove(uuid);
         if (noteIds.isEmpty) isSelectMode = false;
       } else {
-        noteIds.add(id);
+        noteIds.add(uuid);
       }
     });
   }
@@ -60,10 +61,10 @@ class _TrashPageState extends ConsumerState<TrashPage> {
       try {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Emptying trash...')));
 
-        // Delete locally and get the orphaned Firebase IDs
+        // Delete locally and get the UUIDs
         final cloudIdsToDelete = await driftDb.emptyLocalTrash();
 
-        // If online and logged in, delete from Firebase
+        // If online and logged in, delete from Firebase using the UUIDs
         if (firebaseDb != null && cloudIdsToDelete.isNotEmpty) {
           await firebaseDb.deleteBatch(cloudIdsToDelete);
         }
@@ -80,10 +81,12 @@ class _TrashPageState extends ConsumerState<TrashPage> {
   }
 
   // Handle restoring a single note
-  Future<void> _restoreNote(int noteId) async {
+  Future<void> _restoreNote(String uuid) async {
     final driftDb = ref.read(noteDriftDatabaseProvider);
-    await driftDb.restoreNote(noteId);
-    ref.read(syncNotifierProvider.notifier).executeFullSync();
+    await driftDb.restoreNote(uuid);
+
+    // Trigger the Orchestrator to broadcast the restoration
+    ref.read(syncOrchestratorProvider).triggerSync();
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Note restored.')));
@@ -115,21 +118,17 @@ class _TrashPageState extends ConsumerState<TrashPage> {
       final firebaseDb = ref.read(noteFirebaseDatabaseProvider);
 
       try {
-        // Get the Firebase IDs using your exact property name: firestoreId
-        final notesToDelete = allTrashNotes.where((n) => noteIds.contains(n.id)).toList();
-        final firestoreIdsToDelete = notesToDelete
-            .map((n) => n.firestoreId) // <-- Fixed: cloudId changed to firestoreId
-            .whereType<String>()
-            .toList();
 
-        // Loop and delete locally using your EXISTING hard-delete function
-        for (final id in noteIds) {
-          await driftDb.deleteNote(id);
+        final uuidsToDelete = noteIds.toList();
+
+        // Loop and delete locally
+        for (final uuid in uuidsToDelete) {
+          await driftDb.deleteNote(uuid);
         }
 
-        // Delete from Firebase
-        if (firebaseDb != null && firestoreIdsToDelete.isNotEmpty) {
-          await firebaseDb.deleteBatch(firestoreIdsToDelete);
+        // Delete from Firebase directly using the UUIDs
+        if (firebaseDb != null && uuidsToDelete.isNotEmpty) {
+          await firebaseDb.deleteBatch(uuidsToDelete);
         }
 
         setState(() {
@@ -181,7 +180,7 @@ class _TrashPageState extends ConsumerState<TrashPage> {
                     noteIds.clear();
                     isSelectMode = false;
                   } else {
-                    noteIds.addAll(currentNotes.map((note) => note.id));
+                    noteIds.addAll(currentNotes.map((note) => note.uuid));
                   }
                 });
               },
@@ -193,10 +192,10 @@ class _TrashPageState extends ConsumerState<TrashPage> {
             tooltip: 'Restore Selected',
             onPressed: () async {
               final driftDb = ref.read(noteDriftDatabaseProvider);
-              for (final id in noteIds) {
-                await driftDb.restoreNote(id);
+              for (final uuid in noteIds) {
+                await driftDb.restoreNote(uuid);
               }
-              ref.read(syncNotifierProvider.notifier).executeFullSync();
+              ref.read(syncOrchestratorProvider).triggerSync();
               setState(() {
                 isSelectMode = false;
                 noteIds.clear();
@@ -215,7 +214,7 @@ class _TrashPageState extends ConsumerState<TrashPage> {
 
     final showLabel = kIsWeb || defaultTargetPlatform == TargetPlatform.windows;
 
-// Default App Bar
+    // Default App Bar
     return AppBar(
       title: const Text('Trash Bin'),
       actions: [
@@ -279,15 +278,14 @@ class _TrashPageState extends ConsumerState<TrashPage> {
               itemCount: notes.length,
               itemBuilder: (context, index) {
                 final note = notes[index];
-                final isSelected = noteIds.contains(note.id);
+                final isSelected = noteIds.contains(note.uuid);
 
-                // Return NoteCard directly
                 return NoteCard(
                   note: note,
                   isSelected: isSelected,
                   onTap: () {
                     if (isSelectMode) {
-                      _toggleSelection(note.id);
+                      _toggleSelection(note.uuid);
                     } else {
                       // Todo: Open a read-only view of the trashed note
                     }
@@ -295,11 +293,10 @@ class _TrashPageState extends ConsumerState<TrashPage> {
                   onLongPress: () {
                     if (!isSelectMode) {
                       setState(() => isSelectMode = true);
-                      _toggleSelection(note.id);
+                      _toggleSelection(note.uuid);
                     }
                   },
                   hoverActions: [
-                    // Dynamic Selection Radio/Checkmark Button
                     IconButton(
                       icon: Icon(
                           isSelected ? Icons.check_circle : Icons.radio_button_unchecked_rounded,
@@ -309,7 +306,7 @@ class _TrashPageState extends ConsumerState<TrashPage> {
                       visualDensity: VisualDensity.compact,
                       onPressed: () {
                         if (!isSelectMode) setState(() => isSelectMode = true);
-                        _toggleSelection(note.id);
+                        _toggleSelection(note.uuid);
                       },
                     ),
 
@@ -318,7 +315,7 @@ class _TrashPageState extends ConsumerState<TrashPage> {
                         icon: const Icon(Icons.restore, size: 18),
                         visualDensity: VisualDensity.compact,
                         tooltip: 'Restore',
-                        onPressed: () => _restoreNote(note.id),
+                        onPressed: () => _restoreNote(note.uuid),
                       ),
                   ],
                 );

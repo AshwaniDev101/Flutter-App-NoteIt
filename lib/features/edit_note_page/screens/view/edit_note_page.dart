@@ -32,9 +32,10 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
 
   bool get _isNewNote =>
       widget.existingNote == null ||
-      (widget.existingNote!.title.isEmpty &&
-          widget.existingNote!.content.isEmpty &&
-          widget.existingNote!.syncStatus == 0);
+          (widget.existingNote!.title.isEmpty &&
+              widget.existingNote!.content.isEmpty &&
+              widget.existingNote!.cloudSyncStatus == 0 &&
+              widget.existingNote!.localSyncStatus == 0);
 
   @override
   void initState() {
@@ -94,7 +95,8 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
       _hasCreatedNewNote = true;
     } else {
       if (title != widget.existingNote!.title || content != widget.existingNote!.content) {
-        _viewModel.updateNote(widget.existingNote!.id, title, content);
+
+        _viewModel.updateNote(widget.existingNote!.uuid, title, content);
       }
     }
 
@@ -123,13 +125,12 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
   Widget build(BuildContext context) {
     final isDesktop =
         defaultTargetPlatform == TargetPlatform.windows ||
-        defaultTargetPlatform == TargetPlatform.macOS ||
-        defaultTargetPlatform == TargetPlatform.linux;
+            defaultTargetPlatform == TargetPlatform.macOS ||
+            defaultTargetPlatform == TargetPlatform.linux;
 
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
-        // Triggers the save sequence on hardware back button
         if (!didPop && !isDesktop) _handleMobileBack();
       },
       child: isDesktop ? _buildDesktopUI() : _buildMobileUI(),
@@ -143,7 +144,7 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
     return Scaffold(
       backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        automaticallyImplyLeading: false, // No back button on desktop
+        automaticallyImplyLeading: false,
         titleSpacing: 24,
         title: _buildTitleField(colorScheme, textTheme, maxWidth: 300),
         actions: [_buildUndoRedoButtons(), if (!_isNewNote) _buildOptionMenu(), const SizedBox(width: 8)],
@@ -167,10 +168,8 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
         automaticallyImplyLeading: false,
         leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: _handleMobileBack),
         titleSpacing: 0,
-        // Pass showSaveIcon: false to hide it in mobile mode
         title: _buildTitleField(colorScheme, textTheme, showSaveIcon: false),
         actions: [
-          // Removed the duplicate save icon from here
           if (!_isNewNote) _buildOptionMenu(),
           const SizedBox(width: 8),
         ],
@@ -190,21 +189,13 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
     );
   }
 
-  // SHARED UI WIDGETS
-  // Added `showSaveIcon` parameter with a default of true (for desktop)
   Widget _buildTitleField(ColorScheme colorScheme, TextTheme textTheme, {double? maxWidth, bool showSaveIcon = true}) {
     return Row(
       children: [
-        // Wrapped the Container in Flexible to give it proper bounds on mobile
         Flexible(
           child: Container(
             height: 40,
             constraints: maxWidth != null ? BoxConstraints(maxWidth: maxWidth) : null,
-            // decoration: BoxDecoration(
-            //   color: colorScheme.surface,
-            //   borderRadius: BorderRadius.circular(8),
-            //   border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.5), width: 1.2),
-            // ),
             child: TextField(
               controller: _titleController,
               focusNode: _titleFocusNode,
@@ -213,37 +204,31 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
               decoration: InputDecoration(
                 isDense: true,
                 hintText: "Title",
-                // border: InputBorder.none,
-                // contentPadding: const EdgeInsets.symmetric(horizontal: 12),
                 suffixIcon: _titleFocusNode.hasFocus
                     ? ValueListenableBuilder<TextEditingValue>(
-                        valueListenable: _titleController,
-                        builder: (context, value, child) {
-                          if (value.text.isEmpty) return const SizedBox.shrink();
-                          return IconButton(
-                            icon: const Icon(Icons.close, size: 16),
-                            onPressed: () {
-                              _titleController.clear();
-                              _isAutoSyncingTitle = true;
-                            },
-                          );
-                        },
-                      )
+                  valueListenable: _titleController,
+                  builder: (context, value, child) {
+                    if (value.text.isEmpty) return const SizedBox.shrink();
+                    return IconButton(
+                      icon: const Icon(Icons.close, size: 16),
+                      onPressed: () {
+                        _titleController.clear();
+                        _isAutoSyncingTitle = true;
+                      },
+                    );
+                  },
+                )
                     : const SizedBox.shrink(),
               ),
             ),
           ),
         ),
-
-        // Conditionally render the save icon based on the platform requirement
         if (showSaveIcon) ...[
           const SizedBox(width: 8),
-
           TextButton.icon(
             onPressed: () => _executeSave(isManualSave: true),
             icon: Icon(Icons.save, color: Theme.of(context).colorScheme.primary),
-            label: Text("Save"),
-
+            label: const Text("Save"),
           ),
         ],
       ],
@@ -304,22 +289,22 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
         ValueListenableBuilder<UndoHistoryValue>(
           valueListenable: _undoController,
           builder: (context, value, child) => IconButton(
-            onPressed: value.canUndo ? () => _undoController.undo() : null,
-            style: IconButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.primary,
-            ),
-            icon: Icon(Icons.undo, size: isMobileView ? 24 : 20,)
+              onPressed: value.canUndo ? () => _undoController.undo() : null,
+              style: IconButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.primary,
+              ),
+              icon: Icon(Icons.undo, size: isMobileView ? 24 : 20,)
           ),
         ),
         SizedBox(width: isMobileView ? 24 : 0),
         ValueListenableBuilder<UndoHistoryValue>(
           valueListenable: _undoController,
           builder: (context, value, child) => IconButton(
-            onPressed: value.canRedo ? () => _undoController.redo() : null,
-            style: IconButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.primary,
-            ),
-            icon: Icon(Icons.redo, size: isMobileView ? 24 : 20,)
+              onPressed: value.canRedo ? () => _undoController.redo() : null,
+              style: IconButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.primary,
+              ),
+              icon: Icon(Icons.redo, size: isMobileView ? 24 : 20,)
           ),
         ),
       ],
@@ -358,8 +343,9 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
           }
 
           if (shouldProceed) {
+
             final success = await lockManager.togglePersistentLock(
-              widget.existingNote!.id,
+              widget.existingNote!.uuid,
               '',
               shouldLock: !isCurrentlyLocked,
               ignorePassword: true,
@@ -371,8 +357,6 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
                   _isLocked = !_isLocked;
                 });
 
-                // If we are on mobile, locking it boots you out.
-                // On desktop split view, we let them keep editing it.
                 if (!isCurrentlyLocked && defaultTargetPlatform == TargetPlatform.android) {
                   context.pop();
                 }
@@ -383,8 +367,9 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
           }
         } else if (value == 'delete') {
           if (!_isNewNote && widget.existingNote != null) {
-            _hasTriggeredFinalSave = true; // Mark as saved to prevent recreate on dispose
-            ref.read(editNoteViewModelProvider.notifier).deleteNote(widget.existingNote!.id);
+            _hasTriggeredFinalSave = true;
+            // FIXED: Passing UUID instead of integer ID
+            ref.read(editNoteViewModelProvider.notifier).deleteNote(widget.existingNote!.uuid);
             if (defaultTargetPlatform == TargetPlatform.android && mounted) {
               context.pop();
             }
@@ -392,7 +377,6 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
         }
       },
       itemBuilder: (BuildContext context) {
-        final colorScheme = Theme.of(context).colorScheme;
         return [
           PopupMenuItem(
             value: 'toggle_lock',

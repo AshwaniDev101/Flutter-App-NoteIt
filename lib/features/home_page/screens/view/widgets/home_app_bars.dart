@@ -4,9 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/theme/note_theme.dart';
 import 'package:noteit/database/drift/drift_database.dart';
 import 'package:noteit/features/home_page/screens/core/sort.dart';
+import '../../../../../database/sync_orchestrator.dart';
 import '../../core/options.dart';
 import '../../core/providers.dart';
-import '../../../../../database/sync_manager.dart';
+import '../../../../../database/sync_manager.dart'; // Safe to delete this import if you removed the file
 
 // DEFAULT APP BAR
 class DefaultHomeAppBar extends ConsumerWidget implements PreferredSizeWidget {
@@ -28,7 +29,12 @@ class DefaultHomeAppBar extends ConsumerWidget implements PreferredSizeWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currentSortOption = ref.watch(noteSortOptionProvider);
     final currentPlatformFilter = ref.watch(platformFilterProvider);
-    final isSyncing = ref.watch(syncNotifierProvider);
+
+
+    // boolean provider to track if the Orchestrator is currently running a sync
+    // to keep the loading spinner set it to true and when the sync is complete set it to false
+    final isSyncing = ref.watch(isSyncingProvider);
+
     final colorScheme = Theme.of(context).colorScheme;
 
     return AppBar(
@@ -73,7 +79,7 @@ class DefaultHomeAppBar extends ConsumerWidget implements PreferredSizeWidget {
             child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
           )
               : TextButton(
-            onPressed: () => ref.read(syncNotifierProvider.notifier).executeFullSync(),
+            onPressed: () => ref.read(syncOrchestratorProvider).triggerSync(),
             child: const Row(
               children: [
                 Icon(Icons.sync),
@@ -170,7 +176,8 @@ class DefaultHomeAppBar extends ConsumerWidget implements PreferredSizeWidget {
 
 // SELECT MODE APP BAR
 class SelectModeAppBar extends ConsumerWidget implements PreferredSizeWidget {
-  final Set<int> noteIds;
+
+  final Set<String> noteIds;
   final VoidCallback onClearSelection;
   final VoidCallback onSelectAll;
 
@@ -216,8 +223,10 @@ class SelectModeAppBar extends ConsumerWidget implements PreferredSizeWidget {
           icon: const Icon(Icons.delete_outline),
           onPressed: () async {
             final driftDatabase = ref.read(noteDriftDatabaseProvider);
+
             await driftDatabase.softDeleteNotes(noteIds, platform: defaultTargetPlatform.name);
-            ref.read(syncNotifierProvider.notifier).executeFullSync();
+
+            ref.read(syncOrchestratorProvider).triggerSync();
             onClearSelection();
           },
         ),

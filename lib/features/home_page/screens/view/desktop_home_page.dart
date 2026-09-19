@@ -4,9 +4,9 @@ import 'package:noteit/database/drift/drift_database.dart';
 import 'package:noteit/features/home_page/screens/view/widgets/home_app_bars.dart';
 import 'package:noteit/features/home_page/screens/view/widgets/notes_grid_view.dart';
 import 'package:noteit/features/edit_note_page/screens/view/edit_note_page.dart';
-import 'package:qr_flutter/qr_flutter.dart';
+import 'package:uuid/uuid.dart';
 
-import '../../../../database/sync_manager.dart';
+import '../../../../database/sync_orchestrator.dart';
 import '../../../drawer_page/homepage_drawer.dart';
 import '../core/providers.dart';
 import '../core/sort.dart';
@@ -15,10 +15,6 @@ import '../viewmodel/home_view_model.dart';
 import 'password_prompt_helper.dart';
 
 /// The main entry point for the desktop layout of the application.
-///
-/// Implements a responsive two-pane architecture:
-/// * Left pane: Search, filtering, and the notes grid.
-/// * Right pane: The active note editor
 class DesktopHomePage extends ConsumerStatefulWidget {
   const DesktopHomePage({super.key});
 
@@ -30,20 +26,16 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
   final TextEditingController _searchController = TextEditingController();
 
   /// Tracks the currently selected note displayed in the right panel.
-  /// If null, the default QR sync placeholder is shown.
   Note? _activeNote;
 
   @override
   void initState() {
     super.initState();
 
-    // Defer the sync execution until after the first frame renders
-    // to prevent modifying provider states during the build phase.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(syncNotifierProvider.notifier).executeFullSync();
+      ref.read(syncOrchestratorProvider).triggerSync();
     });
 
-    // Rebuild the UI when search text changes to toggle the clear icon.
     _searchController.addListener(() => setState(() {}));
   }
 
@@ -57,25 +49,18 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
   Widget build(BuildContext context) {
     final homeState = ref.watch(homeViewModelProvider);
     final viewModel = ref.read(homeViewModelProvider.notifier);
+
     // Watched solely to keep the sync manager alive in the widget tree.
-    ref.watch(syncNotifierProvider);
+    ref.watch(syncOrchestratorProvider);
 
     return PopScope(
-      // Prevent system back navigation if we are currently in multi-select mode.
       canPop: !homeState.isSelectMode,
-      // Intercept back presses to clear the selection instead of closing the app.
       onPopInvokedWithResult: (bool didPop, Object? result) {
         if (!didPop && homeState.isSelectMode) viewModel.clearSelection();
       },
       child: Scaffold(
         drawer: const HomepageDrawer(),
         appBar: _buildAppBar(homeState, viewModel),
-        // floatingActionButton: FloatingActionButton(
-        //   onPressed: () {
-        //
-        //   },
-        //   child: const Icon(Icons.add),
-        // ),
         body: Row(
           children: [
             SizedBox(width: 340, child: _buildLeftPanel(homeState, viewModel)),
@@ -88,15 +73,14 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
   }
 
   // ==== App Bar ====
-  /// Dynamically generates the AppBar based on the current selection state.
   PreferredSizeWidget _buildAppBar(HomePageState state, HomeViewModel viewModel) {
     if (state.isSelectMode) {
       return SelectModeAppBar(
         noteIds: state.selectedNoteIds,
         onClearSelection: viewModel.clearSelection,
         onSelectAll: () {
-          final allNoteIds = (ref.read(filteredNotesProvider).value ?? []).map((n) => n.id).toList();
-          viewModel.toggleSelectAll(allNoteIds);
+          final allNoteUuids = (ref.read(filteredNotesProvider).value ?? []).map((n) => n.uuid).toList();
+          viewModel.toggleSelectAll(allNoteUuids);
         },
       );
     }
@@ -105,20 +89,15 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
       elevation: 0,
       centerTitle: true,
       actions: [
-
-
-
-
         TextButton.icon(
           onPressed: () {
-            // Instantiate an empty note draft. This won't be saved to the DB
-            // until the user actually interacts with the EditNotePage.
+
             final emptyNote = Note(
-              id: DateTime.now().millisecondsSinceEpoch,
+              uuid: const Uuid().v4(),
               title: '',
               content: '',
-              createdAt: DateTime.now(),
-              updatedAt: DateTime.now(),
+              createdAt: DateTime.now().toUtc(),
+              updatedAt: DateTime.now().toUtc(),
               isLocked: false,
               isPinned: false,
               color: 0,
@@ -127,35 +106,30 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
               hasAttachments: false,
               contentType: 'text',
               isShared: false,
-              syncStatus: 0,
+              cloudSyncStatus: 0,
+              localSyncStatus: 0,
               versionCounter: 1,
             );
             setState(() => _activeNote = emptyNote);
           },
           icon: Icon(Icons.add, color: Theme.of(context).colorScheme.primary),
-          label: Text("New Note"),
+          label: const Text("New Note"),
         ),
-
         const SizedBox(width: 8),
         TextButton.icon(
           onPressed: () {
-            ref.read(syncNotifierProvider.notifier).executeFullSync();
+            ref.read(syncOrchestratorProvider).triggerSync();
             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Syncing notes...')));
           },
           icon: Icon(Icons.sync, color: Theme.of(context).colorScheme.primary),
-          label: Text("Sync"),
+          label: const Text("Sync"),
         ),
-
         const SizedBox(width: 8),
-
-
       ],
     );
   }
 
   // ==== Left panel ====
-  /// Builds the left-hand navigation pane containing the search bar,
-  /// filter controls, and the list of available notes.
   Widget _buildLeftPanel(HomePageState homeState, HomeViewModel viewModel) {
     final currentSortOption = ref.watch(noteSortOptionProvider);
     final currentPlatformFilter = ref.watch(platformFilterProvider);
@@ -204,7 +178,7 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
           child: NotesGridView(
             isSelectMode: homeState.isSelectMode,
             noteIds: homeState.selectedNoteIds,
-            activeNoteId: _activeNote?.id,
+            activeNoteId: _activeNote?.uuid,
             onToggleSelection: viewModel.toggleSelection,
             onEnableSelectMode: viewModel.enableSelectMode,
             onPromptPassword: (ctx, note) => PasswordPromptHelper.promptAndVerify(ctx, ref, note),
@@ -215,19 +189,17 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
     );
   }
 
-  /// Clears the search input and exits search mode in the view model.
   void _clearSearch() {
     _searchController.clear();
     ref.read(searchQueryProvider.notifier).clear();
     ref.read(homeViewModelProvider.notifier).exitSearchMode();
   }
 
-  /// Constructs the popup menu for sorting and filtering note lists.
   Widget _buildFilterMenu(
-    NoteSortOption currentSortOption,
-    PlatformOptions? currentPlatformFilter,
-    ColorScheme colorScheme,
-  ) {
+      NoteSortOption currentSortOption,
+      PlatformOptions? currentPlatformFilter,
+      ColorScheme colorScheme,
+      ) {
     return PopupMenuButton<String>(
       icon: const Icon(Icons.filter_list),
       tooltip: 'Sort & Filter',
@@ -318,39 +290,14 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
   }
 
   // ==== Right panel ====
-  /// Builds the right-hand content pane.
-  ///
-  /// Renders a QR code for local wifi sync when idle, or the [EditNotePage]
-  /// when a note is actively selected.
   Widget _buildRightPanel() {
     if (_activeNote == null) {
       return homepagePlaceholder();
-      // QR page is not ready yet
-      // return Center(
-      //   child: Column(
-      //     mainAxisAlignment: MainAxisAlignment.center,
-      //     children: [
-      //       Container(
-      //         color: Colors.white,
-      //         height: 200,
-      //         width: 200,
-      //         child: QrImageView(data: "919.9191.029"),
-      //       ),
-      //       const SizedBox(height: 8),
-      //       Text('Local wifi sync', style: TextStyle(color: Colors.grey.shade600, fontSize: 18)),
-      //       const SizedBox(height: 4),
-      //       Text('Scan the qr to sync your notes on local network', style: TextStyle(color: Colors.grey.shade500)),
-      //     ],
-      //   ),
-      // );
     }
-    // ValueKey is crucial here. It forces Flutter to tear down and rebuild
-    // the EditNotePage entirely when switching between different notes.
-    return EditNotePage(key: ValueKey(_activeNote!.id), existingNote: _activeNote);
+    // ValueKey must use the UUID so the editor rebuilds when switching notes
+    return EditNotePage(key: ValueKey(_activeNote!.uuid), existingNote: _activeNote);
   }
 
-  /// Handles note selection, verifying passwords for locked notes
-  /// before revealing their contents in the editor pane.
   void _handleNoteTap(Note note) async {
     if (note.isLocked) {
       final success = await PasswordPromptHelper.promptAndVerify(context, ref, note);
@@ -362,7 +309,6 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
     }
   }
 
-  // Simple placeholder when no note is selected - Discarded! and replaced with qr code
   Widget homepagePlaceholder() {
     return Center(
       child: Column(

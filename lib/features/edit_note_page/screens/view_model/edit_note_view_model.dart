@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/database/drift/drift_database.dart';
 
 import '../../../../core/helpers/device_helper.dart';
-import '../../../../database/sync_manager.dart';
+import '../../../../database/sync_orchestrator.dart';
 
 
 class EditNoteState {
@@ -39,10 +39,8 @@ class EditNoteViewModel extends Notifier<EditNoteState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      // 1. Fetch metadata before saving
       final deviceInfo = await DeviceHelper.getDeviceInfo();
 
-      // 2. Save locally with the new device data
       await ref.read(noteDriftDatabaseProvider).addNote(
         title: title,
         content: content,
@@ -50,8 +48,8 @@ class EditNoteViewModel extends Notifier<EditNoteState> {
         creationDevice: deviceInfo['deviceName'],
       );
 
-      // 3. Fire background sync
-      ref.read(syncNotifierProvider.notifier).executeFullSync();
+      // Fire background sync via Orchestrator
+      ref.read(syncOrchestratorProvider).triggerSync();
 
       state = state.copyWith(isLoading: false);
     } catch (e) {
@@ -59,14 +57,14 @@ class EditNoteViewModel extends Notifier<EditNoteState> {
     }
   }
 
-  Future<void> updateNote(int id, String title, String content) async {
+
+  Future<void> updateNote(String uuid, String title, String content) async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      await ref.read(noteDriftDatabaseProvider).updateNote(id, title, content);
+      await ref.read(noteDriftDatabaseProvider).updateNote(uuid, title, content);
 
-      // Fire background sync
-      ref.read(syncNotifierProvider.notifier).executeFullSync();
+      ref.read(syncOrchestratorProvider).triggerSync();
 
       state = state.copyWith(isLoading: false);
     } catch (e) {
@@ -74,14 +72,14 @@ class EditNoteViewModel extends Notifier<EditNoteState> {
     }
   }
 
-  Future<void> lockNote(int id, {bool isLocked = true}) async {
+
+  Future<void> lockNote(String uuid, {bool isLocked = true}) async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      await ref.read(noteDriftDatabaseProvider).lockNote(id, isLocked: isLocked);
+      await ref.read(noteDriftDatabaseProvider).lockNote(uuid, isLocked: isLocked);
 
-      // Fire background sync
-      ref.read(syncNotifierProvider.notifier).executeFullSync();
+      ref.read(syncOrchestratorProvider).triggerSync();
 
       state = state.copyWith(isLoading: false);
     } catch (e) {
@@ -89,19 +87,16 @@ class EditNoteViewModel extends Notifier<EditNoteState> {
     }
   }
 
-  // Completes the CRUD cycle by soft-deleting the target note
-  Future<void> deleteNote(int id) async {
+  Future<void> deleteNote(String uuid) async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-
       await ref.read(noteDriftDatabaseProvider).softDeleteNotes(
-        [id],
+        [uuid],
         platform: defaultTargetPlatform.name,
       );
 
-      // Fire background sync to update the cloud's trash state
-      ref.read(syncNotifierProvider.notifier).executeFullSync();
+      ref.read(syncOrchestratorProvider).triggerSync();
 
       state = state.copyWith(isLoading: false);
     } catch (e) {

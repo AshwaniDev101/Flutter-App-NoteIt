@@ -5,7 +5,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in_all_platforms/google_sign_in_all_platforms.dart';
 import 'package:noteit/core/routing/routing.dart';
 import '../../../../core/provider/provider.dart';
+import '../../../../database/sync_engine.dart';
 import '../../../../shared/managers/lock_manger/lock_manager.dart';
+import '../../../../database/sync_orchestrator.dart';
+
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
@@ -33,8 +36,9 @@ class SettingsPage extends ConsumerWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    // Listen to lock state for our switch toggle
+    // Listen to states
     final lockState = ref.watch(lockManagerProvider);
+    final currentEngine = ref.watch(syncEngineProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -48,11 +52,12 @@ class SettingsPage extends ConsumerWidget {
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
             children: [
-              // Preferences Section
+
+              // ==================== SYNCHRONIZATION SECTION ====================
               Padding(
                 padding: const EdgeInsets.only(left: 8.0, bottom: 8.0),
                 child: Text(
-                  'General',
+                  'Synchronization',
                   style: textTheme.titleSmall?.copyWith(
                     color: colorScheme.primary,
                     fontWeight: FontWeight.bold,
@@ -63,8 +68,94 @@ class SettingsPage extends ConsumerWidget {
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(
-                      color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                  side: BorderSide(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.blueAccent.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.sync_alt, color: Colors.blueAccent, size: 22),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Active Sync Engine',
+                                  style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w500),
+                                ),
+                                Text(
+                                  'Choose how your notes are backed up and shared.',
+                                  style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      SegmentedButton<SyncEngine>(
+                        segments: const [
+                          ButtonSegment<SyncEngine>(
+                            value: SyncEngine.cloud,
+                            label: Text('Cloud'),
+                            icon: Icon(Icons.cloud_outlined),
+                          ),
+                          ButtonSegment<SyncEngine>(
+                            value: SyncEngine.local,
+                            label: Text('Wi-Fi'),
+                            icon: Icon(Icons.wifi),
+                          ),
+                          ButtonSegment<SyncEngine>(
+                            value: SyncEngine.offline,
+                            label: Text('Offline'),
+                            icon: Icon(Icons.signal_wifi_off),
+                          ),
+                        ],
+                        selected: {currentEngine},
+                        onSelectionChanged: (Set<SyncEngine> newSelection) {
+                          final selectedMode = newSelection.first;
+
+                          // Uses your Notifier's specific setEngine method!
+                          ref.read(syncEngineProvider.notifier).setEngine(selectedMode);
+
+                          // Tell the Orchestrator to switch gears immediately
+                          ref.read(syncOrchestratorProvider).triggerSync();
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // ==================== GENERAL SECTION ====================
+              Padding(
+                padding: const EdgeInsets.only(left: 8.0, bottom: 8.0),
+                child: Text(
+                  'General & Security',
+                  style: textTheme.titleSmall?.copyWith(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              Card(
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
                 ),
                 child: Column(
                   children: [
@@ -90,7 +181,6 @@ class SettingsPage extends ConsumerWidget {
                         height: 1,
                         indent: 64,
                         color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
-                    // Switch Tile for Keeping Notes Unlocked
                     SettingsSwitchTile(
                       icon: Icons.lock_open_rounded,
                       iconColor: Colors.teal,
@@ -101,7 +191,6 @@ class SettingsPage extends ConsumerWidget {
                         ref.read(lockManagerProvider.notifier).setKeepUnlockedPreference(value);
                       },
                     ),
-
                   ],
                 ),
               )

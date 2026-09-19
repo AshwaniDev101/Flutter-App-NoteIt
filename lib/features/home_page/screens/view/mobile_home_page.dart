@@ -6,7 +6,7 @@ import 'package:noteit/database/drift/drift_database.dart';
 import 'package:noteit/features/home_page/screens/view/widgets/home_app_bars.dart';
 import 'package:noteit/features/home_page/screens/view/widgets/notes_grid_view.dart';
 
-import '../../../../database/sync_manager.dart';
+import '../../../../database/sync_orchestrator.dart';
 import '../../../drawer_page/homepage_drawer.dart';
 import '../core/providers.dart';
 import '../core/sort.dart';
@@ -28,8 +28,9 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(syncNotifierProvider.notifier).executeFullSync();
+      ref.read(syncOrchestratorProvider).triggerSync();
     });
+
     _searchController.addListener(() => setState(() {}));
   }
 
@@ -65,7 +66,8 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
     final currentPlatformFilter = ref.watch(platformFilterProvider);
     final colorScheme = Theme.of(context).colorScheme;
 
-    ref.watch(syncNotifierProvider);
+    // Watched solely to keep the sync manager alive in the widget tree.
+    ref.watch(syncOrchestratorProvider);
 
     return PopScope(
       canPop: !homeState.isSelectMode,
@@ -119,8 +121,8 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
             Expanded(
               child: NotesGridView(
                 isSelectMode: homeState.isSelectMode,
-                noteIds: homeState.selectedNoteIds,
-                activeNoteId: null, // Mobile doesn't need to highlight active notes
+                noteIds: homeState.selectedNoteIds, // Make sure NotesGridView expects a Set<String> now!
+                activeNoteId: null,
                 onToggleSelection: viewModel.toggleSelection,
                 onEnableSelectMode: viewModel.enableSelectMode,
                 onPromptPassword: (ctx, note) => PasswordPromptHelper.promptAndVerify(ctx, ref, note),
@@ -139,8 +141,9 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
         noteIds: state.selectedNoteIds,
         onClearSelection: viewModel.clearSelection,
         onSelectAll: () {
-          final allNoteIds = (ref.read(filteredNotesProvider).value ?? []).map((n) => n.id).toList();
-          viewModel.toggleSelectAll(allNoteIds);
+          // FIXED: Map to UUIDs instead of integer IDs
+          final allNoteUuids = (ref.read(filteredNotesProvider).value ?? []).map((n) => n.uuid).toList();
+          viewModel.toggleSelectAll(allNoteUuids);
         },
       );
     }
@@ -153,7 +156,7 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
           icon: const Icon(Icons.sync),
           tooltip: 'Sync Notes',
           onPressed: () {
-            ref.read(syncNotifierProvider.notifier).executeFullSync();
+            ref.read(syncOrchestratorProvider).triggerSync();
             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Syncing notes...')));
           },
         ),

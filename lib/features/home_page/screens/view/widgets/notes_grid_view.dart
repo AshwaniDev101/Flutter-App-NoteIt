@@ -2,15 +2,15 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../database/drift/drift_database.dart';
-import '../../../../../database/sync_manager.dart';
+import '../../../../../database/sync_orchestrator.dart';
 import '../../../../../shared/widgets/note_card.dart';
 import '../../core/providers.dart';
 
 class NotesGridView extends ConsumerWidget {
   final bool isSelectMode;
-  final Set<int> noteIds;
-  final int? activeNoteId; // Added to identify the active note
-  final Function(int) onToggleSelection;
+  final Set<String> noteIds;
+  final String? activeNoteId;
+  final Function(String) onToggleSelection;
   final Function() onEnableSelectMode;
   final Future<void> Function(BuildContext, Note) onPromptPassword;
   final void Function(Note) onNoteTap;
@@ -26,10 +26,11 @@ class NotesGridView extends ConsumerWidget {
     required this.onNoteTap,
   });
 
-  Future<void> _deleteNote(WidgetRef ref, int id) async {
+  Future<void> _deleteNote(WidgetRef ref, String uuid) async {
     final driftDatabase = ref.read(noteDriftDatabaseProvider);
-    await driftDatabase.softDeleteNotes({id}, platform: defaultTargetPlatform.name);
-    ref.read(syncNotifierProvider.notifier).executeFullSync();
+    await driftDatabase.softDeleteNotes({uuid}, platform: defaultTargetPlatform.name);
+
+    ref.read(syncOrchestratorProvider).triggerSync();
   }
 
   @override
@@ -49,7 +50,7 @@ class NotesGridView extends ConsumerWidget {
 
           return RefreshIndicator(
             onRefresh: () async {
-              await ref.read(syncNotifierProvider.notifier).executeFullSync();
+              ref.read(syncOrchestratorProvider).triggerSync();
             },
             child: GridView.builder(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -60,8 +61,9 @@ class NotesGridView extends ConsumerWidget {
               itemCount: notes.length,
               itemBuilder: (context, index) {
                 final currentNote = notes[index];
-                final isSelected = noteIds.contains(currentNote.id);
-                final isActive = currentNote.id == activeNoteId;
+
+                final isSelected = noteIds.contains(currentNote.uuid);
+                final isActive = currentNote.uuid == activeNoteId;
                 final displayAsLocked = currentNote.isLocked;
 
                 final noteCard = NoteCard(
@@ -70,7 +72,7 @@ class NotesGridView extends ConsumerWidget {
                   searchQuery: ref.read(searchQueryProvider),
                   onTap: () async {
                     if (isSelectMode) {
-                      onToggleSelection(currentNote.id);
+                      onToggleSelection(currentNote.uuid);
                     } else if (displayAsLocked) {
                       await onPromptPassword(context, currentNote);
                     } else {
@@ -80,7 +82,7 @@ class NotesGridView extends ConsumerWidget {
                   onLongPress: () {
                     if (!isSelectMode) {
                       onEnableSelectMode();
-                      onToggleSelection(currentNote.id);
+                      onToggleSelection(currentNote.uuid);
                     }
                   },
                   hoverActions: [
@@ -93,31 +95,25 @@ class NotesGridView extends ConsumerWidget {
                       visualDensity: VisualDensity.compact,
                       onPressed: () {
                         if (!isSelectMode) onEnableSelectMode();
-                        onToggleSelection(currentNote.id);
+                        onToggleSelection(currentNote.uuid);
                       },
                     ),
                     if (!isSelectMode) ...[
                       IconButton(
                         icon: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
                         visualDensity: VisualDensity.compact,
-                        onPressed: () => _deleteNote(ref, currentNote.id),
+                        onPressed: () => _deleteNote(ref, currentNote.uuid),
                       ),
                     ],
                   ],
                 );
 
-                // final noteCard = Container(height: 200,width: 200,color: Colors.red,);
-
-                // If this note is currently open in the right-side editor, wrap it in a highlight border
                 if (isActive && !isSelectMode) {
                   return AnimatedContainer(
                     duration: const Duration(milliseconds: 150),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: colorScheme.primary,
-                        width: 2.5,
-                      ),
+                      border: Border.all(color: colorScheme.primary, width: 2.5),
                     ),
                     child: noteCard,
                   );
