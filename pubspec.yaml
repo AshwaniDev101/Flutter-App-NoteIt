@@ -30,6 +30,7 @@ dependencies:
   cloud_firestore: ^6.6.0
   firebase_auth: ^6.5.3
   google_sign_in_all_platforms: ^2.0.3
+  uuid: ^4.6.0
 
   # Local Sync (WebSocket P2P)
   shelf: ^1.4.2
@@ -46,9 +47,7 @@ dependencies:
   go_router: ^17.2.2
 
 
-  riverpod_annotation: ^4.0.2
-  nsd: ^5.0.1
-  analysis_server_plugin: ^0.3.7
+
 
 dev_dependencies:
   flutter_test:
