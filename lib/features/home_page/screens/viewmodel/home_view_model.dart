@@ -3,7 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class HomePageState {
   final bool isSelectMode;
   final bool isSearchMode;
-  final Set<int> selectedNoteIds;
+
+  final Set<String> selectedNoteIds;
 
   const HomePageState({
     this.isSelectMode = false,
@@ -14,7 +15,7 @@ class HomePageState {
   HomePageState copyWith({
     bool? isSelectMode,
     bool? isSearchMode,
-    Set<int>? selectedNoteIds
+    Set<String>? selectedNoteIds
   }) {
     return HomePageState(
       isSelectMode: isSelectMode ?? this.isSelectMode,
@@ -28,26 +29,26 @@ class HomeViewModel extends Notifier<HomePageState> {
   @override
   HomePageState build() => const HomePageState();
 
-  void toggleSelection(int id) {
-    final currentSet = Set<int>.from(state.selectedNoteIds);
-    if (currentSet.contains(id)) {
-      currentSet.remove(id);
+  void toggleSelection(String uuid) {
+    final currentSet = Set<String>.from(state.selectedNoteIds);
+    if (currentSet.contains(uuid)) {
+      currentSet.remove(uuid);
       final keepsSelectionMode = currentSet.isNotEmpty;
       state = state.copyWith(selectedNoteIds: currentSet, isSelectMode: keepsSelectionMode);
     } else {
-      currentSet.add(id);
+      currentSet.add(uuid);
       state = state.copyWith(selectedNoteIds: currentSet, isSelectMode: true);
     }
   }
 
-  void toggleSelectAll(List<int> allNoteIds) {
-    if (allNoteIds.isEmpty) return;
+  void toggleSelectAll(List<String> allNoteUuids) {
+    if (allNoteUuids.isEmpty) return;
 
-    final isAllSelected = state.selectedNoteIds.length == allNoteIds.length;
+    final isAllSelected = state.selectedNoteIds.length == allNoteUuids.length;
     if (isAllSelected) {
       clearSelection();
     } else {
-      state = state.copyWith(isSelectMode: true, selectedNoteIds: Set<int>.from(allNoteIds));
+      state = state.copyWith(isSelectMode: true, selectedNoteIds: Set<String>.from(allNoteUuids));
     }
   }
 

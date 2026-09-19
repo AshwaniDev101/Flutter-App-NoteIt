@@ -26,7 +26,7 @@ class TabViewModel extends Notifier<TabViewState> {
   TabViewState build() => const TabViewState();
 
   void openTab(Note note) {
-    final existingIndex = state.openTabs.indexWhere((t) => t.id == note.id);
+    final existingIndex = state.openTabs.indexWhere((t) => t.uuid == note.uuid);
 
     if (existingIndex != -1) {
       // Note is already open, just switch to it

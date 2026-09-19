@@ -1,13 +1,14 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/database/drift/drift_database.dart';
-import 'package:noteit/database/sync_manager.dart';
 
 import '../../../database/shared_preference/shared_preference_manager.dart';
+import '../../../database/sync_orchestrator.dart';
 
 @immutable
 class LockState {
-  final Set<int> sessionUnlockedNoteIds;
+
+  final Set<String> sessionUnlockedNoteIds;
   final bool isAuthenticating;
   final String? error;
   final bool keepUnlockedDuringSession;
@@ -20,7 +21,7 @@ class LockState {
   });
 
   LockState copyWith({
-    Set<int>? sessionUnlockedNoteIds,
+    Set<String>? sessionUnlockedNoteIds,
     bool? isAuthenticating,
     String? error,
     bool? keepUnlockedDuringSession,
@@ -55,8 +56,8 @@ class LockManager extends Notifier<LockState> {
     }
   }
 
-  bool isNoteSessionUnlocked(int id) {
-    return state.sessionUnlockedNoteIds.contains(id);
+  bool isNoteSessionUnlocked(String uuid) {
+    return state.sessionUnlockedNoteIds.contains(uuid);
   }
 
   bool verifyPassword(String password) {
@@ -64,9 +65,9 @@ class LockManager extends Notifier<LockState> {
     return savedPassword != null && savedPassword == password;
   }
 
-  bool verifyAndSessionUnlock(int id, String password) {
+  bool verifyAndSessionUnlock(String uuid, String password) {
     if (verifyPassword(password)) {
-      final updatedSet = Set<int>.from(state.sessionUnlockedNoteIds)..add(id);
+      final updatedSet = Set<String>.from(state.sessionUnlockedNoteIds)..add(uuid);
       state = state.copyWith(sessionUnlockedNoteIds: updatedSet, error: null);
       return true;
     } else {
@@ -91,13 +92,13 @@ class LockManager extends Notifier<LockState> {
     state = state.copyWith(sessionUnlockedNoteIds: const {});
   }
 
-  void lockSessionNote(int id) {
-    final updatedSet = Set<int>.from(state.sessionUnlockedNoteIds)..remove(id);
+
+  void lockSessionNote(String uuid) {
+    final updatedSet = Set<String>.from(state.sessionUnlockedNoteIds)..remove(uuid);
     state = state.copyWith(sessionUnlockedNoteIds: updatedSet);
   }
 
-  Future<bool> togglePersistentLock(int id, String password, {required bool shouldLock, bool ignorePassword = false}) async {
-
+  Future<bool> togglePersistentLock(String uuid, String password, {required bool shouldLock, bool ignorePassword = false}) async {
     // Only verify the password if we are UNLOCKING, AND we aren't explicitly ignoring the password check
     if (!shouldLock && !ignorePassword) {
       if (!verifyPassword(password)) {
@@ -107,14 +108,16 @@ class LockManager extends Notifier<LockState> {
     }
 
     try {
-      await ref.read(noteDriftDatabaseProvider).lockNote(id, isLocked: shouldLock);
+      await ref.read(noteDriftDatabaseProvider).lockNote(uuid, isLocked: shouldLock);
 
-      final updatedSet = Set<int>.from(state.sessionUnlockedNoteIds);
+      final updatedSet = Set<String>.from(state.sessionUnlockedNoteIds);
       // Remove it from temporary session memory to keep state clean
-      updatedSet.remove(id);
+      updatedSet.remove(uuid);
 
       state = state.copyWith(sessionUnlockedNoteIds: updatedSet);
-      ref.read(syncNotifierProvider.notifier).executeFullSync();
+
+      // Tell the Orchestrator to broadcast the lock state change
+      ref.read(syncOrchestratorProvider).triggerSync();
       return true;
     } catch (e) {
       state = state.copyWith(error: e.toString());

@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:uuid/uuid.dart';
 
 import 'notes_table.dart';
 
@@ -37,139 +38,198 @@ class NoteDriftDatabase extends _$NoteDriftDatabase {
 
   // STANDARD LOCAL CRUD OPERATIONS =====================
 
-  Future<int> addNote({
+  Future<String> addNote({
     required String title,
     required String content,
     String? creationPlatform,
     String? creationDevice,
   }) async {
-    return await into(notes).insert(
+    final newUuid = const Uuid().v4();
+    await into(notes).insert(
       NotesCompanion.insert(
+        uuid: Value(newUuid),
         title: title,
         content: content,
         creationPlatform: Value(creationPlatform),
         creationDevice: Value(creationDevice),
         createdAt: Value(DateTime.now().toUtc()),
+        updatedAt: Value(DateTime.now().toUtc()),
+        cloudSyncStatus: const Value(0),
+        localSyncStatus: const Value(0),
       ),
     );
+    return newUuid;
   }
 
   Stream<List<Note>> watchAllNotes() {
     return select(notes).watch();
   }
 
-  Future<Note> getNoteById(int id) {
-    return (select(notes)..where((t) => t.id.equals(id))).getSingle();
+  Future<Note> getNoteById(String uuid) {
+    return (select(notes)..where((t) => t.uuid.equals(uuid))).getSingle();
   }
 
-  Future<bool> updateNote(int id, String title, String content) async {
-    return await (update(notes)..where((t) => t.id.equals(id))).write(
-          NotesCompanion(
-            title: Value(title),
-            content: Value(content),
-            syncStatus: const Value(0), // Trigger the SyncManager
-            updatedAt: Value(DateTime.now().toUtc()), // Enforce UTC
-          ),
-        ) >
-        0;
+
+  Future<bool> updateNote(String uuid, String title, String content) async {
+    return await (update(notes)..where((t) => t.uuid.equals(uuid))).write(
+      NotesCompanion(
+        title: Value(title),
+        content: Value(content),
+        cloudSyncStatus: const Value(0), // Trigger Cloud Worker
+        localSyncStatus: const Value(0), // Trigger Local Worker
+        updatedAt: Value(DateTime.now().toUtc()),
+      ),
+    ) > 0;
   }
 
-  Future<int> deleteNote(int id) async {
-    // This is the "Hard Delete"
-    return await (delete(notes)..where((t) => t.id.equals(id))).go();
+  Future<int> deleteNote(String uuid) async {
+    // Hard Delete
+    return await (delete(notes)..where((t) => t.uuid.equals(uuid))).go();
   }
 
-  Future<void> softDeleteNotes(Iterable<int> ids, {required String platform}) async {
-    // This is the "Soft Delete" used by the UI
-    await (update(notes)..where((t) => t.id.isIn(ids))).write(
+  Future<void> softDeleteNotes(Iterable<String> uuids, {required String platform}) async {
+    await (update(notes)..where((t) => t.uuid.isIn(uuids))).write(
       NotesCompanion(
         deletedAt: Value(DateTime.now().toUtc()),
-        syncStatus: const Value(0),
+        cloudSyncStatus: const Value(0),
+        localSyncStatus: const Value(0),
         updatedAt: Value(DateTime.now().toUtc()),
-        deletedPlatform: Value(platform), // NEW: Stamping the platform
+        deletedPlatform: Value(platform),
       ),
     );
   }
 
-  Future<bool> lockNote(int id, {required bool isLocked}) async {
-    return await (update(notes)..where((t) => t.id.equals(id))).write(
-          NotesCompanion(
-            isLocked: Value(isLocked),
-            syncStatus: const Value(0),
-            updatedAt: Value(DateTime.now().toUtc()),
-          ),
-        ) >
-        0;
+  Future<bool> lockNote(String uuid, {required bool isLocked}) async {
+    return await (update(notes)..where((t) => t.uuid.equals(uuid))).write(
+      NotesCompanion(
+        isLocked: Value(isLocked),
+        cloudSyncStatus: const Value(0),
+        localSyncStatus: const Value(0),
+        updatedAt: Value(DateTime.now().toUtc()),
+      ),
+    ) > 0;
   }
 
   // SYNC MANAGER HELPER METHODS
 
-  /// PUSH: Get all local notes waiting to be pushed to Firebase
-  Future<List<Note>> getPendingNotes() {
-    return (select(notes)..where((t) => t.syncStatus.equals(0))).get();
+  /// CLOUD PUSH: Get local notes waiting for Firebase
+  Future<List<Note>> getPendingCloudNotes() {
+    return (select(notes)..where((t) => t.cloudSyncStatus.equals(0))).get();
   }
 
-  /// MERGE: Upsert (Update or Insert) notes pulled down from Firebase
-  Future<void> upsertNoteFromCloud(Map<String, dynamic> cloudNote, String firestoreId) async {
-    // Parse the cloud timestamps
-    final cloudUpdatedAt = DateTime.fromMillisecondsSinceEpoch(cloudNote['updatedAt'] as int, isUtc: true);
-    final cloudDeletedAt = cloudNote['deletedAt'] != null
-        ? DateTime.fromMillisecondsSinceEpoch(cloudNote['deletedAt'] as int, isUtc: true)
+  /// LOCAL PUSH: Get local notes waiting for Wi-Fi P2P
+  Future<List<Note>> getPendingLocalNotes() {
+    return (select(notes)..where((t) => t.localSyncStatus.equals(0))).get();
+  }
+
+  /// MERGE: Upsert notes pulled down from Firebase OR Local Wi-Fi
+  Future<void> upsertNoteFromCloud(Map<String, dynamic> incomingData) async {
+    final incomingUuid = incomingData['uuid'] as String;
+
+    final incomingUpdatedAt = DateTime.fromMillisecondsSinceEpoch(incomingData['updatedAt'] as int, isUtc: true);
+    final incomingDeletedAt = incomingData['deletedAt'] != null
+        ? DateTime.fromMillisecondsSinceEpoch(incomingData['deletedAt'] as int, isUtc: true)
         : null;
 
     final noteCompanion = NotesCompanion(
-      title: Value(cloudNote['title'] as String),
-      content: Value(cloudNote['content'] as String),
-      color: Value(cloudNote['color'] as int? ?? 0xFFFFFFFF),
-      isPinned: Value(cloudNote['isPinned'] as bool? ?? false),
-      isArchived: Value(cloudNote['isArchived'] as bool? ?? false),
-      isLocked: Value(cloudNote['isLocked'] as bool? ?? false),
-      position: Value(cloudNote['position'] as int? ?? 0),
-      tags: Value(cloudNote['tags'] as String?),
-      creationPlatform: Value(cloudNote['creationPlatform'] as String?),
-      creationDevice: Value(cloudNote['creationDevice'] as String?),
-      deletedAt: Value(cloudDeletedAt),
-      syncStatus: const Value(1),
-      // Already synced!
-      firestoreId: Value(firestoreId),
-      reminderAt: cloudNote['reminderAt'] != null
-          ? Value(DateTime.fromMillisecondsSinceEpoch(cloudNote['reminderAt'] as int, isUtc: true))
+      uuid: Value(incomingUuid),
+      title: Value(incomingData['title'] as String),
+      content: Value(incomingData['content'] as String),
+      color: Value(incomingData['color'] as int? ?? 0xFFFFFFFF),
+      isPinned: Value(incomingData['isPinned'] as bool? ?? false),
+      isArchived: Value(incomingData['isArchived'] as bool? ?? false),
+      isLocked: Value(incomingData['isLocked'] as bool? ?? false),
+      position: Value(incomingData['position'] as int? ?? 0),
+      tags: Value(incomingData['tags'] as String?),
+      creationPlatform: Value(incomingData['creationPlatform'] as String?),
+      creationDevice: Value(incomingData['creationDevice'] as String?),
+      deletedAt: Value(incomingDeletedAt),
+      reminderAt: incomingData['reminderAt'] != null
+          ? Value(DateTime.fromMillisecondsSinceEpoch(incomingData['reminderAt'] as int, isUtc: true))
           : const Value.absent(),
-      updatedAt: Value(cloudUpdatedAt),
-      createdAt: Value(DateTime.fromMillisecondsSinceEpoch(cloudNote['createdAt'] as int, isUtc: true)),
+      updatedAt: Value(incomingUpdatedAt),
+      createdAt: Value(DateTime.fromMillisecondsSinceEpoch(incomingData['createdAt'] as int, isUtc: true)),
+
+      // CRITICAL: Since this came from the network, mark it as synced for the network that received it.
+      // But leave the other status as 0 so it passes the data along!
+      cloudSyncStatus: const Value(1),
+      localSyncStatus: const Value(0),
     );
 
-    // Fetch the existing local note
-    final existingNote = await (select(notes)..where((t) => t.firestoreId.equals(firestoreId))).getSingleOrNull();
+    final existingNote = await (select(notes)..where((t) => t.uuid.equals(incomingUuid))).getSingleOrNull();
 
     if (existingNote != null) {
-      // CONFLICT RESOLUTION: Compare timestamps
-      if (cloudUpdatedAt.isAfter(existingNote.updatedAt ?? existingNote.createdAt)) {
-        // The cloud version is newer. Safe to overwrite local.
-        await (update(notes)..where((t) => t.id.equals(existingNote.id))).write(noteCompanion);
+      if (incomingUpdatedAt.isAfter(existingNote.updatedAt)) {
+        // Network version is newer. Overwrite local.
+        await (update(notes)..where((t) => t.uuid.equals(incomingUuid))).write(noteCompanion);
       } else {
-        // The local version is newer!
-        // Do nothing. The local note retains its syncStatus == 0 and will be pushed to Firebase on the next batch.
-        print("SyncManager: Ignored older cloud data for note ${existingNote.id}. Local is newer.");
+        print("Drift: Ignored older incoming data for note $incomingUuid. Local is newer.");
       }
     } else {
-      // Note doesn't exist locally, so insert it.
+      // Note doesn't exist locally, insert it.
       await into(notes).insert(noteCompanion);
     }
   }
 
-  /// CONFIRM: Mark local notes as successfully pushed to Firebase
-  Future<void> markAsSynced(Iterable<int> localIds, Map<int, String> newFirestoreIds) async {
-    await transaction(() async {
-      for (final id in localIds) {
-        final assignedFirestoreId = newFirestoreIds[id];
-        if (assignedFirestoreId != null) {
-          await (update(notes)..where((t) => t.id.equals(id))).write(
-            NotesCompanion(syncStatus: const Value(1), firestoreId: Value(assignedFirestoreId)),
-          );
-        }
+
+  /// CONFIRM CLOUD: Mark notes as successfully pushed to Firebase
+  Future<void> markAsCloudSynced(Iterable<String> uuids) async {
+    await (update(notes)..where((t) => t.uuid.isIn(uuids))).write(
+      const NotesCompanion(cloudSyncStatus: Value(1)),
+    );
+  }
+
+
+  /// MERGE: Upsert notes pulled down from Local Wi-Fi
+  Future<void> upsertNoteFromLocal(Map<String, dynamic> incomingData) async {
+    final incomingUuid = incomingData['uuid'] as String;
+
+    final incomingUpdatedAt = DateTime.fromMillisecondsSinceEpoch(incomingData['updatedAt'] as int, isUtc: true);
+    final incomingDeletedAt = incomingData['deletedAt'] != null
+        ? DateTime.fromMillisecondsSinceEpoch(incomingData['deletedAt'] as int, isUtc: true)
+        : null;
+
+    final noteCompanion = NotesCompanion(
+      uuid: Value(incomingUuid),
+      title: Value(incomingData['title'] as String),
+      content: Value(incomingData['content'] as String),
+      color: Value(incomingData['color'] as int? ?? 0xFFFFFFFF),
+      isPinned: Value(incomingData['isPinned'] as bool? ?? false),
+      isArchived: Value(incomingData['isArchived'] as bool? ?? false),
+      isLocked: Value(incomingData['isLocked'] as bool? ?? false),
+      position: Value(incomingData['position'] as int? ?? 0),
+      tags: Value(incomingData['tags'] as String?),
+      creationPlatform: Value(incomingData['creationPlatform'] as String?),
+      creationDevice: Value(incomingData['creationDevice'] as String?),
+      deletedAt: Value(incomingDeletedAt),
+      reminderAt: incomingData['reminderAt'] != null
+          ? Value(DateTime.fromMillisecondsSinceEpoch(incomingData['reminderAt'] as int, isUtc: true))
+          : const Value.absent(),
+      updatedAt: Value(incomingUpdatedAt),
+      createdAt: Value(DateTime.fromMillisecondsSinceEpoch(incomingData['createdAt'] as int, isUtc: true)),
+
+      // INVERTED: Came from Wi-Fi, so mark local synced, but leave cloud pending!
+      cloudSyncStatus: const Value(0),
+      localSyncStatus: const Value(1),
+    );
+
+    final existingNote = await (select(notes)..where((t) => t.uuid.equals(incomingUuid))).getSingleOrNull();
+
+    if (existingNote != null) {
+      if (incomingUpdatedAt.isAfter(existingNote.updatedAt)) {
+        await (update(notes)..where((t) => t.uuid.equals(incomingUuid))).write(noteCompanion);
       }
-    });
+    } else {
+      await into(notes).insert(noteCompanion);
+    }
+  }
+
+
+  /// CONFIRM LOCAL: Mark notes as successfully pushed over Wi-Fi
+  Future<void> markAsLocalSynced(Iterable<String> uuids) async {
+    await (update(notes)..where((t) => t.uuid.isIn(uuids))).write(
+      const NotesCompanion(localSyncStatus: Value(1)),
+    );
   }
 
   // TRASH PAGE METHODS  ----------------------------------------
@@ -177,41 +237,31 @@ class NoteDriftDatabase extends _$NoteDriftDatabase {
   /// VIEW TRASH: Watch only notes that have a deletedAt timestamp
   Stream<List<Note>> watchTrashNotes() {
     return (select(notes)
-          ..where((t) => t.deletedAt.isNotNull())
-          // Sort trash by most recently deleted
-          ..orderBy([(t) => OrderingTerm(expression: t.deletedAt, mode: OrderingMode.desc)]))
+      ..where((t) => t.deletedAt.isNotNull())
+      ..orderBy([(t) => OrderingTerm(expression: t.deletedAt, mode: OrderingMode.desc)]))
         .watch();
   }
 
-  /// RESTORE: Remove the deletedAt flag and trigger a sync
-  Future<bool> restoreNote(int id) async {
-    return await (update(notes)..where((t) => t.id.equals(id))).write(
-          NotesCompanion(
-            deletedAt: const Value(null), // Nullify the trash flag
-            syncStatus: const Value(0), // Flag as pending sync
-            updatedAt: Value(DateTime.now().toUtc()), // Enforce Last-Write-Wins
-          ),
-        ) >
-        0;
+  Future<bool> restoreNote(String uuid) async {
+    return await (update(notes)..where((t) => t.uuid.equals(uuid))).write(
+      NotesCompanion(
+        deletedAt: const Value(null),
+        cloudSyncStatus: const Value(0),
+        localSyncStatus: const Value(0),
+        updatedAt: Value(DateTime.now().toUtc()),
+      ),
+    ) > 0;
   }
 
-  /// EMPTY TRASH (LOCAL): Hard delete all trashed notes and return their Firestore IDs
+  /// EMPTY TRASH: Hard delete all trashed notes and return their UUIDs to delete them from Firebase
   Future<List<String>> emptyLocalTrash() async {
-    // Get all trashed notes before we delete them
     final trashedNotes = await (select(notes)..where((t) => t.deletedAt.isNotNull())).get();
 
-    // Extract the Firestore IDs (ignore any notes that were never synced)
-    final firestoreIdsToDelete = trashedNotes
-        .map((note) => note.firestoreId)
-        .where((id) => id != null && id.isNotEmpty)
-        .cast<String>()
-        .toList();
+    final uuidsToDelete = trashedNotes.map((note) => note.uuid).toList();
 
-    // Perform the actual hard delete locally
     final deletedCount = await (delete(notes)..where((t) => t.deletedAt.isNotNull())).go();
     print("Drift: Emptied $deletedCount notes from local trash.");
 
-    //Return the IDs so Firebase knows what to delete
-    return firestoreIdsToDelete;
+    return uuidsToDelete;
   }
 }

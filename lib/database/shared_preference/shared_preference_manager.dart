@@ -1,7 +1,9 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-// Riverpod Provider for consistent dependency injection
+import '../sync_engine.dart';
+
+// The Global Settings Provider
 final sharedPreferenceProvider = Provider<SharedPreferenceManager>((ref) {
   return SharedPreferenceManager.instance;
 });
@@ -21,18 +23,32 @@ class SharedPreferenceManager {
   static const String _keyLastSyncTime = 'last_sync_time';
   static const String _keyMasterPassword = 'master_password';
   static const String _keyThemeType = 'theme_type';
+  static const String _keySyncEngine = 'sync_engine';
 
   // Key for keeping notes unlocked during session
   static const String _keyKeepUnlockedSession = 'keep_unlocked_session';
 
+  // --- Sync Engine Mode ---
+  // Defaults to offline if the user has never chosen one
+  SyncEngine get currentEngine {
+    final engineName = _prefs.getString(_keySyncEngine) ?? SyncEngine.offline.name;
+    return SyncEngine.values.firstWhere((e) => e.name == engineName, orElse: () => SyncEngine.offline);
+  }
+
+  Future<bool> setCurrentEngine(SyncEngine engine) async {
+    return await _prefs.setString(_keySyncEngine, engine.name);
+  }
+
   // --- View Type ---
   int get viewType => _prefs.getInt(_keyViewType) ?? 0;
+
   Future<bool> setViewType(int value) async {
     return await _prefs.setInt(_keyViewType, value);
   }
 
   // --- Sync Time ---
   int get lastSyncTime => _prefs.getInt(_keyLastSyncTime) ?? 0;
+
   Future<bool> setLastSyncTime(int timestamp) async {
     return await _prefs.setInt(_keyLastSyncTime, timestamp);
   }
@@ -43,10 +59,13 @@ class SharedPreferenceManager {
 
   // --- Master Password ---
   String? get masterPassword => _prefs.getString(_keyMasterPassword);
+
   Future<bool> setMasterPassword(String password) async {
     return await _prefs.setString(_keyMasterPassword, password);
   }
+
   bool get hasMasterPassword => _prefs.containsKey(_keyMasterPassword);
+
   Future<bool> removeMasterPassword() async {
     return await _prefs.remove(_keyMasterPassword);
   }
@@ -54,12 +73,14 @@ class SharedPreferenceManager {
   // --- Session Lock Preference ---
   // Defaults to false (strict mode)
   bool get keepUnlockedDuringSession => _prefs.getBool(_keyKeepUnlockedSession) ?? false;
+
   Future<bool> setKeepUnlockedDuringSession(bool value) async {
     return await _prefs.setBool(_keyKeepUnlockedSession, value);
   }
 
   // --- Theme  ---
   String get themeType => _prefs.getString(_keyThemeType) ?? 'dark';
+
   Future<bool> setThemeType(String value) async {
     return await _prefs.setString(_keyThemeType, value);
   }

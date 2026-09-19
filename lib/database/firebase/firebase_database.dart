@@ -66,22 +66,15 @@ class NoteFirestoreDatabase {
   }
 
   /// PUSH: Send all pending local changes to Firebase in a single atomic batch
-  Future<Map<int, String>> pushBatch(List<Note> pendingNotes) async {
+  Future<void> pushBatch(List<Note> pendingNotes) async {
     final batch = _firestore.batch();
-    final Map<int, String> assignedIds = {};
 
     for (final note in pendingNotes) {
-      DocumentReference docRef;
-
-      if (note.firestoreId != null && note.firestoreId!.isNotEmpty) {
-        docRef = _notesRef.doc(note.firestoreId);
-      } else {
-        docRef = _notesRef.doc();
-      }
-
-      assignedIds[note.id] = docRef.id;
+      // Force Firebase to use your exact local Drift UUID!
+      final docRef = _notesRef.doc(note.uuid);
 
       final data = {
+        'uuid': note.uuid, // Save it inside the document too
         'title': note.title,
         'content': note.content,
         'color': note.color,
@@ -97,7 +90,8 @@ class NoteFirestoreDatabase {
         'deletedAt': note.deletedAt?.toUtc().millisecondsSinceEpoch,
         'reminderAt': note.reminderAt?.toUtc().millisecondsSinceEpoch,
         'createdAt': note.createdAt.toUtc().millisecondsSinceEpoch,
-        'updatedAt': note.updatedAt?.toUtc().millisecondsSinceEpoch ?? note.createdAt.toUtc().millisecondsSinceEpoch,
+
+        'updatedAt': note.updatedAt.toUtc().millisecondsSinceEpoch,
 
         // Let Firebase dictate the exact sync timeline!
         'cloudUpdatedAt': FieldValue.serverTimestamp(),
@@ -107,22 +101,21 @@ class NoteFirestoreDatabase {
     }
 
     await batch.commit();
-    return assignedIds;
   }
 
 
   // Hard delete  -----------------------------
 
   /// EMPTY TRASH (REMOTE): Hard delete a batch of documents from Firestore
-  Future<void> deleteBatch(List<String> firestoreIds) async {
-    if (firestoreIds.isEmpty) return;
+  Future<void> deleteBatch(List<String> uuids) async {
+    if (uuids.isEmpty) return;
 
     // Note: Firestore limits a WriteBatch to 500 operations. 
     // If a user has more than 500 notes in the trash, we need to chunk them.
     final chunks = <List<String>>[];
-    for (var i = 0; i < firestoreIds.length; i += 500) {
-      chunks.add(firestoreIds.sublist(
-          i, i + 500 > firestoreIds.length ? firestoreIds.length : i + 500));
+    for (var i = 0; i < uuids.length; i += 500) {
+      chunks.add(uuids.sublist(
+          i, i + 500 > uuids.length ? uuids.length : i + 500));
     }
 
     for (final chunk in chunks) {

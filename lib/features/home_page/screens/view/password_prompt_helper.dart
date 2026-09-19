@@ -26,7 +26,7 @@ class PasswordPromptHelper {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('New Master Password Set!')));
       }
 
-      final success = lockManager.verifyAndSessionUnlock(note.id, enteredPassword);
+      final success = lockManager.verifyAndSessionUnlock(note.uuid, enteredPassword);
 
       if (!success && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Incorrect Password')));

@@ -8,18 +8,15 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
   $NotesTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  static const VerificationMeta _uuidMeta = const VerificationMeta('uuid');
   @override
-  late final GeneratedColumn<int> id = GeneratedColumn<int>(
-    'id',
+  late final GeneratedColumn<String> uuid = GeneratedColumn<String>(
+    'uuid',
     aliasedName,
     false,
-    hasAutoIncrement: true,
-    type: DriftSqlType.int,
+    type: DriftSqlType.string,
     requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'PRIMARY KEY AUTOINCREMENT',
-    ),
+    clientDefault: () => const Uuid().v4(),
   );
   static const VerificationMeta _titleMeta = const VerificationMeta('title');
   @override
@@ -226,9 +223,10 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
   late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
     'updated_at',
     aliasedName,
-    true,
+    false,
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
   );
   static const VerificationMeta _deletedAtMeta = const VerificationMeta(
     'deletedAt',
@@ -241,23 +239,24 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _firestoreIdMeta = const VerificationMeta(
-    'firestoreId',
+  static const VerificationMeta _cloudSyncStatusMeta = const VerificationMeta(
+    'cloudSyncStatus',
   );
   @override
-  late final GeneratedColumn<String> firestoreId = GeneratedColumn<String>(
-    'firestore_id',
+  late final GeneratedColumn<int> cloudSyncStatus = GeneratedColumn<int>(
+    'cloud_sync_status',
     aliasedName,
-    true,
-    type: DriftSqlType.string,
+    false,
+    type: DriftSqlType.int,
     requiredDuringInsert: false,
+    defaultValue: const Constant(0),
   );
-  static const VerificationMeta _syncStatusMeta = const VerificationMeta(
-    'syncStatus',
+  static const VerificationMeta _localSyncStatusMeta = const VerificationMeta(
+    'localSyncStatus',
   );
   @override
-  late final GeneratedColumn<int> syncStatus = GeneratedColumn<int>(
-    'sync_status',
+  late final GeneratedColumn<int> localSyncStatus = GeneratedColumn<int>(
+    'local_sync_status',
     aliasedName,
     false,
     type: DriftSqlType.int,
@@ -298,6 +297,17 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _lastEditedPlatformMeta =
+      const VerificationMeta('lastEditedPlatform');
+  @override
+  late final GeneratedColumn<String> lastEditedPlatform =
+      GeneratedColumn<String>(
+        'last_edited_platform',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _lastEditedDeviceMeta = const VerificationMeta(
     'lastEditedDevice',
   );
@@ -320,9 +330,20 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _deletedDeviceMeta = const VerificationMeta(
+    'deletedDevice',
+  );
+  @override
+  late final GeneratedColumn<String> deletedDevice = GeneratedColumn<String>(
+    'deleted_device',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
-    id,
+    uuid,
     title,
     content,
     color,
@@ -341,13 +362,15 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
     createdAt,
     updatedAt,
     deletedAt,
-    firestoreId,
-    syncStatus,
+    cloudSyncStatus,
+    localSyncStatus,
     versionCounter,
     creationPlatform,
     creationDevice,
+    lastEditedPlatform,
     lastEditedDevice,
     deletedPlatform,
+    deletedDevice,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -361,8 +384,11 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
   }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    if (data.containsKey('uuid')) {
+      context.handle(
+        _uuidMeta,
+        uuid.isAcceptableOrUnknown(data['uuid']!, _uuidMeta),
+      );
     }
     if (data.containsKey('title')) {
       context.handle(
@@ -482,19 +508,22 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
         deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
       );
     }
-    if (data.containsKey('firestore_id')) {
+    if (data.containsKey('cloud_sync_status')) {
       context.handle(
-        _firestoreIdMeta,
-        firestoreId.isAcceptableOrUnknown(
-          data['firestore_id']!,
-          _firestoreIdMeta,
+        _cloudSyncStatusMeta,
+        cloudSyncStatus.isAcceptableOrUnknown(
+          data['cloud_sync_status']!,
+          _cloudSyncStatusMeta,
         ),
       );
     }
-    if (data.containsKey('sync_status')) {
+    if (data.containsKey('local_sync_status')) {
       context.handle(
-        _syncStatusMeta,
-        syncStatus.isAcceptableOrUnknown(data['sync_status']!, _syncStatusMeta),
+        _localSyncStatusMeta,
+        localSyncStatus.isAcceptableOrUnknown(
+          data['local_sync_status']!,
+          _localSyncStatusMeta,
+        ),
       );
     }
     if (data.containsKey('version_counter')) {
@@ -524,6 +553,15 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
         ),
       );
     }
+    if (data.containsKey('last_edited_platform')) {
+      context.handle(
+        _lastEditedPlatformMeta,
+        lastEditedPlatform.isAcceptableOrUnknown(
+          data['last_edited_platform']!,
+          _lastEditedPlatformMeta,
+        ),
+      );
+    }
     if (data.containsKey('last_edited_device')) {
       context.handle(
         _lastEditedDeviceMeta,
@@ -542,18 +580,27 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
         ),
       );
     }
+    if (data.containsKey('deleted_device')) {
+      context.handle(
+        _deletedDeviceMeta,
+        deletedDevice.isAcceptableOrUnknown(
+          data['deleted_device']!,
+          _deletedDeviceMeta,
+        ),
+      );
+    }
     return context;
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {id};
+  Set<GeneratedColumn> get $primaryKey => const {};
   @override
   Note map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return Note(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}id'],
+      uuid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}uuid'],
       )!,
       title: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -622,18 +669,18 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
       updatedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
-      ),
+      )!,
       deletedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}deleted_at'],
       ),
-      firestoreId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}firestore_id'],
-      ),
-      syncStatus: attachedDatabase.typeMapping.read(
+      cloudSyncStatus: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
-        data['${effectivePrefix}sync_status'],
+        data['${effectivePrefix}cloud_sync_status'],
+      )!,
+      localSyncStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}local_sync_status'],
       )!,
       versionCounter: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
@@ -647,6 +694,10 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
         DriftSqlType.string,
         data['${effectivePrefix}creation_device'],
       ),
+      lastEditedPlatform: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_edited_platform'],
+      ),
       lastEditedDevice: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}last_edited_device'],
@@ -654,6 +705,10 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
       deletedPlatform: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}deleted_platform'],
+      ),
+      deletedDevice: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}deleted_device'],
       ),
     );
   }
@@ -665,7 +720,7 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
 }
 
 class Note extends DataClass implements Insertable<Note> {
-  final int id;
+  final String uuid;
   final String title;
   final String content;
   final int color;
@@ -682,17 +737,19 @@ class Note extends DataClass implements Insertable<Note> {
   final String? ownerUid;
   final String? ownerEmail;
   final DateTime createdAt;
-  final DateTime? updatedAt;
+  final DateTime updatedAt;
   final DateTime? deletedAt;
-  final String? firestoreId;
-  final int syncStatus;
+  final int cloudSyncStatus;
+  final int localSyncStatus;
   final int versionCounter;
   final String? creationPlatform;
   final String? creationDevice;
+  final String? lastEditedPlatform;
   final String? lastEditedDevice;
   final String? deletedPlatform;
+  final String? deletedDevice;
   const Note({
-    required this.id,
+    required this.uuid,
     required this.title,
     required this.content,
     required this.color,
@@ -709,20 +766,22 @@ class Note extends DataClass implements Insertable<Note> {
     this.ownerUid,
     this.ownerEmail,
     required this.createdAt,
-    this.updatedAt,
+    required this.updatedAt,
     this.deletedAt,
-    this.firestoreId,
-    required this.syncStatus,
+    required this.cloudSyncStatus,
+    required this.localSyncStatus,
     required this.versionCounter,
     this.creationPlatform,
     this.creationDevice,
+    this.lastEditedPlatform,
     this.lastEditedDevice,
     this.deletedPlatform,
+    this.deletedDevice,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
-    map['id'] = Variable<int>(id);
+    map['uuid'] = Variable<String>(uuid);
     map['title'] = Variable<String>(title);
     map['content'] = Variable<String>(content);
     map['color'] = Variable<int>(color);
@@ -749,16 +808,12 @@ class Note extends DataClass implements Insertable<Note> {
       map['owner_email'] = Variable<String>(ownerEmail);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
-    if (!nullToAbsent || updatedAt != null) {
-      map['updated_at'] = Variable<DateTime>(updatedAt);
-    }
+    map['updated_at'] = Variable<DateTime>(updatedAt);
     if (!nullToAbsent || deletedAt != null) {
       map['deleted_at'] = Variable<DateTime>(deletedAt);
     }
-    if (!nullToAbsent || firestoreId != null) {
-      map['firestore_id'] = Variable<String>(firestoreId);
-    }
-    map['sync_status'] = Variable<int>(syncStatus);
+    map['cloud_sync_status'] = Variable<int>(cloudSyncStatus);
+    map['local_sync_status'] = Variable<int>(localSyncStatus);
     map['version_counter'] = Variable<int>(versionCounter);
     if (!nullToAbsent || creationPlatform != null) {
       map['creation_platform'] = Variable<String>(creationPlatform);
@@ -766,18 +821,24 @@ class Note extends DataClass implements Insertable<Note> {
     if (!nullToAbsent || creationDevice != null) {
       map['creation_device'] = Variable<String>(creationDevice);
     }
+    if (!nullToAbsent || lastEditedPlatform != null) {
+      map['last_edited_platform'] = Variable<String>(lastEditedPlatform);
+    }
     if (!nullToAbsent || lastEditedDevice != null) {
       map['last_edited_device'] = Variable<String>(lastEditedDevice);
     }
     if (!nullToAbsent || deletedPlatform != null) {
       map['deleted_platform'] = Variable<String>(deletedPlatform);
     }
+    if (!nullToAbsent || deletedDevice != null) {
+      map['deleted_device'] = Variable<String>(deletedDevice);
+    }
     return map;
   }
 
   NotesCompanion toCompanion(bool nullToAbsent) {
     return NotesCompanion(
-      id: Value(id),
+      uuid: Value(uuid),
       title: Value(title),
       content: Value(content),
       color: Value(color),
@@ -802,16 +863,12 @@ class Note extends DataClass implements Insertable<Note> {
           ? const Value.absent()
           : Value(ownerEmail),
       createdAt: Value(createdAt),
-      updatedAt: updatedAt == null && nullToAbsent
-          ? const Value.absent()
-          : Value(updatedAt),
+      updatedAt: Value(updatedAt),
       deletedAt: deletedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(deletedAt),
-      firestoreId: firestoreId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(firestoreId),
-      syncStatus: Value(syncStatus),
+      cloudSyncStatus: Value(cloudSyncStatus),
+      localSyncStatus: Value(localSyncStatus),
       versionCounter: Value(versionCounter),
       creationPlatform: creationPlatform == null && nullToAbsent
           ? const Value.absent()
@@ -819,12 +876,18 @@ class Note extends DataClass implements Insertable<Note> {
       creationDevice: creationDevice == null && nullToAbsent
           ? const Value.absent()
           : Value(creationDevice),
+      lastEditedPlatform: lastEditedPlatform == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastEditedPlatform),
       lastEditedDevice: lastEditedDevice == null && nullToAbsent
           ? const Value.absent()
           : Value(lastEditedDevice),
       deletedPlatform: deletedPlatform == null && nullToAbsent
           ? const Value.absent()
           : Value(deletedPlatform),
+      deletedDevice: deletedDevice == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedDevice),
     );
   }
 
@@ -834,7 +897,7 @@ class Note extends DataClass implements Insertable<Note> {
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return Note(
-      id: serializer.fromJson<int>(json['id']),
+      uuid: serializer.fromJson<String>(json['uuid']),
       title: serializer.fromJson<String>(json['title']),
       content: serializer.fromJson<String>(json['content']),
       color: serializer.fromJson<int>(json['color']),
@@ -851,22 +914,26 @@ class Note extends DataClass implements Insertable<Note> {
       ownerUid: serializer.fromJson<String?>(json['ownerUid']),
       ownerEmail: serializer.fromJson<String?>(json['ownerEmail']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
-      updatedAt: serializer.fromJson<DateTime?>(json['updatedAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
-      firestoreId: serializer.fromJson<String?>(json['firestoreId']),
-      syncStatus: serializer.fromJson<int>(json['syncStatus']),
+      cloudSyncStatus: serializer.fromJson<int>(json['cloudSyncStatus']),
+      localSyncStatus: serializer.fromJson<int>(json['localSyncStatus']),
       versionCounter: serializer.fromJson<int>(json['versionCounter']),
       creationPlatform: serializer.fromJson<String?>(json['creationPlatform']),
       creationDevice: serializer.fromJson<String?>(json['creationDevice']),
+      lastEditedPlatform: serializer.fromJson<String?>(
+        json['lastEditedPlatform'],
+      ),
       lastEditedDevice: serializer.fromJson<String?>(json['lastEditedDevice']),
       deletedPlatform: serializer.fromJson<String?>(json['deletedPlatform']),
+      deletedDevice: serializer.fromJson<String?>(json['deletedDevice']),
     );
   }
   @override
   Map<String, dynamic> toJson({ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
-      'id': serializer.toJson<int>(id),
+      'uuid': serializer.toJson<String>(uuid),
       'title': serializer.toJson<String>(title),
       'content': serializer.toJson<String>(content),
       'color': serializer.toJson<int>(color),
@@ -883,20 +950,22 @@ class Note extends DataClass implements Insertable<Note> {
       'ownerUid': serializer.toJson<String?>(ownerUid),
       'ownerEmail': serializer.toJson<String?>(ownerEmail),
       'createdAt': serializer.toJson<DateTime>(createdAt),
-      'updatedAt': serializer.toJson<DateTime?>(updatedAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
-      'firestoreId': serializer.toJson<String?>(firestoreId),
-      'syncStatus': serializer.toJson<int>(syncStatus),
+      'cloudSyncStatus': serializer.toJson<int>(cloudSyncStatus),
+      'localSyncStatus': serializer.toJson<int>(localSyncStatus),
       'versionCounter': serializer.toJson<int>(versionCounter),
       'creationPlatform': serializer.toJson<String?>(creationPlatform),
       'creationDevice': serializer.toJson<String?>(creationDevice),
+      'lastEditedPlatform': serializer.toJson<String?>(lastEditedPlatform),
       'lastEditedDevice': serializer.toJson<String?>(lastEditedDevice),
       'deletedPlatform': serializer.toJson<String?>(deletedPlatform),
+      'deletedDevice': serializer.toJson<String?>(deletedDevice),
     };
   }
 
   Note copyWith({
-    int? id,
+    String? uuid,
     String? title,
     String? content,
     int? color,
@@ -913,17 +982,19 @@ class Note extends DataClass implements Insertable<Note> {
     Value<String?> ownerUid = const Value.absent(),
     Value<String?> ownerEmail = const Value.absent(),
     DateTime? createdAt,
-    Value<DateTime?> updatedAt = const Value.absent(),
+    DateTime? updatedAt,
     Value<DateTime?> deletedAt = const Value.absent(),
-    Value<String?> firestoreId = const Value.absent(),
-    int? syncStatus,
+    int? cloudSyncStatus,
+    int? localSyncStatus,
     int? versionCounter,
     Value<String?> creationPlatform = const Value.absent(),
     Value<String?> creationDevice = const Value.absent(),
+    Value<String?> lastEditedPlatform = const Value.absent(),
     Value<String?> lastEditedDevice = const Value.absent(),
     Value<String?> deletedPlatform = const Value.absent(),
+    Value<String?> deletedDevice = const Value.absent(),
   }) => Note(
-    id: id ?? this.id,
+    uuid: uuid ?? this.uuid,
     title: title ?? this.title,
     content: content ?? this.content,
     color: color ?? this.color,
@@ -940,10 +1011,10 @@ class Note extends DataClass implements Insertable<Note> {
     ownerUid: ownerUid.present ? ownerUid.value : this.ownerUid,
     ownerEmail: ownerEmail.present ? ownerEmail.value : this.ownerEmail,
     createdAt: createdAt ?? this.createdAt,
-    updatedAt: updatedAt.present ? updatedAt.value : this.updatedAt,
+    updatedAt: updatedAt ?? this.updatedAt,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
-    firestoreId: firestoreId.present ? firestoreId.value : this.firestoreId,
-    syncStatus: syncStatus ?? this.syncStatus,
+    cloudSyncStatus: cloudSyncStatus ?? this.cloudSyncStatus,
+    localSyncStatus: localSyncStatus ?? this.localSyncStatus,
     versionCounter: versionCounter ?? this.versionCounter,
     creationPlatform: creationPlatform.present
         ? creationPlatform.value
@@ -951,16 +1022,22 @@ class Note extends DataClass implements Insertable<Note> {
     creationDevice: creationDevice.present
         ? creationDevice.value
         : this.creationDevice,
+    lastEditedPlatform: lastEditedPlatform.present
+        ? lastEditedPlatform.value
+        : this.lastEditedPlatform,
     lastEditedDevice: lastEditedDevice.present
         ? lastEditedDevice.value
         : this.lastEditedDevice,
     deletedPlatform: deletedPlatform.present
         ? deletedPlatform.value
         : this.deletedPlatform,
+    deletedDevice: deletedDevice.present
+        ? deletedDevice.value
+        : this.deletedDevice,
   );
   Note copyWithCompanion(NotesCompanion data) {
     return Note(
-      id: data.id.present ? data.id.value : this.id,
+      uuid: data.uuid.present ? data.uuid.value : this.uuid,
       title: data.title.present ? data.title.value : this.title,
       content: data.content.present ? data.content.value : this.content,
       color: data.color.present ? data.color.value : this.color,
@@ -989,12 +1066,12 @@ class Note extends DataClass implements Insertable<Note> {
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
-      firestoreId: data.firestoreId.present
-          ? data.firestoreId.value
-          : this.firestoreId,
-      syncStatus: data.syncStatus.present
-          ? data.syncStatus.value
-          : this.syncStatus,
+      cloudSyncStatus: data.cloudSyncStatus.present
+          ? data.cloudSyncStatus.value
+          : this.cloudSyncStatus,
+      localSyncStatus: data.localSyncStatus.present
+          ? data.localSyncStatus.value
+          : this.localSyncStatus,
       versionCounter: data.versionCounter.present
           ? data.versionCounter.value
           : this.versionCounter,
@@ -1004,19 +1081,25 @@ class Note extends DataClass implements Insertable<Note> {
       creationDevice: data.creationDevice.present
           ? data.creationDevice.value
           : this.creationDevice,
+      lastEditedPlatform: data.lastEditedPlatform.present
+          ? data.lastEditedPlatform.value
+          : this.lastEditedPlatform,
       lastEditedDevice: data.lastEditedDevice.present
           ? data.lastEditedDevice.value
           : this.lastEditedDevice,
       deletedPlatform: data.deletedPlatform.present
           ? data.deletedPlatform.value
           : this.deletedPlatform,
+      deletedDevice: data.deletedDevice.present
+          ? data.deletedDevice.value
+          : this.deletedDevice,
     );
   }
 
   @override
   String toString() {
     return (StringBuffer('Note(')
-          ..write('id: $id, ')
+          ..write('uuid: $uuid, ')
           ..write('title: $title, ')
           ..write('content: $content, ')
           ..write('color: $color, ')
@@ -1035,20 +1118,22 @@ class Note extends DataClass implements Insertable<Note> {
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
-          ..write('firestoreId: $firestoreId, ')
-          ..write('syncStatus: $syncStatus, ')
+          ..write('cloudSyncStatus: $cloudSyncStatus, ')
+          ..write('localSyncStatus: $localSyncStatus, ')
           ..write('versionCounter: $versionCounter, ')
           ..write('creationPlatform: $creationPlatform, ')
           ..write('creationDevice: $creationDevice, ')
+          ..write('lastEditedPlatform: $lastEditedPlatform, ')
           ..write('lastEditedDevice: $lastEditedDevice, ')
-          ..write('deletedPlatform: $deletedPlatform')
+          ..write('deletedPlatform: $deletedPlatform, ')
+          ..write('deletedDevice: $deletedDevice')
           ..write(')'))
         .toString();
   }
 
   @override
   int get hashCode => Object.hashAll([
-    id,
+    uuid,
     title,
     content,
     color,
@@ -1067,19 +1152,21 @@ class Note extends DataClass implements Insertable<Note> {
     createdAt,
     updatedAt,
     deletedAt,
-    firestoreId,
-    syncStatus,
+    cloudSyncStatus,
+    localSyncStatus,
     versionCounter,
     creationPlatform,
     creationDevice,
+    lastEditedPlatform,
     lastEditedDevice,
     deletedPlatform,
+    deletedDevice,
   ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is Note &&
-          other.id == this.id &&
+          other.uuid == this.uuid &&
           other.title == this.title &&
           other.content == this.content &&
           other.color == this.color &&
@@ -1098,17 +1185,19 @@ class Note extends DataClass implements Insertable<Note> {
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.deletedAt == this.deletedAt &&
-          other.firestoreId == this.firestoreId &&
-          other.syncStatus == this.syncStatus &&
+          other.cloudSyncStatus == this.cloudSyncStatus &&
+          other.localSyncStatus == this.localSyncStatus &&
           other.versionCounter == this.versionCounter &&
           other.creationPlatform == this.creationPlatform &&
           other.creationDevice == this.creationDevice &&
+          other.lastEditedPlatform == this.lastEditedPlatform &&
           other.lastEditedDevice == this.lastEditedDevice &&
-          other.deletedPlatform == this.deletedPlatform);
+          other.deletedPlatform == this.deletedPlatform &&
+          other.deletedDevice == this.deletedDevice);
 }
 
 class NotesCompanion extends UpdateCompanion<Note> {
-  final Value<int> id;
+  final Value<String> uuid;
   final Value<String> title;
   final Value<String> content;
   final Value<int> color;
@@ -1125,17 +1214,20 @@ class NotesCompanion extends UpdateCompanion<Note> {
   final Value<String?> ownerUid;
   final Value<String?> ownerEmail;
   final Value<DateTime> createdAt;
-  final Value<DateTime?> updatedAt;
+  final Value<DateTime> updatedAt;
   final Value<DateTime?> deletedAt;
-  final Value<String?> firestoreId;
-  final Value<int> syncStatus;
+  final Value<int> cloudSyncStatus;
+  final Value<int> localSyncStatus;
   final Value<int> versionCounter;
   final Value<String?> creationPlatform;
   final Value<String?> creationDevice;
+  final Value<String?> lastEditedPlatform;
   final Value<String?> lastEditedDevice;
   final Value<String?> deletedPlatform;
+  final Value<String?> deletedDevice;
+  final Value<int> rowid;
   const NotesCompanion({
-    this.id = const Value.absent(),
+    this.uuid = const Value.absent(),
     this.title = const Value.absent(),
     this.content = const Value.absent(),
     this.color = const Value.absent(),
@@ -1154,16 +1246,19 @@ class NotesCompanion extends UpdateCompanion<Note> {
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
-    this.firestoreId = const Value.absent(),
-    this.syncStatus = const Value.absent(),
+    this.cloudSyncStatus = const Value.absent(),
+    this.localSyncStatus = const Value.absent(),
     this.versionCounter = const Value.absent(),
     this.creationPlatform = const Value.absent(),
     this.creationDevice = const Value.absent(),
+    this.lastEditedPlatform = const Value.absent(),
     this.lastEditedDevice = const Value.absent(),
     this.deletedPlatform = const Value.absent(),
+    this.deletedDevice = const Value.absent(),
+    this.rowid = const Value.absent(),
   });
   NotesCompanion.insert({
-    this.id = const Value.absent(),
+    this.uuid = const Value.absent(),
     required String title,
     required String content,
     this.color = const Value.absent(),
@@ -1182,17 +1277,20 @@ class NotesCompanion extends UpdateCompanion<Note> {
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
-    this.firestoreId = const Value.absent(),
-    this.syncStatus = const Value.absent(),
+    this.cloudSyncStatus = const Value.absent(),
+    this.localSyncStatus = const Value.absent(),
     this.versionCounter = const Value.absent(),
     this.creationPlatform = const Value.absent(),
     this.creationDevice = const Value.absent(),
+    this.lastEditedPlatform = const Value.absent(),
     this.lastEditedDevice = const Value.absent(),
     this.deletedPlatform = const Value.absent(),
+    this.deletedDevice = const Value.absent(),
+    this.rowid = const Value.absent(),
   }) : title = Value(title),
        content = Value(content);
   static Insertable<Note> custom({
-    Expression<int>? id,
+    Expression<String>? uuid,
     Expression<String>? title,
     Expression<String>? content,
     Expression<int>? color,
@@ -1211,16 +1309,19 @@ class NotesCompanion extends UpdateCompanion<Note> {
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<DateTime>? deletedAt,
-    Expression<String>? firestoreId,
-    Expression<int>? syncStatus,
+    Expression<int>? cloudSyncStatus,
+    Expression<int>? localSyncStatus,
     Expression<int>? versionCounter,
     Expression<String>? creationPlatform,
     Expression<String>? creationDevice,
+    Expression<String>? lastEditedPlatform,
     Expression<String>? lastEditedDevice,
     Expression<String>? deletedPlatform,
+    Expression<String>? deletedDevice,
+    Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
-      if (id != null) 'id': id,
+      if (uuid != null) 'uuid': uuid,
       if (title != null) 'title': title,
       if (content != null) 'content': content,
       if (color != null) 'color': color,
@@ -1239,18 +1340,22 @@ class NotesCompanion extends UpdateCompanion<Note> {
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
-      if (firestoreId != null) 'firestore_id': firestoreId,
-      if (syncStatus != null) 'sync_status': syncStatus,
+      if (cloudSyncStatus != null) 'cloud_sync_status': cloudSyncStatus,
+      if (localSyncStatus != null) 'local_sync_status': localSyncStatus,
       if (versionCounter != null) 'version_counter': versionCounter,
       if (creationPlatform != null) 'creation_platform': creationPlatform,
       if (creationDevice != null) 'creation_device': creationDevice,
+      if (lastEditedPlatform != null)
+        'last_edited_platform': lastEditedPlatform,
       if (lastEditedDevice != null) 'last_edited_device': lastEditedDevice,
       if (deletedPlatform != null) 'deleted_platform': deletedPlatform,
+      if (deletedDevice != null) 'deleted_device': deletedDevice,
+      if (rowid != null) 'rowid': rowid,
     });
   }
 
   NotesCompanion copyWith({
-    Value<int>? id,
+    Value<String>? uuid,
     Value<String>? title,
     Value<String>? content,
     Value<int>? color,
@@ -1267,18 +1372,21 @@ class NotesCompanion extends UpdateCompanion<Note> {
     Value<String?>? ownerUid,
     Value<String?>? ownerEmail,
     Value<DateTime>? createdAt,
-    Value<DateTime?>? updatedAt,
+    Value<DateTime>? updatedAt,
     Value<DateTime?>? deletedAt,
-    Value<String?>? firestoreId,
-    Value<int>? syncStatus,
+    Value<int>? cloudSyncStatus,
+    Value<int>? localSyncStatus,
     Value<int>? versionCounter,
     Value<String?>? creationPlatform,
     Value<String?>? creationDevice,
+    Value<String?>? lastEditedPlatform,
     Value<String?>? lastEditedDevice,
     Value<String?>? deletedPlatform,
+    Value<String?>? deletedDevice,
+    Value<int>? rowid,
   }) {
     return NotesCompanion(
-      id: id ?? this.id,
+      uuid: uuid ?? this.uuid,
       title: title ?? this.title,
       content: content ?? this.content,
       color: color ?? this.color,
@@ -1297,21 +1405,24 @@ class NotesCompanion extends UpdateCompanion<Note> {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
-      firestoreId: firestoreId ?? this.firestoreId,
-      syncStatus: syncStatus ?? this.syncStatus,
+      cloudSyncStatus: cloudSyncStatus ?? this.cloudSyncStatus,
+      localSyncStatus: localSyncStatus ?? this.localSyncStatus,
       versionCounter: versionCounter ?? this.versionCounter,
       creationPlatform: creationPlatform ?? this.creationPlatform,
       creationDevice: creationDevice ?? this.creationDevice,
+      lastEditedPlatform: lastEditedPlatform ?? this.lastEditedPlatform,
       lastEditedDevice: lastEditedDevice ?? this.lastEditedDevice,
       deletedPlatform: deletedPlatform ?? this.deletedPlatform,
+      deletedDevice: deletedDevice ?? this.deletedDevice,
+      rowid: rowid ?? this.rowid,
     );
   }
 
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<int>(id.value);
+    if (uuid.present) {
+      map['uuid'] = Variable<String>(uuid.value);
     }
     if (title.present) {
       map['title'] = Variable<String>(title.value);
@@ -1367,11 +1478,11 @@ class NotesCompanion extends UpdateCompanion<Note> {
     if (deletedAt.present) {
       map['deleted_at'] = Variable<DateTime>(deletedAt.value);
     }
-    if (firestoreId.present) {
-      map['firestore_id'] = Variable<String>(firestoreId.value);
+    if (cloudSyncStatus.present) {
+      map['cloud_sync_status'] = Variable<int>(cloudSyncStatus.value);
     }
-    if (syncStatus.present) {
-      map['sync_status'] = Variable<int>(syncStatus.value);
+    if (localSyncStatus.present) {
+      map['local_sync_status'] = Variable<int>(localSyncStatus.value);
     }
     if (versionCounter.present) {
       map['version_counter'] = Variable<int>(versionCounter.value);
@@ -1382,11 +1493,20 @@ class NotesCompanion extends UpdateCompanion<Note> {
     if (creationDevice.present) {
       map['creation_device'] = Variable<String>(creationDevice.value);
     }
+    if (lastEditedPlatform.present) {
+      map['last_edited_platform'] = Variable<String>(lastEditedPlatform.value);
+    }
     if (lastEditedDevice.present) {
       map['last_edited_device'] = Variable<String>(lastEditedDevice.value);
     }
     if (deletedPlatform.present) {
       map['deleted_platform'] = Variable<String>(deletedPlatform.value);
+    }
+    if (deletedDevice.present) {
+      map['deleted_device'] = Variable<String>(deletedDevice.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
     }
     return map;
   }
@@ -1394,7 +1514,7 @@ class NotesCompanion extends UpdateCompanion<Note> {
   @override
   String toString() {
     return (StringBuffer('NotesCompanion(')
-          ..write('id: $id, ')
+          ..write('uuid: $uuid, ')
           ..write('title: $title, ')
           ..write('content: $content, ')
           ..write('color: $color, ')
@@ -1413,13 +1533,16 @@ class NotesCompanion extends UpdateCompanion<Note> {
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
-          ..write('firestoreId: $firestoreId, ')
-          ..write('syncStatus: $syncStatus, ')
+          ..write('cloudSyncStatus: $cloudSyncStatus, ')
+          ..write('localSyncStatus: $localSyncStatus, ')
           ..write('versionCounter: $versionCounter, ')
           ..write('creationPlatform: $creationPlatform, ')
           ..write('creationDevice: $creationDevice, ')
+          ..write('lastEditedPlatform: $lastEditedPlatform, ')
           ..write('lastEditedDevice: $lastEditedDevice, ')
-          ..write('deletedPlatform: $deletedPlatform')
+          ..write('deletedPlatform: $deletedPlatform, ')
+          ..write('deletedDevice: $deletedDevice, ')
+          ..write('rowid: $rowid')
           ..write(')'))
         .toString();
   }
@@ -1438,7 +1561,7 @@ abstract class _$NoteDriftDatabase extends GeneratedDatabase {
 
 typedef $$NotesTableCreateCompanionBuilder =
     NotesCompanion Function({
-      Value<int> id,
+      Value<String> uuid,
       required String title,
       required String content,
       Value<int> color,
@@ -1455,19 +1578,22 @@ typedef $$NotesTableCreateCompanionBuilder =
       Value<String?> ownerUid,
       Value<String?> ownerEmail,
       Value<DateTime> createdAt,
-      Value<DateTime?> updatedAt,
+      Value<DateTime> updatedAt,
       Value<DateTime?> deletedAt,
-      Value<String?> firestoreId,
-      Value<int> syncStatus,
+      Value<int> cloudSyncStatus,
+      Value<int> localSyncStatus,
       Value<int> versionCounter,
       Value<String?> creationPlatform,
       Value<String?> creationDevice,
+      Value<String?> lastEditedPlatform,
       Value<String?> lastEditedDevice,
       Value<String?> deletedPlatform,
+      Value<String?> deletedDevice,
+      Value<int> rowid,
     });
 typedef $$NotesTableUpdateCompanionBuilder =
     NotesCompanion Function({
-      Value<int> id,
+      Value<String> uuid,
       Value<String> title,
       Value<String> content,
       Value<int> color,
@@ -1484,15 +1610,18 @@ typedef $$NotesTableUpdateCompanionBuilder =
       Value<String?> ownerUid,
       Value<String?> ownerEmail,
       Value<DateTime> createdAt,
-      Value<DateTime?> updatedAt,
+      Value<DateTime> updatedAt,
       Value<DateTime?> deletedAt,
-      Value<String?> firestoreId,
-      Value<int> syncStatus,
+      Value<int> cloudSyncStatus,
+      Value<int> localSyncStatus,
       Value<int> versionCounter,
       Value<String?> creationPlatform,
       Value<String?> creationDevice,
+      Value<String?> lastEditedPlatform,
       Value<String?> lastEditedDevice,
       Value<String?> deletedPlatform,
+      Value<String?> deletedDevice,
+      Value<int> rowid,
     });
 
 class $$NotesTableFilterComposer
@@ -1504,8 +1633,8 @@ class $$NotesTableFilterComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<int> get id => $composableBuilder(
-    column: $table.id,
+  ColumnFilters<String> get uuid => $composableBuilder(
+    column: $table.uuid,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1599,13 +1728,13 @@ class $$NotesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get firestoreId => $composableBuilder(
-    column: $table.firestoreId,
+  ColumnFilters<int> get cloudSyncStatus => $composableBuilder(
+    column: $table.cloudSyncStatus,
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<int> get syncStatus => $composableBuilder(
-    column: $table.syncStatus,
+  ColumnFilters<int> get localSyncStatus => $composableBuilder(
+    column: $table.localSyncStatus,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1624,6 +1753,11 @@ class $$NotesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get lastEditedPlatform => $composableBuilder(
+    column: $table.lastEditedPlatform,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<String> get lastEditedDevice => $composableBuilder(
     column: $table.lastEditedDevice,
     builder: (column) => ColumnFilters(column),
@@ -1631,6 +1765,11 @@ class $$NotesTableFilterComposer
 
   ColumnFilters<String> get deletedPlatform => $composableBuilder(
     column: $table.deletedPlatform,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deletedDevice => $composableBuilder(
+    column: $table.deletedDevice,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -1644,8 +1783,8 @@ class $$NotesTableOrderingComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<int> get id => $composableBuilder(
-    column: $table.id,
+  ColumnOrderings<String> get uuid => $composableBuilder(
+    column: $table.uuid,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -1739,13 +1878,13 @@ class $$NotesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get firestoreId => $composableBuilder(
-    column: $table.firestoreId,
+  ColumnOrderings<int> get cloudSyncStatus => $composableBuilder(
+    column: $table.cloudSyncStatus,
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<int> get syncStatus => $composableBuilder(
-    column: $table.syncStatus,
+  ColumnOrderings<int> get localSyncStatus => $composableBuilder(
+    column: $table.localSyncStatus,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -1764,6 +1903,11 @@ class $$NotesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get lastEditedPlatform => $composableBuilder(
+    column: $table.lastEditedPlatform,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get lastEditedDevice => $composableBuilder(
     column: $table.lastEditedDevice,
     builder: (column) => ColumnOrderings(column),
@@ -1771,6 +1915,11 @@ class $$NotesTableOrderingComposer
 
   ColumnOrderings<String> get deletedPlatform => $composableBuilder(
     column: $table.deletedPlatform,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deletedDevice => $composableBuilder(
+    column: $table.deletedDevice,
     builder: (column) => ColumnOrderings(column),
   );
 }
@@ -1784,8 +1933,8 @@ class $$NotesTableAnnotationComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<int> get id =>
-      $composableBuilder(column: $table.id, builder: (column) => column);
+  GeneratedColumn<String> get uuid =>
+      $composableBuilder(column: $table.uuid, builder: (column) => column);
 
   GeneratedColumn<String> get title =>
       $composableBuilder(column: $table.title, builder: (column) => column);
@@ -1851,13 +2000,13 @@ class $$NotesTableAnnotationComposer
   GeneratedColumn<DateTime> get deletedAt =>
       $composableBuilder(column: $table.deletedAt, builder: (column) => column);
 
-  GeneratedColumn<String> get firestoreId => $composableBuilder(
-    column: $table.firestoreId,
+  GeneratedColumn<int> get cloudSyncStatus => $composableBuilder(
+    column: $table.cloudSyncStatus,
     builder: (column) => column,
   );
 
-  GeneratedColumn<int> get syncStatus => $composableBuilder(
-    column: $table.syncStatus,
+  GeneratedColumn<int> get localSyncStatus => $composableBuilder(
+    column: $table.localSyncStatus,
     builder: (column) => column,
   );
 
@@ -1876,6 +2025,11 @@ class $$NotesTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get lastEditedPlatform => $composableBuilder(
+    column: $table.lastEditedPlatform,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get lastEditedDevice => $composableBuilder(
     column: $table.lastEditedDevice,
     builder: (column) => column,
@@ -1883,6 +2037,11 @@ class $$NotesTableAnnotationComposer
 
   GeneratedColumn<String> get deletedPlatform => $composableBuilder(
     column: $table.deletedPlatform,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get deletedDevice => $composableBuilder(
+    column: $table.deletedDevice,
     builder: (column) => column,
   );
 }
@@ -1915,7 +2074,7 @@ class $$NotesTableTableManager
               $$NotesTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
-                Value<int> id = const Value.absent(),
+                Value<String> uuid = const Value.absent(),
                 Value<String> title = const Value.absent(),
                 Value<String> content = const Value.absent(),
                 Value<int> color = const Value.absent(),
@@ -1932,17 +2091,20 @@ class $$NotesTableTableManager
                 Value<String?> ownerUid = const Value.absent(),
                 Value<String?> ownerEmail = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
-                Value<DateTime?> updatedAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
-                Value<String?> firestoreId = const Value.absent(),
-                Value<int> syncStatus = const Value.absent(),
+                Value<int> cloudSyncStatus = const Value.absent(),
+                Value<int> localSyncStatus = const Value.absent(),
                 Value<int> versionCounter = const Value.absent(),
                 Value<String?> creationPlatform = const Value.absent(),
                 Value<String?> creationDevice = const Value.absent(),
+                Value<String?> lastEditedPlatform = const Value.absent(),
                 Value<String?> lastEditedDevice = const Value.absent(),
                 Value<String?> deletedPlatform = const Value.absent(),
+                Value<String?> deletedDevice = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
               }) => NotesCompanion(
-                id: id,
+                uuid: uuid,
                 title: title,
                 content: content,
                 color: color,
@@ -1961,17 +2123,20 @@ class $$NotesTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
-                firestoreId: firestoreId,
-                syncStatus: syncStatus,
+                cloudSyncStatus: cloudSyncStatus,
+                localSyncStatus: localSyncStatus,
                 versionCounter: versionCounter,
                 creationPlatform: creationPlatform,
                 creationDevice: creationDevice,
+                lastEditedPlatform: lastEditedPlatform,
                 lastEditedDevice: lastEditedDevice,
                 deletedPlatform: deletedPlatform,
+                deletedDevice: deletedDevice,
+                rowid: rowid,
               ),
           createCompanionCallback:
               ({
-                Value<int> id = const Value.absent(),
+                Value<String> uuid = const Value.absent(),
                 required String title,
                 required String content,
                 Value<int> color = const Value.absent(),
@@ -1988,17 +2153,20 @@ class $$NotesTableTableManager
                 Value<String?> ownerUid = const Value.absent(),
                 Value<String?> ownerEmail = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
-                Value<DateTime?> updatedAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
-                Value<String?> firestoreId = const Value.absent(),
-                Value<int> syncStatus = const Value.absent(),
+                Value<int> cloudSyncStatus = const Value.absent(),
+                Value<int> localSyncStatus = const Value.absent(),
                 Value<int> versionCounter = const Value.absent(),
                 Value<String?> creationPlatform = const Value.absent(),
                 Value<String?> creationDevice = const Value.absent(),
+                Value<String?> lastEditedPlatform = const Value.absent(),
                 Value<String?> lastEditedDevice = const Value.absent(),
                 Value<String?> deletedPlatform = const Value.absent(),
+                Value<String?> deletedDevice = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
               }) => NotesCompanion.insert(
-                id: id,
+                uuid: uuid,
                 title: title,
                 content: content,
                 color: color,
@@ -2017,13 +2185,16 @@ class $$NotesTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
-                firestoreId: firestoreId,
-                syncStatus: syncStatus,
+                cloudSyncStatus: cloudSyncStatus,
+                localSyncStatus: localSyncStatus,
                 versionCounter: versionCounter,
                 creationPlatform: creationPlatform,
                 creationDevice: creationDevice,
+                lastEditedPlatform: lastEditedPlatform,
                 lastEditedDevice: lastEditedDevice,
                 deletedPlatform: deletedPlatform,
+                deletedDevice: deletedDevice,
+                rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

@@ -28,7 +28,7 @@ final filteredNotesProvider = Provider<AsyncValue<List<Note>>>((ref) {
       result = result.where((note) {
         final matchesTitle = note.title.toLowerCase().contains(searchQuery);
 
-        final canReadContent = !note.isLocked || lockState.sessionUnlockedNoteIds.contains(note.id);
+        final canReadContent = !note.isLocked || lockState.sessionUnlockedNoteIds.contains(note.uuid);
         final matchesContent = canReadContent && note.content.toLowerCase().contains(searchQuery);
         // final matchesContent = !note.isLocked && note.content.toLowerCase().contains(searchQuery);
         return matchesTitle || matchesContent;

@@ -1,9 +1,17 @@
 import 'package:drift/drift.dart';
+import 'package:uuid/uuid.dart';
 
+// To trigger fresh code gen use 'dart run build_runner build'
 class Notes extends Table {
 
   // PRIMARY KEYS & CORE DATA
-  IntColumn get id => integer().autoIncrement()();
+  // The local fast-lookup ID (Only used for local UI, NEVER use this for syncing)
+  // IntColumn get id => integer().autoIncrement()();
+
+
+// The Global Sync ID. This is what we use to compare notes between devices.
+  TextColumn get uuid => text().clientDefault(() => const Uuid().v4())();
+
   TextColumn get title => text().withLength(min: 0, max: 255)();
   TextColumn get content => text()();
 
@@ -14,6 +22,7 @@ class Notes extends Table {
   BoolColumn get isArchived => boolean().withDefault(const Constant(false))();
   BoolColumn get isLocked => boolean().withDefault(const Constant(false))();
   IntColumn get position => integer().withDefault(const Constant(0))();
+  // Note: Stored as a delimited string (e.g., "|work|urgent|") for accurate searching
   TextColumn get tags => text().nullable()();
   DateTimeColumn get reminderAt => dateTime().nullable()();
 
@@ -42,13 +51,17 @@ class Notes extends Table {
 
   // TIMESTAMPS (THE LWW ENGINE)
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
-  DateTimeColumn get updatedAt => dateTime().nullable()();
+  // REQUIRES a timestamp to compare. It defaults to the creation time.
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+  // Essential for P2P: Soft deletes ("Tombstones"). If you hard-delete a note,
+  // the other device won't know, and will just re-sync it back to you.
   DateTimeColumn get deletedAt => dateTime().nullable()();
 
 
   // SYNC ENGINE
-  TextColumn get firestoreId => text().nullable()();
-  IntColumn get syncStatus => integer().withDefault(const Constant(0))();
+  // TextColumn get firestoreId => text().nullable()();
+  IntColumn get cloudSyncStatus => integer().withDefault(const Constant(0))();
+  IntColumn get localSyncStatus => integer().withDefault(const Constant(0))();
   // Increments on every edit. More reliable than timestamps for advanced conflict resolution.
   IntColumn get versionCounter => integer().withDefault(const Constant(1))();
 
@@ -58,7 +71,11 @@ class Notes extends Table {
   TextColumn get creationDevice => text().nullable()();
 
   // Future-proofing: When a conflict happens, it helps to know which device caused it.
+  TextColumn get lastEditedPlatform => text().nullable()();
   TextColumn get lastEditedDevice => text().nullable()();
+
+
   // Tracks which platform initiated the soft-delete (e.g., 'android', 'windows')
   TextColumn get deletedPlatform => text().nullable()();
+  TextColumn get deletedDevice => text().nullable()();
 }
