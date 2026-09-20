@@ -7,7 +7,6 @@ import 'package:noteit/features/home_page/screens/core/sort.dart';
 import '../../../../../database/sync_orchestrator.dart';
 import '../../core/options.dart';
 import '../../core/providers.dart';
-import '../../../../../database/sync_manager.dart'; // Safe to delete this import if you removed the file
 
 // DEFAULT APP BAR
 class DefaultHomeAppBar extends ConsumerWidget implements PreferredSizeWidget {

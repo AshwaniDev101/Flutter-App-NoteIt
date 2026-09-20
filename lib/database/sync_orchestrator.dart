@@ -1,12 +1,20 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 import 'package:noteit/database/sync_engine.dart';
 import '../core/provider/provider.dart';
 import 'cloud_sync_service.dart';
 import 'local_sync_service.dart';
 
-final isSyncingProvider = StateProvider<bool>((ref) => false);
+final isSyncingProvider = NotifierProvider<IsSyncingNotifier, bool>(() {
+  return IsSyncingNotifier();
+});
+
+class IsSyncingNotifier extends Notifier<bool> {
+  @override
+  bool build() => false; // initial state
+
+  void setSyncing(bool value) => state = value;
+}
 
 final syncOrchestratorProvider = Provider<SyncOrchestrator>((ref) {
   final orchestrator = SyncOrchestrator(ref);
@@ -42,14 +50,13 @@ class SyncOrchestrator with WidgetsBindingObserver {
     final user = ref.read(authStateProvider).value;
 
     final cloudWorker = ref.read(cloudSyncServiceProvider);
-    final localWorker = ref.read(localSyncServiceProvider);
+    final localWorker = ref.read(localSyncServiceProvider.notifier);
 
     if (engine == SyncEngine.cloud && user != null) {
       localWorker.stop();
       cloudWorker.start();
     } else if (engine == SyncEngine.local) {
       cloudWorker.stop();
-      localWorker.start();
     } else {
       // Offline mode, or user logged out
       cloudWorker.stop();
@@ -78,7 +85,7 @@ class SyncOrchestrator with WidgetsBindingObserver {
       ref.read(cloudSyncServiceProvider).executeFullSync();
     } else if (engine == SyncEngine.local) {
       print("Orchestrator: UI triggered sync. Routing to Local Wi-Fi Engine.");
-      ref.read(localSyncServiceProvider).broadcastLocalChanges();
+      ref.read(localSyncServiceProvider.notifier).broadcastLocalChanges();
     } else {
       print("Orchestrator: UI triggered sync, but app is Offline. Ignored.");
     }
