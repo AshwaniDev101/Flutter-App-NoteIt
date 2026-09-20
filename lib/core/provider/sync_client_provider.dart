@@ -7,50 +7,47 @@ final syncClientProvider = NotifierProvider<SyncClientNotifier, WebSocketChannel
   return SyncClientNotifier();
 });
 
+// Because LocalSyncNotifier is symmetrical, SyncClientNotifier essentially just acts as the dialer.
+// It picks up the phone (WebSocketChannel.connect), hands the receiver to LocalSyncNotifier,
+// and says, "Here, you talk." From that point on, the batching and ACK logic starts
 class SyncClientNotifier extends Notifier<WebSocketChannel?> {
   @override
   WebSocketChannel? build() {
-    // When the provider is destroyed, close the connection cleanly
+    // When the provider is destroyed, close the connection cleanly and disconnect everything
     // 'state' is a built-in, special variable that holds the current data of your provider.
-    ref.onDispose(() => state?.sink.close());
+    ref.onDispose(disconnect);
     return null; // Null means disconnected
   }
 
   void connectToHost(String wsUrl) {
     // Close any existing connection first
-    state?.sink.close();
+    disconnect();
 
     print('Connecting to Host: $wsUrl');
-    final channel = WebSocketChannel.connect(Uri.parse(wsUrl));
+    try {
+      final channel = WebSocketChannel.connect(Uri.parse(wsUrl));
 
-    // Save the connection to the state
-    state = channel;
+      // Save the connection to the state
+      state = channel;
 
-    // Listen for incoming sync payloads from the PC/Host
-
-    ref.read(localSyncServiceProvider).setActiveConnection(channel);
-
-    // channel.stream.listen(
-    //   (message) {
-    //     print('Received from Host: $message');
-    //     // TODO: We will add the Drift JSON parsing here next
-    //   },
-    //   onDone: () {
-    //     print('Disconnected from Host');
-    //     state = null; // Update UI to show disconnected status
-    //   },
-    //   onError: (error) {
-    //     print('WebSocket Error: $error');
-    //     state = null;
-    //   },
-    // );
-
-    // Send an initial handshake payload to prove the connection works
-    channel.sink.add('Hello from Client! Ready to sync.');
+      // Listen for incoming sync payloads from the PC/Host
+      // We pass the channel to the traffic controller, which handles all the listening,
+      // batching, and database saving automatically.
+      ref.read(localSyncServiceProvider.notifier).setActiveConnection(channel);
+    } catch (e) {
+      print('Failed to connect to host: $e');
+      state = null;
+    }
   }
 
   void disconnect() {
-    state?.sink.close();
-    state = null;
+    if (state != null) {
+      print("Client: Disconnecting from host...");
+      // Make sure the central traffic controller also knows we are stopping
+      ref.read(localSyncServiceProvider.notifier).stop();
+
+      state?.sink.close();
+      state = null;
+    }
   }
 }
