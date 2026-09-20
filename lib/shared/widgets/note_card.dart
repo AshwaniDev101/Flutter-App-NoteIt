@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/note_theme.dart';
 import '../../database/drift/drift_database.dart';
-import '../managers/lock_manger/lock_manager.dart';
 import 'highlighted_text.dart';
 
 class NoteCard extends ConsumerStatefulWidget {
@@ -105,30 +104,30 @@ class _NoteCardState extends ConsumerState<NoteCard> {
                             padding: const EdgeInsets.only(left: 12.0, top: 12.0, right: 32.0, bottom: 12.0),
                             child: displayAsLocked
                                 ? Center(
-                              child: Icon(
-                                Icons.lock_outlined,
-                                size: 32,
-                                color: (noteTheme.cardContentForeground ?? colorScheme.onSurfaceVariant)
-                                    .withValues(alpha: 0.4),
-                              ),
-                            )
+                                    child: Icon(
+                                      Icons.lock_outlined,
+                                      size: 32,
+                                      color: (noteTheme.cardContentForeground ?? colorScheme.onSurfaceVariant)
+                                          .withValues(alpha: 0.4),
+                                    ),
+                                  )
                                 : HighlightedText(
-                              text: widget.note.content,
-                              query: widget.searchQuery,
-                              maxLines: 5,
-                              overflow: TextOverflow.ellipsis,
-                              normalStyle: TextStyle(
-                                fontSize: 13,
-                                height: 1.4,
-                                color: noteTheme.cardContentForeground ?? colorScheme.onSurfaceVariant,
-                              ),
-                              highlightStyle: TextStyle(
-                                fontSize: 13,
-                                height: 1.4,
-                                backgroundColor: highlightColor,
-                                color: onHighlightColor,
-                              ),
-                            ),
+                                    text: widget.note.content,
+                                    query: widget.searchQuery,
+                                    maxLines: 5,
+                                    overflow: TextOverflow.ellipsis,
+                                    normalStyle: TextStyle(
+                                      fontSize: 13,
+                                      height: 1.4,
+                                      color: noteTheme.cardContentForeground ?? colorScheme.onSurfaceVariant,
+                                    ),
+                                    highlightStyle: TextStyle(
+                                      fontSize: 13,
+                                      height: 1.4,
+                                      backgroundColor: highlightColor,
+                                      color: onHighlightColor,
+                                    ),
+                                  ),
                           ),
 
                           // TINY UNLOCK ICON

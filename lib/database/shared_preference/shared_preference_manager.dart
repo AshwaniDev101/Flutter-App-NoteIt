@@ -1,7 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../sync_engine.dart';
+import '../sync/sync_engine.dart';
 
 // The Global Settings Provider
 final sharedPreferenceProvider = Provider<SharedPreferenceManager>((ref) {

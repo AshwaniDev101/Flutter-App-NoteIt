@@ -1,16 +1,16 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:noteit/features/dev_page/dev_page.dart';
-import 'package:noteit/features/edit_note_page/screens/view/edit_note_page.dart';
-import 'package:noteit/features/home_page/screens/view/home_page.dart';
-import 'package:noteit/features/local_sync_page/screens/view/qr_page.dart';
-import 'package:noteit/features/local_sync_page/screens/view/qr_scanner/qr_scanner_page.dart';
-import 'package:noteit/features/themes_page/view/theme_page.dart';
-import 'package:noteit/features/settings_page/screens/view/settings_page.dart';
-
 import 'package:noteit/database/drift/drift_database.dart';
-import 'package:noteit/features/trash_page/trash_page.dart';
-import '../../features/settings_page/screens/view/options/master_password_page.dart';
+
+import '../../features/dev_tools/dev_page.dart';
+import '../../features/home/view/home_page.dart';
+import '../../features/local_sync/view/qr_page.dart';
+import '../../features/local_sync/view/qr_scanner/qr_scanner_page.dart';
+import '../../features/note_editor/screens/view/edit_note_page.dart';
+import '../../features/settings/view/options/master_password_page.dart';
+import '../../features/settings/view/settings_page.dart';
+import '../../features/themes/view/theme_page.dart';
+import '../../features/trash/trash_page.dart';
 
 class AppRoutes {
   static const String home = '/';
@@ -45,7 +45,6 @@ final routerProvider = Provider((ref) {
           return ThemesPage();
         },
       ),
-
 
       GoRoute(
         path: AppRoutes.settings,
