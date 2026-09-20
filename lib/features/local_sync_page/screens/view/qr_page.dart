@@ -17,12 +17,43 @@ final deviceInfoProvider = FutureProvider<BaseDeviceInfo>((ref) async {
 });
 
 /// Fetch the Local Wi-Fi IP Address
-final localIPProvide = FutureProvider<String?>((ref) async {
+final localIPProvide = FutureProvider.autoDispose<String?>((ref) async {
   // 'NetworkInfo' special package used for getting network info
   return await NetworkInfo().getWifiIP();
 });
 
+// .autoDispose: when no widgets are listening to this provider, destroy the cache
+// Without it you will get a same url and ip value you have already fetched before
+final syncSessionProvider = FutureProvider.autoDispose<({String ip, String qrUrl, String deviceName})>((ref) async {
+  final String? ip = await ref.watch(localIPProvide.future);
+  final BaseDeviceInfo info = await ref.watch(deviceInfoProvider.future);
 
+  if (ip == null) {
+    throw Exception('Please connect to Wi-Fi to host a sync session.');
+  }
+
+  final deviceName = info.extractName;
+
+  final qrUrl = 'ws://$ip:8080?name=${Uri.encodeComponent(deviceName)}';
+
+  // START THE SERVER
+  ref.read(syncServerProvider.notifier).startHosting(ip);
+
+  return (ip: ip, qrUrl: qrUrl, deviceName: deviceName);
+});
+
+extension DeviceInfoExtension on BaseDeviceInfo {
+  String get extractName {
+    if (this is AndroidDeviceInfo) return (this as AndroidDeviceInfo).model;
+    if (this is IosDeviceInfo) return (this as IosDeviceInfo).name;
+    if (this is WindowsDeviceInfo) return (this as WindowsDeviceInfo).computerName;
+    if (this is MacOsDeviceInfo) return (this as MacOsDeviceInfo).computerName;
+    if (this is LinuxDeviceInfo) return (this as LinuxDeviceInfo).prettyName;
+    if (this is WebBrowserInfo) return (this as WebBrowserInfo).browserName.toString();
+
+    return 'Unknown Device';
+  }
+}
 
 class QrCodePage extends ConsumerWidget {
   const QrCodePage({super.key});
@@ -30,108 +61,70 @@ class QrCodePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Watch the FutureProvider
-    final deviceInfoAsync = ref.watch(deviceInfoProvider);
-    final localIpAsync = ref.watch(localIPProvide);
-
+    final syncSessionAsync = ref.watch(syncSessionProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Host Local Sync'),
         centerTitle: true,
 
-        actions: [IconButton(onPressed: () {}, icon: const Icon(Icons.share))],
+        // actions: [IconButton(onPressed: () {}, icon: const Icon(Icons.share))],
       ),
 
       // Use Riverbed's .when() to handle the loading, error, and success states
-      body: deviceInfoAsync.when(
+      body: syncSessionAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stackTrace) => Center(child: Text('Device Error: $error')),
-        data: (info) {
-          return localIpAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, _) => Center(child: Text('Network Error: $error')),
-            data: (ip) {
-              // Failsafe: Ensure device is actually on Wi-Fi
-              if (ip == null) {
-                return const Center(child: Text('Please connect to Wi-Fi to host a sync session.'));
-              }
-
-              // Fire up the WebSocket server in the background using the discovered IP
-              ref.read(syncServerProvider.notifier).startHosting(ip);
-
-              final deviceName = extractDeviceName(info);
-
-              // Build the connection string, passing the device name so the client UI can say "Syncing with Varsha's Laptop"
-              final qrPayload = 'ws://$ip:8080?name=${Uri.encodeComponent(deviceName)}';
-
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Card(
-                        color: Colors.white,
-                        child: Padding(
-                          padding: EdgeInsets.all(16.0),
-                          child: Column(
-                            children: [
-                              Text(
-                                deviceName,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.grey.shade800),
-                              ),
-                              // Text("LanternChat Contact", style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey.shade800)),
-                              SizedBox(height: 8),
-                              Container(
-                                color: Colors.white,
-                                height: 200,
-                                width: 200,
-                                child: QrImageView(data: qrPayload),
-                              ),
-                            ],
+        error: (error, _) => Center(child: Text('Network Error: $error')),
+        data: (syncData) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Card(
+                    color: Colors.white,
+                    child: Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Column(
+                        children: [
+                          Text(
+                            syncData.deviceName,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.grey.shade800),
                           ),
-                        ),
+                          // Text("LanternChat Contact", style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey.shade800)),
+                          SizedBox(height: 8),
+                          Container(
+                            color: Colors.white,
+                            height: 200,
+                            width: 200,
+                            child: QrImageView(data: syncData.qrUrl),
+                          ),
+                        ],
                       ),
                     ),
-                    const Padding(
-                      padding: EdgeInsets.all(20.0),
-                      child: Text(
-                        'Scan this QR code using Note-It on another device to sync over Wi-Fi.',
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        context.push(AppRoutes.scan);
-                      },
-                      child: const Text("Scan QR"),
-                    ),
-                  ],
+                  ),
                 ),
-              );
-            },
+                const Padding(
+                  padding: EdgeInsets.all(20.0),
+                  child: Text(
+                    'Scan this QR code using Note-It on another device to sync over Wi-Fi.',
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    context.push(AppRoutes.scan);
+                  },
+                  child: const Text("Scan QR"),
+                ),
+              ],
+            ),
           );
         },
       ),
     );
-  }
-
-  String extractDeviceName(BaseDeviceInfo info) {
-    if (info is AndroidDeviceInfo) {
-      return info.model;
-    } else if (info is IosDeviceInfo) {
-      return info.name;
-    } else if (info is WindowsDeviceInfo) {
-      return info.computerName;
-    } else if (info is MacOsDeviceInfo) {
-      return info.computerName;
-    } else if (info is LinuxDeviceInfo) {
-      return info.prettyName;
-    } else if (info is WebBrowserInfo) {
-      return info.browserName.toString();
-    }
-    return 'Unknown Device';
   }
 }
