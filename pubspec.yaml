@@ -45,6 +45,7 @@ dependencies:
 
   #  Navigation dependencies
   go_router: ^17.2.2
+  nsd: ^5.0.1
 
 
 

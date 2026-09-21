@@ -139,7 +139,8 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
           label: const Text("Sync"),
         ),
         const SizedBox(width: 8),
-        WebSocketConnectionIndicator(isConnected: isConnected,)
+        WebSocketConnectionIndicator(isConnected: isConnected,),
+        const SizedBox(width: 8),
       ],
     );
   }

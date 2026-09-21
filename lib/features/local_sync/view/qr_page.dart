@@ -34,10 +34,15 @@ final syncSessionProvider = FutureProvider.autoDispose<({String ip, String qrUrl
 
   final deviceName = info.extractName;
 
-  final qrUrl = 'ws://$ip:8080?name=${Uri.encodeComponent(deviceName)}';
+  // final qrUrl = 'ws://$ip:8080?name=${Uri.encodeComponent(deviceName)}';
+  // // START THE SERVER
+  // ref.read(syncServerProvider.notifier).startHosting(ip);
 
-  // START THE SERVER
-  ref.read(syncServerProvider.notifier).startHosting(ip);
+  // The server starts and give us the dynamic base URL (e.g., ws://192.168.1.5:49152)
+  final baseUrl = await ref.read(syncServerProvider.notifier).startHosting(ip);
+
+  // Attach your custom name parameter to the dynamic URL
+  final qrUrl = '$baseUrl?name=${Uri.encodeComponent(deviceName)}';
 
   return (ip: ip, qrUrl: qrUrl, deviceName: deviceName);
 });

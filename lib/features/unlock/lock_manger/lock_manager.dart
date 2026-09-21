@@ -35,7 +35,7 @@ class LockState {
   }
 }
 
-class LockManager extends Notifier<LockState> {
+class LockNotifier extends Notifier<LockState> {
   @override
   LockState build() {
     // Initialize the state using the saved preference
@@ -126,4 +126,4 @@ class LockManager extends Notifier<LockState> {
   }
 }
 
-final lockManagerProvider = NotifierProvider<LockManager, LockState>(() => LockManager());
+final lockManagerProvider = NotifierProvider<LockNotifier, LockState>(() => LockNotifier());

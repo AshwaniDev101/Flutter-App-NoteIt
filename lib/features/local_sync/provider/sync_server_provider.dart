@@ -16,9 +16,12 @@ class SyncServerNotifier extends Notifier<HttpServer?> {
     return null;
   }
 
-  Future<void> startHosting(String ip) async {
+  Future<String> startHosting(String ip) async {
     // If the server is already running, it ignores the command so we don't crash the app
-    if (state != null) return;
+    if (state != null) {
+      // Server is already running, just hand back its existing URL
+      return 'ws://${state!.address.host}:${state!.port}';
+    }
 
     print('Starting Host Server on $ip...');
 
@@ -40,10 +43,12 @@ class SyncServerNotifier extends Notifier<HttpServer?> {
           });
     });
 
-    final server = await shelf_io.serve(handler, ip, 8080);
+    // 8080 is common for web servers testing, 0 to let the OS pick a port
+    final server = await shelf_io.serve(handler, ip, 0);
     print('Sync server hosting at ws://${server.address.host}:${server.port}');
 
     state = server;
+    return 'ws://${server.address.host}:${server.port}';
   }
 
   void stopHosting() {

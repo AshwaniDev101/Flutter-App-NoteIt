@@ -153,7 +153,7 @@ class HomepageDrawer extends ConsumerWidget {
                 ),
 
                 _DrawerItem(
-                  icon: Icons.color_lens_outlined,
+                  icon: Icons.palette_outlined,
                   title: 'Themes',
                   onTap: () {
                     Navigator.pop(context);
@@ -161,7 +161,7 @@ class HomepageDrawer extends ConsumerWidget {
                   },
                 ),
                 _DrawerItem(
-                  icon: Icons.lock_outline_rounded,
+                  icon: Icons.phonelink_outlined,
                   title: 'Local Sync',
                   onTap: () {
                     Navigator.pop(context);
