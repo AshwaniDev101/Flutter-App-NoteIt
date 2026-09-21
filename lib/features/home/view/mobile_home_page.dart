@@ -5,8 +5,10 @@ import 'package:noteit/core/routing/routing.dart';
 import 'package:noteit/database/drift/drift_database.dart';
 import 'package:noteit/features/home/view/widgets/home_app_bars.dart';
 import 'package:noteit/features/home/view/widgets/notes_grid_view.dart';
+import 'package:noteit/shared/widgets/websocket_connection_indicator.dart';
 
 import '../../../../database/sync/sync_orchestrator.dart';
+import '../../../database/sync/local_sync_service.dart';
 import '../../../shared/widgets/spinning_sync_icon.dart';
 import '../../drawer/homepage_drawer.dart';
 import '../core/providers.dart';
@@ -143,6 +145,10 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
   }
 
   PreferredSizeWidget _buildAppBar(HomePageState state, HomeViewModel viewModel) {
+    // Just to get Connection state from local sync service
+    final SyncConnectionState syncConnectionState = ref.watch(localSyncServiceProvider);
+    final isConnected = syncConnectionState == SyncConnectionState.connected;
+    // Getting the sync state from the orchestrator
     final isSyncing = ref.watch(isSyncingProvider);
 
     if (state.isSelectMode) {
@@ -161,6 +167,7 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
       elevation: 0,
       centerTitle: true,
       actions: [
+        WebSocketConnectionIndicator(isConnected: isConnected),
         IconButton(
           // icon: const Icon(Icons.sync),
           icon: SpinningSyncIcon(isSyncing: isSyncing, color: Theme.of(context).colorScheme.primary),

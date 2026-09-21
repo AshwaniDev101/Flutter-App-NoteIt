@@ -1,13 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:noteit/database/drift/drift_database.dart';
+import 'package:noteit/database/sync/local_sync_service.dart';
 import 'package:noteit/features/home/view/widgets/home_app_bars.dart';
 import 'package:noteit/features/home/view/widgets/notes_grid_view.dart';
-import 'package:noteit/features/local_sync/view/qr_page.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../../database/sync/sync_orchestrator.dart';
 import '../../../shared/widgets/spinning_sync_icon.dart';
+import '../../../shared/widgets/websocket_connection_indicator.dart';
 import '../../drawer/homepage_drawer.dart';
 import '../../note_editor/screens/view/edit_note_page.dart';
 import '../core/providers.dart';
@@ -52,8 +53,12 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
     final homeState = ref.watch(homeViewModelProvider);
     final viewModel = ref.read(homeViewModelProvider.notifier);
 
+
+
     // Watched solely to keep the sync manager alive in the widget tree.
     ref.watch(syncOrchestratorProvider);
+
+
 
     return PopScope(
       canPop: !homeState.isSelectMode,
@@ -76,6 +81,11 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
 
   // ==== App Bar ====
   PreferredSizeWidget _buildAppBar(HomePageState state, HomeViewModel viewModel) {
+
+    // Just to get Connection state from local sync service
+    final SyncConnectionState syncConnectionState = ref.watch(localSyncServiceProvider);
+    final isConnected = syncConnectionState == SyncConnectionState.connected;
+    // Getting the sync state from the orchestrator
     final isSyncing = ref.watch(isSyncingProvider);
 
     if (state.isSelectMode) {
@@ -129,6 +139,7 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
           label: const Text("Sync"),
         ),
         const SizedBox(width: 8),
+        WebSocketConnectionIndicator(isConnected: isConnected,)
       ],
     );
   }
