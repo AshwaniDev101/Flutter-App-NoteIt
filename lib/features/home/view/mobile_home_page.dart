@@ -7,6 +7,7 @@ import 'package:noteit/features/home/view/widgets/home_app_bars.dart';
 import 'package:noteit/features/home/view/widgets/notes_grid_view.dart';
 
 import '../../../../database/sync/sync_orchestrator.dart';
+import '../../../shared/widgets/spinning_sync_icon.dart';
 import '../../drawer/homepage_drawer.dart';
 import '../core/providers.dart';
 import '../core/sort.dart';
@@ -142,6 +143,8 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
   }
 
   PreferredSizeWidget _buildAppBar(HomePageState state, HomeViewModel viewModel) {
+    final isSyncing = ref.watch(isSyncingProvider);
+
     if (state.isSelectMode) {
       return SelectModeAppBar(
         noteIds: state.selectedNoteIds,
@@ -159,7 +162,8 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
       centerTitle: true,
       actions: [
         IconButton(
-          icon: const Icon(Icons.sync),
+          // icon: const Icon(Icons.sync),
+          icon: SpinningSyncIcon(isSyncing: isSyncing, color: Theme.of(context).colorScheme.primary),
           tooltip: 'Sync Notes',
           onPressed: () {
             ref.read(syncOrchestratorProvider).triggerSync();
