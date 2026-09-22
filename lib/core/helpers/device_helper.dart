@@ -19,9 +19,6 @@ class DeviceHelper {
       print("Failed to get device info: $e");
     }
 
-    return {
-      'platform': platform,
-      'deviceName': deviceName,
-    };
+    return {'platform': platform, 'deviceName': deviceName};
   }
 }

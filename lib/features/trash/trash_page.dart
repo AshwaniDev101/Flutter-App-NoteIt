@@ -3,14 +3,15 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/note_theme.dart';
-import '../../database/drift/drift_database.dart';
+import '../../database/drift/local_database.dart';
+import '../../database/drift/notes/notes_dao.dart';
 import '../../database/firebase/firebase_database.dart';
 import '../../database/sync/sync_orchestrator.dart';
 import '../../shared/widgets/note_card.dart';
 
 final trashNotesProvider = StreamProvider.autoDispose<List<Note>>((ref) {
-  final driftDb = ref.watch(noteDriftDatabaseProvider);
-  return driftDb.watchTrashNotes();
+  final notesDao = ref.watch(notesDaoProvider);
+  return notesDao.watchTrashNotes();
 });
 
 class TrashPage extends ConsumerStatefulWidget {
@@ -42,9 +43,14 @@ class _TrashPageState extends ConsumerState<TrashPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Empty Trash?'),
-        content: const Text('This will permanently delete all items in the trash. This action cannot be undone.'),
+        content: const Text(
+          'This will permanently delete all items in the trash. This action cannot be undone.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.of(context).pop(true),
@@ -55,14 +61,16 @@ class _TrashPageState extends ConsumerState<TrashPage> {
     );
 
     if (confirmed == true && mounted) {
-      final driftDb = ref.read(noteDriftDatabaseProvider);
+      final notesDao = ref.read(notesDaoProvider);
       final firebaseDb = ref.read(noteFirebaseDatabaseProvider);
 
       try {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Emptying trash...')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Emptying trash...')));
 
         // Delete locally and get the UUIDs
-        final cloudIdsToDelete = await driftDb.emptyLocalTrash();
+        final cloudIdsToDelete = await notesDao.emptyLocalTrash();
 
         // If online and logged in, delete from Firebase using the UUIDs
         if (firebaseDb != null && cloudIdsToDelete.isNotEmpty) {
@@ -70,11 +78,15 @@ class _TrashPageState extends ConsumerState<TrashPage> {
         }
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Trash emptied successfully.')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Trash emptied successfully.')),
+          );
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error emptying trash: $e')));
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error emptying trash: $e')));
         }
       }
     }
@@ -82,14 +94,16 @@ class _TrashPageState extends ConsumerState<TrashPage> {
 
   // Handle restoring a single note
   Future<void> _restoreNote(String uuid) async {
-    final driftDb = ref.read(noteDriftDatabaseProvider);
-    await driftDb.restoreNote(uuid);
+    final notesDao = ref.read(notesDaoProvider);
+    await notesDao.restoreNote(uuid);
 
     // Trigger the Orchestrator to broadcast the restoration
     ref.read(syncOrchestratorProvider).triggerSync();
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Note restored.')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Note restored.')));
     }
   }
 
@@ -103,7 +117,10 @@ class _TrashPageState extends ConsumerState<TrashPage> {
           'This will permanently delete the ${noteIds.length} selected items. This action cannot be undone.',
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.of(context).pop(true),
@@ -114,16 +131,15 @@ class _TrashPageState extends ConsumerState<TrashPage> {
     );
 
     if (confirmed == true && mounted) {
-      final driftDb = ref.read(noteDriftDatabaseProvider);
+      final notesDao = ref.read(notesDaoProvider);
       final firebaseDb = ref.read(noteFirebaseDatabaseProvider);
 
       try {
-
         final uuidsToDelete = noteIds.toList();
 
         // Loop and delete locally
         for (final uuid in uuidsToDelete) {
-          await driftDb.deleteNote(uuid);
+          await notesDao.deleteNote(uuid);
         }
 
         // Delete from Firebase directly using the UUIDs
@@ -137,10 +153,15 @@ class _TrashPageState extends ConsumerState<TrashPage> {
         });
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Selected notes deleted.')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Selected notes deleted.')),
+          );
         }
       } catch (e) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+        if (mounted)
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
   }
@@ -151,10 +172,12 @@ class _TrashPageState extends ConsumerState<TrashPage> {
     final colorScheme = Theme.of(context).colorScheme;
 
     if (isSelectMode) {
-      final isAllSelected = currentNotes.isNotEmpty && noteIds.length == currentNotes.length;
+      final isAllSelected =
+          currentNotes.isNotEmpty && noteIds.length == currentNotes.length;
 
       return AppBar(
-        backgroundColor: noteTheme?.selectedAppBar ?? Theme.of(context).primaryColor,
+        backgroundColor:
+            noteTheme?.selectedAppBar ?? Theme.of(context).primaryColor,
         foregroundColor: Colors.white,
         leading: IconButton(
           icon: const Icon(Icons.close),
@@ -163,15 +186,23 @@ class _TrashPageState extends ConsumerState<TrashPage> {
             noteIds.clear();
           }),
         ),
-        title: Text('${noteIds.length} Selected', style: const TextStyle(color: Colors.white)),
+        title: Text(
+          '${noteIds.length} Selected',
+          style: const TextStyle(color: Colors.white),
+        ),
         actions: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 10.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 8.0,
+              vertical: 10.0,
+            ),
             child: OutlinedButton(
               style: OutlinedButton.styleFrom(
                 foregroundColor: Colors.white,
                 side: const BorderSide(color: Colors.white, width: 1.5),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
                 padding: const EdgeInsets.symmetric(horizontal: 16),
               ),
               onPressed: () {
@@ -191,16 +222,19 @@ class _TrashPageState extends ConsumerState<TrashPage> {
             icon: const Icon(Icons.restore),
             tooltip: 'Restore Selected',
             onPressed: () async {
-              final driftDb = ref.read(noteDriftDatabaseProvider);
+              final notesDao = ref.read(notesDaoProvider);
               for (final uuid in noteIds) {
-                await driftDb.restoreNote(uuid);
+                await notesDao.restoreNote(uuid);
               }
               ref.read(syncOrchestratorProvider).triggerSync();
               setState(() {
                 isSelectMode = false;
                 noteIds.clear();
               });
-              if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Notes restored.')));
+              if (mounted)
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Notes restored.')),
+                );
             },
           ),
           IconButton(
@@ -221,21 +255,21 @@ class _TrashPageState extends ConsumerState<TrashPage> {
         if (currentNotes.isNotEmpty)
           showLabel
               ? OutlinedButton.icon(
-            onPressed: _handleEmptyTrash,
-            icon: const Icon(Icons.delete_sweep_outlined),
-            label: const Text('Empty Trash'),
-            style: OutlinedButton.styleFrom(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.0),
-              ),
-              side: BorderSide(color: colorScheme.primary, width: 1),
-            ),
-          )
+                  onPressed: _handleEmptyTrash,
+                  icon: const Icon(Icons.delete_sweep_outlined),
+                  label: const Text('Empty Trash'),
+                  style: OutlinedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                    side: BorderSide(color: colorScheme.primary, width: 1),
+                  ),
+                )
               : IconButton(
-            onPressed: _handleEmptyTrash,
-            icon: const Icon(Icons.delete_sweep_outlined),
-            tooltip: 'Empty Trash',
-          ),
+                  onPressed: _handleEmptyTrash,
+                  icon: const Icon(Icons.delete_sweep_outlined),
+                  tooltip: 'Empty Trash',
+                ),
 
         const SizedBox(width: 8),
       ],
@@ -263,7 +297,10 @@ class _TrashPageState extends ConsumerState<TrashPage> {
                   children: [
                     Icon(Icons.delete_outline, size: 64, color: Colors.grey),
                     SizedBox(height: 16),
-                    Text('Trash is empty', style: TextStyle(color: Colors.grey, fontSize: 18)),
+                    Text(
+                      'Trash is empty',
+                      style: TextStyle(color: Colors.grey, fontSize: 18),
+                    ),
                   ],
                 ),
               );
@@ -272,9 +309,16 @@ class _TrashPageState extends ConsumerState<TrashPage> {
             return GridView.builder(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.only(bottom: 80, top: 8),
-              gridDelegate: defaultTargetPlatform == TargetPlatform.android && !kIsWeb
-                  ? const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, childAspectRatio: 0.85)
-                  : const SliverGridDelegateWithMaxCrossAxisExtent(maxCrossAxisExtent: 220, childAspectRatio: 0.85),
+              gridDelegate:
+                  defaultTargetPlatform == TargetPlatform.android && !kIsWeb
+                  ? const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      childAspectRatio: 0.85,
+                    )
+                  : const SliverGridDelegateWithMaxCrossAxisExtent(
+                      maxCrossAxisExtent: 220,
+                      childAspectRatio: 0.85,
+                    ),
               itemCount: notes.length,
               itemBuilder: (context, index) {
                 final note = notes[index];
@@ -299,9 +343,11 @@ class _TrashPageState extends ConsumerState<TrashPage> {
                   hoverActions: [
                     IconButton(
                       icon: Icon(
-                          isSelected ? Icons.check_circle : Icons.radio_button_unchecked_rounded,
-                          size: 18,
-                          color: colorScheme.primary
+                        isSelected
+                            ? Icons.check_circle
+                            : Icons.radio_button_unchecked_rounded,
+                        size: 18,
+                        color: colorScheme.primary,
                       ),
                       visualDensity: VisualDensity.compact,
                       onPressed: () {

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-
 final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
 class SnackBarManager {
@@ -20,9 +19,7 @@ class SnackBarManager {
         backgroundColor: Colors.black87,
         behavior: SnackBarBehavior.floating,
         // margin: EdgeInsets.fromLTRB(16, 0, 16, bottomMargin),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         duration: const Duration(seconds: 2),
         elevation: 0,
       ),

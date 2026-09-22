@@ -1,24 +1,17 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:noteit/database/drift/drift_database.dart';
+import 'package:noteit/database/drift/notes/notes_dao.dart';
 
 import '../../../../core/helpers/device_helper.dart';
 import '../../../../database/sync/sync_orchestrator.dart';
-
 
 class EditNoteState {
   final bool isLoading;
   final String? error;
 
-  const EditNoteState({
-    required this.isLoading,
-    this.error,
-  });
+  const EditNoteState({required this.isLoading, this.error});
 
-  EditNoteState copyWith({
-    bool? isLoading,
-    String? error,
-  }) {
+  EditNoteState copyWith({bool? isLoading, String? error}) {
     return EditNoteState(
       isLoading: isLoading ?? this.isLoading,
       error: error ?? this.error,
@@ -29,10 +22,7 @@ class EditNoteState {
 class EditNoteViewModel extends Notifier<EditNoteState> {
   @override
   EditNoteState build() {
-    return const EditNoteState(
-      isLoading: false,
-      error: null,
-    );
+    return const EditNoteState(isLoading: false, error: null);
   }
 
   Future<void> saveNote(String title, String content) async {
@@ -41,12 +31,14 @@ class EditNoteViewModel extends Notifier<EditNoteState> {
     try {
       final deviceInfo = await DeviceHelper.getDeviceInfo();
 
-      await ref.read(noteDriftDatabaseProvider).addNote(
-        title: title,
-        content: content,
-        creationPlatform: deviceInfo['platform'],
-        creationDevice: deviceInfo['deviceName'],
-      );
+      await ref
+          .read(notesDaoProvider)
+          .addNote(
+            title: title,
+            content: content,
+            creationPlatform: deviceInfo['platform'],
+            creationDevice: deviceInfo['deviceName'],
+          );
 
       // Fire background sync via Orchestrator
       ref.read(syncOrchestratorProvider).triggerSync();
@@ -57,12 +49,11 @@ class EditNoteViewModel extends Notifier<EditNoteState> {
     }
   }
 
-
   Future<void> updateNote(String uuid, String title, String content) async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      await ref.read(noteDriftDatabaseProvider).updateNote(uuid, title, content);
+      await ref.read(notesDaoProvider).updateNote(uuid, title, content);
 
       ref.read(syncOrchestratorProvider).triggerSync();
 
@@ -72,12 +63,11 @@ class EditNoteViewModel extends Notifier<EditNoteState> {
     }
   }
 
-
   Future<void> lockNote(String uuid, {bool isLocked = true}) async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      await ref.read(noteDriftDatabaseProvider).lockNote(uuid, isLocked: isLocked);
+      await ref.read(notesDaoProvider).lockNote(uuid, isLocked: isLocked);
 
       ref.read(syncOrchestratorProvider).triggerSync();
 
@@ -91,10 +81,9 @@ class EditNoteViewModel extends Notifier<EditNoteState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      await ref.read(noteDriftDatabaseProvider).softDeleteNotes(
-        [uuid],
-        platform: defaultTargetPlatform.name,
-      );
+      await ref.read(notesDaoProvider).softDeleteNotes([
+        uuid,
+      ], platform: defaultTargetPlatform.name);
 
       ref.read(syncOrchestratorProvider).triggerSync();
 
@@ -105,6 +94,7 @@ class EditNoteViewModel extends Notifier<EditNoteState> {
   }
 }
 
-final editNoteViewModelProvider = NotifierProvider<EditNoteViewModel, EditNoteState>(
+final editNoteViewModelProvider =
+    NotifierProvider<EditNoteViewModel, EditNoteState>(
       () => EditNoteViewModel(),
-);
+    );

@@ -1,19 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:noteit/database/drift/drift_database.dart';
+import 'package:noteit/database/drift/local_database.dart';
 
 class TabViewState {
   final List<Note> openTabs;
   final int activeTabIndex;
 
-  const TabViewState({
-    this.openTabs = const [],
-    this.activeTabIndex = 0,
-  });
+  const TabViewState({this.openTabs = const [], this.activeTabIndex = 0});
 
-  TabViewState copyWith({
-    List<Note>? openTabs,
-    int? activeTabIndex,
-  }) {
+  TabViewState copyWith({List<Note>? openTabs, int? activeTabIndex}) {
     return TabViewState(
       openTabs: openTabs ?? this.openTabs,
       activeTabIndex: activeTabIndex ?? this.activeTabIndex,
@@ -45,7 +39,8 @@ class TabViewModel extends Notifier<TabViewState> {
     final newTabs = List<Note>.from(state.openTabs)..removeAt(index);
 
     int newActiveIndex = state.activeTabIndex;
-    if (index < state.activeTabIndex || (index == state.activeTabIndex && index == newTabs.length)) {
+    if (index < state.activeTabIndex ||
+        (index == state.activeTabIndex && index == newTabs.length)) {
       newActiveIndex--;
     }
 
@@ -60,4 +55,6 @@ class TabViewModel extends Notifier<TabViewState> {
   }
 }
 
-final tabViewModelProvider = NotifierProvider<TabViewModel, TabViewState>(TabViewModel.new);
+final tabViewModelProvider = NotifierProvider<TabViewModel, TabViewState>(
+  TabViewModel.new,
+);

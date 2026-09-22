@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'master_password_viewmodel.dart';
 
-class MasterPasswordPage extends ConsumerWidget{
+class MasterPasswordPage extends ConsumerWidget {
   const MasterPasswordPage({super.key});
 
   @override
@@ -25,13 +25,15 @@ class MasterPasswordPage extends ConsumerWidget{
       ),
       body: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 600), // Limits width for Web/Chrome
+          constraints: const BoxConstraints(
+            maxWidth: 600,
+          ), // Limits width for Web/Chrome
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch, // Stretches children to fill width
+              crossAxisAlignment: CrossAxisAlignment
+                  .stretch, // Stretches children to fill width
               children: [
-
                 // --- INFO BANNER ---
                 Container(
                   padding: const EdgeInsets.all(16),
@@ -60,7 +62,9 @@ class MasterPasswordPage extends ConsumerWidget{
                 // --- FORM FIELDS ---
                 Text(
                   "Current master password",
-                  style: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold),
+                  style: textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 TextField(
@@ -71,14 +75,20 @@ class MasterPasswordPage extends ConsumerWidget{
                     prefixIcon: const Icon(Icons.lock_outline),
                     filled: true,
                     // Updated to modern Material 3 standard:
-                    fillColor: colorScheme.surfaceContainerHighest.withValues(alpha:0.3),
+                    fillColor: colorScheme.surfaceContainerHighest.withValues(
+                      alpha: 0.3,
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide(color: colorScheme.outlineVariant),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: colorScheme.outlineVariant.withValues(alpha:0.5)),
+                      borderSide: BorderSide(
+                        color: colorScheme.outlineVariant.withValues(
+                          alpha: 0.5,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -87,7 +97,9 @@ class MasterPasswordPage extends ConsumerWidget{
 
                 Text(
                   "New master password",
-                  style: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold),
+                  style: textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 TextField(
@@ -98,14 +110,20 @@ class MasterPasswordPage extends ConsumerWidget{
                     prefixIcon: const Icon(Icons.lock_reset),
                     filled: true,
 
-                    fillColor: colorScheme.surfaceContainerHighest.withValues(alpha:0.3),
+                    fillColor: colorScheme.surfaceContainerHighest.withValues(
+                      alpha: 0.3,
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide(color: colorScheme.outlineVariant),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: colorScheme.outlineVariant.withValues(alpha:0.5)),
+                      borderSide: BorderSide(
+                        color: colorScheme.outlineVariant.withValues(
+                          alpha: 0.5,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -114,7 +132,9 @@ class MasterPasswordPage extends ConsumerWidget{
 
                 Text(
                   "Confirm new master password",
-                  style: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold),
+                  style: textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 TextField(
@@ -125,14 +145,20 @@ class MasterPasswordPage extends ConsumerWidget{
                     prefixIcon: const Icon(Icons.lock_reset),
                     filled: true,
                     // Updated to modern Material 3 standard:
-                    fillColor: colorScheme.surfaceContainerHighest.withValues(alpha:0.3),
+                    fillColor: colorScheme.surfaceContainerHighest.withValues(
+                      alpha: 0.3,
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide(color: colorScheme.outlineVariant),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: colorScheme.outlineVariant.withValues(alpha:0.5)),
+                      borderSide: BorderSide(
+                        color: colorScheme.outlineVariant.withValues(
+                          alpha: 0.5,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -148,7 +174,10 @@ class MasterPasswordPage extends ConsumerWidget{
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.warning_amber_rounded, color: colorScheme.error),
+                      Icon(
+                        Icons.warning_amber_rounded,
+                        color: colorScheme.error,
+                      ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
@@ -168,7 +197,8 @@ class MasterPasswordPage extends ConsumerWidget{
                 // --- ACTION BUTTON ---
                 ElevatedButton(
                   onPressed: () {
-                    if (newPasswordController.text != confirmPasswordController.text) {
+                    if (newPasswordController.text !=
+                        confirmPasswordController.text) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('New passwords do not match'),
@@ -194,7 +224,9 @@ class MasterPasswordPage extends ConsumerWidget{
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Failed to update password. Check your current password.'),
+                          content: Text(
+                            'Failed to update password. Check your current password.',
+                          ),
                           behavior: SnackBarBehavior.floating,
                         ),
                       );

@@ -4,21 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/theme/note_theme.dart';
 import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
 
-
 part 'custom_themes/light/light.dart';
 part 'custom_themes/dark/dark.dart';
 part 'custom_themes/amoled/amoled.dart';
 part 'custom_themes/sepia/sepia.dart';
 
-
 // THEME ENUM
-enum AppThemeType {
-  light,
-  dark,
-  amoled,
-  sepia,
-}
-
+enum AppThemeType { light, dark, amoled, sepia }
 
 // STATE MANAGER (RIVERPOD)
 class ThemeNotifier extends Notifier<AppThemeType> {
@@ -30,7 +22,7 @@ class ThemeNotifier extends Notifier<AppThemeType> {
     final savedThemeStr = _prefs.themeType;
 
     return AppThemeType.values.firstWhere(
-          (theme) => theme.name == savedThemeStr,
+      (theme) => theme.name == savedThemeStr,
       orElse: () => AppThemeType.dark,
     );
   }
@@ -41,8 +33,9 @@ class ThemeNotifier extends Notifier<AppThemeType> {
   }
 }
 
-final themeProvider = NotifierProvider<ThemeNotifier, AppThemeType>(ThemeNotifier.new);
-
+final themeProvider = NotifierProvider<ThemeNotifier, AppThemeType>(
+  ThemeNotifier.new,
+);
 
 // UI THEME RESOLVER
 class Themes {

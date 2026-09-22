@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:noteit/database/drift/drift_database.dart';
+import 'package:noteit/database/drift/local_database.dart';
 
 import '../../features/dev_tools/dev_page.dart';
 import '../../features/home/view/home_page.dart';
@@ -30,7 +30,10 @@ final routerProvider = Provider((ref) {
     initialLocation: AppRoutes.home,
     // initialLocation: AppRoutes.search,
     routes: <RouteBase>[
-      GoRoute(path: AppRoutes.home, builder: (context, state) => const HomePage()),
+      GoRoute(
+        path: AppRoutes.home,
+        builder: (context, state) => const HomePage(),
+      ),
       GoRoute(
         path: AppRoutes.edit,
         builder: (context, state) {

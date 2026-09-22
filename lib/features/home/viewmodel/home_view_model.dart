@@ -9,13 +9,13 @@ class HomePageState {
   const HomePageState({
     this.isSelectMode = false,
     this.isSearchMode = false,
-    this.selectedNoteIds = const {}
+    this.selectedNoteIds = const {},
   });
 
   HomePageState copyWith({
     bool? isSelectMode,
     bool? isSearchMode,
-    Set<String>? selectedNoteIds
+    Set<String>? selectedNoteIds,
   }) {
     return HomePageState(
       isSelectMode: isSelectMode ?? this.isSelectMode,
@@ -34,7 +34,10 @@ class HomeViewModel extends Notifier<HomePageState> {
     if (currentSet.contains(uuid)) {
       currentSet.remove(uuid);
       final keepsSelectionMode = currentSet.isNotEmpty;
-      state = state.copyWith(selectedNoteIds: currentSet, isSelectMode: keepsSelectionMode);
+      state = state.copyWith(
+        selectedNoteIds: currentSet,
+        isSelectMode: keepsSelectionMode,
+      );
     } else {
       currentSet.add(uuid);
       state = state.copyWith(selectedNoteIds: currentSet, isSelectMode: true);
@@ -48,7 +51,10 @@ class HomeViewModel extends Notifier<HomePageState> {
     if (isAllSelected) {
       clearSelection();
     } else {
-      state = state.copyWith(isSelectMode: true, selectedNoteIds: Set<String>.from(allNoteUuids));
+      state = state.copyWith(
+        isSelectMode: true,
+        selectedNoteIds: Set<String>.from(allNoteUuids),
+      );
     }
   }
 
@@ -69,4 +75,6 @@ class HomeViewModel extends Notifier<HomePageState> {
   }
 }
 
-final homeViewModelProvider = NotifierProvider<HomeViewModel, HomePageState>(HomeViewModel.new);
+final homeViewModelProvider = NotifierProvider<HomeViewModel, HomePageState>(
+  HomeViewModel.new,
+);

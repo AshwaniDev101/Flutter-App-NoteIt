@@ -32,6 +32,6 @@ ThemeData get _lightThemeData => ThemeData(
       cardTitleForeground: Color(0xFF292524),
       cardContentBackground: Color(0xFFFFFFFF),
       cardContentForeground: Color(0xFF57534E),
-    )
+    ),
   ],
 );

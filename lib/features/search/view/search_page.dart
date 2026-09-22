@@ -3,7 +3,7 @@
 // import 'package:go_router/go_router.dart';
 //
 // import 'package:noteit/core/routing/routing.dart';
-// import 'package:noteit/database/drift/drift_database.dart';
+// import 'package:noteit/database/drift/local_database.dart';
 //
 // class SearchPage extends ConsumerStatefulWidget {
 //   const SearchPage({super.key});
@@ -36,7 +36,7 @@
 //
 //   @override
 //   Widget build(BuildContext context) {
-//     final driftDatabase = ref.watch(noteDriftDatabaseProvider);
+//     final driftDatabase = ref.watch(noteDatabaseProvider);
 //     final colorScheme = Theme.of(context).colorScheme;
 //     final textTheme = Theme.of(context).textTheme;
 //

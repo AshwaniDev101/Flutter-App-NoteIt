@@ -6,8 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in_all_platforms/google_sign_in_all_platforms.dart';
 import 'package:noteit/core/secrets/app_secrets.dart';
 
-
-
 // Provides the FirebaseAuth instance
 // Provides the FirebaseAuth instance
 final firebaseAuthProvider = Provider<FirebaseAuth>((ref) {
@@ -19,11 +17,9 @@ final authStateProvider = StreamProvider<User?>((ref) {
   return ref.watch(firebaseAuthProvider).authStateChanges();
 });
 
-
 final googleSignInProvider = Provider<GoogleSignIn>((ref) {
   // Determine if we are running on Windows Desktop
   final isWindows = !kIsWeb && Platform.isWindows;
-
 
   // Your Desktop Client ID, You have set it up yourself
   // Go to project Credentials > click create credentials > OAuth client ID > now ur on 'Create OAuth client ID' page> Select Application type to "Desktop app" and Name it anything example : "Desktop-Client-1"
@@ -35,14 +31,13 @@ final googleSignInProvider = Provider<GoogleSignIn>((ref) {
 
   return GoogleSignIn(
     params: GoogleSignInParams(
-      clientId: isWindows ? AppSecrets.windowsClientId: AppSecrets.webClientId,
+      clientId: isWindows ? AppSecrets.windowsClientId : AppSecrets.webClientId,
 
       // Provide the secret ONLY for Windows Desktop; leave null for Web/Mobile
       clientSecret: isWindows ? AppSecrets.windowsClientSecret : null,
     ),
   );
 });
-
 
 final firestoreProvider = Provider<FirebaseFirestore>((ref) {
   return FirebaseFirestore.instance;

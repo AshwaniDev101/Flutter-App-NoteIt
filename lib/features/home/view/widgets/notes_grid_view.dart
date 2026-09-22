@@ -1,7 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../../database/drift/drift_database.dart';
+import 'package:noteit/database/drift/notes/notes_dao.dart';
+import '../../../../database/drift/local_database.dart';
 import '../../../../../database/sync/sync_orchestrator.dart';
 import '../../../../../shared/widgets/note_card.dart';
 import '../../core/providers.dart';
@@ -27,8 +28,10 @@ class NotesGridView extends ConsumerWidget {
   });
 
   Future<void> _deleteNote(WidgetRef ref, String uuid) async {
-    final driftDatabase = ref.read(noteDriftDatabaseProvider);
-    await driftDatabase.softDeleteNotes({uuid}, platform: defaultTargetPlatform.name);
+    final notesDao = ref.read(notesDaoProvider);
+    await notesDao.softDeleteNotes({
+      uuid,
+    }, platform: defaultTargetPlatform.name);
 
     ref.read(syncOrchestratorProvider).triggerSync();
   }
@@ -55,9 +58,16 @@ class NotesGridView extends ConsumerWidget {
             child: GridView.builder(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.only(bottom: 80),
-              gridDelegate: defaultTargetPlatform == TargetPlatform.android && !kIsWeb
-                  ? const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, childAspectRatio: 0.85)
-                  : const SliverGridDelegateWithMaxCrossAxisExtent(maxCrossAxisExtent: 220, childAspectRatio: 0.85),
+              gridDelegate:
+                  defaultTargetPlatform == TargetPlatform.android && !kIsWeb
+                  ? const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      childAspectRatio: 0.85,
+                    )
+                  : const SliverGridDelegateWithMaxCrossAxisExtent(
+                      maxCrossAxisExtent: 220,
+                      childAspectRatio: 0.85,
+                    ),
               itemCount: notes.length,
               itemBuilder: (context, index) {
                 final currentNote = notes[index];
@@ -88,7 +98,9 @@ class NotesGridView extends ConsumerWidget {
                   hoverActions: [
                     IconButton(
                       icon: Icon(
-                        isSelected ? Icons.check_circle : Icons.radio_button_unchecked_rounded,
+                        isSelected
+                            ? Icons.check_circle
+                            : Icons.radio_button_unchecked_rounded,
                         size: 18,
                         color: colorScheme.primary,
                       ),
@@ -100,7 +112,11 @@ class NotesGridView extends ConsumerWidget {
                     ),
                     if (!isSelectMode) ...[
                       IconButton(
-                        icon: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
+                        icon: const Icon(
+                          Icons.delete_outline,
+                          size: 18,
+                          color: Colors.redAccent,
+                        ),
                         visualDensity: VisualDensity.compact,
                         onPressed: () => _deleteNote(ref, currentNote.uuid),
                       ),
@@ -113,7 +129,10 @@ class NotesGridView extends ConsumerWidget {
                     duration: const Duration(milliseconds: 150),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: colorScheme.primary, width: 2.5),
+                      border: Border.all(
+                        color: colorScheme.primary,
+                        width: 2.5,
+                      ),
                     ),
                     child: noteCard,
                   );

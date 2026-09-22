@@ -33,6 +33,6 @@ ThemeData get _sepiaThemeData => ThemeData(
       cardTitleForeground: Color(0xFF433422),
       cardContentBackground: Color(0xFFFDF6E3),
       cardContentForeground: Color(0xFF5C4435),
-    )
+    ),
   ],
 );

@@ -76,7 +76,9 @@ class _SetupPasswordPageState extends State<SetupPasswordPage> {
                     const SizedBox(height: 12),
                     Text(
                       "Create Master Password",
-                      style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                      style: textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 12),
 
@@ -86,17 +88,25 @@ class _SetupPasswordPageState extends State<SetupPasswordPage> {
                       decoration: BoxDecoration(
                         color: Colors.redAccent.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.redAccent.withValues(alpha: 0.5)),
+                        border: Border.all(
+                          color: Colors.redAccent.withValues(alpha: 0.5),
+                        ),
                       ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.warning_amber_rounded, color: Colors.redAccent, size: 20),
+                          const Icon(
+                            Icons.warning_amber_rounded,
+                            color: Colors.redAccent,
+                            size: 20,
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               "WARNING: There is no password recovery. If you forget this password, you will permanently lose access to all locked notes.",
-                              style: textTheme.bodySmall?.copyWith(color: Colors.redAccent),
+                              style: textTheme.bodySmall?.copyWith(
+                                color: Colors.redAccent,
+                              ),
                             ),
                           ),
                         ],
@@ -118,7 +128,9 @@ class _SetupPasswordPageState extends State<SetupPasswordPage> {
                         ),
                         suffixIcon: IconButton(
                           icon: Icon(
-                            _obscurePass ? Icons.visibility_off : Icons.visibility,
+                            _obscurePass
+                                ? Icons.visibility_off
+                                : Icons.visibility,
                             color: Colors.grey,
                           ),
                           onPressed: () {
@@ -145,7 +157,9 @@ class _SetupPasswordPageState extends State<SetupPasswordPage> {
                         ),
                         suffixIcon: IconButton(
                           icon: Icon(
-                            _obscureConfirm ? Icons.visibility_off : Icons.visibility,
+                            _obscureConfirm
+                                ? Icons.visibility_off
+                                : Icons.visibility,
                             color: Colors.grey,
                           ),
                           onPressed: () {

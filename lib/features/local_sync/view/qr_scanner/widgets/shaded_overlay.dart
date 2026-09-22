@@ -5,7 +5,12 @@ class ShadedOverlay extends StatelessWidget {
   final VoidCallback onClickFlash;
   final VoidCallback onClickGallery;
 
-  const ShadedOverlay({required this.boxConstraints, super.key, required this.onClickFlash, required this.onClickGallery});
+  const ShadedOverlay({
+    required this.boxConstraints,
+    super.key,
+    required this.onClickFlash,
+    required this.onClickGallery,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -20,11 +25,8 @@ class ShadedOverlay extends StatelessWidget {
       height: scanSize,
     );
 
-
     return Stack(
       children: [
-
-
         // Clipped Scan Area
         IgnorePointer(
           child: ClipPath(
@@ -54,11 +56,9 @@ class ShadedOverlay extends StatelessWidget {
           child: Center(
             child: Text(
               'Scan a LanternChat QR Code',
-              style: Theme
-                  .of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(color: Colors.white),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: Colors.white),
             ),
           ),
         ),
@@ -77,7 +77,11 @@ class ShadedOverlay extends StatelessWidget {
                 IconButton(
                   // TODO Implement Image Picker
                   onPressed: onClickGallery,
-                  icon: Icon(Icons.photo_library_outlined, color: Colors.white, size: 32),
+                  icon: Icon(
+                    Icons.photo_library_outlined,
+                    color: Colors.white,
+                    size: 32,
+                  ),
                 ),
                 IconButton(
                   onPressed: () {
@@ -89,13 +93,10 @@ class ShadedOverlay extends StatelessWidget {
             ),
           ),
         ),
-
-
       ],
     );
   }
 }
-
 
 class _CutoutClipper extends CustomClipper<Path> {
   final double scanSize;
@@ -114,8 +115,7 @@ class _CutoutClipper extends CustomClipper<Path> {
     );
 
     // Outer path: Full screen
-    final outerPath = Path()
-      ..addRect(fullRect);
+    final outerPath = Path()..addRect(fullRect);
 
     // Inner path: the area we want to KEEP visible (cut-out)
     // adding Rounded corner to inner rect path

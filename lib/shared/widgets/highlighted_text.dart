@@ -38,26 +38,27 @@ class HighlightedText extends StatelessWidget {
 
     while (indexOfMatch != -1) {
       if (indexOfMatch > start) {
-        spans.add(TextSpan(
-          text: text.substring(start, indexOfMatch),
-          style: normalStyle,
-        ));
+        spans.add(
+          TextSpan(
+            text: text.substring(start, indexOfMatch),
+            style: normalStyle,
+          ),
+        );
       }
 
-      spans.add(TextSpan(
-        text: text.substring(indexOfMatch, indexOfMatch + query.length),
-        style: highlightStyle,
-      ));
+      spans.add(
+        TextSpan(
+          text: text.substring(indexOfMatch, indexOfMatch + query.length),
+          style: highlightStyle,
+        ),
+      );
 
       start = indexOfMatch + query.length;
       indexOfMatch = textLower.indexOf(queryLower, start);
     }
 
     if (start < text.length) {
-      spans.add(TextSpan(
-        text: text.substring(start),
-        style: normalStyle,
-      ));
+      spans.add(TextSpan(text: text.substring(start), style: normalStyle));
     }
 
     return RichText(

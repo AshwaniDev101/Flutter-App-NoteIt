@@ -37,26 +37,38 @@ class SettingsPage extends ConsumerWidget {
     final currentEngine = ref.watch(syncEngineProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings'), centerTitle: true, elevation: 0),
+      appBar: AppBar(
+        title: const Text('Settings'),
+        centerTitle: true,
+        elevation: 0,
+      ),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 600),
           child: ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 24.0,
+            ),
             children: [
               // ==================== SYNCHRONIZATION SECTION ====================
               Padding(
                 padding: const EdgeInsets.only(left: 8.0, bottom: 8.0),
                 child: Text(
                   'Synchronization',
-                  style: textTheme.titleSmall?.copyWith(color: colorScheme.primary, fontWeight: FontWeight.bold),
+                  style: textTheme.titleSmall?.copyWith(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               Card(
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                  side: BorderSide(
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                  ),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
@@ -71,7 +83,11 @@ class SettingsPage extends ConsumerWidget {
                               color: Colors.blueAccent.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Icon(Icons.sync_alt, color: Colors.blueAccent, size: 22),
+                            child: const Icon(
+                              Icons.sync_alt,
+                              color: Colors.blueAccent,
+                              size: 22,
+                            ),
                           ),
                           const SizedBox(width: 16),
                           Expanded(
@@ -80,11 +96,15 @@ class SettingsPage extends ConsumerWidget {
                               children: [
                                 Text(
                                   'Active Sync Engine',
-                                  style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w500),
+                                  style: textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                                 Text(
                                   'Choose how your notes are backed up and shared.',
-                                  style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+                                  style: textTheme.bodyMedium?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
                                 ),
                               ],
                             ),
@@ -115,7 +135,9 @@ class SettingsPage extends ConsumerWidget {
                           final selectedMode = newSelection.first;
 
                           // Uses your Notifier's specific setEngine method!
-                          ref.read(syncEngineProvider.notifier).setEngine(selectedMode);
+                          ref
+                              .read(syncEngineProvider.notifier)
+                              .setEngine(selectedMode);
 
                           // Tell the Orchestrator to switch gears immediately
                           ref.read(syncOrchestratorProvider).triggerSync();
@@ -133,14 +155,19 @@ class SettingsPage extends ConsumerWidget {
                 padding: const EdgeInsets.only(left: 8.0, bottom: 8.0),
                 child: Text(
                   'General & Security',
-                  style: textTheme.titleSmall?.copyWith(color: colorScheme.primary, fontWeight: FontWeight.bold),
+                  style: textTheme.titleSmall?.copyWith(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               Card(
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                  side: BorderSide(
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                  ),
                 ),
                 child: Column(
                   children: [
@@ -151,7 +178,11 @@ class SettingsPage extends ConsumerWidget {
                       subtitle: 'Manage alerts and sounds',
                       onTap: () {},
                     ),
-                    Divider(height: 1, indent: 64, color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                    Divider(
+                      height: 1,
+                      indent: 64,
+                      color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                    ),
                     SettingsTile(
                       icon: Icons.lock_outline,
                       iconColor: Colors.orange,
@@ -159,7 +190,11 @@ class SettingsPage extends ConsumerWidget {
                       subtitle: 'Reset or clear master password',
                       onTap: () => context.push(AppRoutes.masterPassword),
                     ),
-                    Divider(height: 1, indent: 64, color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                    Divider(
+                      height: 1,
+                      indent: 64,
+                      color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                    ),
                     SettingsSwitchTile(
                       icon: Icons.lock_open_rounded,
                       iconColor: Colors.teal,
@@ -167,7 +202,9 @@ class SettingsPage extends ConsumerWidget {
                       subtitle: 'Stay unlocked during session',
                       value: lockState.keepUnlockedDuringSession,
                       onChanged: (bool value) {
-                        ref.read(lockManagerProvider.notifier).setKeepUnlockedPreference(value);
+                        ref
+                            .read(lockManagerProvider.notifier)
+                            .setKeepUnlockedPreference(value);
                       },
                     ),
                   ],
@@ -203,17 +240,37 @@ class SettingsTile extends StatelessWidget {
     final theme = Theme.of(context);
 
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 16.0,
+        vertical: 6.0,
+      ),
       hoverColor: theme.colorScheme.primary.withValues(alpha: 0.04),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       leading: Container(
         padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+        decoration: BoxDecoration(
+          color: iconColor.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
         child: Icon(icon, color: iconColor, size: 22),
       ),
-      title: Text(title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w500)),
-      subtitle: Text(subtitle, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-      trailing: Icon(Icons.arrow_forward_ios, size: 14, color: theme.colorScheme.outline),
+      title: Text(
+        title,
+        style: theme.textTheme.titleMedium?.copyWith(
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
+      trailing: Icon(
+        Icons.arrow_forward_ios,
+        size: 14,
+        color: theme.colorScheme.outline,
+      ),
       onTap: onTap,
     );
   }
@@ -243,16 +300,32 @@ class SettingsSwitchTile extends StatelessWidget {
     final theme = Theme.of(context);
 
     return SwitchListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 16.0,
+        vertical: 6.0,
+      ),
       hoverColor: theme.colorScheme.primary.withValues(alpha: 0.04),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       secondary: Container(
         padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+        decoration: BoxDecoration(
+          color: iconColor.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
         child: Icon(icon, color: iconColor, size: 22),
       ),
-      title: Text(title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w500)),
-      subtitle: Text(subtitle, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+      title: Text(
+        title,
+        style: theme.textTheme.titleMedium?.copyWith(
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
       value: value,
       onChanged: onChanged,
     );

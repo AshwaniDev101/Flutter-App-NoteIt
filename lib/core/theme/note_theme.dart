@@ -32,14 +32,12 @@ class NoteTheme extends ThemeExtension<NoteTheme> {
     return NoteTheme(
       selectedAppBar: selectedAppBar ?? this.selectedAppBar,
       selectedCheckColor: selectedCheckColor ?? this.selectedCheckColor,
-      cardTitleBackground:
-      cardTitleBackground ?? this.cardTitleBackground,
-      cardTitleForeground:
-      cardTitleForeground ?? this.cardTitleForeground,
+      cardTitleBackground: cardTitleBackground ?? this.cardTitleBackground,
+      cardTitleForeground: cardTitleForeground ?? this.cardTitleForeground,
       cardContentBackground:
-      cardContentBackground ?? this.cardContentBackground,
+          cardContentBackground ?? this.cardContentBackground,
       cardContentForeground:
-      cardContentForeground ?? this.cardContentForeground,
+          cardContentForeground ?? this.cardContentForeground,
     );
   }
 
@@ -48,18 +46,32 @@ class NoteTheme extends ThemeExtension<NoteTheme> {
     if (other is! NoteTheme) return this;
 
     return NoteTheme(
-      selectedAppBar:
-      Color.lerp(selectedAppBar, other.selectedAppBar, t)!,
-      selectedCheckColor:
-      Color.lerp(selectedCheckColor, other.selectedCheckColor, t)!,
-      cardTitleBackground:
-      Color.lerp(cardTitleBackground, other.cardTitleBackground, t)!,
-      cardTitleForeground:
-      Color.lerp(cardTitleForeground, other.cardTitleForeground, t)!,
-      cardContentBackground:
-      Color.lerp(cardContentBackground, other.cardContentBackground, t)!,
-      cardContentForeground:
-      Color.lerp(cardContentForeground, other.cardContentForeground, t)!,
+      selectedAppBar: Color.lerp(selectedAppBar, other.selectedAppBar, t)!,
+      selectedCheckColor: Color.lerp(
+        selectedCheckColor,
+        other.selectedCheckColor,
+        t,
+      )!,
+      cardTitleBackground: Color.lerp(
+        cardTitleBackground,
+        other.cardTitleBackground,
+        t,
+      )!,
+      cardTitleForeground: Color.lerp(
+        cardTitleForeground,
+        other.cardTitleForeground,
+        t,
+      )!,
+      cardContentBackground: Color.lerp(
+        cardContentBackground,
+        other.cardContentBackground,
+        t,
+      )!,
+      cardContentForeground: Color.lerp(
+        cardContentForeground,
+        other.cardContentForeground,
+        t,
+      )!,
     );
   }
 }

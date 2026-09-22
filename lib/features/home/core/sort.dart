@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:noteit/database/drift/drift_database.dart';
+import 'package:noteit/database/drift/local_database.dart';
+import 'package:noteit/database/drift/notes/notes_dao.dart';
 
 enum NoteSortOption { name, createdAt, updatedAt }
 
@@ -17,15 +18,16 @@ class NoteSortNotifier extends Notifier<NoteSortOption> {
 }
 
 // Create the NotifierProvider
-final noteSortOptionProvider = NotifierProvider<NoteSortNotifier, NoteSortOption>(() {
-  return NoteSortNotifier();
-});
+final noteSortOptionProvider =
+    NotifierProvider<NoteSortNotifier, NoteSortOption>(() {
+      return NoteSortNotifier();
+    });
 
 final sortedNotesProvider = StreamProvider<List<Note>>((ref) {
-  final driftDatabase = ref.watch(noteDriftDatabaseProvider);
+  final notesDao = ref.watch(notesDaoProvider);
   final sortOption = ref.watch(noteSortOptionProvider);
 
-  return driftDatabase.watchAllNotes().map((notes) {
+  return notesDao.watchAllNotes().map((notes) {
     // Debug: Add this print to verify data flow in the console
     print("### Stream received ${notes.length} total notes from Drift");
 
@@ -34,10 +36,12 @@ final sortedNotesProvider = StreamProvider<List<Note>>((ref) {
 
     switch (sortOption) {
       case NoteSortOption.name:
-        activeNotes.sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
+        activeNotes.sort(
+          (a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()),
+        );
         break;
       case NoteSortOption.createdAt:
-      // These are UTC timestamps now, which is perfect for accurate sorting!
+        // These are UTC timestamps now, which is perfect for accurate sorting!
         activeNotes.sort((a, b) => b.createdAt.compareTo(a.createdAt));
         break;
       case NoteSortOption.updatedAt:

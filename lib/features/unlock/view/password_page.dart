@@ -36,12 +36,8 @@ class _PasswordPageState extends State<PasswordPage> {
         behavior: HitTestBehavior.opaque,
         onTap: () => Navigator.pop(context),
         child: BackdropFilter(
-          filter: ImageFilter.blur(
-            sigmaX: 8,
-            sigmaY: 8,
-          ),
+          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
           child: Center(
-
             // swallow taps on the card itself so it doesn't trigger the background dismiss
             child: GestureDetector(
               onTap: () {}, // no-op
@@ -83,7 +79,9 @@ class _PasswordPageState extends State<PasswordPage> {
                         // Added suffix icon toggle
                         suffixIcon: IconButton(
                           icon: Icon(
-                            _obscureText ? Icons.visibility_off : Icons.visibility,
+                            _obscureText
+                                ? Icons.visibility_off
+                                : Icons.visibility,
                             color: Colors.grey,
                           ),
                           onPressed: () {

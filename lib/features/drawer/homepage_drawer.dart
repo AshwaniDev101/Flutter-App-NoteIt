@@ -14,7 +14,8 @@ class HomepageDrawer extends ConsumerWidget {
   Future<void> _signInWithGoogle(WidgetRef ref) async {
     try {
       final googleSignIn = ref.read(googleSignInProvider);
-      final GoogleSignInCredentials? credentials = await googleSignIn.signInOnline();
+      final GoogleSignInCredentials? credentials = await googleSignIn
+          .signInOnline();
 
       if (credentials == null) return;
 
@@ -50,7 +51,12 @@ class HomepageDrawer extends ConsumerWidget {
               final bool isSignedIn = user != null;
 
               return Container(
-                padding: const EdgeInsets.only(top: 64, left: 24, right: 24, bottom: 24),
+                padding: const EdgeInsets.only(
+                  top: 64,
+                  left: 24,
+                  right: 24,
+                  bottom: 24,
+                ),
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: colorScheme.surfaceContainerLow,
@@ -70,12 +76,18 @@ class HomepageDrawer extends ConsumerWidget {
                           ? NetworkImage(user.photoURL!)
                           : null,
                       child: !isSignedIn || user.photoURL == null
-                          ? Icon(Icons.person, size: 36, color: colorScheme.onPrimaryContainer)
+                          ? Icon(
+                              Icons.person,
+                              size: 36,
+                              color: colorScheme.onPrimaryContainer,
+                            )
                           : null,
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      isSignedIn ? (user.displayName ?? 'No Name') : 'Welcome to Note-it',
+                      isSignedIn
+                          ? (user.displayName ?? 'No Name')
+                          : 'Welcome to Note-it',
                       style: textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: colorScheme.onSurface,
@@ -83,7 +95,9 @@ class HomepageDrawer extends ConsumerWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      isSignedIn ? (user.email ?? '') : 'Sign in to sync your notes',
+                      isSignedIn
+                          ? (user.email ?? '')
+                          : 'Sign in to sync your notes',
                       style: textTheme.bodyMedium?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),
@@ -97,7 +111,10 @@ class HomepageDrawer extends ConsumerWidget {
           // MAIN SCROLLABLE LIST
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 16.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12.0,
+                vertical: 16.0,
+              ),
               children: [
                 _DrawerItem(
                   icon: Icons.notes_rounded,
@@ -120,7 +137,11 @@ class HomepageDrawer extends ConsumerWidget {
 
                 // Preferences Section
                 Padding(
-                  padding: const EdgeInsets.only(left: 16.0, top: 8.0, bottom: 8.0),
+                  padding: const EdgeInsets.only(
+                    left: 16.0,
+                    top: 8.0,
+                    bottom: 8.0,
+                  ),
                   child: Text(
                     'Preferences',
                     style: textTheme.labelLarge?.copyWith(
@@ -133,22 +154,30 @@ class HomepageDrawer extends ConsumerWidget {
                 // Dark Mode Toggle
                 ListTile(
                   leading: Icon(
-                    isDarkMode ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                    isDarkMode
+                        ? Icons.dark_mode_rounded
+                        : Icons.light_mode_rounded,
                     color: colorScheme.onSurfaceVariant,
                   ),
                   title: Text(
                     'Dark Mode',
-                    style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w500),
+                    style: textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                   trailing: Switch(
                     value: isDarkMode,
                     onChanged: (value) {
                       // Toggle between standard Light and Dark modes
-                      final newTheme = value ? AppThemeType.dark : AppThemeType.light;
+                      final newTheme = value
+                          ? AppThemeType.dark
+                          : AppThemeType.light;
                       ref.read(themeProvider.notifier).setTheme(newTheme);
                     },
                   ),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
                 ),
 
@@ -199,37 +228,53 @@ class HomepageDrawer extends ConsumerWidget {
                   final bool isSignedIn = snapshot.data != null;
 
                   return Align(
-                    alignment: Alignment.centerLeft, // Aligns button nicely to the left
+                    alignment: Alignment
+                        .centerLeft, // Aligns button nicely to the left
                     child: isSignedIn
                         ? OutlinedButton.icon(
-                      onPressed: () async {
-                        final googleSignIn = ref.read(googleSignInProvider);
-                        await googleSignIn.signOut();
-                        await FirebaseAuth.instance.signOut();
-                      },
-                      icon: Icon(Icons.logout_rounded, color: colorScheme.onSurfaceVariant),
-                      label: Text(
-                        'Sign Out',
-                        style: TextStyle(color: colorScheme.onSurfaceVariant),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                        // Gives it a subtle border matching your theme
-                        side: BorderSide(color: colorScheme.outlineVariant),
-                        // Makes it a rounded square instead of a pill
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                    )
+                            onPressed: () async {
+                              final googleSignIn = ref.read(
+                                googleSignInProvider,
+                              );
+                              await googleSignIn.signOut();
+                              await FirebaseAuth.instance.signOut();
+                            },
+                            icon: Icon(
+                              Icons.logout_rounded,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                            label: Text(
+                              'Sign Out',
+                              style: TextStyle(
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 12,
+                              ),
+                              // Gives it a subtle border matching your theme
+                              side: BorderSide(
+                                color: colorScheme.outlineVariant,
+                              ),
+                              // Makes it a rounded square instead of a pill
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                          )
                         : FilledButton.tonalIcon(
-                      onPressed: () => _signInWithGoogle(ref),
-                      icon: const Icon(Icons.login_rounded),
-                      label: const Text('Sign in with Google'),
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      ),
-                    ),
+                            onPressed: () => _signInWithGoogle(ref),
+                            icon: const Icon(Icons.login_rounded),
+                            label: const Text('Sign in with Google'),
+                            style: FilledButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 12,
+                              ),
+                            ),
+                          ),
                   );
                 },
               ),
@@ -257,17 +302,22 @@ class _DrawerItem extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4.0),
       child: ListTile(
-        leading: Icon(icon, color: Theme.of(context).colorScheme.onSurfaceVariant),
+        leading: Icon(
+          icon,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
         title: Text(
           title,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w500,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w500),
         ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
         onTap: onTap,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
-        hoverColor: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.4),
+        hoverColor: Theme.of(
+          context,
+        ).colorScheme.primaryContainer.withValues(alpha: 0.4),
       ),
     );
   }

@@ -33,6 +33,6 @@ ThemeData get _amoledThemeData => ThemeData(
       cardTitleForeground: Color(0xFFE0E0E0),
       cardContentBackground: Colors.black,
       cardContentForeground: Color(0xFFA0A0A0),
-    )
+    ),
   ],
 );

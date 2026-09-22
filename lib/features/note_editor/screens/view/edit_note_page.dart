@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:noteit/database/drift/drift_database.dart';
+import 'package:noteit/database/drift/local_database.dart';
 
 import '../../../../shared/widgets/snack_bar_manager.dart';
 import '../../../unlock/lock_manger/lock_manager.dart';
@@ -42,8 +42,12 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
     super.initState();
     _viewModel = ref.read(editNoteViewModelProvider.notifier);
     _isLocked = widget.existingNote?.isLocked ?? false;
-    _titleController = TextEditingController(text: widget.existingNote?.title ?? '');
-    _contentController = TextEditingController(text: widget.existingNote?.content ?? '');
+    _titleController = TextEditingController(
+      text: widget.existingNote?.title ?? '',
+    );
+    _contentController = TextEditingController(
+      text: widget.existingNote?.content ?? '',
+    );
     _titleFocusNode = FocusNode()..addListener(() => setState(() {}));
 
     if (_titleController.text.isEmpty) _isAutoSyncingTitle = true;
@@ -54,7 +58,9 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
 
   void _syncTitleFromContent() {
     if (!_isAutoSyncingTitle) return;
-    final firstLine = _contentController.text.isNotEmpty ? _contentController.text.split('\n').first : '';
+    final firstLine = _contentController.text.isNotEmpty
+        ? _contentController.text.split('\n').first
+        : '';
     if (_titleController.text != firstLine) {
       _titleController.value = _titleController.value.copyWith(
         text: firstLine,
@@ -67,7 +73,8 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
     if (_titleController.text.isEmpty) {
       _isAutoSyncingTitle = true;
     } else {
-      if (_titleController.text != _contentController.text.split('\n').first) _isAutoSyncingTitle = false;
+      if (_titleController.text != _contentController.text.split('\n').first)
+        _isAutoSyncingTitle = false;
     }
   }
 
@@ -94,14 +101,19 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
       _viewModel.saveNote(title, content);
       _hasCreatedNewNote = true;
     } else {
-      if (title != widget.existingNote!.title || content != widget.existingNote!.content) {
+      if (title != widget.existingNote!.title ||
+          content != widget.existingNote!.content) {
         _viewModel.updateNote(widget.existingNote!.uuid, title, content);
       }
     }
 
     if (isManualSave && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Saved!'), behavior: SnackBarBehavior.floating, duration: Duration(seconds: 1)),
+        const SnackBar(
+          content: Text('Saved!'),
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 1),
+        ),
       );
     }
     if (!isManualSave) _hasTriggeredFinalSave = true;
@@ -114,7 +126,10 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
   }
 
   String _getFormattedDate() {
-    final now = widget.existingNote?.updatedAt ?? widget.existingNote?.createdAt ?? DateTime.now();
+    final now =
+        widget.existingNote?.updatedAt ??
+        widget.existingNote?.createdAt ??
+        DateTime.now();
     return _isNewNote
         ? "${now.month}/${now.day}/${now.year}"
         : "${now.month}/${now.day}/${now.year} ${now.hour}:${now.minute.toString().padLeft(2, '0')}";
@@ -146,7 +161,11 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
         automaticallyImplyLeading: false,
         titleSpacing: 24,
         title: _buildTitleField(colorScheme, textTheme, maxWidth: 300),
-        actions: [_buildUndoRedoButtons(), if (!_isNewNote) _buildOptionMenu(), const SizedBox(width: 8)],
+        actions: [
+          _buildUndoRedoButtons(),
+          if (!_isNewNote) _buildOptionMenu(),
+          const SizedBox(width: 8),
+        ],
       ),
       body: Column(
         children: [
@@ -165,10 +184,16 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
       backgroundColor: colorScheme.surface,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: _handleMobileBack),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: _handleMobileBack,
+        ),
         titleSpacing: 0,
         title: _buildTitleField(colorScheme, textTheme, showSaveIcon: false),
-        actions: [if (!_isNewNote) _buildOptionMenu(), const SizedBox(width: 8)],
+        actions: [
+          if (!_isNewNote) _buildOptionMenu(),
+          const SizedBox(width: 8),
+        ],
       ),
       body: SafeArea(
         child: Column(
@@ -185,18 +210,28 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
     );
   }
 
-  Widget _buildTitleField(ColorScheme colorScheme, TextTheme textTheme, {double? maxWidth, bool showSaveIcon = true}) {
+  Widget _buildTitleField(
+    ColorScheme colorScheme,
+    TextTheme textTheme, {
+    double? maxWidth,
+    bool showSaveIcon = true,
+  }) {
     return Row(
       children: [
         Flexible(
           child: Container(
             height: 40,
-            constraints: maxWidth != null ? BoxConstraints(maxWidth: maxWidth) : null,
+            constraints: maxWidth != null
+                ? BoxConstraints(maxWidth: maxWidth)
+                : null,
             child: TextField(
               controller: _titleController,
               focusNode: _titleFocusNode,
               textAlignVertical: TextAlignVertical.center,
-              style: textTheme.titleMedium?.copyWith(color: colorScheme.onSurface, fontWeight: FontWeight.w600),
+              style: textTheme.titleMedium?.copyWith(
+                color: colorScheme.onSurface,
+                fontWeight: FontWeight.w600,
+              ),
               decoration: InputDecoration(
                 isDense: true,
                 hintText: "Title",
@@ -204,7 +239,8 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
                     ? ValueListenableBuilder<TextEditingValue>(
                         valueListenable: _titleController,
                         builder: (context, value, child) {
-                          if (value.text.isEmpty) return const SizedBox.shrink();
+                          if (value.text.isEmpty)
+                            return const SizedBox.shrink();
                           return IconButton(
                             icon: const Icon(Icons.close, size: 16),
                             onPressed: () {
@@ -223,7 +259,10 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
           const SizedBox(width: 8),
           TextButton.icon(
             onPressed: () => _executeSave(isManualSave: true),
-            icon: Icon(Icons.save, color: Theme.of(context).colorScheme.primary),
+            icon: Icon(
+              Icons.save,
+              color: Theme.of(context).colorScheme.primary,
+            ),
             label: const Text("Save"),
           ),
         ],
@@ -247,7 +286,11 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
     );
   }
 
-  Widget _buildMetaDataRow(ColorScheme colorScheme, TextTheme textTheme, {required double padding}) {
+  Widget _buildMetaDataRow(
+    ColorScheme colorScheme,
+    TextTheme textTheme, {
+    required double padding,
+  }) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: padding, vertical: 8.0),
       child: Row(
@@ -255,23 +298,36 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
             decoration: BoxDecoration(
-              color: _isNewNote ? colorScheme.primaryContainer : colorScheme.tertiaryContainer,
+              color: _isNewNote
+                  ? colorScheme.primaryContainer
+                  : colorScheme.tertiaryContainer,
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(
               _isNewNote ? 'New' : 'Updating...',
               style: textTheme.labelSmall?.copyWith(
-                color: _isNewNote ? colorScheme.onPrimaryContainer : colorScheme.onTertiaryContainer,
+                color: _isNewNote
+                    ? colorScheme.onPrimaryContainer
+                    : colorScheme.onTertiaryContainer,
                 fontWeight: FontWeight.bold,
               ),
             ),
           ),
           const Spacer(),
           if (_isLocked) ...[
-            Icon(Icons.lock_outline, size: 16, color: colorScheme.onSurfaceVariant),
+            Icon(
+              Icons.lock_outline,
+              size: 16,
+              color: colorScheme.onSurfaceVariant,
+            ),
             const SizedBox(width: 8),
           ],
-          Text(_getFormattedDate(), style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant)),
+          Text(
+            _getFormattedDate(),
+            style: textTheme.bodySmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
         ],
       ),
     );
@@ -279,14 +335,18 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
 
   Widget _buildUndoRedoButtons({bool isMobileView = false}) {
     return Row(
-      mainAxisAlignment: isMobileView ? MainAxisAlignment.center : MainAxisAlignment.start,
+      mainAxisAlignment: isMobileView
+          ? MainAxisAlignment.center
+          : MainAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
         ValueListenableBuilder<UndoHistoryValue>(
           valueListenable: _undoController,
           builder: (context, value, child) => IconButton(
             onPressed: value.canUndo ? () => _undoController.undo() : null,
-            style: IconButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.primary),
+            style: IconButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.primary,
+            ),
             icon: Icon(Icons.undo, size: isMobileView ? 24 : 20),
           ),
         ),
@@ -295,7 +355,9 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
           valueListenable: _undoController,
           builder: (context, value, child) => IconButton(
             onPressed: value.canRedo ? () => _undoController.redo() : null,
-            style: IconButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.primary),
+            style: IconButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.primary,
+            ),
             icon: Icon(Icons.redo, size: isMobileView ? 24 : 20),
           ),
         ),
@@ -305,7 +367,9 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
 
   Widget _buildOptionMenu() {
     return PopupMenuButton<String>(
-      style: IconButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.primary),
+      style: IconButton.styleFrom(
+        foregroundColor: Theme.of(context).colorScheme.primary,
+      ),
       icon: const Icon(Icons.more_vert_rounded),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       onSelected: (String value) async {
@@ -325,7 +389,8 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
 
             if (enteredPassword != null && enteredPassword.isNotEmpty) {
               await lockManager.setupMasterPassword(enteredPassword);
-              if (context.mounted) SnackBarManager.show(msg: 'Master Password Created!');
+              if (context.mounted)
+                SnackBarManager.show(msg: 'Master Password Created!');
               shouldProceed = true;
             }
           } else {
@@ -346,7 +411,8 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
                   _isLocked = !_isLocked;
                 });
 
-                if (!isCurrentlyLocked && defaultTargetPlatform == TargetPlatform.android) {
+                if (!isCurrentlyLocked &&
+                    defaultTargetPlatform == TargetPlatform.android) {
                   context.pop();
                 }
               }
@@ -358,7 +424,9 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
           if (!_isNewNote && widget.existingNote != null) {
             _hasTriggeredFinalSave = true;
             // FIXED: Passing UUID instead of integer ID
-            ref.read(editNoteViewModelProvider.notifier).deleteNote(widget.existingNote!.uuid);
+            ref
+                .read(editNoteViewModelProvider.notifier)
+                .deleteNote(widget.existingNote!.uuid);
             if (defaultTargetPlatform == TargetPlatform.android && mounted) {
               context.pop();
             }
@@ -371,7 +439,10 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
             value: 'toggle_lock',
             child: Row(
               children: [
-                Icon(_isLocked ? Icons.lock_clock_outlined : Icons.lock_outline, size: 16),
+                Icon(
+                  _isLocked ? Icons.lock_clock_outlined : Icons.lock_outline,
+                  size: 16,
+                ),
                 const SizedBox(width: 12),
                 Text(_isLocked ? 'Remove Lock' : 'Lock Note'),
               ],

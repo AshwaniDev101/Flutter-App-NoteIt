@@ -14,7 +14,6 @@ import 'core/theme/app_theme.dart';
 // Build drift db : dart run build_runner build -d
 // Drift database location Windows : C:\Users\Ashwin\Documents\my_notes_db.sqlite
 
-
 // TODO:
 // 1. when lock is open during a session we still see the lock icon, there should be a tiny unlock icon on the lock when it lockable note but unlock during the session,
 // 2. when lock is open in editor, the message 'Unlock note' should be replaced with 'Remove Lock' and click that should not as for a master password as ur in the editor page because u already have the password,
@@ -24,19 +23,13 @@ Future<void> main() async {
 
   await SharedPreferenceManager.init();
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  runApp(
-    const ProviderScope(
-      child: _MyApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: _MyApp()));
 }
 
 class _MyApp extends ConsumerWidget {
-  const _MyApp({super.key});
+  const _MyApp();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -53,7 +46,6 @@ class _MyApp extends ConsumerWidget {
 
       // Resolve the ThemeData dynamically using your unified Themes class
       theme: Themes.getThemeData(activeTheme),
-
     );
   }
 }

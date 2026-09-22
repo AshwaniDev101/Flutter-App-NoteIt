@@ -33,6 +33,6 @@ ThemeData get _darkThemeData => ThemeData(
       cardTitleForeground: Color(0xFFE2E4E9),
       cardContentBackground: Color(0xFF1B1E26),
       cardContentForeground: Color(0xFFA3A8B5),
-    )
+    ),
   ],
 );

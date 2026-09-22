@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:noteit/core/routing/routing.dart';
-import 'package:noteit/database/drift/drift_database.dart';
+import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/features/home/view/widgets/home_app_bars.dart';
 import 'package:noteit/features/home/view/widgets/notes_grid_view.dart';
 import 'package:noteit/shared/widgets/websocket_connection_indicator.dart';
@@ -51,7 +51,11 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
 
   void _handleNoteTap(Note note) async {
     if (note.isLocked) {
-      final success = await PasswordPromptHelper.promptAndVerify(context, ref, note);
+      final success = await PasswordPromptHelper.promptAndVerify(
+        context,
+        ref,
+        note,
+      );
       if (success && mounted) {
         context.push(AppRoutes.edit, extra: note);
       }
@@ -98,10 +102,14 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
                         hintText: 'Search notes...',
                         prefixIcon: const Icon(Icons.search),
                         suffixIcon: _searchController.text.isNotEmpty
-                            ? IconButton(icon: const Icon(Icons.clear, size: 20), onPressed: _clearSearch)
+                            ? IconButton(
+                                icon: const Icon(Icons.clear, size: 20),
+                                onPressed: _clearSearch,
+                              )
                             : null,
                         filled: true,
-                        fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                        fillColor: colorScheme.surfaceContainerHighest
+                            .withValues(alpha: 0.5),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(30),
                           borderSide: BorderSide.none,
@@ -109,20 +117,28 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
                         contentPadding: const EdgeInsets.symmetric(vertical: 0),
                       ),
                       onTap: () {
-                        if (!homeState.isSearchMode) viewModel.enterSearchMode();
+                        if (!homeState.isSearchMode)
+                          viewModel.enterSearchMode();
                       },
                       onChanged: (value) {
-                        if (value.isNotEmpty && !homeState.isSearchMode) viewModel.enterSearchMode();
+                        if (value.isNotEmpty && !homeState.isSearchMode)
+                          viewModel.enterSearchMode();
                         if (value.isEmpty) {
                           _clearSearch();
                         } else {
-                          ref.read(searchQueryProvider.notifier).updateQuery(value);
+                          ref
+                              .read(searchQueryProvider.notifier)
+                              .updateQuery(value);
                         }
                       },
                     ),
                   ),
                   const SizedBox(width: 8),
-                  _buildFilterMenu(currentSortOption, currentPlatformFilter, colorScheme),
+                  _buildFilterMenu(
+                    currentSortOption,
+                    currentPlatformFilter,
+                    colorScheme,
+                  ),
                 ],
               ),
             ),
@@ -134,7 +150,8 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
                 activeNoteId: null,
                 onToggleSelection: viewModel.toggleSelection,
                 onEnableSelectMode: viewModel.enableSelectMode,
-                onPromptPassword: (ctx, note) => PasswordPromptHelper.promptAndVerify(ctx, ref, note),
+                onPromptPassword: (ctx, note) =>
+                    PasswordPromptHelper.promptAndVerify(ctx, ref, note),
                 onNoteTap: _handleNoteTap,
               ),
             ),
@@ -144,9 +161,14 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
     );
   }
 
-  PreferredSizeWidget _buildAppBar(HomePageState state, HomeViewModel viewModel) {
+  PreferredSizeWidget _buildAppBar(
+    HomePageState state,
+    HomeViewModel viewModel,
+  ) {
     // Just to get Connection state from local sync service
-    final SyncConnectionState syncConnectionState = ref.watch(localSyncServiceProvider);
+    final SyncConnectionState syncConnectionState = ref.watch(
+      localSyncServiceProvider,
+    );
     final isConnected = syncConnectionState == SyncConnectionState.connected;
     // Getting the sync state from the orchestrator
     final isSyncing = ref.watch(isSyncingProvider);
@@ -157,7 +179,9 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
         onClearSelection: viewModel.clearSelection,
         onSelectAll: () {
           // FIXED: Map to UUIDs instead of integer IDs
-          final allNoteUuids = (ref.read(filteredNotesProvider).value ?? []).map((n) => n.uuid).toList();
+          final allNoteUuids = (ref.read(filteredNotesProvider).value ?? [])
+              .map((n) => n.uuid)
+              .toList();
           viewModel.toggleSelectAll(allNoteUuids);
         },
       );
@@ -170,11 +194,16 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
         WebSocketConnectionIndicator(isConnected: isConnected),
         IconButton(
           // icon: const Icon(Icons.sync),
-          icon: SpinningSyncIcon(isSyncing: isSyncing, color: Theme.of(context).colorScheme.primary),
+          icon: SpinningSyncIcon(
+            isSyncing: isSyncing,
+            color: Theme.of(context).colorScheme.primary,
+          ),
           tooltip: 'Sync Notes',
           onPressed: () {
             ref.read(syncOrchestratorProvider).triggerSync();
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Syncing notes...')));
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(const SnackBar(content: Text('Syncing notes...')));
           },
         ),
         const SizedBox(width: 8),
@@ -193,34 +222,65 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
       onSelected: (String value) {
         switch (value) {
           case 'sortCreated':
-            ref.read(noteSortOptionProvider.notifier).updateSort(NoteSortOption.createdAt);
+            ref
+                .read(noteSortOptionProvider.notifier)
+                .updateSort(NoteSortOption.createdAt);
             break;
           case 'sortName':
-            ref.read(noteSortOptionProvider.notifier).updateSort(NoteSortOption.name);
+            ref
+                .read(noteSortOptionProvider.notifier)
+                .updateSort(NoteSortOption.name);
             break;
           case 'sortUpdated':
-            ref.read(noteSortOptionProvider.notifier).updateSort(NoteSortOption.updatedAt);
+            ref
+                .read(noteSortOptionProvider.notifier)
+                .updateSort(NoteSortOption.updatedAt);
             break;
           case 'filterPhone':
-            ref.read(platformFilterProvider.notifier).toggleFilter(PlatformOptions.android);
+            ref
+                .read(platformFilterProvider.notifier)
+                .toggleFilter(PlatformOptions.android);
             break;
           case 'filterWindows':
-            ref.read(platformFilterProvider.notifier).toggleFilter(PlatformOptions.windows);
+            ref
+                .read(platformFilterProvider.notifier)
+                .toggleFilter(PlatformOptions.windows);
             break;
         }
       },
       itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
         const PopupMenuItem<String>(
           enabled: false,
-          child: Text('SORT BY', style: TextStyle(fontSize: 12, color: Colors.grey)),
+          child: Text(
+            'SORT BY',
+            style: TextStyle(fontSize: 12, color: Colors.grey),
+          ),
         ),
-        _buildSortItem('sortCreated', 'Created', currentSortOption == NoteSortOption.createdAt, colorScheme),
-        _buildSortItem('sortName', 'Name', currentSortOption == NoteSortOption.name, colorScheme),
-        _buildSortItem('sortUpdated', 'Last Updated', currentSortOption == NoteSortOption.updatedAt, colorScheme),
+        _buildSortItem(
+          'sortCreated',
+          'Created',
+          currentSortOption == NoteSortOption.createdAt,
+          colorScheme,
+        ),
+        _buildSortItem(
+          'sortName',
+          'Name',
+          currentSortOption == NoteSortOption.name,
+          colorScheme,
+        ),
+        _buildSortItem(
+          'sortUpdated',
+          'Last Updated',
+          currentSortOption == NoteSortOption.updatedAt,
+          colorScheme,
+        ),
         const PopupMenuDivider(),
         const PopupMenuItem<String>(
           enabled: false,
-          child: Text('FILTER PLATFORM', style: TextStyle(fontSize: 12, color: Colors.grey)),
+          child: Text(
+            'FILTER PLATFORM',
+            style: TextStyle(fontSize: 12, color: Colors.grey),
+          ),
         ),
         _buildFilterItem(
           'filterPhone',
@@ -238,7 +298,12 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
     );
   }
 
-  PopupMenuItem<String> _buildSortItem(String value, String label, bool isSelected, ColorScheme colorScheme) {
+  PopupMenuItem<String> _buildSortItem(
+    String value,
+    String label,
+    bool isSelected,
+    ColorScheme colorScheme,
+  ) {
     return PopupMenuItem<String>(
       value: value,
       child: Row(
@@ -246,7 +311,9 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
         children: [
           Text(label),
           Icon(
-            isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+            isSelected
+                ? Icons.radio_button_checked
+                : Icons.radio_button_unchecked,
             size: 20,
             color: isSelected ? colorScheme.primary : Colors.grey,
           ),
@@ -255,7 +322,12 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
     );
   }
 
-  PopupMenuItem<String> _buildFilterItem(String value, IconData icon, String label, bool isSelected) {
+  PopupMenuItem<String> _buildFilterItem(
+    String value,
+    IconData icon,
+    String label,
+    bool isSelected,
+  ) {
     return PopupMenuItem<String>(
       value: value,
       child: Row(

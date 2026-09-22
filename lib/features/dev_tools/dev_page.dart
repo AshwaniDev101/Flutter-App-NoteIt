@@ -11,7 +11,10 @@ class DevPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Developer Tools'),
-        leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Navigator.of(context).pop()),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -22,17 +25,25 @@ class DevPage extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.construction_rounded, size: 72, color: Colors.orange),
+                  const Icon(
+                    Icons.construction_rounded,
+                    size: 72,
+                    color: Colors.orange,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'Test Environment',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Use these actions to manipulate local state for testing purposes.',
                     textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade600),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.grey.shade600,
+                    ),
                   ),
                   const SizedBox(height: 48),
 
@@ -42,21 +53,33 @@ class DevPage extends ConsumerWidget {
                     height: 56,
                     child: FilledButton.icon(
                       style: FilledButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.errorContainer,
-                        foregroundColor: Theme.of(context).colorScheme.onErrorContainer,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        backgroundColor: Theme.of(
+                          context,
+                        ).colorScheme.errorContainer,
+                        foregroundColor: Theme.of(
+                          context,
+                        ).colorScheme.onErrorContainer,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                       onPressed: () async {
                         // Wipe the master password from disk
-                        await ref.read(sharedPreferenceProvider).removeMasterPassword();
+                        await ref
+                            .read(sharedPreferenceProvider)
+                            .removeMasterPassword();
 
                         // Clear out any temporary session unlocks in memory
-                        ref.read(lockManagerProvider.notifier).clearAllSessions();
+                        ref
+                            .read(lockManagerProvider.notifier)
+                            .clearAllSessions();
 
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('Master password and sessions completely wiped.'),
+                              content: Text(
+                                'Master password and sessions completely wiped.',
+                              ),
                               behavior: SnackBarBehavior.floating,
                             ),
                           );
@@ -65,7 +88,10 @@ class DevPage extends ConsumerWidget {
                       icon: const Icon(Icons.lock_reset_rounded),
                       label: const Text(
                         'Wipe Master Password',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
