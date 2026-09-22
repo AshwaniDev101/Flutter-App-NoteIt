@@ -33,14 +33,22 @@ class _QrScannerPageState extends ConsumerState<QrScannerPage> {
 
         // Parse the device name out of URL (e.g., ?name=Varsha's Desktop)
         final uri = Uri.parse(rawValue);
-        final hostName = uri.queryParameters['name'] ?? 'Unknown Host';
 
-        // Trigger the Riverpod provider to establish the connection
-        ref.read(syncClientProvider.notifier).connectToHost(rawValue);
+        final ip = uri.host;
+        final port = uri.port;
+        final hostName = uri.queryParameters['host_name'] ?? 'Unknown Host';
+        final hostUuid = uri.queryParameters['host_uuid'] ?? '';
 
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Connected to $hostName!')));
+        if (ip.isNotEmpty && port > 0 && hostUuid.isNotEmpty) {
+          // Trigger the Riverpod provider with the raw ingredients
+          ref
+              .read(syncClientProvider.notifier)
+              .connectToHost(ip: ip, port: port, hostUuid: hostUuid, hostName: hostName);
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Connecting to $hostName...')), // Connecting since it's not confirmed yet!
+          );
+        }
 
         // Pop the scanner page to return to the main app
         if (mounted) {
@@ -62,50 +70,21 @@ class _QrScannerPageState extends ConsumerState<QrScannerPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Scan to Sync'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.cameraswitch),
-            onPressed: () => cameraController.switchCamera(),
-          ),
-        ],
+        actions: [IconButton(icon: const Icon(Icons.cameraswitch), onPressed: () => cameraController.switchCamera())],
       ),
-      body: Stack(
-        children: [
-          MobileScanner(
-            controller: cameraController,
-            onDetect: _onDetect,
+      body: MobileScanner(
+        controller: cameraController,
+        onDetect: _onDetect,
 
-            overlayBuilder: (context, constraints) {
-              return ShadedOverlay(
-                boxConstraints: constraints,
-                onClickGallery: () {},
-                onClickFlash: () {
-                  cameraController.toggleTorch();
-                },
-              );
+        overlayBuilder: (context, constraints) {
+          return ShadedOverlay(
+            boxConstraints: constraints,
+            onClickGallery: () {},
+            onClickFlash: () {
+              cameraController.toggleTorch();
             },
-          ),
-          // Show a loading overlay the moment a valid code is detected
-          if (_isConnecting)
-            Container(
-              color: Colors.black54,
-              child: const Center(
-                child: Card(
-                  child: Padding(
-                    padding: EdgeInsets.all(20.0),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        CircularProgressIndicator(),
-                        SizedBox(height: 16),
-                        Text('Establishing connection...'),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        ],
+          );
+        },
       ),
     );
   }

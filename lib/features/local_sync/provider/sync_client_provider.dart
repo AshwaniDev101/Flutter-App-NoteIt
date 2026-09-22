@@ -1,6 +1,10 @@
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/features/local_sync/view/qr_page.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+import '../../../database/drift/device_pairs/device_pairs_dao.dart';
+import '../../../database/shared_preference/shared_preference_manager.dart';
 import '../../../database/sync/local_sync_service.dart';
 
 final syncClientProvider =
@@ -20,13 +24,56 @@ class SyncClientNotifier extends Notifier<WebSocketChannel?> {
     return null; // Null means disconnected
   }
 
-  void connectToHost(String wsUrl) {
+  Future<void> connectToHost({
+    required String ip,
+    required int port,
+    required String hostUuid,
+    required String hostName,
+  }) async {
     // Close any existing connection first
     disconnect();
 
-    print('Connecting to Host: $wsUrl');
+    print('Client: Attempting to connect to Host at $ip:$port');
+
     try {
-      final channel = WebSocketChannel.connect(Uri.parse(wsUrl));
+
+      final String myUuid = ref.read(sharedPreferenceProvider).hostUuid;
+
+      final BaseDeviceInfo info = await ref.read(deviceInfoProvider.future);
+      final myDeviceName = info.extractName;
+
+
+      // Safely construct the URI with all parameters
+      // We pass our own UUID and Name to the Host so they can save us!
+      final finalUri = Uri(
+        scheme: 'ws',
+        host: ip,
+        port: port,
+        queryParameters: {
+          'host_uuid': hostUuid,
+          'host_name': hostName,
+          'client_uuid': myUuid,
+          'client_name': myDeviceName,
+        },
+      );
+
+      //Initiate Connection
+      final channel = WebSocketChannel.connect(finalUri);
+
+      // This pauses execution until the socket is officially OPEN!
+      // If the host is offline, this throws an error and drops into the catch block.
+      await channel.ready;
+
+      print('Client: Connection Confirmed!');
+
+
+      await ref.read(devicePairsDaoProvider).upsertDeviceAsHost(
+        uuid: hostUuid,
+        name: hostName,
+      );
+      print('Client: Saved Host $hostName to Drift DB.');
+
+
 
       // Save the connection to the state
       state = channel;
