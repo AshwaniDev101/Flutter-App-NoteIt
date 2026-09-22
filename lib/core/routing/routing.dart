@@ -1,11 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:noteit/database/drift/local_database.dart';
+import 'package:noteit/features/local_sync/view/search_nearby/host_broadcast.dart';
+import 'package:noteit/features/local_sync/view/search_nearby/search_nearby.dart';
 
 import '../../features/dev_tools/dev_page.dart';
 import '../../features/home/view/home_page.dart';
-import '../../features/local_sync/view/qr_page.dart';
-import '../../features/local_sync/view/qr_scanner/qr_scanner_page.dart';
+import '../../features/local_sync/view/qr/qr_page.dart';
+import '../../features/local_sync/view/qr/qr_scanner/qr_scanner_page.dart';
 import '../../features/note_editor/screens/view/edit_note_page.dart';
 import '../../features/settings/view/options/master_password_page.dart';
 import '../../features/settings/view/settings_page.dart';
@@ -21,6 +23,8 @@ class AppRoutes {
   static const String masterPassword = '/master-password';
   static const String trash = '/trash';
   static const String dev = '/dev';
+  static const String searchNearBy = '/search-nearby';
+  static const String broadcastNearBy = '/broadcast-nearby';
   static const String qr = '/qr';
   static const String scan = '/qr-scan';
 }
@@ -30,10 +34,7 @@ final routerProvider = Provider((ref) {
     initialLocation: AppRoutes.home,
     // initialLocation: AppRoutes.search,
     routes: <RouteBase>[
-      GoRoute(
-        path: AppRoutes.home,
-        builder: (context, state) => const HomePage(),
-      ),
+      GoRoute(path: AppRoutes.home, builder: (context, state) => const HomePage()),
       GoRoute(
         path: AppRoutes.edit,
         builder: (context, state) {
@@ -74,6 +75,20 @@ final routerProvider = Provider((ref) {
         path: AppRoutes.dev,
         builder: (context, state) {
           return const DevPage();
+        },
+      ),
+
+      GoRoute(
+        path: AppRoutes.searchNearBy,
+        builder: (context, state) {
+          return const SearchNearBy();
+        },
+      ),
+
+      GoRoute(
+        path: AppRoutes.broadcastNearBy,
+        builder: (context, state) {
+          return const HostBroadcastPage();
         },
       ),
 

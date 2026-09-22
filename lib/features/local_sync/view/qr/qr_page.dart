@@ -6,10 +6,10 @@ import 'package:noteit/core/routing/routing.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 
-import '../../../database/drift/device_pairs/device_pairs_dao.dart';
-import '../../../database/shared_preference/shared_preference_manager.dart';
-import '../auto_connect/mdns_broadcast.dart';
-import '../provider/sync_server_provider.dart';
+import '../../../../database/drift/device_pairs/device_pairs_dao.dart';
+import '../../../../database/shared_preference/shared_preference_manager.dart';
+import '../../auto_connect/mdns_broadcast.dart';
+import '../../provider/sync_server_provider.dart';
 
 /// Create a FutureProvider to fetch cross-platform device info asynchronously
 final deviceInfoProvider = FutureProvider<BaseDeviceInfo>((ref) async {

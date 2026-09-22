@@ -36,4 +36,13 @@ class DevicePairsDao extends DatabaseAccessor<LocalDatabase>
           ..limit(1))
         .getSingleOrNull();
   }
+
+  /// Checks if a device UUID already exists in our local pairs history.
+  Future<bool> isDeviceKnown(String uuid) async {
+    final existingDevice = await (select(devicePairs)
+      ..where((t) => t.deviceUuid.equals(uuid)))
+        .getSingleOrNull();
+
+    return existingDevice != null; // Returns true if found, false if unknown
+  }
 }

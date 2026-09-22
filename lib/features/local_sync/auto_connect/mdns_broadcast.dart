@@ -29,7 +29,7 @@ class MdnsBroadcastNotifier extends Notifier<Registration?> {
     try {
       final service = Service(
         name: deviceName,
-        type: '_http._tcp',
+        type: '_noteitsync._tcp',
         port: port,
         txt: {'uuid': utf8.encode(uuid)},
       );

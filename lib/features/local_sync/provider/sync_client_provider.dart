@@ -1,16 +1,15 @@
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:noteit/features/local_sync/view/qr_page.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../../../database/drift/device_pairs/device_pairs_dao.dart';
 import '../../../database/shared_preference/shared_preference_manager.dart';
 import '../../../database/sync/local_sync_service.dart';
+import '../view/qr/qr_page.dart';
 
-final syncClientProvider =
-    NotifierProvider<SyncClientNotifier, WebSocketChannel?>(() {
-      return SyncClientNotifier();
-    });
+final syncClientProvider = NotifierProvider<SyncClientNotifier, WebSocketChannel?>(() {
+  return SyncClientNotifier();
+});
 
 // Because LocalSyncNotifier is symmetrical, SyncClientNotifier essentially just acts as the dialer.
 // It picks up the phone (WebSocketChannel.connect), hands the receiver to LocalSyncNotifier,
@@ -36,12 +35,10 @@ class SyncClientNotifier extends Notifier<WebSocketChannel?> {
     print('Client: Attempting to connect to Host at $ip:$port');
 
     try {
-
       final String myUuid = ref.read(sharedPreferenceProvider).hostUuid;
 
       final BaseDeviceInfo info = await ref.read(deviceInfoProvider.future);
       final myDeviceName = info.extractName;
-
 
       // Safely construct the URI with all parameters
       // We pass our own UUID and Name to the Host so they can save us!
@@ -66,14 +63,8 @@ class SyncClientNotifier extends Notifier<WebSocketChannel?> {
 
       print('Client: Connection Confirmed!');
 
-
-      await ref.read(devicePairsDaoProvider).upsertDeviceAsHost(
-        uuid: hostUuid,
-        name: hostName,
-      );
+      await ref.read(devicePairsDaoProvider).upsertDeviceAsHost(uuid: hostUuid, name: hostName);
       print('Client: Saved Host $hostName to Drift DB.');
-
-
 
       // Save the connection to the state
       state = channel;

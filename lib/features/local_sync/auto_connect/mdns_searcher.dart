@@ -6,36 +6,61 @@ import 'package:nsd/nsd.dart';
 
 // ==== Client side ===
 enum ScanStatus { idle, scanning, found, error }
+typedef MdnsState = ({ScanStatus status, List<Service> devices});
 
-final mdnsSearcherProvider = NotifierProvider<MdnsSearcherNotifier, ScanStatus>(
-  () {
-    return MdnsSearcherNotifier();
-  },
-);
+final mdnsSearcherProvider = NotifierProvider<MdnsSearcherNotifier, MdnsState>(() {
+  return MdnsSearcherNotifier();
+});
 
-class MdnsSearcherNotifier extends Notifier<ScanStatus> {
+class MdnsSearcherNotifier extends Notifier<MdnsState> {
   Discovery? _discovery;
 
   @override
-  ScanStatus build() {
-    return ScanStatus.idle;
+  MdnsState build() {
+    ref.onDispose(stopScan);
+    return (status: ScanStatus.idle, devices: []);
+  }
+
+  /// RADAR MODE: Finds ALL NoteIt devices for the SearchNearBy UI (No UUID needed)
+  Future<void> startRadar() async {
+    if (state.status == ScanStatus.scanning) return;
+
+    state = (status: ScanStatus.scanning, devices: []);
+
+    try {
+
+      // sometimes Device does not allow custom tcp name like _noteitsync._tcp
+      enableLogging(LogTopic.errors);
+      disableServiceTypeValidation(true);
+
+
+      _discovery = await startDiscovery('_noteitsync._tcp', ipLookupType: IpLookupType.any);
+
+      // IMMEDIATELY populate the state in case it found devices instantly
+      state = (status: ScanStatus.scanning, devices: _discovery!.services.toList());
+
+      _discovery!.addListener(() {
+        // Update the state with the live list of all found devices
+        state = (status: ScanStatus.scanning, devices: _discovery!.services.toList());
+      });
+
+    } catch (e) {
+      print('mDNS Radar Error: $e');
+      state = (status: ScanStatus.error, devices: []);
+    }
   }
 
   /// Starts scanning the network for the specific UUID.
   /// Returns a Record (ip, port) if found, or null if it fails/times out.
+  /// TARGETED MODE: Background auto-connect searching for a specific UUID
   Future<({String ip, int port})?> findServer(String targetUuid) async {
-    if (state == ScanStatus.scanning) return null;
+    if (state.status == ScanStatus.scanning) return null;
 
-    state = ScanStatus.scanning;
-
-    // A Completer lets us turn a listener stream into a simple Future we can await
+    state = (status: ScanStatus.scanning, devices: []);
     final completer = Completer<({String ip, int port})?>();
 
     try {
-      _discovery = await startDiscovery(
-        '_http._tcp',
-        ipLookupType: IpLookupType.any,
-      );
+      _discovery = await startDiscovery('_noteitsync._tcp', ipLookupType: IpLookupType.any);
 
       _discovery!.addListener(() {
         for (var service in _discovery!.services) {
@@ -50,9 +75,9 @@ class MdnsSearcherNotifier extends Notifier<ScanStatus> {
 
               if (ip != null && port != null && !completer.isCompleted) {
                 print('mDNS: Found exact paired server at $ip:$port!');
-                state = ScanStatus.found;
+                state = (status: ScanStatus.found, devices: []);
 
-                stopScan(); // Shut down the network scanner to save battery
+                stopScan();
                 completer.complete((ip: ip, port: port));
                 return;
               }
@@ -61,18 +86,17 @@ class MdnsSearcherNotifier extends Notifier<ScanStatus> {
         }
       });
 
-      // 60-second timeout so it doesn't scan forever if the server is off
       Future.delayed(const Duration(seconds: 60), () {
         if (!completer.isCompleted) {
           print('mDNS: Scan timed out.');
-          state = ScanStatus.error;
+          state = (status: ScanStatus.error, devices: []);
           stopScan();
           completer.complete(null);
         }
       });
     } catch (e) {
-      print('mDNS Scan Error: $e');
-      state = ScanStatus.error;
+      print('mDNS Targeted Scan Error: $e');
+      state = (status: ScanStatus.error, devices: []);
       completer.complete(null);
     }
 
@@ -84,8 +108,6 @@ class MdnsSearcherNotifier extends Notifier<ScanStatus> {
       stopDiscovery(_discovery!);
       _discovery = null;
     }
-    if (state == ScanStatus.scanning) {
-      state = ScanStatus.idle;
-    }
+    state = (status: ScanStatus.idle, devices: []);
   }
 }

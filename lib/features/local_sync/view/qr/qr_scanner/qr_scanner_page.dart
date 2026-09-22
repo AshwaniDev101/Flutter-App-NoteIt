@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:noteit/features/local_sync/view/qr_scanner/widgets/shaded_overlay.dart';
+import 'package:noteit/features/local_sync/view/qr/qr_scanner/widgets/shaded_overlay.dart';
 
-import '../../provider/sync_client_provider.dart';
+import '../../../provider/sync_client_provider.dart';
 
 class QrScannerPage extends ConsumerStatefulWidget {
   const QrScannerPage({super.key});
