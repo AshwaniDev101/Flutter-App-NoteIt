@@ -6,6 +6,8 @@ import 'package:noteit/core/routing/routing.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 
+import '../../../database/shared_preference/shared_preference_manager.dart';
+import '../auto_connect/mdns_broadcast.dart';
 import '../provider/sync_server_provider.dart';
 
 /// Create a FutureProvider to fetch cross-platform device info asynchronously
@@ -22,39 +24,74 @@ final localIPProvide = FutureProvider.autoDispose<String?>((ref) async {
   return await NetworkInfo().getWifiIP();
 });
 
-// .autoDispose: when no widgets are listening to this provider, destroy the cache
+// Note: .autoDispose: when no widgets are listening to this provider, destroy the cache
 // Without it you will get a same url and ip value you have already fetched before
-final syncSessionProvider = FutureProvider.autoDispose<({String ip, String qrUrl, String deviceName})>((ref) async {
-  final String? ip = await ref.watch(localIPProvide.future);
-  final BaseDeviceInfo info = await ref.watch(deviceInfoProvider.future);
+/// Master setup provider for the Host screen. It handles 4 steps:
+/// 1. Fetches local IP, Device Name, and persistent UUID.
+/// 2. Starts the local WebSocket server (getting a dynamic port).
+/// 3. Broadcasts the server over mDNS so clients can auto-connect.
+/// 4. Returns the final connection URL and IP for the QR code UI.
+final syncSessionProvider =
+    FutureProvider.autoDispose<({String ip, String qrUrl, String deviceName})>((
+      ref,
+    ) async {
+      final String? ip = await ref.watch(localIPProvide.future);
 
-  if (ip == null) {
-    throw Exception('Please connect to Wi-Fi to host a sync session.');
-  }
+      if (ip == null)
+        throw Exception('Please connect to Wi-Fi to host a sync session.');
 
-  final deviceName = info.extractName;
+      final BaseDeviceInfo info = await ref.watch(deviceInfoProvider.future);
+      final deviceName = info.extractName;
 
-  // final qrUrl = 'ws://$ip:8080?name=${Uri.encodeComponent(deviceName)}';
-  // // START THE SERVER
-  // ref.read(syncServerProvider.notifier).startHosting(ip);
+      // final qrUrl = 'ws://$ip:8080?name=${Uri.encodeComponent(deviceName)}';
+      // // START THE SERVER
+      // ref.read(syncServerProvider.notifier).startHosting(ip);
 
-  // The server starts and give us the dynamic base URL (e.g., ws://192.168.1.5:49152)
-  final baseUrl = await ref.read(syncServerProvider.notifier).startHosting(ip);
+      final String uuid = ref.read(sharedPreferenceProvider).hostUuid;
 
-  // Attach your custom name parameter to the dynamic URL
-  final qrUrl = '$baseUrl?name=${Uri.encodeComponent(deviceName)}';
+      // The server starts and give us the dynamic base URL (e.g., ws://192.168.1.5:49152)
+      final hostData = await ref
+          .read(syncServerProvider.notifier)
+          .startHosting(ip);
 
-  return (ip: ip, qrUrl: qrUrl, deviceName: deviceName);
-});
+      // mDNS (Multicast DNS) acts like a local loudspeaker on the Wi-Fi network.
+      // It constantly shouts our server's IP, dynamic port, and unique UUID
+      // so client devices can automatically discover us without scanning a QR code every time
+      // Now starting the mdns sever
+      await ref
+          .read(mdnsBroadcastProvider.notifier)
+          .startBroadcasting(
+            port: hostData.port,
+            uuid: uuid,
+            deviceName: deviceName,
+          );
+
+      // Start the mDNS Broadcast using the data we just gathered
+      await ref
+          .read(mdnsBroadcastProvider.notifier)
+          .startBroadcasting(
+            port: hostData.port,
+            uuid: uuid,
+            deviceName: deviceName,
+          );
+
+      // Attach your custom name parameter to the dynamic URL
+      final baseUrl = 'ws://${hostData.ip}:${hostData.port}';
+      final qrUrl = '$baseUrl?name=${Uri.encodeComponent(deviceName)}';
+
+      return (ip: ip, qrUrl: qrUrl, deviceName: deviceName);
+    });
 
 extension DeviceInfoExtension on BaseDeviceInfo {
   String get extractName {
     if (this is AndroidDeviceInfo) return (this as AndroidDeviceInfo).model;
     if (this is IosDeviceInfo) return (this as IosDeviceInfo).name;
-    if (this is WindowsDeviceInfo) return (this as WindowsDeviceInfo).computerName;
+    if (this is WindowsDeviceInfo)
+      return (this as WindowsDeviceInfo).computerName;
     if (this is MacOsDeviceInfo) return (this as MacOsDeviceInfo).computerName;
     if (this is LinuxDeviceInfo) return (this as LinuxDeviceInfo).prettyName;
-    if (this is WebBrowserInfo) return (this as WebBrowserInfo).browserName.toString();
+    if (this is WebBrowserInfo)
+      return (this as WebBrowserInfo).browserName.toString();
 
     return 'Unknown Device';
   }
@@ -97,7 +134,8 @@ class QrCodePage extends ConsumerWidget {
                             syncData.deviceName,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.grey.shade800),
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(color: Colors.grey.shade800),
                           ),
                           // Text("LanternChat Contact", style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey.shade800)),
                           SizedBox(height: 8),

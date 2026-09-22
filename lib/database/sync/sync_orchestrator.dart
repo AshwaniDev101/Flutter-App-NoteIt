@@ -75,7 +75,6 @@ class SyncOrchestrator with WidgetsBindingObserver {
     }
   }
 
-
   // When EditNoteViewModel calls this, it routes the data to the correct engine.
   void triggerSync() {
     final engine = ref.read(syncEngineProvider);

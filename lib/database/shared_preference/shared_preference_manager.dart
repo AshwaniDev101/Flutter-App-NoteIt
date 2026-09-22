@@ -1,5 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 
 import '../sync/sync_engine.dart';
 
@@ -11,7 +12,8 @@ final sharedPreferenceProvider = Provider<SharedPreferenceManager>((ref) {
 class SharedPreferenceManager {
   SharedPreferenceManager._internal();
 
-  static final SharedPreferenceManager instance = SharedPreferenceManager._internal();
+  static final SharedPreferenceManager instance =
+      SharedPreferenceManager._internal();
 
   static late SharedPreferences _prefs;
 
@@ -24,6 +26,7 @@ class SharedPreferenceManager {
   static const String _keyMasterPassword = 'master_password';
   static const String _keyThemeType = 'theme_type';
   static const String _keySyncEngine = 'sync_engine';
+  static const String _keyHostUuid = 'host_uuid';
 
   // Key for keeping notes unlocked during session
   static const String _keyKeepUnlockedSession = 'keep_unlocked_session';
@@ -31,8 +34,12 @@ class SharedPreferenceManager {
   // --- Sync Engine Mode ---
   // Defaults to offline if the user has never chosen one
   SyncEngine get currentEngine {
-    final engineName = _prefs.getString(_keySyncEngine) ?? SyncEngine.offline.name;
-    return SyncEngine.values.firstWhere((e) => e.name == engineName, orElse: () => SyncEngine.offline);
+    final engineName =
+        _prefs.getString(_keySyncEngine) ?? SyncEngine.offline.name;
+    return SyncEngine.values.firstWhere(
+      (e) => e.name == engineName,
+      orElse: () => SyncEngine.offline,
+    );
   }
 
   Future<bool> setCurrentEngine(SyncEngine engine) async {
@@ -72,7 +79,8 @@ class SharedPreferenceManager {
 
   // --- Session Lock Preference ---
   // Defaults to false (strict mode)
-  bool get keepUnlockedDuringSession => _prefs.getBool(_keyKeepUnlockedSession) ?? false;
+  bool get keepUnlockedDuringSession =>
+      _prefs.getBool(_keyKeepUnlockedSession) ?? false;
 
   Future<bool> setKeepUnlockedDuringSession(bool value) async {
     return await _prefs.setBool(_keyKeepUnlockedSession, value);
@@ -88,5 +96,19 @@ class SharedPreferenceManager {
   // --- Global ---
   Future<bool> clearAll() async {
     return await _prefs.clear();
+  }
+
+  // --- UUID ---
+  // Retrieves the saved UUID, or generates a new one on the very first run.
+  String get hostUuid {
+    String? uuid = _prefs.getString(_keyHostUuid);
+
+    if (uuid == null) {
+      uuid = const Uuid().v4();
+      // Fire-and-forget save; no need to await it here
+      _prefs.setString(_keyHostUuid, uuid);
+    }
+
+    return uuid;
   }
 }

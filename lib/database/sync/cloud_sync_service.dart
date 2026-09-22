@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/database/sync/sync_orchestrator.dart';
-import '../drift/drift_database.dart';
+import '../drift/notes/notes_dao.dart';
 import '../firebase/firebase_database.dart';
 import '../shared_preference/shared_preference_manager.dart';
 
@@ -31,30 +31,34 @@ class CloudSyncService {
 
   void _startActiveSessionListener() {
     final firebaseDb = ref.read(noteFirebaseDatabaseProvider);
-    final driftDb = ref.read(noteDriftDatabaseProvider);
+    final notesDao = ref.read(notesDaoProvider);
     final prefs = ref.read(sharedPreferenceProvider);
 
     if (firebaseDb == null) return;
 
     final sessionStartTime = DateTime.now().toUtc().millisecondsSinceEpoch;
 
-    _remoteSubscription = firebaseDb.watchForRemoteChanges(sessionStartTime).listen((newDocs) async {
-      if (newDocs.isEmpty) return;
+    _remoteSubscription = firebaseDb
+        .watchForRemoteChanges(sessionStartTime)
+        .listen((newDocs) async {
+          if (newDocs.isEmpty) return;
 
-      print("CloudWorker: Real-time remote changes detected!");
-      for (final doc in newDocs) {
-        // upsertNoteFromCloud now only needs the data map, since UUID is inside it!
-        await driftDb.upsertNoteFromCloud(doc.data()!);
-      }
-      await prefs.setLastSyncTime(DateTime.now().toUtc().millisecondsSinceEpoch);
-    });
+          print("CloudWorker: Real-time remote changes detected!");
+          for (final doc in newDocs) {
+            // upsertNoteFromCloud now only needs the data map, since UUID is inside it!
+            await notesDao.upsertNoteFromCloud(doc.data()!);
+          }
+          await prefs.setLastSyncTime(
+            DateTime.now().toUtc().millisecondsSinceEpoch,
+          );
+        });
   }
 
   Future<void> executeFullSync() async {
     if (_isSyncing) return;
 
     final firebaseDb = ref.read(noteFirebaseDatabaseProvider);
-    final driftDb = ref.read(noteDriftDatabaseProvider);
+    final notesDao = ref.read(notesDaoProvider);
     final prefs = ref.read(sharedPreferenceProvider);
 
     if (firebaseDb == null) return;
@@ -70,15 +74,15 @@ class CloudSyncService {
       // --- PULL ---
       final remoteChanges = await firebaseDb.pullChanges(lastSyncTime);
       for (final doc in remoteChanges) {
-        await driftDb.upsertNoteFromCloud(doc.data());
+        await notesDao.upsertNoteFromCloud(doc.data());
       }
 
       // --- PUSH ---
-      final pendingNotes = await driftDb.getPendingCloudNotes();
+      final pendingNotes = await notesDao.getPendingCloudNotes();
       if (pendingNotes.isNotEmpty) {
         await firebaseDb.pushBatch(pendingNotes);
 
-        await driftDb.markAsCloudSynced(pendingNotes.map((n) => n.uuid));
+        await notesDao.markAsCloudSynced(pendingNotes.map((n) => n.uuid));
         print("CloudWorker: Pushed ${pendingNotes.length} notes.");
       }
 

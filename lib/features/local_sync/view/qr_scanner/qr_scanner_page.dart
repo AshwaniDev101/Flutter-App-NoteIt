@@ -38,7 +38,9 @@ class _QrScannerPageState extends ConsumerState<QrScannerPage> {
         // Trigger the Riverpod provider to establish the connection
         ref.read(syncClientProvider.notifier).connectToHost(rawValue);
 
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Connected to $hostName!')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Connected to $hostName!')));
 
         // Pop the scanner page to return to the main app
         if (mounted) {
@@ -60,7 +62,12 @@ class _QrScannerPageState extends ConsumerState<QrScannerPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Scan to Sync'),
-        actions: [IconButton(icon: const Icon(Icons.cameraswitch), onPressed: () => cameraController.switchCamera())],
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.cameraswitch),
+            onPressed: () => cameraController.switchCamera(),
+          ),
+        ],
       ),
       body: Stack(
         children: [
@@ -88,7 +95,11 @@ class _QrScannerPageState extends ConsumerState<QrScannerPage> {
                     padding: EdgeInsets.all(20.0),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
-                      children: [CircularProgressIndicator(), SizedBox(height: 16), Text('Establishing connection...')],
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 16),
+                        Text('Establishing connection...'),
+                      ],
                     ),
                   ),
                 ),

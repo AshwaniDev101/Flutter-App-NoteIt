@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
 
-
 enum SyncEngine { cloud, local, offline }
 
 final syncEngineProvider = NotifierProvider<SyncEngineNotifier, SyncEngine>(() {

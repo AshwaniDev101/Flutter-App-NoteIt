@@ -5,9 +5,11 @@ import 'package:shelf_web_socket/shelf_web_socket.dart';
 
 import '../../../database/sync/local_sync_service.dart';
 
-final syncServerProvider = NotifierProvider<SyncServerNotifier, HttpServer?>(() {
-  return SyncServerNotifier();
-});
+final syncServerProvider = NotifierProvider<SyncServerNotifier, HttpServer?>(
+  () {
+    return SyncServerNotifier();
+  },
+);
 
 class SyncServerNotifier extends Notifier<HttpServer?> {
   @override
@@ -16,11 +18,12 @@ class SyncServerNotifier extends Notifier<HttpServer?> {
     return null;
   }
 
-  Future<String> startHosting(String ip) async {
+  Future<({String ip, int port})> startHosting(String ip) async {
     // If the server is already running, it ignores the command so we don't crash the app
     if (state != null) {
       // Server is already running, just hand back its existing URL
-      return 'ws://${state!.address.host}:${state!.port}';
+      // 'ws://${server.address.host}:${server.port}';
+      return (ip: state!.address.host, port: state!.port);
     }
 
     print('Starting Host Server on $ip...');
@@ -30,7 +33,9 @@ class SyncServerNotifier extends Notifier<HttpServer?> {
       print('A Client has connected to the Host!');
 
       // second a client connects, the receptionist grabs the live, open data pipeline (webSocketChannel) and hands it over to your localSyncServiceProvider
-      ref.read(localSyncServiceProvider.notifier).setActiveConnection(webSocketChannel);
+      ref
+          .read(localSyncServiceProvider.notifier)
+          .setActiveConnection(webSocketChannel);
 
       // Listen for disconnection via the stream or sink done future
       webSocketChannel.sink.done
@@ -48,7 +53,7 @@ class SyncServerNotifier extends Notifier<HttpServer?> {
     print('Sync server hosting at ws://${server.address.host}:${server.port}');
 
     state = server;
-    return 'ws://${server.address.host}:${server.port}';
+    return (ip: state!.address.host, port: state!.port);
   }
 
   void stopHosting() {

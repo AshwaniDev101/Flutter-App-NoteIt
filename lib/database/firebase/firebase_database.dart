@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/provider/provider.dart';
-import '../drift/drift_database.dart';
+import '../drift/local_database.dart';
 
 // final noteFirebaseDatabaseProvider = Provider((ref) {
 //   final firestore = ref.watch(firestoreProvider);
@@ -21,12 +21,8 @@ final noteFirebaseDatabaseProvider = Provider<NoteFirestoreDatabase?>((ref) {
     return null;
   }
 
-  return NoteFirestoreDatabase(
-    firestore: firestore,
-    userId: authUser.uid,
-  );
+  return NoteFirestoreDatabase(firestore: firestore, userId: authUser.uid);
 });
-
 
 class NoteFirestoreDatabase {
   final FirebaseFirestore _firestore;
@@ -41,7 +37,9 @@ class NoteFirestoreDatabase {
       _firestore.collection('users').doc(userId).collection('notes');
 
   /// PULL: Fetch all remote notes that ARRIVED on the server since the last sync
-  Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>> pullChanges(int lastSyncTime) async {
+  Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>> pullChanges(
+    int lastSyncTime,
+  ) async {
     // Convert your local integer timestamp into a Firebase Timestamp
     final syncTimestamp = Timestamp.fromMillisecondsSinceEpoch(lastSyncTime);
 
@@ -53,16 +51,22 @@ class NoteFirestoreDatabase {
   }
 
   /// STREAM: Listen strictly for new remote changes while the app is actively running
-  Stream<List<DocumentSnapshot<Map<String, dynamic>>>> watchForRemoteChanges(int sessionStartTime) {
-    final sessionTimestamp = Timestamp.fromMillisecondsSinceEpoch(sessionStartTime);
+  Stream<List<DocumentSnapshot<Map<String, dynamic>>>> watchForRemoteChanges(
+    int sessionStartTime,
+  ) {
+    final sessionTimestamp = Timestamp.fromMillisecondsSinceEpoch(
+      sessionStartTime,
+    );
 
     return _notesRef
         .where('cloudUpdatedAt', isGreaterThan: sessionTimestamp)
         .snapshots()
-        .map((snapshot) => snapshot.docChanges
-        .where((change) => change.type != DocumentChangeType.removed)
-        .map((change) => change.doc)
-        .toList());
+        .map(
+          (snapshot) => snapshot.docChanges
+              .where((change) => change.type != DocumentChangeType.removed)
+              .map((change) => change.doc)
+              .toList(),
+        );
   }
 
   /// PUSH: Send all pending local changes to Firebase in a single atomic batch
@@ -103,19 +107,19 @@ class NoteFirestoreDatabase {
     await batch.commit();
   }
 
-
   // Hard delete  -----------------------------
 
   /// EMPTY TRASH (REMOTE): Hard delete a batch of documents from Firestore
   Future<void> deleteBatch(List<String> uuids) async {
     if (uuids.isEmpty) return;
 
-    // Note: Firestore limits a WriteBatch to 500 operations. 
+    // Note: Firestore limits a WriteBatch to 500 operations.
     // If a user has more than 500 notes in the trash, we need to chunk them.
     final chunks = <List<String>>[];
     for (var i = 0; i < uuids.length; i += 500) {
-      chunks.add(uuids.sublist(
-          i, i + 500 > uuids.length ? uuids.length : i + 500));
+      chunks.add(
+        uuids.sublist(i, i + 500 > uuids.length ? uuids.length : i + 500),
+      );
     }
 
     for (final chunk in chunks) {
@@ -129,5 +133,4 @@ class NoteFirestoreDatabase {
       print("Firestore: Hard deleted a batch of ${chunk.length} notes.");
     }
   }
-
 }

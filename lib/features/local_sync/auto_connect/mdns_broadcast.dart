@@ -7,9 +7,10 @@ import 'package:nsd/nsd.dart';
 
 // Registration? is the State type that will be returned, while MdnsHostNotifier is responsible for running the functions.
 // In-short mean provider is returning object of Registration when the server is broadcasting, else it returns null
-final mdnsBroadcastProvider = NotifierProvider<MdnsBroadcastNotifier, Registration?>(() {
-  return MdnsBroadcastNotifier();
-});
+final mdnsBroadcastProvider =
+    NotifierProvider<MdnsBroadcastNotifier, Registration?>(() {
+      return MdnsBroadcastNotifier();
+    });
 
 class MdnsBroadcastNotifier extends Notifier<Registration?> {
   // Sets the initial state when the provider is first created.
@@ -17,12 +18,21 @@ class MdnsBroadcastNotifier extends Notifier<Registration?> {
   @override
   Registration? build() => null;
 
-  Future<void> startBroadcasting({required int port, required String uuid, required String deviceName}) async {
+  Future<void> startBroadcasting({
+    required int port,
+    required String uuid,
+    required String deviceName,
+  }) async {
     if (state != null) return; // If server is already broadcasting, do nothing
 
     // Creates the service
     try {
-      final service = Service(name: deviceName, type: '_http._tcp', port: port, txt: {'uuid': utf8.encode(uuid)});
+      final service = Service(
+        name: deviceName,
+        type: '_http._tcp',
+        port: port,
+        txt: {'uuid': utf8.encode(uuid)},
+      );
 
       // Registers the service
       final registration = await register(service);

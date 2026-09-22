@@ -1,15 +1,16 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/database/drift/notes/notes_dao.dart';
 import 'package:noteit/database/sync/sync_orchestrator.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
-import '../drift/drift_database.dart';
 
 enum SyncConnectionState { disconnected, connected }
 
-final localSyncServiceProvider = NotifierProvider<LocalSyncNotifier, SyncConnectionState>(() {
-  return LocalSyncNotifier();
-});
+final localSyncServiceProvider =
+    NotifierProvider<LocalSyncNotifier, SyncConnectionState>(() {
+      return LocalSyncNotifier();
+    });
 // final localSyncServiceProvider = Provider<LocalSyncService>((ref) {
 //   return LocalSyncService(ref);
 // });
@@ -73,7 +74,9 @@ class LocalSyncNotifier extends Notifier<SyncConnectionState> {
 
   Future<void> broadcastLocalChanges() async {
     if (_activeChannel == null) {
-      print("LocalWorker: Note saved, but no active Wi-Fi connection. Waiting.");
+      print(
+        "LocalWorker: Note saved, but no active Wi-Fi connection. Waiting.",
+      );
       return;
     }
 
@@ -81,15 +84,18 @@ class LocalSyncNotifier extends Notifier<SyncConnectionState> {
     ref.read(isSyncingProvider.notifier).state = true;
 
     try {
-      final driftDb = ref.read(noteDriftDatabaseProvider);
+      final notesDao = ref.read(notesDaoProvider);
 
       //  Ask specifically for notes that need to be synced locally
-      final pendingNotes = await driftDb.getPendingLocalNotes();
+      final pendingNotes = await notesDao.getPendingLocalNotes();
 
       if (pendingNotes.isEmpty) return;
 
       // BATCHING : Send everything in one single payload
-      final payload = jsonEncode({'type': 'note_batch', 'data': pendingNotes.map((n) => n.toJson()).toList()});
+      final payload = jsonEncode({
+        'type': 'note_batch',
+        'data': pendingNotes.map((n) => n.toJson()).toList(),
+      });
       // for (final note in pendingNotes) {
       //   final payload = jsonEncode({
       //     'type': 'note_update',
@@ -99,7 +105,9 @@ class LocalSyncNotifier extends Notifier<SyncConnectionState> {
       //   _activeChannel!.sink.add(payload);
       // }
       _activeChannel!.sink.add(payload);
-      print("LocalWorker: Broadcasted batch of ${pendingNotes.length} notes over Wi-Fi.");
+      print(
+        "LocalWorker: Broadcasted batch of ${pendingNotes.length} notes over Wi-Fi.",
+      );
       // Note: We do NOT markAsLocalSynced here. We wait for the ACK!
     } catch (e) {
       print("LocalWorker: Broadcast Failed -> $e");
@@ -118,26 +126,32 @@ class LocalSyncNotifier extends Notifier<SyncConnectionState> {
 
     try {
       final decoded = jsonDecode(message as String);
-      final driftDb = ref.read(noteDriftDatabaseProvider);
+      final notesDao = ref.read(notesDaoProvider);
 
       //  SCENARIO 1: Receiving a batch of notes
       if (decoded['type'] == 'note_batch') {
         final incomingList = decoded['data'] as List<dynamic>;
 
-        final uuidsToAck = <String>[]; // Keep track of what we successfully save
+        final uuidsToAck =
+            <String>[]; // Keep track of what we successfully save
 
         for (var item in incomingList) {
           final noteData = item as Map<String, dynamic>;
-          await driftDb.upsertNoteFromLocal(noteData);
+          await notesDao.upsertNoteFromLocal(noteData);
           uuidsToAck.add(noteData['uuid'] as String);
         }
         // Merge the note into our local database
-        // await driftDb.upsertNoteFromLocal(incomingList);
+        // await notesDao.upsertNoteFromLocal(incomingList);
         // print("LocalWorker: Successfully merged incoming note $incomingUuid from Wi-Fi.");
 
-        print("LocalWorker: Successfully merged ${uuidsToAck.length} notes from Wi-Fi.");
+        print(
+          "LocalWorker: Successfully merged ${uuidsToAck.length} notes from Wi-Fi.",
+        );
         // Tell the other device we successfully saved it!
-        final ackPayload = jsonEncode({'type': 'ack_batch', 'uuids': uuidsToAck});
+        final ackPayload = jsonEncode({
+          'type': 'ack_batch',
+          'uuids': uuidsToAck,
+        });
         _activeChannel?.sink.add(ackPayload);
       }
       //  SCENARIO 2: The other device is acknowledging a note WE sent
@@ -147,9 +161,11 @@ class LocalSyncNotifier extends Notifier<SyncConnectionState> {
 
         // Now it is safe to mark it as synced!
         // Update the database for all confirmed notes at once
-        await driftDb.markAsLocalSynced(ackUuids);
+        await notesDao.markAsLocalSynced(ackUuids);
 
-        print("LocalWorker: Peer acknowledged ${ackUuids.length} notes. Marked as synced.");
+        print(
+          "LocalWorker: Peer acknowledged ${ackUuids.length} notes. Marked as synced.",
+        );
       }
     } catch (e) {
       print('LocalWorker: Failed to parse incoming payload -> $e');

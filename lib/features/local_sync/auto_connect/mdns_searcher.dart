@@ -7,9 +7,11 @@ import 'package:nsd/nsd.dart';
 // ==== Client side ===
 enum ScanStatus { idle, scanning, found, error }
 
-final mdnsSearcherProvider = NotifierProvider<MdnsSearcherNotifier, ScanStatus>(() {
-  return MdnsSearcherNotifier();
-});
+final mdnsSearcherProvider = NotifierProvider<MdnsSearcherNotifier, ScanStatus>(
+  () {
+    return MdnsSearcherNotifier();
+  },
+);
 
 class MdnsSearcherNotifier extends Notifier<ScanStatus> {
   Discovery? _discovery;
@@ -30,7 +32,10 @@ class MdnsSearcherNotifier extends Notifier<ScanStatus> {
     final completer = Completer<({String ip, int port})?>();
 
     try {
-      _discovery = await startDiscovery('_http._tcp', ipLookupType: IpLookupType.any);
+      _discovery = await startDiscovery(
+        '_http._tcp',
+        ipLookupType: IpLookupType.any,
+      );
 
       _discovery!.addListener(() {
         for (var service in _discovery!.services) {

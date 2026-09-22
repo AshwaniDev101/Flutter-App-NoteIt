@@ -3,9 +3,10 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../../../database/sync/local_sync_service.dart';
 
-final syncClientProvider = NotifierProvider<SyncClientNotifier, WebSocketChannel?>(() {
-  return SyncClientNotifier();
-});
+final syncClientProvider =
+    NotifierProvider<SyncClientNotifier, WebSocketChannel?>(() {
+      return SyncClientNotifier();
+    });
 
 // Because LocalSyncNotifier is symmetrical, SyncClientNotifier essentially just acts as the dialer.
 // It picks up the phone (WebSocketChannel.connect), hands the receiver to LocalSyncNotifier,
