@@ -14,6 +14,12 @@ import '../auto_connect/mdns_broadcast.dart';
 /// 3. Broadcasts the server over mDNS so clients can auto-connect.
 /// 4. Returns the final connection URL and IP for the QR code UI.
 final syncSessionProvider = FutureProvider.autoDispose<({String ip, String qrUrl, String deviceName})>((ref) async {
+  // Listen for when the UI stops watching this provider (page closes)
+
+  // ref.watch ties mDNS to this autoDispose provider.
+  // When this closes, mDNS dies with it.
+  final mdnsNotifier = ref.watch(mdnsBroadcastProvider.notifier);
+
   final String? ip = await ref.watch(localIPProvide.future);
 
   if (ip == null) {
@@ -36,9 +42,7 @@ final syncSessionProvider = FutureProvider.autoDispose<({String ip, String qrUrl
   // It constantly shouts our server's IP, dynamic port, and unique UUID
   // so client devices can automatically discover us without scanning a QR code every time
   // Start the mDNS Broadcast using the data we just gathered
-  await ref
-      .read(mdnsBroadcastProvider.notifier)
-      .startBroadcasting(port: hostData.port, uuid: uuid, deviceName: deviceName);
+  await mdnsNotifier.startBroadcasting(port: hostData.port, uuid: uuid, deviceName: deviceName);
 
   // Attach your custom name parameter to the dynamic URL
   final baseUrl = 'ws://${hostData.ip}:${hostData.port}';
