@@ -143,12 +143,7 @@ class HomepageDrawer extends ConsumerWidget {
                   title: 'Local Sync',
                   onTap: () {
                     Navigator.pop(context);
-                    if (Platform.isAndroid) {
-                      context.push(AppRoutes.searchNearBy);
-                    } else {
-
-                      context.push(AppRoutes.broadcastNearBy);
-                    }
+                    context.push(AppRoutes.roleSelector);
                   },
                 ),
                 _DrawerItem(

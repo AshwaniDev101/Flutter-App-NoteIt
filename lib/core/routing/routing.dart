@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:noteit/database/drift/local_database.dart';
+import 'package:noteit/features/local_sync/view/role_selector_page.dart';
 import 'package:noteit/features/local_sync/view/search_nearby/host_broadcast.dart';
 import 'package:noteit/features/local_sync/view/search_nearby/search_nearby.dart';
 
@@ -23,6 +24,7 @@ class AppRoutes {
   static const String masterPassword = '/master-password';
   static const String trash = '/trash';
   static const String dev = '/dev';
+  static const String roleSelector = '/role-selector';
   static const String searchNearBy = '/search-nearby';
   static const String broadcastNearBy = '/broadcast-nearby';
   static const String qr = '/qr';
@@ -75,6 +77,13 @@ final routerProvider = Provider((ref) {
         path: AppRoutes.dev,
         builder: (context, state) {
           return const DevPage();
+        },
+      ),
+
+      GoRoute(
+        path: AppRoutes.roleSelector,
+        builder: (context, state) {
+          return const RoleSelectorPage();
         },
       ),
 
