@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../provider/sync_session_provider.dart';
 import '../qr/qr_page.dart';
 
 class HostBroadcastPage extends ConsumerWidget {

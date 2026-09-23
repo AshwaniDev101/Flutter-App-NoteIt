@@ -16,7 +16,12 @@ class MdnsBroadcastNotifier extends Notifier<Registration?> {
   // Sets the initial state when the provider is first created.
   // Default is null (server is not broadcasting yet).
   @override
-  Registration? build() => null;
+  Registration? build() {
+    ref.onDispose(() {
+      stopBroadcasting();
+    });
+    return null;
+  }
 
   Future<void> startBroadcasting({
     required int port,

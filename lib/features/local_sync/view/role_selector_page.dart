@@ -112,15 +112,15 @@ class RoleTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         // Make the border slightly thicker and darker if it's the recommended option
         side: BorderSide(
-          color: isRecommended ? color.withOpacity(0.8) : color.withOpacity(0.3),
+          color: isRecommended ? color.withValues(alpha: 0.8) : color.withValues(alpha: 0.3),
           width: isRecommended ? 2.0 : 1.5,
         ),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        splashColor: color.withOpacity(0.1),
-        highlightColor: color.withOpacity(0.05),
+        splashColor: color.withValues(alpha: 0.1),
+        highlightColor: color.withValues(alpha: 0.05),
         child: Padding(
           // Reduced outer padding from 20 to 16 for better mobile fit
           padding: const EdgeInsets.all(16.0),
@@ -130,7 +130,7 @@ class RoleTile extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 // Shrunk icon slightly from 32 to 28 to give text more horizontal space
@@ -146,7 +146,7 @@ class RoleTile extends StatelessWidget {
                         margin: const EdgeInsets.only(bottom: 8),
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: color.withOpacity(0.15),
+                          color: color.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
