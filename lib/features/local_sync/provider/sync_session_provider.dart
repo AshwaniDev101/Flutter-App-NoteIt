@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:network_info_plus/network_info_plus.dart';
@@ -13,7 +15,7 @@ import '../auto_connect/mdns_broadcast.dart';
 /// 2. Starts the local WebSocket server (getting a dynamic port).
 /// 3. Broadcasts the server over mDNS so clients can auto-connect.
 /// 4. Returns the final connection URL and IP for the QR code UI.
-final syncSessionProvider = FutureProvider.autoDispose<({String ip, String qrUrl, String deviceName})>((ref) async {
+final syncSessionProvider = FutureProvider.autoDispose<({String ip, String qrUrl, String deviceName, String pin})>((ref) async {
   // Listen for when the UI stops watching this provider (page closes)
 
   // ref.watch ties mDNS to this autoDispose provider.
@@ -35,8 +37,11 @@ final syncSessionProvider = FutureProvider.autoDispose<({String ip, String qrUrl
 
   final String uuid = ref.read(sharedPreferenceProvider).hostUuid;
 
+  // GENERATE THE PIN: Random number from 0 to 9999, padded with leading zeroes
+  final String generatedPin = Random().nextInt(10000).toString().padLeft(4, '0');
+
   // The server starts and give us the dynamic base URL (e.g., ws://192.168.1.5:49152)
-  final hostData = await ref.read(syncServerProvider.notifier).startHosting(ip);
+  final hostData = await ref.read(syncServerProvider.notifier).startHosting(ip:ip,expectedPin: generatedPin);
 
   // mDNS (Multicast DNS) acts like a local loudspeaker on the Wi-Fi network.
   // It constantly shouts our server's IP, dynamic port, and unique UUID
@@ -48,7 +53,7 @@ final syncSessionProvider = FutureProvider.autoDispose<({String ip, String qrUrl
   final baseUrl = 'ws://${hostData.ip}:${hostData.port}';
   // final qrUrl = '$baseUrl?name=${Uri.encodeComponent(deviceName)}';
   final qrUrl = '$baseUrl?host_name=${Uri.encodeComponent(deviceName)}&host_uuid=$uuid';
-  return (ip: ip, qrUrl: qrUrl, deviceName: deviceName);
+  return (ip: ip, qrUrl: qrUrl, deviceName: deviceName, pin: generatedPin);
 });
 
 /// Create a FutureProvider to fetch cross-platform device info asynchronously

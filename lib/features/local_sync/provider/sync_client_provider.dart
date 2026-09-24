@@ -29,6 +29,7 @@ class SyncClientNotifier extends Notifier<WebSocketChannel?> {
     required int port,
     required String hostUuid,
     required String hostName,
+    String? pin,
   }) async {
     // Close any existing connection first
     disconnect();
@@ -41,18 +42,24 @@ class SyncClientNotifier extends Notifier<WebSocketChannel?> {
       final BaseDeviceInfo info = await ref.read(deviceInfoProvider.future);
       final myDeviceName = info.extractName;
 
+      final Map<String, dynamic> queryParams = {
+        'host_uuid': hostUuid,
+        'host_name': hostName,
+        'client_uuid': myUuid,
+        'client_name': myDeviceName,
+      };
+
+      if (pin != null) {
+        queryParams['pin'] = pin;
+      }
+
       // Safely construct the URI with all parameters
       // We pass our own UUID and Name to the Host so they can save us!
       final finalUri = Uri(
         scheme: 'ws',
         host: ip,
         port: port,
-        queryParameters: {
-          'host_uuid': hostUuid,
-          'host_name': hostName,
-          'client_uuid': myUuid,
-          'client_name': myDeviceName,
-        },
+        queryParameters: queryParams,
       );
 
       //Initiate Connection
@@ -60,6 +67,7 @@ class SyncClientNotifier extends Notifier<WebSocketChannel?> {
 
       // This pauses execution until the socket is officially OPEN!
       // If the host is offline, this throws an error and drops into the catch block.
+      // This throws if the host rejects us (e.g., wrong PIN)
       await channel.ready;
 
       print('Client: Connection Confirmed!');
@@ -74,9 +82,16 @@ class SyncClientNotifier extends Notifier<WebSocketChannel?> {
       // We pass the channel to the traffic controller, which handles all the listening,
       // batching, and database saving automatically.
       ref.read(localSyncServiceProvider.notifier).setActiveConnection(channel);
-    } catch (e) {
+    } on WebSocketChannelException catch(e){
+      print('Connection rejected by host. Wrong PIN? Error: $e');
+      state = null;
+      // can catch it and show a Snackbar saying "Wrong PIN, try again!"
+      throw Exception('Connection rejected. Please check the PIN and try again.');
+
+    }catch (e) {
       print('Failed to connect to host: $e');
       state = null;
+      throw Exception('Failed to connect to device.');
     }
   }
 

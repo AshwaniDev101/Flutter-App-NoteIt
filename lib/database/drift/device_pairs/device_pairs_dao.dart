@@ -28,6 +28,20 @@ class DevicePairsDao extends DatabaseAccessor<LocalDatabase>
       ),
     );
   }
+  // LOCAL SYNC: DEVICE PAIRS (P2P HISTORY)
+  Future<void> upsertDeviceAsClient({
+    required String uuid,
+    required String name,
+  }) async {
+    await into(devicePairs).insertOnConflictUpdate(
+      DevicePairsCompanion(
+        deviceUuid: Value(uuid),
+        deviceName: Value(name),
+        // Update a client timestamp, or just save the device if you don't have this column
+        lastSeenAsClientAt: Value(DateTime.now()),
+      ),
+    );
+  }
 
   Future<DevicePair?> getMostRecentHost() async {
     return (select(devicePairs)

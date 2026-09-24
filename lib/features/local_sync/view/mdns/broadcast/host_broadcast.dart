@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../provider/sync_session_provider.dart';
-import '../qr/qr_page.dart';
+import '../../../provider/sync_session_provider.dart';
+import '../../qr/qr_page.dart';
 
 class HostBroadcastPage extends ConsumerWidget {
   const HostBroadcastPage({super.key});
@@ -55,12 +55,41 @@ class HostBroadcastPage extends ConsumerWidget {
                 ),
                 const SizedBox(height: 8),
                 Text('IP: ${hostData.ip}', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey)),
-                const SizedBox(height: 40),
+                const SizedBox(height: 48),
+
+                // PIN DISPLAY CARD
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        'PAIRING PIN',
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          letterSpacing: 2,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        hostData.pin, // Ensure your hostData provides this 4-digit string
+                        style: const TextStyle(
+                          fontSize: 56,
+                          letterSpacing: 16, // Spreads the digits out
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 48),
                 const CircularProgressIndicator(strokeWidth: 2),
                 const SizedBox(height: 16),
                 const Text('Waiting for nearby devices to connect...'),
-
-                // TODO: When we implement the PIN system, display the generated PIN right here!
               ],
             ),
           );

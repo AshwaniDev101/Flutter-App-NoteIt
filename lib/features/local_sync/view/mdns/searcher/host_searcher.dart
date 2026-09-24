@@ -1,19 +1,21 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:noteit/core/routing/routing.dart';
 
-import '../../../../database/drift/device_pairs/device_pairs_dao.dart';
-import '../../auto_connect/mdns_searcher.dart';
-import '../../provider/sync_client_provider.dart';
+import '../../../../../database/drift/device_pairs/device_pairs_dao.dart';
+import '../../../auto_connect/mdns_searcher.dart';
+import '../../../provider/sync_client_provider.dart';
 
-class SearchNearBy extends ConsumerStatefulWidget {
-  const SearchNearBy({super.key});
+class HostSearcher extends ConsumerStatefulWidget {
+  const HostSearcher({super.key});
 
   @override
-  ConsumerState<SearchNearBy> createState() => _SearchNearByState();
+  ConsumerState<HostSearcher> createState() => _SearchNearByState();
 }
 
-class _SearchNearByState extends ConsumerState<SearchNearBy> {
+class _SearchNearByState extends ConsumerState<HostSearcher> {
   @override
   void initState() {
     super.initState();
@@ -21,6 +23,15 @@ class _SearchNearByState extends ConsumerState<SearchNearBy> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(mdnsSearcherProvider.notifier).startRadar();
     });
+  }
+
+  @override
+  void dispose() {
+    // Stop scanning if the user hits the back button to leave the page
+    // Using Future.microtask prevents state modification errors during widget teardown
+    final mdnsNotifier = ref.read(mdnsSearcherProvider.notifier);
+    Future.microtask(() => mdnsNotifier.stopScan());
+    super.dispose();
   }
 
   @override
@@ -66,13 +77,11 @@ class _SearchNearByState extends ConsumerState<SearchNearBy> {
           ? const Center(child: Text('No devices found nearby.\nMake sure the host is on the same Wi-Fi.'))
           : ListView.builder(
               itemCount: devices.length,
-              itemBuilder: (context, index) {
+              itemBuilder: (itemContext, index) {
                 final service = devices[index];
 
-                // 1. Parse Name
                 final deviceName = service.name ?? 'Unknown Host';
 
-                // 2. Parse UUID from TXT record
                 String hostUuid = '';
                 if (service.txt != null && service.txt!.containsKey('uuid')) {
                   final rawUuid = service.txt!['uuid'];
@@ -81,7 +90,6 @@ class _SearchNearByState extends ConsumerState<SearchNearBy> {
                   }
                 }
 
-                // 3. Parse IP and Port
                 final ip = service.host ?? service.addresses?.firstOrNull?.address;
                 final port = service.port;
 
@@ -98,15 +106,15 @@ class _SearchNearByState extends ConsumerState<SearchNearBy> {
                       return;
                     }
 
-                    // Stop scanning when the user decides to connect
-                    ref.read(mdnsSearcherProvider.notifier).stopScan();
-
                     // DB CHECK: Do we already know this UUID?
                     final devicePairsDao = ref.read(devicePairsDaoProvider);
                     final isKnown = await devicePairsDao.isDeviceKnown(hostUuid);
 
+                    if (!mounted) return;
+
                     if (isKnown) {
-                      // MAGIC PATH: Connect instantly without asking for a PIN
+                      print("UUID is Known");
+
                       ScaffoldMessenger.of(
                         context,
                       ).showSnackBar(SnackBar(content: Text('Connecting to $deviceName...')));
@@ -115,20 +123,61 @@ class _SearchNearByState extends ConsumerState<SearchNearBy> {
                           .read(syncClientProvider.notifier)
                           .connectToHost(ip: ip, port: port, hostUuid: hostUuid, hostName: deviceName);
 
-                      if (context.mounted) Navigator.pop(context);
+                      // Note: We don't need stopScan() here because dispose() will catch it when we pop!
+                      context.pop();
                     } else {
-                      // STRANGER PATH: Prompt for PIN!
-                      _showPinDialog(context, ip, port, hostUuid, deviceName);
+                      print("UUID is not Known");
+
+                      // Prompt for PIN!
+                      final enteredPin = await context.push<String>(AppRoutes.pin);
+
+                      // Check mounted again after awaiting the PIN dialog
+                      if (!mounted) return;
+
+                      if (enteredPin != null) {
+                        ScaffoldMessenger.of(
+                          context,
+                        ).showSnackBar(SnackBar(content: Text('Verifying PIN with $deviceName...')));
+
+                        try {
+                          ref
+                              .read(syncClientProvider.notifier)
+                              .connectToHost(
+                                ip: ip,
+                                port: port,
+                                hostUuid: hostUuid,
+                                hostName: deviceName,
+                                pin: enteredPin,
+                              );
+
+                          if (mounted) {
+                            context.pop();
+                          }
+                        } catch (e) {
+                          if (mounted) {
+                            // e.toString() will contain your custom message: "Exception: Connection rejected..."
+
+                            // Clean up the string to remove the "Exception: " prefix
+                            final errorMessage = e.toString().replaceAll('Exception: ', '');
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(errorMessage),
+                                backgroundColor: Colors.red,
+                                behavior: SnackBarBehavior.floating, // Makes it look a bit nicer
+                              ),
+                            );
+                          }
+                        }
+
+                        // // Pop the search page after starting the connection!
+                        // context.pop();
+                      }
                     }
                   },
                 );
               },
             ),
     );
-  }
-
-  void _showPinDialog(BuildContext context, String ip, int port, String hostUuid, String hostName) {
-    // TODO: Build the PIN entry popup UI here!
-    print("Prompting user for PIN to connect to $hostName...");
   }
 }

@@ -2,11 +2,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/features/local_sync/view/role_selector_page.dart';
-import 'package:noteit/features/local_sync/view/search_nearby/host_broadcast.dart';
-import 'package:noteit/features/local_sync/view/search_nearby/search_nearby.dart';
 
 import '../../features/dev_tools/dev_page.dart';
 import '../../features/home/view/home_page.dart';
+import '../../features/local_sync/view/mdns/broadcast/host_broadcast.dart';
+import '../../features/local_sync/view/mdns/searcher/host_searcher.dart';
+import '../../features/local_sync/view/mdns/searcher/pin_entry_dialog.dart';
 import '../../features/local_sync/view/qr/qr_page.dart';
 import '../../features/local_sync/view/qr/qr_scanner/qr_scanner_page.dart';
 import '../../features/note_editor/screens/view/edit_note_page.dart';
@@ -29,6 +30,7 @@ class AppRoutes {
   static const String broadcastNearBy = '/broadcast-nearby';
   static const String qr = '/qr';
   static const String scan = '/qr-scan';
+  static const String pin = '/pin-entry';
 }
 
 final routerProvider = Provider((ref) {
@@ -90,7 +92,7 @@ final routerProvider = Provider((ref) {
       GoRoute(
         path: AppRoutes.searchNearBy,
         builder: (context, state) {
-          return const SearchNearBy();
+          return const HostSearcher();
         },
       ),
 
@@ -114,6 +116,10 @@ final routerProvider = Provider((ref) {
           return const QrScannerPage();
         },
       ),
+      GoRoute(
+        path: AppRoutes.pin,
+        builder: (context, state) => const PinEntryDialog(),
+      )
     ],
   );
 });

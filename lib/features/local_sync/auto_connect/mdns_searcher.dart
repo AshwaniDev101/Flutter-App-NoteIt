@@ -6,6 +6,7 @@ import 'package:nsd/nsd.dart';
 
 // ==== Client side ===
 enum ScanStatus { idle, scanning, found, error }
+
 typedef MdnsState = ({ScanStatus status, List<Service> devices});
 
 final mdnsSearcherProvider = NotifierProvider<MdnsSearcherNotifier, MdnsState>(() {
@@ -28,11 +29,9 @@ class MdnsSearcherNotifier extends Notifier<MdnsState> {
     state = (status: ScanStatus.scanning, devices: []);
 
     try {
-
       // sometimes Device does not allow custom tcp name like _noteitsync._tcp
       enableLogging(LogTopic.errors);
       disableServiceTypeValidation(true);
-
 
       _discovery = await startDiscovery('_noteitsync._tcp', ipLookupType: IpLookupType.any);
 
@@ -43,7 +42,6 @@ class MdnsSearcherNotifier extends Notifier<MdnsState> {
         // Update the state with the live list of all found devices
         state = (status: ScanStatus.scanning, devices: _discovery!.services.toList());
       });
-
     } catch (e) {
       print('mDNS Radar Error: $e');
       state = (status: ScanStatus.error, devices: []);
