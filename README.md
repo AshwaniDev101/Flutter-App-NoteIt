@@ -1,30 +1,34 @@
 
-### * Android
-| Homepage | New Note | Search |
+### Android
+### Android & Local Sync
+| Homepage | Search | Filters |
 | :---: | :---: | :---: |
-| <img src="docs/screenshots/android/android_homepage.jpg" width="250"/> | <img src="docs/screenshots/android/android_notepage.jpg" width="250"/> | <img src="docs/screenshots/android/android_search.jpg" width="250"/> |
+| <img src="docs/screenshots/android/android_homepage.jpg" width="250"/> | <img src="docs/screenshots/android/android_search.jpg" width="250"/> | <img src="docs/screenshots/android/android_filters.jpg" width="250"/> |
 
-| Sidebar | Theme Settings | Password Lock |
+| New Note | Password Lock | Trash Bin |
 | :---: | :---: | :---: |
-| <img src="docs/screenshots/android/android_sidebar.jpg" width="250"/> | <img src="docs/screenshots/android/android_theme_change.jpg" width="250"/> | <img src="docs/screenshots/android/android_enter_password.jpg" width="250"/> |
+| <img src="docs/screenshots/android/android_notepage.jpg" width="250"/> | <img src="docs/screenshots/android/android_enter_password.jpg" width="250"/> | <img src="docs/screenshots/android/andorid_white_trash_page.jpg" width="250"/> |
 
-| Google Sign-In | Filters | Trash Bin |
+| Sidebar | Theme Settings | Google Sign-In |
 | :---: | :---: | :---: |
-| <img src="docs/screenshots/android/android_google_signin.jpg" width="250"/> | <img src="docs/screenshots/android/android_filters.jpg" width="250"/> | <img src="docs/screenshots/android/andorid_white_trash_page.jpg" width="250"/> |
+| <img src="docs/screenshots/android/android_sidebar.jpg" width="250"/> | <img src="docs/screenshots/android/android_theme_change.jpg" width="250"/> | <img src="docs/screenshots/android/android_google_signin.jpg" width="250"/> |
 
-
-### * Windows
-| Desktop Homepage | Desktop Sidebar |
+| Desktop Hosting | Android Host Found |
 | :---: | :---: |
-| <img src="docs/screenshots/windows/desktop_homepage.jpg" width="400"/> | <img src="docs/screenshots/windows/desktop_Sidebar.JPG" width="400"/> |
+| <img src="docs/screenshots/windows/desktop_hosting.jpg" width="400"/> | <img src="docs/screenshots/android/android_host_found.jpg" width="250"/> |
+
+### Windows
+| Desktop Homepage |                            Desktop Sidebar                            |
+| :---: |:---------------------------------------------------------------------:|
+| <img src="docs/screenshots/windows/desktop_homepage.jpg" width="400"/> | <img src="docs/screenshots/windows/desktop_sidebar.jpg" width="400"/> |
 
 | Open Note | New Note |
 | :---: | :---: |
-| <img src="docs/screenshots/windows/desktop_homepage_note.JPG" width="400"/> | <img src="docs/screenshots/windows/desktop_new_note.JPG" width="400"/> |
+| <img src="docs/screenshots/windows/desktop_homepage_note.jpg" width="400"/> | <img src="docs/screenshots/windows/desktop_new_note.jpg" width="400"/> |
 
-| Themes | Trash Bin |
-| :---: | :---: |
-| <img src="docs/screenshots/windows/desktop_Themes.JPG" width="400"/> | <img src="docs/screenshots/windows/desktop_trashbin.JPG" width="400"/> |
+|                                Themes                                | Trash Bin |
+|:--------------------------------------------------------------------:| :---: |
+| <img src="docs/screenshots/windows/desktop_themes.jpg" width="400"/> | <img src="docs/screenshots/windows/desktop_trashbin.jpg" width="400"/> |
 
 # Note-It 
 
