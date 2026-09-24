@@ -1,8 +1,7 @@
 
 ### Android
-### Android & Local Sync
-| Homepage | Search | Filters |
-| :---: | :---: | :---: |
+| Homepage |                              Search bar                              |                            Sort & Filters                             |
+| :---: |:--------------------------------------------------------------------:|:---------------------------------------------------------------------:|
 | <img src="docs/screenshots/android/android_homepage.jpg" width="250"/> | <img src="docs/screenshots/android/android_search.jpg" width="250"/> | <img src="docs/screenshots/android/android_filters.jpg" width="250"/> |
 
 | New Note | Password Lock |                                Trash Bin                                 |
@@ -13,12 +12,12 @@
 | :---: | :---: | :---: |
 | <img src="docs/screenshots/android/android_sidebar.jpg" width="250"/> | <img src="docs/screenshots/android/android_theme_change.jpg" width="250"/> | <img src="docs/screenshots/android/android_google_signin.jpg" width="250"/> |
 
-| Desktop Hosting | Android Host Found |
-| :---: | :---: |
-| <img src="docs/screenshots/windows/desktop_hosting.jpg" width="400"/> | <img src="docs/screenshots/android/android_host_found.jpg" width="250"/> |
+|                            Desktop Hosting                            | Host Found |
+|:---------------------------------------------------------------------:| :---: |
+| <img src="docs/screenshots/windows/desktop_hosting.jpg" width="500"/> | <img src="docs/screenshots/android/android_host_found.jpg" width="250"/> |
 
 ### Windows
-| Desktop Homepage |                            Desktop Sidebar                            |
+| Desktop Homepage |                       Sidebar & Google Sign-in                        |
 | :---: |:---------------------------------------------------------------------:|
 | <img src="docs/screenshots/windows/desktop_homepage.jpg" width="400"/> | <img src="docs/screenshots/windows/desktop_sidebar.jpg" width="400"/> |
 
@@ -30,34 +29,36 @@
 |:--------------------------------------------------------------------:| :---: |
 | <img src="docs/screenshots/windows/desktop_themes.jpg" width="400"/> | <img src="docs/screenshots/windows/desktop_trashbin.jpg" width="400"/> |
 
-# Note-It 
+
+
+# <img src="assets/icons/note_icon.png" alt="Note-It Logo" width="30" align="center" /> Note-It
 
 A fast, offline-first cross-platform note-taking application for Android and Windows.
 
 The core focus of this project is data ownership and sync reliability. Note-It handles state across three environments: a local SQLite database, a Firebase cloud backend, and a peer-to-peer local WiFi network using WebSockets.
 
-## Features
+## ✨ Features
 
 **Dual-Sync Architecture**
-- **Cloud Sync:** Standard real-time sync using Firebase.
-- **Local WiFi Sync:** Peer-to-peer syncing without an internet connection. Uses mDNS for device discovery and WebSockets for data transfer. Includes dedicated Host/Client roles for stable pairing.
-- **Manual Controls:** Pull-to-sync gesture (Android), dedicated sync buttons, and a control panel to toggle between Cloud, WiFi, and Offline modes.
+- ✅ **Cloud Sync:** Standard real-time sync using Firebase.
+- ✅ **Local WiFi Sync:** Peer-to-peer syncing without an internet connection. Uses mDNS for device discovery and WebSockets for data transfer. Includes dedicated Host/Client roles for stable pairing.
+- ✅ **Manual Controls:** Pull-to-sync gesture (Android), dedicated sync buttons, and a control panel to toggle between Cloud, WiFi, and Offline modes.
 
 **Note Management**
-- **Smart Search:** Queries titles and content with real-time text highlighting for matched queries.
-- **Advanced Sorting & Filtering:** Sort by creation date, last updated, or name. Filter notes by device origin (e.g., created on Windows vs. Android).
-- **Editor:** Clean interface with undo/redo functionality and automated datetime stamping.
-- **Data Recovery:** Dedicated recycle bin to restore deleted notes.
+- ✅ **Smart Search:** Queries titles and content with real-time text highlighting for matched queries.
+- ✅ **Advanced Sorting & Filtering:** Sort by creation date, last updated, or name. Filter notes by device origin (e.g., created on Windows vs. Android).
+- ✅ **Editor:** Clean interface with undo/redo functionality and automated datetime stamping.
+- ✅ **Data Recovery:** Dedicated recycle bin to restore deleted notes.
 
 **Security & Customization**
-- **App-Level Locking:** Password protect specific notes via the control panel.
-- **Data Export:** Import/Export functionality to ensure data portability.
-- **Theming:** Quick dark mode toggle and 4 distinct theme palettes (including a custom amber theme).
-- **Authentication:** Google Sign-in integration for quick onboarding.
+- ✅ **App-Level Locking:** Password protect specific notes via the control panel.
+- ✅ **Data Export:** Import/Export functionality to ensure data portability.
+- ✅ **Theming:** Quick dark mode toggle and 4 distinct theme palettes (including a custom amber theme).
+- 🔒 **Authentication:** Google Sign-in integration for quick onboarding.
 
-## Technical Implementation
+## 🏗️ Technical Implementation
 
-### Tech Stack
+### 💻 Tech Stack
 - **Framework:** [Flutter](https://flutter.dev/) (SDK ^3.10.7)
 - **State Management:** `flutter_riverpod` & `riverpod_annotation`
 - **Local Database:** `drift` & `drift_flutter` (SQLite)
@@ -65,13 +66,13 @@ The core focus of this project is data ownership and sync reliability. Note-It h
 - **P2P Networking:** `web_socket_channel`, `nsd` (Network Service Discovery)
 - **Routing:** `go_router`
 
-### Architectural Decisions
+### 🧠 Architectural Decisions
 
 * **Handling Three-Way State:** Coordinating data between a local SQLite database, Firebase streams, and WebSocket channels required strict state management. I used Riverpod to isolate these data sources, ensuring the UI always reflects a single source of truth regardless of the active sync method.
 * **Zero-Cloud Local Sync:** To make the app truly offline-first, I implemented mDNS (Multicast DNS) using the `nsd` package. This allows Windows and Android devices on the same local subnet to automatically discover each other without manual IP entry, establishing a WebSocket connection for zero-latency local data transfer.
 * **Complex Querying:** Instead of using a simple key-value store, I chose Drift (SQLite) for local persistence. The relational database structure allows for efficient execution of complex queries, such as the multi-parameter sorting (Name/Date) and device-origin filtering features.
 
-## Dependencies
+## 📦 Dependencies
 
 **Core & State Management**
 - [Flutter](https://flutter.dev/) (SDK ^3.10.7)
