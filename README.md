@@ -5,9 +5,9 @@
 | :---: | :---: | :---: |
 | <img src="docs/screenshots/android/android_homepage.jpg" width="250"/> | <img src="docs/screenshots/android/android_search.jpg" width="250"/> | <img src="docs/screenshots/android/android_filters.jpg" width="250"/> |
 
-| New Note | Password Lock | Trash Bin |
-| :---: | :---: | :---: |
-| <img src="docs/screenshots/android/android_notepage.jpg" width="250"/> | <img src="docs/screenshots/android/android_enter_password.jpg" width="250"/> | <img src="docs/screenshots/android/andorid_white_trash_page.jpg" width="250"/> |
+| New Note | Password Lock |                                Trash Bin                                 |
+| :---: | :---: |:------------------------------------------------------------------------:|
+| <img src="docs/screenshots/android/android_notepage.jpg" width="250"/> | <img src="docs/screenshots/android/android_enter_password.jpg" width="250"/> | <img src="docs/screenshots/android/android_trash_bin.jpg" width="250"/> |
 
 | Sidebar | Theme Settings | Google Sign-In |
 | :---: | :---: | :---: |
