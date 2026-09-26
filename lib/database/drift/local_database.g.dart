@@ -1548,12 +1548,12 @@ class NotesCompanion extends UpdateCompanion<Note> {
   }
 }
 
-class $DevicePairsTable extends DevicePairs
-    with TableInfo<$DevicePairsTable, DevicePair> {
+class $SyncedDevicesTable extends SyncedDevices
+    with TableInfo<$SyncedDevicesTable, SyncedDevice> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
-  $DevicePairsTable(this.attachedDatabase, [this._alias]);
+  $SyncedDevicesTable(this.attachedDatabase, [this._alias]);
   static const VerificationMeta _deviceUuidMeta = const VerificationMeta(
     'deviceUuid',
   );
@@ -1575,6 +1575,28 @@ class $DevicePairsTable extends DevicePairs
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lastKnownIpMeta = const VerificationMeta(
+    'lastKnownIp',
+  );
+  @override
+  late final GeneratedColumn<String> lastKnownIp = GeneratedColumn<String>(
+    'last_known_ip',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lastKnownPortMeta = const VerificationMeta(
+    'lastKnownPort',
+  );
+  @override
+  late final GeneratedColumn<int> lastKnownPort = GeneratedColumn<int>(
+    'last_known_port',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _lastSeenAsHostAtMeta = const VerificationMeta(
     'lastSeenAsHostAt',
@@ -1616,6 +1638,8 @@ class $DevicePairsTable extends DevicePairs
   List<GeneratedColumn> get $columns => [
     deviceUuid,
     deviceName,
+    lastKnownIp,
+    lastKnownPort,
     lastSeenAsHostAt,
     lastSeenAsClientAt,
     firstPairedAt,
@@ -1624,10 +1648,10 @@ class $DevicePairsTable extends DevicePairs
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
-  static const String $name = 'device_pairs';
+  static const String $name = 'synced_devices';
   @override
   VerificationContext validateIntegrity(
-    Insertable<DevicePair> instance, {
+    Insertable<SyncedDevice> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
@@ -1647,6 +1671,24 @@ class $DevicePairsTable extends DevicePairs
       );
     } else if (isInserting) {
       context.missing(_deviceNameMeta);
+    }
+    if (data.containsKey('last_known_ip')) {
+      context.handle(
+        _lastKnownIpMeta,
+        lastKnownIp.isAcceptableOrUnknown(
+          data['last_known_ip']!,
+          _lastKnownIpMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_known_port')) {
+      context.handle(
+        _lastKnownPortMeta,
+        lastKnownPort.isAcceptableOrUnknown(
+          data['last_known_port']!,
+          _lastKnownPortMeta,
+        ),
+      );
     }
     if (data.containsKey('last_seen_as_host_at')) {
       context.handle(
@@ -1681,9 +1723,9 @@ class $DevicePairsTable extends DevicePairs
   @override
   Set<GeneratedColumn> get $primaryKey => {deviceUuid};
   @override
-  DevicePair map(Map<String, dynamic> data, {String? tablePrefix}) {
+  SyncedDevice map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return DevicePair(
+    return SyncedDevice(
       deviceUuid: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}device_uuid'],
@@ -1692,6 +1734,14 @@ class $DevicePairsTable extends DevicePairs
         DriftSqlType.string,
         data['${effectivePrefix}device_name'],
       )!,
+      lastKnownIp: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_known_ip'],
+      ),
+      lastKnownPort: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}last_known_port'],
+      ),
       lastSeenAsHostAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}last_seen_as_host_at'],
@@ -1708,20 +1758,24 @@ class $DevicePairsTable extends DevicePairs
   }
 
   @override
-  $DevicePairsTable createAlias(String alias) {
-    return $DevicePairsTable(attachedDatabase, alias);
+  $SyncedDevicesTable createAlias(String alias) {
+    return $SyncedDevicesTable(attachedDatabase, alias);
   }
 }
 
-class DevicePair extends DataClass implements Insertable<DevicePair> {
+class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
   final String deviceUuid;
   final String deviceName;
+  final String? lastKnownIp;
+  final int? lastKnownPort;
   final DateTime? lastSeenAsHostAt;
   final DateTime? lastSeenAsClientAt;
   final DateTime firstPairedAt;
-  const DevicePair({
+  const SyncedDevice({
     required this.deviceUuid,
     required this.deviceName,
+    this.lastKnownIp,
+    this.lastKnownPort,
     this.lastSeenAsHostAt,
     this.lastSeenAsClientAt,
     required this.firstPairedAt,
@@ -1731,6 +1785,12 @@ class DevicePair extends DataClass implements Insertable<DevicePair> {
     final map = <String, Expression>{};
     map['device_uuid'] = Variable<String>(deviceUuid);
     map['device_name'] = Variable<String>(deviceName);
+    if (!nullToAbsent || lastKnownIp != null) {
+      map['last_known_ip'] = Variable<String>(lastKnownIp);
+    }
+    if (!nullToAbsent || lastKnownPort != null) {
+      map['last_known_port'] = Variable<int>(lastKnownPort);
+    }
     if (!nullToAbsent || lastSeenAsHostAt != null) {
       map['last_seen_as_host_at'] = Variable<DateTime>(lastSeenAsHostAt);
     }
@@ -1741,10 +1801,16 @@ class DevicePair extends DataClass implements Insertable<DevicePair> {
     return map;
   }
 
-  DevicePairsCompanion toCompanion(bool nullToAbsent) {
-    return DevicePairsCompanion(
+  SyncedDevicesCompanion toCompanion(bool nullToAbsent) {
+    return SyncedDevicesCompanion(
       deviceUuid: Value(deviceUuid),
       deviceName: Value(deviceName),
+      lastKnownIp: lastKnownIp == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastKnownIp),
+      lastKnownPort: lastKnownPort == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastKnownPort),
       lastSeenAsHostAt: lastSeenAsHostAt == null && nullToAbsent
           ? const Value.absent()
           : Value(lastSeenAsHostAt),
@@ -1755,14 +1821,16 @@ class DevicePair extends DataClass implements Insertable<DevicePair> {
     );
   }
 
-  factory DevicePair.fromJson(
+  factory SyncedDevice.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return DevicePair(
+    return SyncedDevice(
       deviceUuid: serializer.fromJson<String>(json['deviceUuid']),
       deviceName: serializer.fromJson<String>(json['deviceName']),
+      lastKnownIp: serializer.fromJson<String?>(json['lastKnownIp']),
+      lastKnownPort: serializer.fromJson<int?>(json['lastKnownPort']),
       lastSeenAsHostAt: serializer.fromJson<DateTime?>(
         json['lastSeenAsHostAt'],
       ),
@@ -1778,21 +1846,29 @@ class DevicePair extends DataClass implements Insertable<DevicePair> {
     return <String, dynamic>{
       'deviceUuid': serializer.toJson<String>(deviceUuid),
       'deviceName': serializer.toJson<String>(deviceName),
+      'lastKnownIp': serializer.toJson<String?>(lastKnownIp),
+      'lastKnownPort': serializer.toJson<int?>(lastKnownPort),
       'lastSeenAsHostAt': serializer.toJson<DateTime?>(lastSeenAsHostAt),
       'lastSeenAsClientAt': serializer.toJson<DateTime?>(lastSeenAsClientAt),
       'firstPairedAt': serializer.toJson<DateTime>(firstPairedAt),
     };
   }
 
-  DevicePair copyWith({
+  SyncedDevice copyWith({
     String? deviceUuid,
     String? deviceName,
+    Value<String?> lastKnownIp = const Value.absent(),
+    Value<int?> lastKnownPort = const Value.absent(),
     Value<DateTime?> lastSeenAsHostAt = const Value.absent(),
     Value<DateTime?> lastSeenAsClientAt = const Value.absent(),
     DateTime? firstPairedAt,
-  }) => DevicePair(
+  }) => SyncedDevice(
     deviceUuid: deviceUuid ?? this.deviceUuid,
     deviceName: deviceName ?? this.deviceName,
+    lastKnownIp: lastKnownIp.present ? lastKnownIp.value : this.lastKnownIp,
+    lastKnownPort: lastKnownPort.present
+        ? lastKnownPort.value
+        : this.lastKnownPort,
     lastSeenAsHostAt: lastSeenAsHostAt.present
         ? lastSeenAsHostAt.value
         : this.lastSeenAsHostAt,
@@ -1801,14 +1877,20 @@ class DevicePair extends DataClass implements Insertable<DevicePair> {
         : this.lastSeenAsClientAt,
     firstPairedAt: firstPairedAt ?? this.firstPairedAt,
   );
-  DevicePair copyWithCompanion(DevicePairsCompanion data) {
-    return DevicePair(
+  SyncedDevice copyWithCompanion(SyncedDevicesCompanion data) {
+    return SyncedDevice(
       deviceUuid: data.deviceUuid.present
           ? data.deviceUuid.value
           : this.deviceUuid,
       deviceName: data.deviceName.present
           ? data.deviceName.value
           : this.deviceName,
+      lastKnownIp: data.lastKnownIp.present
+          ? data.lastKnownIp.value
+          : this.lastKnownIp,
+      lastKnownPort: data.lastKnownPort.present
+          ? data.lastKnownPort.value
+          : this.lastKnownPort,
       lastSeenAsHostAt: data.lastSeenAsHostAt.present
           ? data.lastSeenAsHostAt.value
           : this.lastSeenAsHostAt,
@@ -1823,9 +1905,11 @@ class DevicePair extends DataClass implements Insertable<DevicePair> {
 
   @override
   String toString() {
-    return (StringBuffer('DevicePair(')
+    return (StringBuffer('SyncedDevice(')
           ..write('deviceUuid: $deviceUuid, ')
           ..write('deviceName: $deviceName, ')
+          ..write('lastKnownIp: $lastKnownIp, ')
+          ..write('lastKnownPort: $lastKnownPort, ')
           ..write('lastSeenAsHostAt: $lastSeenAsHostAt, ')
           ..write('lastSeenAsClientAt: $lastSeenAsClientAt, ')
           ..write('firstPairedAt: $firstPairedAt')
@@ -1837,6 +1921,8 @@ class DevicePair extends DataClass implements Insertable<DevicePair> {
   int get hashCode => Object.hash(
     deviceUuid,
     deviceName,
+    lastKnownIp,
+    lastKnownPort,
     lastSeenAsHostAt,
     lastSeenAsClientAt,
     firstPairedAt,
@@ -1844,41 +1930,51 @@ class DevicePair extends DataClass implements Insertable<DevicePair> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is DevicePair &&
+      (other is SyncedDevice &&
           other.deviceUuid == this.deviceUuid &&
           other.deviceName == this.deviceName &&
+          other.lastKnownIp == this.lastKnownIp &&
+          other.lastKnownPort == this.lastKnownPort &&
           other.lastSeenAsHostAt == this.lastSeenAsHostAt &&
           other.lastSeenAsClientAt == this.lastSeenAsClientAt &&
           other.firstPairedAt == this.firstPairedAt);
 }
 
-class DevicePairsCompanion extends UpdateCompanion<DevicePair> {
+class SyncedDevicesCompanion extends UpdateCompanion<SyncedDevice> {
   final Value<String> deviceUuid;
   final Value<String> deviceName;
+  final Value<String?> lastKnownIp;
+  final Value<int?> lastKnownPort;
   final Value<DateTime?> lastSeenAsHostAt;
   final Value<DateTime?> lastSeenAsClientAt;
   final Value<DateTime> firstPairedAt;
   final Value<int> rowid;
-  const DevicePairsCompanion({
+  const SyncedDevicesCompanion({
     this.deviceUuid = const Value.absent(),
     this.deviceName = const Value.absent(),
+    this.lastKnownIp = const Value.absent(),
+    this.lastKnownPort = const Value.absent(),
     this.lastSeenAsHostAt = const Value.absent(),
     this.lastSeenAsClientAt = const Value.absent(),
     this.firstPairedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
-  DevicePairsCompanion.insert({
+  SyncedDevicesCompanion.insert({
     required String deviceUuid,
     required String deviceName,
+    this.lastKnownIp = const Value.absent(),
+    this.lastKnownPort = const Value.absent(),
     this.lastSeenAsHostAt = const Value.absent(),
     this.lastSeenAsClientAt = const Value.absent(),
     this.firstPairedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : deviceUuid = Value(deviceUuid),
        deviceName = Value(deviceName);
-  static Insertable<DevicePair> custom({
+  static Insertable<SyncedDevice> custom({
     Expression<String>? deviceUuid,
     Expression<String>? deviceName,
+    Expression<String>? lastKnownIp,
+    Expression<int>? lastKnownPort,
     Expression<DateTime>? lastSeenAsHostAt,
     Expression<DateTime>? lastSeenAsClientAt,
     Expression<DateTime>? firstPairedAt,
@@ -1887,6 +1983,8 @@ class DevicePairsCompanion extends UpdateCompanion<DevicePair> {
     return RawValuesInsertable({
       if (deviceUuid != null) 'device_uuid': deviceUuid,
       if (deviceName != null) 'device_name': deviceName,
+      if (lastKnownIp != null) 'last_known_ip': lastKnownIp,
+      if (lastKnownPort != null) 'last_known_port': lastKnownPort,
       if (lastSeenAsHostAt != null) 'last_seen_as_host_at': lastSeenAsHostAt,
       if (lastSeenAsClientAt != null)
         'last_seen_as_client_at': lastSeenAsClientAt,
@@ -1895,17 +1993,21 @@ class DevicePairsCompanion extends UpdateCompanion<DevicePair> {
     });
   }
 
-  DevicePairsCompanion copyWith({
+  SyncedDevicesCompanion copyWith({
     Value<String>? deviceUuid,
     Value<String>? deviceName,
+    Value<String?>? lastKnownIp,
+    Value<int?>? lastKnownPort,
     Value<DateTime?>? lastSeenAsHostAt,
     Value<DateTime?>? lastSeenAsClientAt,
     Value<DateTime>? firstPairedAt,
     Value<int>? rowid,
   }) {
-    return DevicePairsCompanion(
+    return SyncedDevicesCompanion(
       deviceUuid: deviceUuid ?? this.deviceUuid,
       deviceName: deviceName ?? this.deviceName,
+      lastKnownIp: lastKnownIp ?? this.lastKnownIp,
+      lastKnownPort: lastKnownPort ?? this.lastKnownPort,
       lastSeenAsHostAt: lastSeenAsHostAt ?? this.lastSeenAsHostAt,
       lastSeenAsClientAt: lastSeenAsClientAt ?? this.lastSeenAsClientAt,
       firstPairedAt: firstPairedAt ?? this.firstPairedAt,
@@ -1921,6 +2023,12 @@ class DevicePairsCompanion extends UpdateCompanion<DevicePair> {
     }
     if (deviceName.present) {
       map['device_name'] = Variable<String>(deviceName.value);
+    }
+    if (lastKnownIp.present) {
+      map['last_known_ip'] = Variable<String>(lastKnownIp.value);
+    }
+    if (lastKnownPort.present) {
+      map['last_known_port'] = Variable<int>(lastKnownPort.value);
     }
     if (lastSeenAsHostAt.present) {
       map['last_seen_as_host_at'] = Variable<DateTime>(lastSeenAsHostAt.value);
@@ -1941,9 +2049,11 @@ class DevicePairsCompanion extends UpdateCompanion<DevicePair> {
 
   @override
   String toString() {
-    return (StringBuffer('DevicePairsCompanion(')
+    return (StringBuffer('SyncedDevicesCompanion(')
           ..write('deviceUuid: $deviceUuid, ')
           ..write('deviceName: $deviceName, ')
+          ..write('lastKnownIp: $lastKnownIp, ')
+          ..write('lastKnownPort: $lastKnownPort, ')
           ..write('lastSeenAsHostAt: $lastSeenAsHostAt, ')
           ..write('lastSeenAsClientAt: $lastSeenAsClientAt, ')
           ..write('firstPairedAt: $firstPairedAt, ')
@@ -1957,16 +2067,16 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
   _$LocalDatabase(QueryExecutor e) : super(e);
   $LocalDatabaseManager get managers => $LocalDatabaseManager(this);
   late final $NotesTable notes = $NotesTable(this);
-  late final $DevicePairsTable devicePairs = $DevicePairsTable(this);
+  late final $SyncedDevicesTable syncedDevices = $SyncedDevicesTable(this);
   late final NotesDao notesDao = NotesDao(this as LocalDatabase);
-  late final DevicePairsDao devicePairsDao = DevicePairsDao(
+  late final SyncedDevicesDao syncedDevicesDao = SyncedDevicesDao(
     this as LocalDatabase,
   );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities => [notes, devicePairs];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [notes, syncedDevices];
 }
 
 typedef $$NotesTableCreateCompanionBuilder =
@@ -2628,28 +2738,32 @@ typedef $$NotesTableProcessedTableManager =
       Note,
       PrefetchHooks Function()
     >;
-typedef $$DevicePairsTableCreateCompanionBuilder =
-    DevicePairsCompanion Function({
+typedef $$SyncedDevicesTableCreateCompanionBuilder =
+    SyncedDevicesCompanion Function({
       required String deviceUuid,
       required String deviceName,
+      Value<String?> lastKnownIp,
+      Value<int?> lastKnownPort,
       Value<DateTime?> lastSeenAsHostAt,
       Value<DateTime?> lastSeenAsClientAt,
       Value<DateTime> firstPairedAt,
       Value<int> rowid,
     });
-typedef $$DevicePairsTableUpdateCompanionBuilder =
-    DevicePairsCompanion Function({
+typedef $$SyncedDevicesTableUpdateCompanionBuilder =
+    SyncedDevicesCompanion Function({
       Value<String> deviceUuid,
       Value<String> deviceName,
+      Value<String?> lastKnownIp,
+      Value<int?> lastKnownPort,
       Value<DateTime?> lastSeenAsHostAt,
       Value<DateTime?> lastSeenAsClientAt,
       Value<DateTime> firstPairedAt,
       Value<int> rowid,
     });
 
-class $$DevicePairsTableFilterComposer
-    extends Composer<_$LocalDatabase, $DevicePairsTable> {
-  $$DevicePairsTableFilterComposer({
+class $$SyncedDevicesTableFilterComposer
+    extends Composer<_$LocalDatabase, $SyncedDevicesTable> {
+  $$SyncedDevicesTableFilterComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -2663,6 +2777,16 @@ class $$DevicePairsTableFilterComposer
 
   ColumnFilters<String> get deviceName => $composableBuilder(
     column: $table.deviceName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lastKnownIp => $composableBuilder(
+    column: $table.lastKnownIp,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lastKnownPort => $composableBuilder(
+    column: $table.lastKnownPort,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2682,9 +2806,9 @@ class $$DevicePairsTableFilterComposer
   );
 }
 
-class $$DevicePairsTableOrderingComposer
-    extends Composer<_$LocalDatabase, $DevicePairsTable> {
-  $$DevicePairsTableOrderingComposer({
+class $$SyncedDevicesTableOrderingComposer
+    extends Composer<_$LocalDatabase, $SyncedDevicesTable> {
+  $$SyncedDevicesTableOrderingComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -2698,6 +2822,16 @@ class $$DevicePairsTableOrderingComposer
 
   ColumnOrderings<String> get deviceName => $composableBuilder(
     column: $table.deviceName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lastKnownIp => $composableBuilder(
+    column: $table.lastKnownIp,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get lastKnownPort => $composableBuilder(
+    column: $table.lastKnownPort,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -2717,9 +2851,9 @@ class $$DevicePairsTableOrderingComposer
   );
 }
 
-class $$DevicePairsTableAnnotationComposer
-    extends Composer<_$LocalDatabase, $DevicePairsTable> {
-  $$DevicePairsTableAnnotationComposer({
+class $$SyncedDevicesTableAnnotationComposer
+    extends Composer<_$LocalDatabase, $SyncedDevicesTable> {
+  $$SyncedDevicesTableAnnotationComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -2733,6 +2867,16 @@ class $$DevicePairsTableAnnotationComposer
 
   GeneratedColumn<String> get deviceName => $composableBuilder(
     column: $table.deviceName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get lastKnownIp => $composableBuilder(
+    column: $table.lastKnownIp,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get lastKnownPort => $composableBuilder(
+    column: $table.lastKnownPort,
     builder: (column) => column,
   );
 
@@ -2752,46 +2896,52 @@ class $$DevicePairsTableAnnotationComposer
   );
 }
 
-class $$DevicePairsTableTableManager
+class $$SyncedDevicesTableTableManager
     extends
         RootTableManager<
           _$LocalDatabase,
-          $DevicePairsTable,
-          DevicePair,
-          $$DevicePairsTableFilterComposer,
-          $$DevicePairsTableOrderingComposer,
-          $$DevicePairsTableAnnotationComposer,
-          $$DevicePairsTableCreateCompanionBuilder,
-          $$DevicePairsTableUpdateCompanionBuilder,
+          $SyncedDevicesTable,
+          SyncedDevice,
+          $$SyncedDevicesTableFilterComposer,
+          $$SyncedDevicesTableOrderingComposer,
+          $$SyncedDevicesTableAnnotationComposer,
+          $$SyncedDevicesTableCreateCompanionBuilder,
+          $$SyncedDevicesTableUpdateCompanionBuilder,
           (
-            DevicePair,
-            BaseReferences<_$LocalDatabase, $DevicePairsTable, DevicePair>,
+            SyncedDevice,
+            BaseReferences<_$LocalDatabase, $SyncedDevicesTable, SyncedDevice>,
           ),
-          DevicePair,
+          SyncedDevice,
           PrefetchHooks Function()
         > {
-  $$DevicePairsTableTableManager(_$LocalDatabase db, $DevicePairsTable table)
-    : super(
+  $$SyncedDevicesTableTableManager(
+    _$LocalDatabase db,
+    $SyncedDevicesTable table,
+  ) : super(
         TableManagerState(
           db: db,
           table: table,
           createFilteringComposer: () =>
-              $$DevicePairsTableFilterComposer($db: db, $table: table),
+              $$SyncedDevicesTableFilterComposer($db: db, $table: table),
           createOrderingComposer: () =>
-              $$DevicePairsTableOrderingComposer($db: db, $table: table),
+              $$SyncedDevicesTableOrderingComposer($db: db, $table: table),
           createComputedFieldComposer: () =>
-              $$DevicePairsTableAnnotationComposer($db: db, $table: table),
+              $$SyncedDevicesTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<String> deviceUuid = const Value.absent(),
                 Value<String> deviceName = const Value.absent(),
+                Value<String?> lastKnownIp = const Value.absent(),
+                Value<int?> lastKnownPort = const Value.absent(),
                 Value<DateTime?> lastSeenAsHostAt = const Value.absent(),
                 Value<DateTime?> lastSeenAsClientAt = const Value.absent(),
                 Value<DateTime> firstPairedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
-              }) => DevicePairsCompanion(
+              }) => SyncedDevicesCompanion(
                 deviceUuid: deviceUuid,
                 deviceName: deviceName,
+                lastKnownIp: lastKnownIp,
+                lastKnownPort: lastKnownPort,
                 lastSeenAsHostAt: lastSeenAsHostAt,
                 lastSeenAsClientAt: lastSeenAsClientAt,
                 firstPairedAt: firstPairedAt,
@@ -2801,13 +2951,17 @@ class $$DevicePairsTableTableManager
               ({
                 required String deviceUuid,
                 required String deviceName,
+                Value<String?> lastKnownIp = const Value.absent(),
+                Value<int?> lastKnownPort = const Value.absent(),
                 Value<DateTime?> lastSeenAsHostAt = const Value.absent(),
                 Value<DateTime?> lastSeenAsClientAt = const Value.absent(),
                 Value<DateTime> firstPairedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
-              }) => DevicePairsCompanion.insert(
+              }) => SyncedDevicesCompanion.insert(
                 deviceUuid: deviceUuid,
                 deviceName: deviceName,
+                lastKnownIp: lastKnownIp,
+                lastKnownPort: lastKnownPort,
                 lastSeenAsHostAt: lastSeenAsHostAt,
                 lastSeenAsClientAt: lastSeenAsClientAt,
                 firstPairedAt: firstPairedAt,
@@ -2821,21 +2975,21 @@ class $$DevicePairsTableTableManager
       );
 }
 
-typedef $$DevicePairsTableProcessedTableManager =
+typedef $$SyncedDevicesTableProcessedTableManager =
     ProcessedTableManager<
       _$LocalDatabase,
-      $DevicePairsTable,
-      DevicePair,
-      $$DevicePairsTableFilterComposer,
-      $$DevicePairsTableOrderingComposer,
-      $$DevicePairsTableAnnotationComposer,
-      $$DevicePairsTableCreateCompanionBuilder,
-      $$DevicePairsTableUpdateCompanionBuilder,
+      $SyncedDevicesTable,
+      SyncedDevice,
+      $$SyncedDevicesTableFilterComposer,
+      $$SyncedDevicesTableOrderingComposer,
+      $$SyncedDevicesTableAnnotationComposer,
+      $$SyncedDevicesTableCreateCompanionBuilder,
+      $$SyncedDevicesTableUpdateCompanionBuilder,
       (
-        DevicePair,
-        BaseReferences<_$LocalDatabase, $DevicePairsTable, DevicePair>,
+        SyncedDevice,
+        BaseReferences<_$LocalDatabase, $SyncedDevicesTable, SyncedDevice>,
       ),
-      DevicePair,
+      SyncedDevice,
       PrefetchHooks Function()
     >;
 
@@ -2844,6 +2998,6 @@ class $LocalDatabaseManager {
   $LocalDatabaseManager(this._db);
   $$NotesTableTableManager get notes =>
       $$NotesTableTableManager(_db, _db.notes);
-  $$DevicePairsTableTableManager get devicePairs =>
-      $$DevicePairsTableTableManager(_db, _db.devicePairs);
+  $$SyncedDevicesTableTableManager get syncedDevices =>
+      $$SyncedDevicesTableTableManager(_db, _db.syncedDevices);
 }

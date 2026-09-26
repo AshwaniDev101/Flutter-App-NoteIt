@@ -4,8 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
-import 'device_pairs/device_pairs_dao.dart';
-import 'device_pairs/pairs_table.dart';
+import 'device_pairs/synced_devices_dao.dart';
+import 'device_pairs/synced_devices_table.dart';
 import 'notes/notes_dao.dart';
 import 'notes/notes_table.dart';
 
@@ -20,7 +20,7 @@ final localDatabaseProvider = Provider((ref) {
   return LocalDatabase();
 });
 
-@DriftDatabase(tables: [Notes, DevicePairs], daos: [NotesDao, DevicePairsDao])
+@DriftDatabase(tables: [Notes, SyncedDevices], daos: [NotesDao, SyncedDevicesDao])
 class LocalDatabase extends _$LocalDatabase {
   LocalDatabase()
     : super(
