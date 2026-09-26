@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/features/local_sync/provider/sync_session_provider.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
-import '../../../database/drift/device_pairs/device_pairs_dao.dart';
+import '../../../database/drift/device_pairs/synced_devices_dao.dart';
 import '../../../database/shared_preference/shared_preference_manager.dart';
 import '../../../database/sync/local_sync_service.dart';
 import '../view/qr/qr_page.dart';
@@ -72,7 +72,7 @@ class SyncClientNotifier extends Notifier<WebSocketChannel?> {
 
       print('Client: Connection Confirmed!');
 
-      await ref.read(devicePairsDaoProvider).upsertDeviceAsHost(uuid: hostUuid, name: hostName);
+      await ref.read(syncedDevicesDaoProvider).upsertDeviceAsHost(uuid: hostUuid, name: hostName);
       print('Client: Saved Host $hostName to Drift DB.');
 
       // Save the connection to the state

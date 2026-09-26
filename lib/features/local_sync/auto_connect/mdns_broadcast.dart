@@ -8,7 +8,7 @@ import 'package:nsd/nsd.dart';
 // Registration? is the State type that will be returned, while MdnsHostNotifier is responsible for running the functions.
 // In-short mean provider is returning object of Registration when the server is broadcasting, else it returns null
 final mdnsBroadcastProvider =
-    NotifierProvider.autoDispose<MdnsBroadcastNotifier, Registration?>(() {
+    NotifierProvider<MdnsBroadcastNotifier, Registration?>(() {
       return MdnsBroadcastNotifier();
     });
 

@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:noteit/core/routing/routing.dart';
 
-import '../../../../../database/drift/device_pairs/device_pairs_dao.dart';
+import '../../../../../database/drift/device_pairs/synced_devices_dao.dart';
 import '../../../auto_connect/mdns_searcher.dart';
 import '../../../provider/sync_client_provider.dart';
 
@@ -107,7 +107,7 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
                     }
 
                     // DB CHECK: Do we already know this UUID?
-                    final devicePairsDao = ref.read(devicePairsDaoProvider);
+                    final devicePairsDao = ref.read(syncedDevicesDaoProvider);
                     final isKnown = await devicePairsDao.isDeviceKnown(hostUuid);
 
                     if (!mounted) return;
