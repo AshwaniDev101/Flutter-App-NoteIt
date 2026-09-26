@@ -4,6 +4,8 @@ import 'package:uuid/uuid.dart';
 
 import '../sync/sync_engine.dart';
 
+enum SyncRole { undefine, host, client }
+
 // The Global Settings Provider
 final sharedPreferenceProvider = Provider<SharedPreferenceManager>((ref) {
   return SharedPreferenceManager.instance;
@@ -12,8 +14,7 @@ final sharedPreferenceProvider = Provider<SharedPreferenceManager>((ref) {
 class SharedPreferenceManager {
   SharedPreferenceManager._internal();
 
-  static final SharedPreferenceManager instance =
-      SharedPreferenceManager._internal();
+  static final SharedPreferenceManager instance = SharedPreferenceManager._internal();
 
   static late SharedPreferences _prefs;
 
@@ -26,7 +27,8 @@ class SharedPreferenceManager {
   static const String _keyMasterPassword = 'master_password';
   static const String _keyThemeType = 'theme_type';
   static const String _keySyncEngine = 'sync_engine';
-  static const String _keyHostUuid = 'host_uuid';
+  static const String _keyHostUuid = 'host_uuid'; // Need when this device ever becomes a host
+  static const String _keySyncRole = 'sync_role'; //  0 = undefine, 1 = Host, 2 = Client
 
   // Key for keeping notes unlocked during session
   static const String _keyKeepUnlockedSession = 'keep_unlocked_session';
@@ -34,12 +36,8 @@ class SharedPreferenceManager {
   // --- Sync Engine Mode ---
   // Defaults to offline if the user has never chosen one
   SyncEngine get currentEngine {
-    final engineName =
-        _prefs.getString(_keySyncEngine) ?? SyncEngine.offline.name;
-    return SyncEngine.values.firstWhere(
-      (e) => e.name == engineName,
-      orElse: () => SyncEngine.offline,
-    );
+    final engineName = _prefs.getString(_keySyncEngine) ?? SyncEngine.offline.name;
+    return SyncEngine.values.firstWhere((e) => e.name == engineName, orElse: () => SyncEngine.offline);
   }
 
   Future<bool> setCurrentEngine(SyncEngine engine) async {
@@ -79,8 +77,7 @@ class SharedPreferenceManager {
 
   // --- Session Lock Preference ---
   // Defaults to false (strict mode)
-  bool get keepUnlockedDuringSession =>
-      _prefs.getBool(_keyKeepUnlockedSession) ?? false;
+  bool get keepUnlockedDuringSession => _prefs.getBool(_keyKeepUnlockedSession) ?? false;
 
   Future<bool> setKeepUnlockedDuringSession(bool value) async {
     return await _prefs.setBool(_keyKeepUnlockedSession, value);
@@ -110,5 +107,34 @@ class SharedPreferenceManager {
     }
 
     return uuid;
+  }
+
+  SyncRole get syncRole {
+    final role = _prefs.getInt(_keySyncRole) ?? 0;
+
+    switch (role) {
+      case 0:
+        return SyncRole.undefine;
+      case 1:
+        return SyncRole.host;
+      case 2:
+        return SyncRole.client;
+    }
+
+    return SyncRole.undefine;
+  }
+
+  void setSyncRole(SyncRole role) {
+    switch (role) {
+      case SyncRole.undefine:
+        _prefs.setInt(_keySyncRole, 0);
+        break;
+      case SyncRole.host:
+        _prefs.setInt(_keySyncRole, 1);
+        break;
+      case SyncRole.client:
+        _prefs.setInt(_keySyncRole, 2);
+        break;
+    }
   }
 }
