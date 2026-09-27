@@ -34,7 +34,9 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
 
   @override
   void dispose() {
-    _mdnsNotifier.stopScan();
+    Future.microtask(() {
+      ref.read(mdnsSearcherProvider.notifier).stopScan();
+    });
     super.dispose();
   }
 

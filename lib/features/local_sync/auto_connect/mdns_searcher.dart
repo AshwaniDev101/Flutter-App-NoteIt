@@ -37,12 +37,29 @@ class MdnsSearcherNotifier extends Notifier<MdnsState> {
 
       _discovery = await startDiscovery('_noteitsync._tcp', ipLookupType: IpLookupType.any);
 
+// We don't want to crash if _discovery drops instantly
+      if (_discovery == null) return;
+
       // IMMEDIATELY populate the state in case it found devices instantly
-      state = (status: ScanStatus.scanning, devices: _discovery!.services.toList());
+      // Filter out invalid services before they hit the state
+
+      final validServices = _discovery!.services.where((s) => s.port != null).toList();
+      state = (status: ScanStatus.scanning, devices: validServices);
 
       _discovery!.addListener(() {
+
+        // The listener fires even when devices disconnect.
+        // If _discovery is suddenly null here, abort.
+        if (_discovery == null) return;
+
+
+        final currentValidServices = _discovery!.services.where((s) => s.port != null).toList();
+
         // Update the state with the live list of all found devices
-        state = (status: ScanStatus.scanning, devices: _discovery!.services.toList());
+        state = (status: ScanStatus.scanning, devices: currentValidServices);
+        // state = (status: ScanStatus.scanning, devices: _discovery!.services.toList());
+
+
       });
     } catch (e) {
       AppLogger.d('mDNS Radar Error: $e');
@@ -62,7 +79,15 @@ class MdnsSearcherNotifier extends Notifier<MdnsState> {
     try {
       _discovery = await startDiscovery('_noteitsync._tcp', ipLookupType: IpLookupType.any);
 
+      if (_discovery == null) {
+        state = (status: ScanStatus.error, devices: []);
+        completer.complete(null);
+        return completer.future;
+      }
+
       _discovery!.addListener(() {
+        if (_discovery == null) return; // Prevent _TypeError if discovery is stopped
+
         for (var service in _discovery!.services) {
           final rawUuidBytes = service.txt?['uuid'];
 
@@ -70,7 +95,17 @@ class MdnsSearcherNotifier extends Notifier<MdnsState> {
             final discoveredUuid = utf8.decode(rawUuidBytes);
 
             if (discoveredUuid == targetUuid) {
-              final ip = service.host ?? service.addresses?.first.address;
+
+              // 1. Try service.host first (Sometimes a String on Android)
+              // 2. Try the first item in service.addresses (Usually works on Windows/iOS)
+              String? ip;
+              if (service.host != null && service.host!.isNotEmpty) {
+                ip = service.host;
+              } else if (service.addresses != null && service.addresses!.isNotEmpty) {
+                ip = service.addresses!.first.address;
+              }
+
+              // final ip = service.host ?? service.addresses?.firstOrNull?.address;
               final port = service.port;
 
               if (ip != null && port != null && !completer.isCompleted) {

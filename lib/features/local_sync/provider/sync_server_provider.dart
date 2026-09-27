@@ -7,6 +7,7 @@ import 'package:shelf_web_socket/shelf_web_socket.dart';
 
 import '../../../core/util/logger.dart';
 import '../../../database/drift/device_pairs/synced_devices_dao.dart';
+import '../../../database/shared_preference/shared_preference_manager.dart';
 import '../../../database/sync/local_sync_service.dart';
 
 final syncServerProvider = NotifierProvider<SyncServerNotifier, HttpServer?>(() {
@@ -103,6 +104,9 @@ class SyncServerNotifier extends Notifier<HttpServer?> {
     AppLogger.d('Sync server hosting at ws://${server.address.host}:${server.port}');
 
     state = server;
+
+    // Host role set at the moment the server successfully starts!
+    ref.read(sharedPreferenceProvider).setSyncRole(SyncRole.host);
     return state!.port;
   }
 

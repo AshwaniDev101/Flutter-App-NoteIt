@@ -56,12 +56,7 @@ class SyncClientNotifier extends Notifier<WebSocketChannel?> {
 
       // Safely construct the URI with all parameters
       // We pass our own UUID and Name to the Host so they can save us!
-      final finalUri = Uri(
-        scheme: 'ws',
-        host: ip,
-        port: port,
-        queryParameters: queryParams,
-      );
+      final finalUri = Uri(scheme: 'ws', host: ip, port: port, queryParameters: queryParams);
 
       //Initiate Connection
       final channel = WebSocketChannel.connect(finalUri);
@@ -73,6 +68,9 @@ class SyncClientNotifier extends Notifier<WebSocketChannel?> {
 
       AppLogger.d('Client: Connection Confirmed!');
 
+      // Client role the set at the moment the connection is successful!
+      ref.read(sharedPreferenceProvider).setSyncRole(SyncRole.client);
+
       await ref.read(syncedDevicesDaoProvider).upsertDeviceAsHost(uuid: hostUuid, name: hostName);
       AppLogger.d('Client: Saved Host $hostName to Drift DB.');
 
@@ -83,13 +81,12 @@ class SyncClientNotifier extends Notifier<WebSocketChannel?> {
       // We pass the channel to the traffic controller, which handles all the listening,
       // batching, and database saving automatically.
       ref.read(localSyncServiceProvider.notifier).setActiveConnection(channel);
-    } on WebSocketChannelException catch(e){
+    } on WebSocketChannelException catch (e) {
       AppLogger.d('Connection rejected by host. Wrong PIN? Error: $e');
       state = null;
       // can catch it and show a Snackbar saying "Wrong PIN, try again!"
       throw Exception('Connection rejected. Please check the PIN and try again.');
-
-    }catch (e) {
+    } catch (e) {
       AppLogger.d('Failed to connect to host: $e');
       state = null;
       throw Exception('Failed to connect to device.');

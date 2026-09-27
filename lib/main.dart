@@ -5,6 +5,7 @@ import 'package:noteit/core/routing/routing.dart';
 import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
 import 'package:noteit/firebase_options.dart';
 import 'package:noteit/shared/widgets/snack_bar_manager.dart';
+import 'package:noteit/startup_initializer.dart';
 
 import 'core/theme/app_theme.dart';
 
@@ -32,7 +33,7 @@ class _MyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
-
+    ref.watch(startupInitializerProvider);
     //  Watch the active theme state from your provider
     final activeTheme = ref.watch(themeProvider);
 

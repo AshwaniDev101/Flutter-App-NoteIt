@@ -29,31 +29,32 @@ class StartupInitializer extends Notifier<void> {
   }
 
   void _evaluateSyncState() async {
-    AppLogger.d('Evaluating Sync State...');
+    AppLogger.d('StartupInitializer: Evaluating Sync State...');
 
     final spp = ref.read(sharedPreferenceProvider);
     final syncRole = spp.syncRole;
 
     switch (syncRole) {
       case SyncRole.undefine:
+        AppLogger.d('StartupInitializer: SyncRole is undefine');
         // Do nothing this is the first time user opened this app, or yet to user local sync function
         break;
       case SyncRole.host: // Last time this user was host
-        AppLogger.d('Sync Role: Host');
-        AppLogger.d('AutoSync [HOST]: Starting background engine...');
+        AppLogger.d('StartupInitializer: Sync Role: Host');
+        AppLogger.d('StartupInitializer: AutoSync [HOST]: Starting background engine...');
         try {
           await ref.read(serverHostingProvider.future);
         } catch (e) {
-          AppLogger.d('AutoSync [HOST]: Failed to start engine - $e');
+          AppLogger.d('StartupInitializer: AutoSync [HOST]: Failed to start engine - $e');
         }
         break;
       case SyncRole.client:
-        AppLogger.d('AutoSync [CLIENT]: Initializing connection protocol...');
+        AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Initializing connection protocol...');
 
         final SyncedDevice? host = await ref.read(syncedDevicesDaoProvider).getMostRecentHost();
 
         if (host == null) {
-          AppLogger.d('AutoSync [CLIENT]: No host found in DB.');
+          AppLogger.d('StartupInitializer: AutoSync [CLIENT]: No host found in DB.');
           return;
         }
 
@@ -62,7 +63,7 @@ class StartupInitializer extends Notifier<void> {
 
         // Fast Reconnect (Try DB IP first)
         if (host.lastKnownIp != null && host.lastKnownPort != null) {
-          AppLogger.d('AutoSync [CLIENT]: Attempting Fast Reconnect to ${host.lastKnownIp}:${host.lastKnownPort}...');
+          AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Attempting Fast Reconnect to ${host.lastKnownIp}:${host.lastKnownPort}...');
           try {
             await clientNotifier.connectToHost(
               ip: host.lastKnownIp!,
@@ -73,17 +74,17 @@ class StartupInitializer extends Notifier<void> {
             );
             connected = true;
           } catch (e) {
-            AppLogger.d('AutoSync [CLIENT]: Fast Reconnect failed. Moving to mDNS fallback...');
+            AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Fast Reconnect failed. Moving to mDNS fallback...');
           }
         }
 
         // mDNS Radar Fallback
         if (!connected) {
-          AppLogger.d('AutoSync [CLIENT]: Starting mDNS radar...');
+          AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Starting mDNS radar...');
           final mdnsResult = await ref.read(mdnsSearcherProvider.notifier).findServer(host.deviceUuid);
 
           if (mdnsResult != null) {
-            AppLogger.d('AutoSync [CLIENT]: Host found via mDNS at ${mdnsResult.ip}:${mdnsResult.port}.');
+            AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Host found via mDNS at ${mdnsResult.ip}:${mdnsResult.port}.');
             try {
               await clientNotifier.connectToHost(
                 ip: mdnsResult.ip,
@@ -94,10 +95,10 @@ class StartupInitializer extends Notifier<void> {
               );
               // Connection successful! (Make sure your connectToHost method saves the new IP/Port to DB)
             } catch (e) {
-              AppLogger.d('AutoSync [CLIENT]: Failed to connect after mDNS discovery: $e');
+              AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Failed to connect after mDNS discovery: $e');
             }
           } else {
-            AppLogger.d('AutoSync [CLIENT]: mDNS Radar timed out. Host unreachable.');
+            AppLogger.d('StartupInitializer: AutoSync [CLIENT]: mDNS Radar timed out. Host unreachable.');
           }
         }
         break;
@@ -105,12 +106,12 @@ class StartupInitializer extends Notifier<void> {
   }
 
   void onAppPaused() {
-    AppLogger.d('App went to the background');
+    AppLogger.d('StartupInitializer: App went to the background');
     ref.read(mdnsSearcherProvider.notifier).stopScan();
   }
 
   void onAppResumed() {
-    AppLogger.d('App came back to the foreground');
+    AppLogger.d('StartupInitializer: App came back to the foreground');
 
     final syncRole = ref.read(sharedPreferenceProvider).syncRole;
 
@@ -120,7 +121,7 @@ class StartupInitializer extends Notifier<void> {
       // By invalidating the IP provider, Riverpod fetches the fresh IP.
       // This automatically causes `serverHostingProvider` to rebuild and run your
       // safe IP-checking logic inside `startHosting`!
-      AppLogger.d('AutoSync [HOST]: Re-checking Wi-Fi IP...');
+      AppLogger.d('StartupInitializer: AutoSync [HOST]: Re-checking Wi-Fi IP...');
 
       ref.invalidate(localIPProvide); // Forces the IP to refresh
 
@@ -132,11 +133,11 @@ class StartupInitializer extends Notifier<void> {
       final currentConnection = ref.read(syncClientProvider);
 
       if (currentConnection == null) {
-        AppLogger.d('AutoSync [CLIENT]: WebSocket was killed in background. Reconnecting...');
+        AppLogger.d('StartupInitializer: AutoSync [CLIENT]: WebSocket was killed in background. Reconnecting...');
         // Run the Fast Reconnect / mDNS Radar logic again
         _evaluateSyncState();
       } else {
-        AppLogger.d('AutoSync [CLIENT]: WebSocket survived the background pause!');
+        AppLogger.d('StartupInitializer: AutoSync [CLIENT]: WebSocket survived the background pause!');
       }
     }
   }
@@ -197,7 +198,7 @@ class StartupInitializer extends Notifier<void> {
 //
 //     // 2. We DO NOT disconnect the WebSockets.
 //     // Let the OS decide if it wants to kill them while the user is away.
-//     AppLogger.d('AutoSync: App paused. WebSockets left alive.');
+//     AppLogger.d('StartupInitializer: AutoSync: App paused. WebSockets left alive.');
 //   }
 //
 //   Future<void> _onAppResumed() async {
@@ -216,7 +217,7 @@ class StartupInitializer extends Notifier<void> {
 //   // HOST MODE LOGIC
 //   // ==========================================
 //   void _startHostMode() {
-//     AppLogger.d('AutoSync [HOST]: Ensuring server is running...');
+//     AppLogger.d('StartupInitializer: AutoSync [HOST]: Ensuring server is running...');
 //
 //     // Disconnect client if we were previously in client mode
 //     ref.read(syncClientProvider.notifier).disconnect();
@@ -226,9 +227,9 @@ class StartupInitializer extends Notifier<void> {
 //     // 1. Fetch IP 2. Generate PIN 3. Start Server 4. Start mDNS Broadcast
 //     _hostSubscription ??= ref.listenManual(syncSessionProvider, (previous, next) {
 //       if (next.hasError) {
-//         AppLogger.d('AutoSync [HOST]: Failed to start silently - ${next.error}');
+//         AppLogger.d('StartupInitializer: AutoSync [HOST]: Failed to start silently - ${next.error}');
 //       } else if (next.hasValue) {
-//         AppLogger.d('AutoSync [HOST]: Server is silently running in the background!');
+//         AppLogger.d('StartupInitializer: AutoSync [HOST]: Server is silently running in the background!');
 //       }
 //     });
 //   }
@@ -244,25 +245,25 @@ class StartupInitializer extends Notifier<void> {
 //
 //       // We MUST explicitly stop the server because your syncServerProvider is not autoDispose
 //       ref.read(syncServerProvider.notifier).stopHosting();
-//       AppLogger.d('AutoSync [CLIENT]: Shut down host server.');
+//       AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Shut down host server.');
 //     }
 //
 //     // 2. If the socket survived the pause, we don't need to do anything!
 //     if (ref.read(syncClientProvider) != null) {
-//       AppLogger.d('AutoSync [CLIENT]: Socket survived the pause!');
+//       AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Socket survived the pause!');
 //       return;
 //     }
 //
 //     // 3. FAST DIRECT RECONNECT: Try the last known IP first before starting the radar
 //     if (_lastIp != null && _lastPort != null && _lastUuid != null) {
-//       AppLogger.d('AutoSync [CLIENT]: Attempting fast reconnect to $_lastName...');
+//       AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Attempting fast reconnect to $_lastName...');
 //       try {
 //         await ref.read(syncClientProvider.notifier).connectToHost(
 //           ip: _lastIp!, port: _lastPort!, hostUuid: _lastUuid!, hostName: _lastName ?? 'Host',
 //         );
 //         return; // Success! No need to scan.
 //       } catch (e) {
-//         AppLogger.d('AutoSync [CLIENT]: Fast reconnect failed. Starting Radar...');
+//         AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Fast reconnect failed. Starting Radar...');
 //       }
 //     }
 //
@@ -291,7 +292,7 @@ class StartupInitializer extends Notifier<void> {
 //           final hostName = service.name ?? 'Known Device';
 //
 //           if (ip != null && port != null) {
-//             AppLogger.d('AutoSync [CLIENT]: Found known device ($hostName) via Radar! Connecting...');
+//             AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Found known device ($hostName) via Radar! Connecting...');
 //
 //             // Stop scanning so we don't drain the battery
 //             ref.read(mdnsSearcherProvider.notifier).stopScan();
@@ -309,7 +310,7 @@ class StartupInitializer extends Notifier<void> {
 //               _lastName = hostName;
 //
 //             } catch (e) {
-//               AppLogger.d('AutoSync [CLIENT]: Auto-connect failed: $e');
+//               AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Auto-connect failed: $e');
 //             }
 //             break;
 //           }
