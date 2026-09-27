@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nsd/nsd.dart';
 
+import '../../../core/util/logger.dart';
+
 // ==== Server side ===
 
 // Registration? is the State type that will be returned, while MdnsHostNotifier is responsible for running the functions.
@@ -25,9 +27,9 @@ class MdnsBroadcastNotifier extends Notifier<Registration?> {
       // This completely bypasses Riverpod's strict teardown locks.
       if (_activeRegistration != null) {
         unregister(_activeRegistration!).then((_) {
-          print('mDNS: Stopped broadcasting (auto-disposed)');
+          AppLogger.d('mDNS: Stopped broadcasting (auto-disposed)');
         }).catchError((e) {
-          print('mDNS cleanup error: $e');
+          AppLogger.d('mDNS cleanup error: $e');
         });
       }
     });
@@ -52,13 +54,13 @@ class MdnsBroadcastNotifier extends Notifier<Registration?> {
 
       // Registers the service
       final registration = await register(service);
-      print('mDNS: Broadcasting as ${registration.service.name} on port $port');
+      AppLogger.d('mDNS: Broadcasting as ${registration.service.name} on port $port');
 
       // Save the registration object to state so we can cancel it later
       _activeRegistration = registration;
       state = registration;
     } catch (e) {
-      print('mDNS Host Error: $e');
+      AppLogger.d('mDNS Host Error: $e');
     }
   }
 
@@ -73,7 +75,7 @@ class MdnsBroadcastNotifier extends Notifier<Registration?> {
       state = null;
 
       await unregister(regToCancel);
-      print('mDNS: Stopped broadcasting manually');
+      AppLogger.d('mDNS: Stopped broadcasting manually');
     }
   }
 }

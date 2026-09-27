@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/database/sync/sync_engine.dart';
 import '../../core/provider/provider.dart';
+import '../../core/util/logger.dart';
 import 'cloud_sync_service.dart';
 import 'local_sync_service.dart';
 
@@ -69,7 +70,7 @@ class SyncOrchestrator with WidgetsBindingObserver {
     // Only fire Firebase delta syncs on resume if Cloud is actively selected
     if (state == AppLifecycleState.resumed) {
       if (ref.read(syncEngineProvider) == SyncEngine.cloud) {
-        print("Orchestrator: App resumed. Triggering Cloud Delta Sync...");
+        AppLogger.d("Orchestrator: App resumed. Triggering Cloud Delta Sync...");
         ref.read(cloudSyncServiceProvider).executeFullSync();
       }
     }
@@ -80,13 +81,13 @@ class SyncOrchestrator with WidgetsBindingObserver {
     final engine = ref.read(syncEngineProvider);
 
     if (engine == SyncEngine.cloud) {
-      print("Orchestrator: UI triggered sync. Routing to Cloud Engine.");
+      AppLogger.d("Orchestrator: UI triggered sync. Routing to Cloud Engine.");
       ref.read(cloudSyncServiceProvider).executeFullSync();
     } else if (engine == SyncEngine.local) {
-      print("Orchestrator: UI triggered sync. Routing to Local Wi-Fi Engine.");
+      AppLogger.d("Orchestrator: UI triggered sync. Routing to Local Wi-Fi Engine.");
       ref.read(localSyncServiceProvider.notifier).broadcastLocalChanges();
     } else {
-      print("Orchestrator: UI triggered sync, but app is Offline. Ignored.");
+      AppLogger.d("Orchestrator: UI triggered sync, but app is Offline. Ignored.");
     }
   }
 

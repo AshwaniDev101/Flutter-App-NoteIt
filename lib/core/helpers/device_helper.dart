@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 
+import '../util/logger.dart';
+
 class DeviceHelper {
   static Future<Map<String, String>> getDeviceInfo() async {
     final deviceInfo = DeviceInfoPlugin();
@@ -16,7 +18,7 @@ class DeviceHelper {
         deviceName = windowsInfo.computerName; // e.g., 'Ashwin-PC'
       }
     } catch (e) {
-      print("Failed to get device info: $e");
+      AppLogger.d("Failed to get device info: $e");
     }
 
     return {'platform': platform, 'deviceName': deviceName};

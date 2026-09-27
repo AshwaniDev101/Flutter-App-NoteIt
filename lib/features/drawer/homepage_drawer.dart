@@ -9,6 +9,7 @@ import 'package:noteit/core/routing/routing.dart';
 
 import '../../core/provider/provider.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/util/logger.dart';
 
 class HomepageDrawer extends ConsumerWidget {
   const HomepageDrawer({super.key});
@@ -27,7 +28,7 @@ class HomepageDrawer extends ConsumerWidget {
 
       await FirebaseAuth.instance.signInWithCredential(credential);
     } catch (e) {
-      debugPrint('Google Sign-In failed: $e');
+      AppLogger.d('Google Sign-In failed: $e');
     }
   }
 

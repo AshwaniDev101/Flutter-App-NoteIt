@@ -235,7 +235,7 @@
 //
 //                   if (note.isLocked) {
 //                     // TODO: Implement password prompt dialog
-//                     print("Prompt for password");
+//                     AppLogger.d("Prompt for password");
 //                   } else {
 //                     context.push(AppRoutes.edit, extra: note);
 //                   }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/features/local_sync/provider/sync_session_provider.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+import '../../../core/util/logger.dart';
 import '../../../database/drift/device_pairs/synced_devices_dao.dart';
 import '../../../database/shared_preference/shared_preference_manager.dart';
 import '../../../database/sync/local_sync_service.dart';
@@ -34,7 +35,7 @@ class SyncClientNotifier extends Notifier<WebSocketChannel?> {
     // Close any existing connection first
     disconnect();
 
-    print('Client: Attempting to connect to Host at $ip:$port');
+    AppLogger.d('Client: Attempting to connect to Host at $ip:$port');
 
     try {
       final String myUuid = ref.read(sharedPreferenceProvider).hostUuid;
@@ -70,10 +71,10 @@ class SyncClientNotifier extends Notifier<WebSocketChannel?> {
       // This throws if the host rejects us (e.g., wrong PIN)
       await channel.ready;
 
-      print('Client: Connection Confirmed!');
+      AppLogger.d('Client: Connection Confirmed!');
 
       await ref.read(syncedDevicesDaoProvider).upsertDeviceAsHost(uuid: hostUuid, name: hostName);
-      print('Client: Saved Host $hostName to Drift DB.');
+      AppLogger.d('Client: Saved Host $hostName to Drift DB.');
 
       // Save the connection to the state
       state = channel;
@@ -83,13 +84,13 @@ class SyncClientNotifier extends Notifier<WebSocketChannel?> {
       // batching, and database saving automatically.
       ref.read(localSyncServiceProvider.notifier).setActiveConnection(channel);
     } on WebSocketChannelException catch(e){
-      print('Connection rejected by host. Wrong PIN? Error: $e');
+      AppLogger.d('Connection rejected by host. Wrong PIN? Error: $e');
       state = null;
       // can catch it and show a Snackbar saying "Wrong PIN, try again!"
       throw Exception('Connection rejected. Please check the PIN and try again.');
 
     }catch (e) {
-      print('Failed to connect to host: $e');
+      AppLogger.d('Failed to connect to host: $e');
       state = null;
       throw Exception('Failed to connect to device.');
     }
@@ -97,7 +98,7 @@ class SyncClientNotifier extends Notifier<WebSocketChannel?> {
 
   void disconnect() {
     if (state != null) {
-      print("Client: Disconnecting from host...");
+      AppLogger.d("Client: Disconnecting from host...");
       // Make sure the central traffic controller also knows we are stopping
       ref.read(localSyncServiceProvider.notifier).stop();
 

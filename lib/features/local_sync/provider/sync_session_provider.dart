@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:network_info_plus/network_info_plus.dart';
 import 'package:noteit/features/local_sync/provider/sync_server_provider.dart';
 
+import '../../../core/util/logger.dart';
 import '../../../database/shared_preference/shared_preference_manager.dart';
 import '../auto_connect/mdns_broadcast.dart';
 
@@ -19,15 +20,18 @@ final syncSessionProvider = FutureProvider.autoDispose<({String ip, String qrUrl
   // Generate the UI PIN
   final String generatedPin = Random().nextInt(10000).toString().padLeft(4, '0');
 
+
+  final serverNotifier = ref.read(syncServerProvider.notifier);
+
   // Schedule the update for immediately AFTER the provider finishes building
   Future.microtask(() {
-    ref.read(syncServerProvider.notifier).updatePin(generatedPin);
+    serverNotifier.updatePin(generatedPin);
   });
 
   // When the user closes the QR screen, erase the PIN from the server.
   ref.onDispose(() {
-    print('QR Screen closed. Erasing PIN to lock down server.');
-    ref.read(syncServerProvider.notifier).updatePin(null);
+    AppLogger.d('QR Screen closed. Erasing PIN to lock down server.');
+    serverNotifier.updatePin(null);
   });
 
   // 5. Build the QR Code URL
@@ -61,11 +65,11 @@ final serverHostingProvider = FutureProvider<({String ip, int port, String devic
       .startHosting(
         ip: ip,
         onClientConnected: () {
-          print('Engine: Client connected! Shutting down mDNS broadcast.');
+          AppLogger.d('Engine: Client connected! Shutting down mDNS broadcast.');
           mdnsNotifier.stopBroadcasting();
         },
         onClientDisconnected: () {
-          print('Engine: Client disconnected! Restarting mDNS broadcast.');
+          AppLogger.d('Engine: Client disconnected! Restarting mDNS broadcast.');
           if (assignedPort != null) {
             mdnsNotifier.startBroadcasting(port: assignedPort, uuid: uuid, deviceName: deviceName);
           }

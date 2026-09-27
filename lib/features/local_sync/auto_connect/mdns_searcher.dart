@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nsd/nsd.dart';
 
+import '../../../core/util/logger.dart';
+
 // ==== Client side ===
 enum ScanStatus { idle, scanning, found, error }
 
@@ -43,7 +45,7 @@ class MdnsSearcherNotifier extends Notifier<MdnsState> {
         state = (status: ScanStatus.scanning, devices: _discovery!.services.toList());
       });
     } catch (e) {
-      print('mDNS Radar Error: $e');
+      AppLogger.d('mDNS Radar Error: $e');
       state = (status: ScanStatus.error, devices: []);
     }
   }
@@ -72,7 +74,7 @@ class MdnsSearcherNotifier extends Notifier<MdnsState> {
               final port = service.port;
 
               if (ip != null && port != null && !completer.isCompleted) {
-                print('mDNS: Found exact paired server at $ip:$port!');
+                AppLogger.d('mDNS: Found exact paired server at $ip:$port!');
                 state = (status: ScanStatus.found, devices: []);
 
                 stopScan();
@@ -86,14 +88,14 @@ class MdnsSearcherNotifier extends Notifier<MdnsState> {
 
       Future.delayed(const Duration(seconds: 60), () {
         if (!completer.isCompleted) {
-          print('mDNS: Scan timed out.');
+          AppLogger.d('mDNS: Scan timed out.');
           state = (status: ScanStatus.error, devices: []);
           stopScan();
           completer.complete(null);
         }
       });
     } catch (e) {
-      print('mDNS Targeted Scan Error: $e');
+      AppLogger.d('mDNS Targeted Scan Error: $e');
       state = (status: ScanStatus.error, devices: []);
       completer.complete(null);
     }

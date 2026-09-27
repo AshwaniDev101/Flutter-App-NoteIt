@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:noteit/core/routing/routing.dart';
 
+import '../../../../../core/util/logger.dart';
 import '../../../../../database/drift/device_pairs/synced_devices_dao.dart';
 import '../../../auto_connect/mdns_searcher.dart';
 import '../../../provider/sync_client_provider.dart';
@@ -16,9 +17,15 @@ class HostSearcher extends ConsumerStatefulWidget {
 }
 
 class _SearchNearByState extends ConsumerState<HostSearcher> {
+
+  late final MdnsSearcherNotifier _mdnsNotifier;
+
   @override
   void initState() {
     super.initState();
+
+    _mdnsNotifier = ref.read(mdnsSearcherProvider.notifier);
+
     // Start radar scanning immediately upon opening the page
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(mdnsSearcherProvider.notifier).startRadar();
@@ -27,10 +34,7 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
 
   @override
   void dispose() {
-    // Stop scanning if the user hits the back button to leave the page
-    // Using Future.microtask prevents state modification errors during widget teardown
-    final mdnsNotifier = ref.read(mdnsSearcherProvider.notifier);
-    Future.microtask(() => mdnsNotifier.stopScan());
+    _mdnsNotifier.stopScan();
     super.dispose();
   }
 
@@ -113,7 +117,7 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
                     if (!mounted) return;
 
                     if (isKnown) {
-                      print("UUID is Known");
+                      AppLogger.d("UUID is Known");
 
                       ScaffoldMessenger.of(
                         context,
@@ -126,7 +130,7 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
                       // Note: We don't need stopScan() here because dispose() will catch it when we pop!
                       context.pop();
                     } else {
-                      print("UUID is not Known");
+                      AppLogger.d("UUID is not Known");
 
                       // Prompt for PIN!
                       final enteredPin = await context.push<String>(AppRoutes.pin);

@@ -23,7 +23,7 @@ class SettingsPage extends ConsumerWidget {
   //
   //     await FirebaseAuth.instance.signInWithCredential(credential);
   //   } catch (e) {
-  //     debugPrint('Google Sign-In failed: $e');
+  //     AppLogger.d('('Google Sign-In failed: $e');
   //   }
   // }
 

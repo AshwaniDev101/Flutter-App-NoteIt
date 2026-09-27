@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/database/drift/notes/notes_dao.dart';
 
+import '../../../core/util/logger.dart';
+
 enum NoteSortOption { name, createdAt, updatedAt }
 
 // Create a Notifier to manage the state
@@ -29,7 +31,7 @@ final sortedNotesProvider = StreamProvider<List<Note>>((ref) {
 
   return notesDao.watchAllNotes().map((notes) {
     // Debug: Add this print to verify data flow in the console
-    print("### Stream received ${notes.length} total notes from Drift");
+    AppLogger.d("### Stream received ${notes.length} total notes from Drift");
 
     // UPDATED: Use deletedAt == null instead of !isDeleted
     final activeNotes = notes.where((note) => note.deletedAt == null).toList();

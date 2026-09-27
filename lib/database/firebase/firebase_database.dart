@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/provider/provider.dart';
+import '../../core/util/logger.dart';
 import '../drift/local_database.dart';
 
 // final noteFirebaseDatabaseProvider = Provider((ref) {
@@ -130,7 +131,7 @@ class NoteFirestoreDatabase {
       }
 
       await batch.commit();
-      print("Firestore: Hard deleted a batch of ${chunk.length} notes.");
+      AppLogger.d("Firestore: Hard deleted a batch of ${chunk.length} notes.");
     }
   }
 }

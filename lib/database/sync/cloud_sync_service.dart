@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/core/util/logger.dart';
 import 'package:noteit/database/sync/sync_orchestrator.dart';
 import '../drift/notes/notes_dao.dart';
 import '../firebase/firebase_database.dart';
@@ -18,13 +19,13 @@ class CloudSyncService {
 
   void start() {
     if (_remoteSubscription != null) return; // Already running
-    print("CloudWorker: Starting Firebase sync engine...");
+    AppLogger.d("CloudWorker: Starting Firebase sync engine...");
     _startActiveSessionListener();
     executeFullSync();
   }
 
   void stop() {
-    print("CloudWorker: Stopping Firebase sync engine...");
+    AppLogger.d("CloudWorker: Stopping Firebase sync engine...");
     _remoteSubscription?.cancel();
     _remoteSubscription = null;
   }
@@ -43,7 +44,7 @@ class CloudSyncService {
         .listen((newDocs) async {
           if (newDocs.isEmpty) return;
 
-          print("CloudWorker: Real-time remote changes detected!");
+          AppLogger.d("CloudWorker: Real-time remote changes detected!");
           for (final doc in newDocs) {
             // upsertNoteFromCloud now only needs the data map, since UUID is inside it!
             await notesDao.upsertNoteFromCloud(doc.data()!);
@@ -83,14 +84,14 @@ class CloudSyncService {
         await firebaseDb.pushBatch(pendingNotes);
 
         await notesDao.markAsCloudSynced(pendingNotes.map((n) => n.uuid));
-        print("CloudWorker: Pushed ${pendingNotes.length} notes.");
+        AppLogger.d("CloudWorker: Pushed ${pendingNotes.length} notes.");
       }
 
       // --- BOOKMARK ---
       await prefs.setLastSyncTime(newSyncTime);
-      print("CloudWorker: Sync Complete. Bookmark: $newSyncTime");
+      AppLogger.d("CloudWorker: Sync Complete. Bookmark: $newSyncTime");
     } catch (e) {
-      print("CloudWorker: Sync Failed -> $e");
+      AppLogger.d("CloudWorker: Sync Failed -> $e");
     } finally {
       _isSyncing = false;
 

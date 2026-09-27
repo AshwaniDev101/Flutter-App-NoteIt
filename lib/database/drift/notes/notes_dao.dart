@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../core/util/logger.dart';
 import '../local_database.dart';
 import 'notes_table.dart';
 
@@ -168,7 +169,7 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
           notes,
         )..where((t) => t.uuid.equals(incomingUuid))).write(noteCompanion);
       } else {
-        print(
+        AppLogger.d(
           "Drift: Ignored older incoming data for note $incomingUuid. Local is newer.",
         );
       }
@@ -292,7 +293,7 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
     final deletedCount = await (delete(
       notes,
     )..where((t) => t.deletedAt.isNotNull())).go();
-    print("Drift: Emptied $deletedCount notes from local trash.");
+    AppLogger.d("Drift: Emptied $deletedCount notes from local trash.");
 
     return uuidsToDelete;
   }
