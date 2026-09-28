@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/routing/routing.dart';
@@ -22,15 +25,20 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
 
-  // Remove the default windows form and add ability to add a custom one
-  await windowManager.ensureInitialized();
-  WindowOptions windowOptions = const WindowOptions(
-    titleBarStyle: TitleBarStyle.hidden, // Hides the default Windows frame
-  );
-  await windowManager.waitUntilReadyToShow(windowOptions, () async {
-    await windowManager.show();
-    await windowManager.focus();
-  });
+  if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
+    // Remove the default windows form and add ability to add a custom one
+    await windowManager.ensureInitialized();
+    WindowOptions windowOptions = const WindowOptions(
+      titleBarStyle: TitleBarStyle.hidden, // Hides the default Windows frame
+      size: Size(1280, 720),
+      center: true,
+    );
+    await windowManager.waitUntilReadyToShow(windowOptions, () async {
+      await windowManager.show();
+      await windowManager.focus();
+    });
+
+  }
 
 
 

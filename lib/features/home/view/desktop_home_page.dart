@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/database/sync/local_sync_service.dart';
+import 'package:noteit/features/home/view/dynamic_notes_layout.dart';
 import 'package:noteit/features/home/view/widgets/home_app_bars.dart';
 import 'package:noteit/features/home/view/widgets/notes_grid_view.dart';
 import 'package:uuid/uuid.dart';
@@ -15,6 +16,7 @@ import '../../note_editor/screens/view/edit_note_page.dart';
 import '../core/providers.dart';
 import '../core/sort.dart';
 import '../core/options.dart';
+import '../note_view.dart';
 import '../viewmodel/home_view_model.dart';
 import 'password_prompt_helper.dart';
 
@@ -60,13 +62,14 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
     // Watched solely to keep the sync manager alive in the widget tree.
     ref.watch(syncOrchestratorProvider);
 
+    final viewType = ref.watch(noteViewTypeProvider);
+
     return PopScope(
       canPop: !homeState.isSelectMode,
       onPopInvokedWithResult: (bool didPop, Object? result) {
         if (!didPop && homeState.isSelectMode) viewModel.clearSelection();
       },
       child: Scaffold(
-
         // appBar: _buildAppBar(homeState, viewModel),
         body: Row(
           children: [
@@ -112,56 +115,53 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
         child: DragToMoveArea(
           child: homeState.isSelectMode
               ? SelectModeAppBar(
-
-            noteIds: homeState.selectedNoteIds,
-            onClearSelection: viewModel.clearSelection,
-            onSelectAll: () {
-              final allNoteUuids = (ref.read(filteredNotesProvider).value ?? [])
-                  .map((n) => n.uuid)
-                  .toList();
-              viewModel.toggleSelectAll(allNoteUuids);
-            },
-          )
-              :AppBar(
-            title: const Text('Note-It', style: TextStyle(fontWeight: FontWeight.bold)),
-            elevation: 0,
-            actions: [
-              IconButton(
-                tooltip: "New Note",
-                icon: Icon(Icons.edit_square, color: colorScheme.primary),
-                onPressed: () {
-                  final emptyNote = Note(
-                    uuid: const Uuid().v4(),
-                    title: '',
-                    content: '',
-                    createdAt: DateTime.now().toUtc(),
-                    updatedAt: DateTime.now().toUtc(),
-                    isLocked: false,
-                    isPinned: false,
-                    color: 0,
-                    isArchived: false,
-                    position: 0,
-                    hasAttachments: false,
-                    contentType: 'text',
-                    isShared: false,
-                    cloudSyncStatus: 0,
-                    localSyncStatus: 0,
-                    versionCounter: 1,
-                  );
-                  setState(() => _activeNote = emptyNote);
-                },
-              ),
-              // IconButton(
-              //   tooltip: "Settings",
-              //   icon: Icon(Icons.settings, color: colorScheme.primary),
-              //   onPressed: () {
-              //     ref.read(syncOrchestratorProvider).triggerSync();
-              //   },
-              // ),
-              // WebSocketConnectionIndicator(isConnected: isConnected),
-              const SizedBox(width: 8),
-            ],
-          ),
+                  noteIds: homeState.selectedNoteIds,
+                  onClearSelection: viewModel.clearSelection,
+                  onSelectAll: () {
+                    final allNoteUuids = (ref.read(filteredNotesProvider).value ?? []).map((n) => n.uuid).toList();
+                    viewModel.toggleSelectAll(allNoteUuids);
+                  },
+                )
+              : AppBar(
+                  title: const Text('Note-It', style: TextStyle(fontWeight: FontWeight.bold)),
+                  elevation: 0,
+                  actions: [
+                    IconButton(
+                      tooltip: "New Note",
+                      icon: Icon(Icons.edit_square, color: colorScheme.primary),
+                      onPressed: () {
+                        final emptyNote = Note(
+                          uuid: const Uuid().v4(),
+                          title: '',
+                          content: '',
+                          createdAt: DateTime.now().toUtc(),
+                          updatedAt: DateTime.now().toUtc(),
+                          isLocked: false,
+                          isPinned: false,
+                          color: 0,
+                          isArchived: false,
+                          position: 0,
+                          hasAttachments: false,
+                          contentType: 'text',
+                          isShared: false,
+                          cloudSyncStatus: 0,
+                          localSyncStatus: 0,
+                          versionCounter: 1,
+                        );
+                        setState(() => _activeNote = emptyNote);
+                      },
+                    ),
+                    // IconButton(
+                    //   tooltip: "Settings",
+                    //   icon: Icon(Icons.settings, color: colorScheme.primary),
+                    //   onPressed: () {
+                    //     ref.read(syncOrchestratorProvider).triggerSync();
+                    //   },
+                    // ),
+                    // WebSocketConnectionIndicator(isConnected: isConnected),
+                    const SizedBox(width: 8),
+                  ],
+                ),
         ),
       ),
       body: Column(
@@ -175,7 +175,7 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
                   child: TextField(
                     controller: _searchController,
                     decoration: InputDecoration(
-                      hintText: 'Search notes...',
+                      hintText: 'search...',
                       prefixIcon: const Icon(Icons.search),
                       suffixIcon: _searchController.text.isNotEmpty
                           ? IconButton(icon: const Icon(Icons.clear, size: 20), onPressed: _clearSearch)
@@ -199,12 +199,13 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
                   ),
                 ),
                 const SizedBox(width: 4),
+                const ViewSwitcherButton(),
                 _buildFilterMenu(currentSortOption, currentPlatformFilter, colorScheme),
               ],
             ),
           ),
           Expanded(
-            child: NotesGridView(
+            child: DynamicNotesLayout(
               isSelectMode: homeState.isSelectMode,
               noteIds: homeState.selectedNoteIds,
               activeNoteId: _activeNote?.uuid,
@@ -213,9 +214,71 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
               onPromptPassword: (ctx, note) => PasswordPromptHelper.promptAndVerify(ctx, ref, note),
               onNoteTap: _handleNoteTap,
             ),
+
+            // child: NotesGridView(
+            //   isSelectMode: homeState.isSelectMode,
+            //   noteIds: homeState.selectedNoteIds,
+            //   activeNoteId: _activeNote?.uuid,
+            //   onToggleSelection: viewModel.toggleSelection,
+            //   onEnableSelectMode: viewModel.enableSelectMode,
+            //   onPromptPassword: (ctx, note) => PasswordPromptHelper.promptAndVerify(ctx, ref, note),
+            //   onNoteTap: _handleNoteTap,
+            // ),
           ),
         ],
       ),
+    );
+  }
+
+  // ==== Right panel ====
+  Widget _buildRightPanel() {
+    // ValueKey must use the UUID so the editor rebuilds when switching notes
+    final colorScheme = Theme.of(context).colorScheme;
+    final isConnected = ref.watch(localSyncServiceProvider) == SyncConnectionState.connected;
+    final isSyncing = ref.watch(isSyncingProvider);
+
+    return Scaffold(
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        child: DragToMoveArea(
+          child: AppBar(
+            // title: const Text('Note-It', style: TextStyle(fontWeight: FontWeight.bold)),
+            elevation: 0,
+            actions: [
+              const Spacer(),
+
+              WebSocketConnectionIndicator(isConnected: isConnected),
+
+              IconButton(
+                tooltip: "Sync Notes",
+                icon: SpinningSyncIcon(isSyncing: isSyncing, color: colorScheme.primary),
+                onPressed: () {
+                  ref.read(syncOrchestratorProvider).triggerSync();
+                },
+              ),
+              // Re-add standard window controls manually
+              const VerticalDivider(indent: 12, endIndent: 12, width: 1),
+              const SizedBox(width: 8),
+              IconButton(icon: const Icon(Icons.minimize, size: 16), onPressed: () => windowManager.minimize()),
+              IconButton(
+                icon: const Icon(Icons.crop_square, size: 16),
+                onPressed: () async {
+                  if (await windowManager.isMaximized()) {
+                    windowManager.unmaximize();
+                  } else {
+                    windowManager.maximize();
+                  }
+                },
+              ),
+              IconButton(icon: const Icon(Icons.close, size: 16), onPressed: () => windowManager.close()),
+              const SizedBox(width: 8),
+            ],
+          ),
+        ),
+      ),
+      body: _activeNote == null
+          ? homepagePlaceholder()
+          : EditNotePage(key: ValueKey(_activeNote!.uuid), existingNote: _activeNote),
     );
   }
 
@@ -281,6 +344,17 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
     );
   }
 
+  void _handleNoteTap(Note note) async {
+    if (note.isLocked) {
+      final success = await PasswordPromptHelper.promptAndVerify(context, ref, note);
+      if (success && mounted) {
+        setState(() => _activeNote = note);
+      }
+    } else {
+      setState(() => _activeNote = note);
+    }
+  }
+
   PopupMenuItem<String> _buildSortItem(String value, String label, bool isSelected, ColorScheme colorScheme) {
     return PopupMenuItem<String>(
       value: value,
@@ -317,74 +391,6 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
         ],
       ),
     );
-  }
-
-  // ==== Right panel ====
-  Widget _buildRightPanel() {
-
-    // ValueKey must use the UUID so the editor rebuilds when switching notes
-    final colorScheme = Theme.of(context).colorScheme;
-    final isConnected = ref.watch(localSyncServiceProvider) == SyncConnectionState.connected;
-    final isSyncing = ref.watch(isSyncingProvider);
-
-    return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(kToolbarHeight),
-        child: DragToMoveArea(
-          child: AppBar(
-            // title: const Text('Note-It', style: TextStyle(fontWeight: FontWeight.bold)),
-            elevation: 0,
-            actions: [
-
-
-
-
-              const Spacer(),
-
-              WebSocketConnectionIndicator(isConnected: isConnected),
-
-              IconButton(
-                tooltip: "Sync Notes",
-                icon: SpinningSyncIcon(isSyncing: isSyncing, color: colorScheme.primary),
-                onPressed: () {
-                  ref.read(syncOrchestratorProvider).triggerSync();
-                },
-              ),
-              // Re-add standard window controls manually
-              const VerticalDivider(indent: 12, endIndent: 12, width: 1),
-              const SizedBox(width: 8),
-              IconButton(icon: const Icon(Icons.minimize, size: 20), onPressed: () => windowManager.minimize()),
-              IconButton(
-                icon: const Icon(Icons.crop_square, size: 20),
-                onPressed: () async {
-                  if (await windowManager.isMaximized()) {
-                    windowManager.unmaximize();
-                  } else {
-                    windowManager.maximize();
-                  }
-                },
-              ),
-              IconButton(icon: const Icon(Icons.close, size: 20), onPressed: () => windowManager.close()),
-              const SizedBox(width: 8),
-            ],
-          ),
-        ),
-      ),
-      body: _activeNote == null
-          ? homepagePlaceholder()
-          : EditNotePage(key: ValueKey(_activeNote!.uuid), existingNote: _activeNote),
-    );
-  }
-
-  void _handleNoteTap(Note note) async {
-    if (note.isLocked) {
-      final success = await PasswordPromptHelper.promptAndVerify(context, ref, note);
-      if (success && mounted) {
-        setState(() => _activeNote = note);
-      }
-    } else {
-      setState(() => _activeNote = note);
-    }
   }
 
   Widget homepagePlaceholder() {
