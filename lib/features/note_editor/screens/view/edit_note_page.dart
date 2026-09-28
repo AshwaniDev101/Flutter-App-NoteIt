@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:noteit/database/drift/local_database.dart';
 
+import '../../../../core/theme/note_theme.dart';
 import '../../../../shared/widgets/snack_bar_manager.dart';
 import '../../../unlock/lock_manger/lock_manager.dart';
 import '../../../unlock/view/setup_password_page.dart';
@@ -154,24 +155,43 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
   Widget _buildDesktopUI() {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final noteTheme = Theme.of(context).extension<NoteTheme>()!;
 
-    return Scaffold(
-      backgroundColor: colorScheme.surface,
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        titleSpacing: 24,
-        title: _buildTitleField(colorScheme, textTheme, maxWidth: 300),
-        actions: [
-          _buildUndoRedoButtons(),
-          if (!_isNewNote) _buildOptionMenu(),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: Column(
-        children: [
-          _buildMetaDataRow(colorScheme, textTheme, padding: 24.0),
-          Expanded(child: _buildContentField(textTheme, padding: 24.0)),
-        ],
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: ClipRRect(
+
+        // ADD ROUNDED CORNERS HERE
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(16.0),
+          topRight: Radius.circular(16.0),
+          bottomLeft: Radius.circular(16.0),
+          bottomRight: Radius.circular(16.0),
+        ),
+
+        child: Scaffold(
+          // backgroundColor: colorScheme.surface,
+          backgroundColor: noteTheme.cardContentBackground,
+          appBar: AppBar(
+            backgroundColor: noteTheme.cardContentBackground,
+            automaticallyImplyLeading: false,
+            titleSpacing: 24,
+            title: _buildTitleField(colorScheme, textTheme, maxWidth: 300),
+            actions: [
+              _buildUndoRedoButtons(),
+              // if (!_isNewNote) _buildOptionMenu(),
+              const SizedBox(width: 8),
+
+              showOptionButtons(),
+            ],
+          ),
+          body: Column(
+            children: [
+              _buildMetaDataRow(colorScheme, textTheme, padding: 24.0),
+              Expanded(child: _buildContentField(textTheme, padding: 24.0)),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -365,6 +385,10 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
     );
   }
 
+
+
+
+  // if(Platfrom)
   Widget _buildOptionMenu() {
     return PopupMenuButton<String>(
       style: IconButton.styleFrom(
@@ -461,5 +485,53 @@ class _EditNotePageState extends ConsumerState<EditNotePage> {
         ];
       },
     );
+  }
+
+  Widget showOptionButtons() {
+    return Row(children: [
+      // 1. PIN BUTTON
+      IconButton(
+        tooltip: widget.existingNote?.isPinned == true ? 'Unpin Note' : 'Pin Note',
+        icon: Icon(
+          widget.existingNote?.isPinned == true ? Icons.push_pin : Icons.push_pin_outlined,
+          // Optional: add color to make it pop when active
+          // color: widget.existingNote?.isPinned == true ? colorScheme.primary : null,
+        ),
+        onPressed: () {
+          // Add your pin toggle logic here
+          // e.g., _viewModel.togglePin(widget.existingNote!.uuid);
+        },
+      ),
+
+// 2. LOCK BUTTON
+      IconButton(
+        tooltip: _isLocked ? 'Remove Lock' : 'Lock Note',
+        icon: Icon(
+          _isLocked ? Icons.lock_clock_outlined : Icons.lock_outline,
+        ),
+        onPressed: () async {
+          // Paste your existing 'toggle_lock' logic here
+        },
+      ),
+
+// 3. DELETE BUTTON
+      IconButton(
+        tooltip: 'Delete Note',
+        icon: const Icon(
+          Icons.delete_outline,
+          color: Colors.redAccent,
+        ),
+        onPressed: () {
+          if (!_isNewNote && widget.existingNote != null) {
+            _hasTriggeredFinalSave = true;
+            ref.read(editNoteViewModelProvider.notifier).deleteNote(widget.existingNote!.uuid);
+
+            if (defaultTargetPlatform == TargetPlatform.android && mounted) {
+              context.pop();
+            }
+          }
+        },
+      ),
+    ],);
   }
 }

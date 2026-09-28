@@ -7,7 +7,6 @@ import '../../../../../database/sync/sync_orchestrator.dart';
 import '../../../../../shared/widgets/note_card.dart';
 import '../core/providers.dart';
 import '../note_view.dart';
-// TODO: Import your noteViewTypeProvider here
 
 class DynamicNotesLayout extends ConsumerWidget {
   final bool isSelectMode;
@@ -41,10 +40,10 @@ class DynamicNotesLayout extends ConsumerWidget {
     final isActive = currentNote.uuid == activeNoteId;
     final displayAsLocked = currentNote.isLocked;
 
-
-    final noteCard = NoteCard(
+    return NoteCard(
       note: currentNote,
-      isSelected: isSelected,
+      // Tell the card to light up if it's selected OR if it's the active note being edited
+      isSelected: isSelected || isActive,
       searchQuery: ref.read(searchQueryProvider),
       onTap: () async {
         if (isSelectMode) {
@@ -83,19 +82,6 @@ class DynamicNotesLayout extends ConsumerWidget {
         ],
       ],
     );
-
-    if (isActive && !isSelectMode) {
-      return AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: colorScheme.primary, width: 2.5),
-        ),
-        child: noteCard,
-      );
-    }
-
-    return noteCard;
   }
 
   @override
@@ -129,12 +115,9 @@ class DynamicNotesLayout extends ConsumerWidget {
       // Use ListView for list layouts
         return ListView.builder(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.only(bottom: 80),
+          // padding: const EdgeInsets.only(bottom: 80),
           itemCount: notes.length,
-          itemBuilder: (context, index) => Padding(
-            padding: const EdgeInsets.only(bottom: 8.0),
-            child: _buildNoteItem(context, ref, notes[index]),
-          ),
+          itemBuilder: (context, index) => _buildNoteItem(context, ref, notes[index]),
         );
 
       case NoteViewType.grid:

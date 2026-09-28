@@ -30,10 +30,11 @@ Future<void> main() async {
     await windowManager.ensureInitialized();
     WindowOptions windowOptions = const WindowOptions(
       titleBarStyle: TitleBarStyle.hidden, // Hides the default Windows frame
-      size: Size(1280, 720),
+      size: Size(1400, 900),
       center: true,
     );
     await windowManager.waitUntilReadyToShow(windowOptions, () async {
+
       await windowManager.show();
       await windowManager.focus();
     });
