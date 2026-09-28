@@ -6,10 +6,11 @@ import 'package:noteit/database/shared_preference/shared_preference_manager.dart
 import 'package:noteit/firebase_options.dart';
 import 'package:noteit/shared/widgets/snack_bar_manager.dart';
 import 'package:noteit/startup_initializer.dart';
+import 'package:window_manager/window_manager.dart';
 
 import 'core/theme/app_theme.dart';
 
-// Build Command: flutter build windows
+// Window Release : flutter build windows
 // Built location: build\windows\x64\runner\Release\noteit.exe
 // Get Git Diff : git diff HEAD | clip
 // Build drift db : dart run build_runner build -d
@@ -19,6 +20,19 @@ import 'core/theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+
+  // Remove the default windows form and add ability to add a custom one
+  await windowManager.ensureInitialized();
+  WindowOptions windowOptions = const WindowOptions(
+    titleBarStyle: TitleBarStyle.hidden, // Hides the default Windows frame
+  );
+  await windowManager.waitUntilReadyToShow(windowOptions, () async {
+    await windowManager.show();
+    await windowManager.focus();
+  });
+
+
 
   await SharedPreferenceManager.init();
 
@@ -41,7 +55,7 @@ class _MyApp extends ConsumerWidget {
       scaffoldMessengerKey: scaffoldMessengerKey,
       routerConfig: router,
       debugShowCheckedModeBanner: false,
-      title: 'NoteIt',
+      title: 'Note-It',
 
       // Resolve the ThemeData dynamically using your unified Themes class
       theme: Themes.getThemeData(activeTheme),

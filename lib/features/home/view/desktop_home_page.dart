@@ -5,6 +5,7 @@ import 'package:noteit/database/sync/local_sync_service.dart';
 import 'package:noteit/features/home/view/widgets/home_app_bars.dart';
 import 'package:noteit/features/home/view/widgets/notes_grid_view.dart';
 import 'package:uuid/uuid.dart';
+import 'package:window_manager/window_manager.dart';
 
 import '../../../../database/sync/sync_orchestrator.dart';
 import '../../../shared/widgets/spinning_sync_icon.dart';
@@ -28,7 +29,10 @@ class DesktopHomePage extends ConsumerStatefulWidget {
 class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
   final TextEditingController _searchController = TextEditingController();
 
-  /// Tracks the currently selected note displayed in the right panel.
+  // Add this variable to control the width
+  double _leftPanelWidth = 340.0;
+
+  // Tracks the currently selected note displayed in the right panel.
   Note? _activeNote;
 
   @override
@@ -62,12 +66,33 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
         if (!didPop && homeState.isSelectMode) viewModel.clearSelection();
       },
       child: Scaffold(
-        drawer: const HomepageDrawer(),
-        appBar: _buildAppBar(homeState, viewModel),
+
+        // appBar: _buildAppBar(homeState, viewModel),
         body: Row(
           children: [
-            SizedBox(width: 340, child: _buildLeftPanel(homeState, viewModel)),
-            const VerticalDivider(width: 1, thickness: 1),
+            SizedBox(width: _leftPanelWidth, child: _buildLeftPanel(homeState, viewModel)),
+
+            // const VerticalDivider(width: 1, thickness: 1),
+            MouseRegion(
+              cursor: SystemMouseCursors.resizeColumn,
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onPanUpdate: (details) {
+                  setState(() {
+                    _leftPanelWidth += details.delta.dx;
+
+                    // Prevent the panel from getting too small or too large
+                    if (_leftPanelWidth < 250) _leftPanelWidth = 250;
+                    if (_leftPanelWidth > 600) _leftPanelWidth = 600;
+                  });
+                },
+                child: const SizedBox(
+                  width: 8, // Makes the grab area slightly wider than the visual line
+                  child: VerticalDivider(width: 1, thickness: 1),
+                ),
+              ),
+            ),
+
             Expanded(child: _buildRightPanel()),
           ],
         ),
@@ -75,154 +100,122 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
     );
   }
 
-  // ==== App Bar ====
-  PreferredSizeWidget _buildAppBar(
-    HomePageState state,
-    HomeViewModel viewModel,
-  ) {
-    // Just to get Connection state from local sync service
-    final SyncConnectionState syncConnectionState = ref.watch(
-      localSyncServiceProvider,
-    );
-    final isConnected = syncConnectionState == SyncConnectionState.connected;
-    // Getting the sync state from the orchestrator
-    final isSyncing = ref.watch(isSyncingProvider);
-
-    if (state.isSelectMode) {
-      return SelectModeAppBar(
-        noteIds: state.selectedNoteIds,
-        onClearSelection: viewModel.clearSelection,
-        onSelectAll: () {
-          final allNoteUuids = (ref.read(filteredNotesProvider).value ?? [])
-              .map((n) => n.uuid)
-              .toList();
-          viewModel.toggleSelectAll(allNoteUuids);
-        },
-      );
-    }
-    return AppBar(
-      title: const Text('Note-It'),
-      elevation: 0,
-      centerTitle: true,
-      actions: [
-        TextButton.icon(
-          onPressed: () {
-            final emptyNote = Note(
-              uuid: const Uuid().v4(),
-              title: '',
-              content: '',
-              createdAt: DateTime.now().toUtc(),
-              updatedAt: DateTime.now().toUtc(),
-              isLocked: false,
-              isPinned: false,
-              color: 0,
-              isArchived: false,
-              position: 0,
-              hasAttachments: false,
-              contentType: 'text',
-              isShared: false,
-              cloudSyncStatus: 0,
-              localSyncStatus: 0,
-              versionCounter: 1,
-            );
-            setState(() => _activeNote = emptyNote);
-          },
-          icon: Icon(Icons.add, color: Theme.of(context).colorScheme.primary),
-          label: const Text("New Note"),
-        ),
-        const SizedBox(width: 8),
-        TextButton.icon(
-          onPressed: () {
-            ref.read(syncOrchestratorProvider).triggerSync();
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(const SnackBar(content: Text('Syncing notes...')));
-          },
-          icon: SpinningSyncIcon(
-            isSyncing: isSyncing,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-          // icon: Icon(Icons.sync, color: Theme.of(context).colorScheme.primary),
-          label: const Text("Sync"),
-        ),
-        const SizedBox(width: 8),
-        WebSocketConnectionIndicator(isConnected: isConnected),
-        const SizedBox(width: 8),
-      ],
-    );
-  }
-
-  // ==== Left panel ====
   Widget _buildLeftPanel(HomePageState homeState, HomeViewModel viewModel) {
     final currentSortOption = ref.watch(noteSortOptionProvider);
     final currentPlatformFilter = ref.watch(platformFilterProvider);
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(12, 12, 8, 8),
-          child: Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Search notes...',
-                    prefixIcon: const Icon(Icons.search),
-                    suffixIcon: _searchController.text.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear, size: 20),
-                            onPressed: _clearSearch,
-                          )
-                        : null,
-                    filled: true,
-                    fillColor: colorScheme.surfaceContainerHighest.withValues(
-                      alpha: 0.5,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(30),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                  ),
-                  onTap: () {
-                    if (!homeState.isSearchMode) viewModel.enterSearchMode();
-                  },
-                  onChanged: (value) {
-                    if (value.isNotEmpty && !homeState.isSearchMode)
-                      viewModel.enterSearchMode();
-                    if (value.isEmpty) {
-                      _clearSearch();
-                    } else {
-                      ref.read(searchQueryProvider.notifier).updateQuery(value);
-                    }
-                  },
-                ),
+    return Scaffold(
+      drawer: const HomepageDrawer(),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        child: DragToMoveArea(
+          child: homeState.isSelectMode
+              ? SelectModeAppBar(
+
+            noteIds: homeState.selectedNoteIds,
+            onClearSelection: viewModel.clearSelection,
+            onSelectAll: () {
+              final allNoteUuids = (ref.read(filteredNotesProvider).value ?? [])
+                  .map((n) => n.uuid)
+                  .toList();
+              viewModel.toggleSelectAll(allNoteUuids);
+            },
+          )
+              :AppBar(
+            title: const Text('Note-It', style: TextStyle(fontWeight: FontWeight.bold)),
+            elevation: 0,
+            actions: [
+              IconButton(
+                tooltip: "New Note",
+                icon: Icon(Icons.edit_square, color: colorScheme.primary),
+                onPressed: () {
+                  final emptyNote = Note(
+                    uuid: const Uuid().v4(),
+                    title: '',
+                    content: '',
+                    createdAt: DateTime.now().toUtc(),
+                    updatedAt: DateTime.now().toUtc(),
+                    isLocked: false,
+                    isPinned: false,
+                    color: 0,
+                    isArchived: false,
+                    position: 0,
+                    hasAttachments: false,
+                    contentType: 'text',
+                    isShared: false,
+                    cloudSyncStatus: 0,
+                    localSyncStatus: 0,
+                    versionCounter: 1,
+                  );
+                  setState(() => _activeNote = emptyNote);
+                },
               ),
-              const SizedBox(width: 4),
-              _buildFilterMenu(
-                currentSortOption,
-                currentPlatformFilter,
-                colorScheme,
-              ),
+              // IconButton(
+              //   tooltip: "Settings",
+              //   icon: Icon(Icons.settings, color: colorScheme.primary),
+              //   onPressed: () {
+              //     ref.read(syncOrchestratorProvider).triggerSync();
+              //   },
+              // ),
+              // WebSocketConnectionIndicator(isConnected: isConnected),
+              const SizedBox(width: 8),
             ],
           ),
         ),
-        Expanded(
-          child: NotesGridView(
-            isSelectMode: homeState.isSelectMode,
-            noteIds: homeState.selectedNoteIds,
-            activeNoteId: _activeNote?.uuid,
-            onToggleSelection: viewModel.toggleSelection,
-            onEnableSelectMode: viewModel.enableSelectMode,
-            onPromptPassword: (ctx, note) =>
-                PasswordPromptHelper.promptAndVerify(ctx, ref, note),
-            onNoteTap: _handleNoteTap,
+      ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 8, 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Search notes...',
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: _searchController.text.isNotEmpty
+                          ? IconButton(icon: const Icon(Icons.clear, size: 20), onPressed: _clearSearch)
+                          : null,
+                      filled: true,
+                      fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                    ),
+                    onTap: () {
+                      if (!homeState.isSearchMode) viewModel.enterSearchMode();
+                    },
+                    onChanged: (value) {
+                      if (value.isNotEmpty && !homeState.isSearchMode) viewModel.enterSearchMode();
+                      if (value.isEmpty) {
+                        _clearSearch();
+                      } else {
+                        ref.read(searchQueryProvider.notifier).updateQuery(value);
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(width: 4),
+                _buildFilterMenu(currentSortOption, currentPlatformFilter, colorScheme),
+              ],
+            ),
           ),
-        ),
-      ],
+          Expanded(
+            child: NotesGridView(
+              isSelectMode: homeState.isSelectMode,
+              noteIds: homeState.selectedNoteIds,
+              activeNoteId: _activeNote?.uuid,
+              onToggleSelection: viewModel.toggleSelection,
+              onEnableSelectMode: viewModel.enableSelectMode,
+              onPromptPassword: (ctx, note) => PasswordPromptHelper.promptAndVerify(ctx, ref, note),
+              onNoteTap: _handleNoteTap,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -243,65 +236,34 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
       onSelected: (String value) {
         switch (value) {
           case 'sortCreated':
-            ref
-                .read(noteSortOptionProvider.notifier)
-                .updateSort(NoteSortOption.createdAt);
+            ref.read(noteSortOptionProvider.notifier).updateSort(NoteSortOption.createdAt);
             break;
           case 'sortName':
-            ref
-                .read(noteSortOptionProvider.notifier)
-                .updateSort(NoteSortOption.name);
+            ref.read(noteSortOptionProvider.notifier).updateSort(NoteSortOption.name);
             break;
           case 'sortUpdated':
-            ref
-                .read(noteSortOptionProvider.notifier)
-                .updateSort(NoteSortOption.updatedAt);
+            ref.read(noteSortOptionProvider.notifier).updateSort(NoteSortOption.updatedAt);
             break;
           case 'filterPhone':
-            ref
-                .read(platformFilterProvider.notifier)
-                .toggleFilter(PlatformOptions.android);
+            ref.read(platformFilterProvider.notifier).toggleFilter(PlatformOptions.android);
             break;
           case 'filterWindows':
-            ref
-                .read(platformFilterProvider.notifier)
-                .toggleFilter(PlatformOptions.windows);
+            ref.read(platformFilterProvider.notifier).toggleFilter(PlatformOptions.windows);
             break;
         }
       },
       itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
         const PopupMenuItem<String>(
           enabled: false,
-          child: Text(
-            'SORT BY',
-            style: TextStyle(fontSize: 12, color: Colors.grey),
-          ),
+          child: Text('SORT BY', style: TextStyle(fontSize: 12, color: Colors.grey)),
         ),
-        _buildSortItem(
-          'sortCreated',
-          'Created',
-          currentSortOption == NoteSortOption.createdAt,
-          colorScheme,
-        ),
-        _buildSortItem(
-          'sortName',
-          'Name',
-          currentSortOption == NoteSortOption.name,
-          colorScheme,
-        ),
-        _buildSortItem(
-          'sortUpdated',
-          'Last Updated',
-          currentSortOption == NoteSortOption.updatedAt,
-          colorScheme,
-        ),
+        _buildSortItem('sortCreated', 'Created', currentSortOption == NoteSortOption.createdAt, colorScheme),
+        _buildSortItem('sortName', 'Name', currentSortOption == NoteSortOption.name, colorScheme),
+        _buildSortItem('sortUpdated', 'Last Updated', currentSortOption == NoteSortOption.updatedAt, colorScheme),
         const PopupMenuDivider(),
         const PopupMenuItem<String>(
           enabled: false,
-          child: Text(
-            'FILTER PLATFORM',
-            style: TextStyle(fontSize: 12, color: Colors.grey),
-          ),
+          child: Text('FILTER PLATFORM', style: TextStyle(fontSize: 12, color: Colors.grey)),
         ),
         _buildFilterItem(
           'filterPhone',
@@ -319,12 +281,7 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
     );
   }
 
-  PopupMenuItem<String> _buildSortItem(
-    String value,
-    String label,
-    bool isSelected,
-    ColorScheme colorScheme,
-  ) {
+  PopupMenuItem<String> _buildSortItem(String value, String label, bool isSelected, ColorScheme colorScheme) {
     return PopupMenuItem<String>(
       value: value,
       child: Row(
@@ -332,9 +289,7 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
         children: [
           Text(label),
           Icon(
-            isSelected
-                ? Icons.radio_button_checked
-                : Icons.radio_button_unchecked,
+            isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
             size: 20,
             color: isSelected ? colorScheme.primary : Colors.grey,
           ),
@@ -343,12 +298,7 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
     );
   }
 
-  PopupMenuItem<String> _buildFilterItem(
-    String value,
-    IconData icon,
-    String label,
-    bool isSelected,
-  ) {
+  PopupMenuItem<String> _buildFilterItem(String value, IconData icon, String label, bool isSelected) {
     return PopupMenuItem<String>(
       value: value,
       child: Row(
@@ -371,23 +321,64 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
 
   // ==== Right panel ====
   Widget _buildRightPanel() {
-    if (_activeNote == null) {
-      return homepagePlaceholder();
-    }
+
     // ValueKey must use the UUID so the editor rebuilds when switching notes
-    return EditNotePage(
-      key: ValueKey(_activeNote!.uuid),
-      existingNote: _activeNote,
+    final colorScheme = Theme.of(context).colorScheme;
+    final isConnected = ref.watch(localSyncServiceProvider) == SyncConnectionState.connected;
+    final isSyncing = ref.watch(isSyncingProvider);
+
+    return Scaffold(
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        child: DragToMoveArea(
+          child: AppBar(
+            // title: const Text('Note-It', style: TextStyle(fontWeight: FontWeight.bold)),
+            elevation: 0,
+            actions: [
+
+
+
+
+              const Spacer(),
+
+              WebSocketConnectionIndicator(isConnected: isConnected),
+
+              IconButton(
+                tooltip: "Sync Notes",
+                icon: SpinningSyncIcon(isSyncing: isSyncing, color: colorScheme.primary),
+                onPressed: () {
+                  ref.read(syncOrchestratorProvider).triggerSync();
+                },
+              ),
+              // Re-add standard window controls manually
+              const VerticalDivider(indent: 12, endIndent: 12, width: 1),
+              const SizedBox(width: 8),
+              IconButton(icon: const Icon(Icons.minimize, size: 20), onPressed: () => windowManager.minimize()),
+              IconButton(
+                icon: const Icon(Icons.crop_square, size: 20),
+                onPressed: () async {
+                  if (await windowManager.isMaximized()) {
+                    windowManager.unmaximize();
+                  } else {
+                    windowManager.maximize();
+                  }
+                },
+              ),
+              IconButton(icon: const Icon(Icons.close, size: 20), onPressed: () => windowManager.close()),
+              const SizedBox(width: 8),
+            ],
+          ),
+        ),
+      ),
+      body: _activeNote == null
+          ? homepagePlaceholder()
+          : EditNotePage(key: ValueKey(_activeNote!.uuid), existingNote: _activeNote),
     );
   }
 
   void _handleNoteTap(Note note) async {
     if (note.isLocked) {
-      final success = await PasswordPromptHelper.promptAndVerify(
-        context,
-        ref,
-        note,
-      );
+      final success = await PasswordPromptHelper.promptAndVerify(context, ref, note);
       if (success && mounted) {
         setState(() => _activeNote = note);
       }
@@ -403,10 +394,7 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
         children: [
           Icon(Icons.edit_note, size: 64, color: Colors.grey.shade400),
           const SizedBox(height: 16),
-          Text(
-            'No note selected',
-            style: TextStyle(color: Colors.grey.shade600, fontSize: 18),
-          ),
+          Text('No note selected', style: TextStyle(color: Colors.grey.shade600, fontSize: 18)),
           const SizedBox(height: 8),
           Text(
             'Select a note from the list or click + to start editing.',

@@ -17,8 +17,8 @@ class _WebSocketConnectionIndicatorState
   @override
   Widget build(BuildContext context) {
     return AnimatedScale(
-      scale: widget.isConnected ? 1.0 : 00,
-      duration: Duration(seconds: 1),
+      scale: widget.isConnected ? 1.0 : 0.0,
+      duration: Duration(microseconds: 100),
       child: Container(
         width: 12,
         height: 12,
@@ -28,11 +28,12 @@ class _WebSocketConnectionIndicatorState
           boxShadow: [
             BoxShadow(
               color: Colors.greenAccent.withValues(alpha: 0.5),
-              blurRadius: 6,
+              blurRadius: 2,
               spreadRadius: 1,
             ),
           ],
         ),
+        // child: Icon(Icons.phonelink_outlined, color:  Colors.white,),
       ),
     );
   }
