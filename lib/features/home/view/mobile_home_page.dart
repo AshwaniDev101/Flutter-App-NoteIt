@@ -34,7 +34,7 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
       ref.read(syncOrchestratorProvider).triggerSync();
     });
 
-    _searchController.addListener(() => setState(() {}));
+    // _searchController.addListener(() => setState(() {}));
   }
 
   @override
@@ -82,7 +82,9 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
         if (!didPop && homeState.isSelectMode) viewModel.clearSelection();
       },
       child: Scaffold(
-        drawer: const HomepageDrawer(),
+        drawer: const Drawer(
+          child: HomepageDrawer(),
+        ),
         appBar: _buildAppBar(homeState, viewModel),
         floatingActionButton: FloatingActionButton(
           onPressed: () => context.push(AppRoutes.edit),
@@ -101,12 +103,20 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
                       decoration: InputDecoration(
                         hintText: 'Search notes...',
                         prefixIcon: const Icon(Icons.search),
-                        suffixIcon: _searchController.text.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.clear, size: 20),
-                                onPressed: _clearSearch,
-                              )
-                            : null,
+
+                        suffixIcon: ValueListenableBuilder<TextEditingValue>(
+                          valueListenable: _searchController,
+                          builder: (context, value, child) {
+                            return value.text.isNotEmpty
+                                ? IconButton(
+                              icon: const Icon(Icons.clear, size: 20),
+                              onPressed: _clearSearch,
+                            )
+                                : const SizedBox.shrink();
+                          },
+                        ),
+
+
                         filled: true,
                         fillColor: colorScheme.surfaceContainerHighest
                             .withValues(alpha: 0.5),

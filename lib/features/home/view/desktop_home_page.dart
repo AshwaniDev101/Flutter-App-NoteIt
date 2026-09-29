@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:noteit/database/drift/local_database.dart';
@@ -29,13 +31,33 @@ class DesktopHomePage extends ConsumerStatefulWidget {
 }
 
 class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
-  final TextEditingController _searchController = TextEditingController();
 
+  final TextEditingController _searchController = TextEditingController();
   // Add this variable to control the width
   double _leftPanelWidth = 340.0;
-
   // Tracks the currently selected note displayed in the right panel.
   Note? _activeNote;
+
+// Drawer state & Debouncer for Drawer
+  bool _isDrawerHovered = false;
+  bool _isDrawerPinned = false;
+  Timer? _hoverTimer;
+  bool get _isDrawerOpen => _isDrawerHovered || _isDrawerPinned;
+
+
+
+  void _handleMenuHover(bool isHovering) {
+    _hoverTimer?.cancel(); // Cancel any pending close actions
+    if (isHovering) {
+      setState(() => _isDrawerHovered = true);
+    } else {
+      // A 150ms grace period prevents flickering if the mouse slips between widgets
+      _hoverTimer = Timer(const Duration(milliseconds: 150), () {
+        if (mounted) setState(() => _isDrawerHovered = false);
+      });
+    }
+  }
+
 
   @override
   void initState() {
@@ -45,11 +67,12 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
       ref.read(syncOrchestratorProvider).triggerSync();
     });
 
-    _searchController.addListener(() => setState(() {}));
+    // _searchController.addListener(() => setState(() {}));
   }
 
   @override
   void dispose() {
+    _hoverTimer?.cancel();
     _searchController.dispose();
     super.dispose();
   }
@@ -58,11 +81,11 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
   Widget build(BuildContext context) {
     final homeState = ref.watch(homeViewModelProvider);
     final viewModel = ref.read(homeViewModelProvider.notifier);
-
+    final colorScheme = Theme.of(context).colorScheme;
     // Watched solely to keep the sync manager alive in the widget tree.
     ref.watch(syncOrchestratorProvider);
 
-    final viewType = ref.watch(noteViewTypeProvider);
+    // final viewType = ref.watch(noteViewTypeProvider);
 
     return PopScope(
       canPop: !homeState.isSelectMode,
@@ -71,32 +94,105 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
       },
       child: Scaffold(
         // appBar: _buildAppBar(homeState, viewModel),
-        body: Row(
+
+
+        body: Stack(
           children: [
-            SizedBox(width: _leftPanelWidth, child: _buildLeftPanel(homeState, viewModel)),
+            Row(
+              children: [
+                SizedBox(width: _leftPanelWidth, child: _buildLeftPanel(homeState, viewModel)),
 
-            // const VerticalDivider(width: 1, thickness: 1),
-            MouseRegion(
-              cursor: SystemMouseCursors.resizeColumn,
-              child: GestureDetector(
-                behavior: HitTestBehavior.translucent,
-                onPanUpdate: (details) {
-                  setState(() {
-                    _leftPanelWidth += details.delta.dx;
+                // const VerticalDivider(width: 1, thickness: 1),
+                MouseRegion(
+                  cursor: SystemMouseCursors.resizeColumn,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.translucent,
+                    onPanUpdate: (details) {
+                      setState(() {
+                        _leftPanelWidth += details.delta.dx;
 
-                    // Prevent the panel from getting too small or too large
-                    if (_leftPanelWidth < 250) _leftPanelWidth = 250;
-                    if (_leftPanelWidth > 600) _leftPanelWidth = 600;
-                  });
-                },
-                child: const SizedBox(
-                  width: 8, // Makes the grab area slightly wider than the visual line
-                  child: VerticalDivider(width: 1, thickness: 1),
+                        // Prevent the panel from getting too small or too large
+                        if (_leftPanelWidth < 250) _leftPanelWidth = 250;
+                        if (_leftPanelWidth > 600) _leftPanelWidth = 600;
+                      });
+                    },
+                    child: const SizedBox(
+                      width: 8, // Makes the grab area slightly wider than the visual line
+                      child: VerticalDivider(width: 1, thickness: 1),
+                    ),
+                  ),
                 ),
-              ),
+
+                // Right Panel
+                Expanded(child: _buildRightPanel()),
+              ],
             ),
 
-            Expanded(child: _buildRightPanel()),
+            // Top Layer: The Instant Windows-Style Hover Drawer
+            if (_isDrawerOpen)
+              Positioned(
+                top: 0,
+                bottom: 0,
+                left: 0,
+                child: MouseRegion(
+                  onEnter: (_) => _handleMenuHover(true),
+                  onExit: (_) => _handleMenuHover(false),
+                  child: Material(
+                    elevation: 16, // Gives a beautiful desktop shadow over the content
+                    color: Theme.of(context).scaffoldBackgroundColor,
+                    child: SizedBox(
+                      width: 250, // Your drawer width
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Header area matches AppBar height precisely
+                          SizedBox(
+                            height: kToolbarHeight,
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child:  //The Instant Windows-Style Hover Drawer
+                              SizedBox(
+                                height: kToolbarHeight,
+                                width: 56.0, // Matches default AppBar leading width
+                                child: Center( // Centers perfectly like the AppBar does
+                                  child: IconButton(
+                                    icon: Icon(
+                                      _isDrawerPinned ? Icons.menu_open : Icons.menu,
+                                      color: colorScheme.primary,
+                                    ),
+                                    onPressed: () => setState(() => _isDrawerPinned = !_isDrawerPinned),
+                                  ),
+                                ),
+                              ),
+                              // child: Padding(
+                              //   padding: const EdgeInsets.only(left: 8.0),
+                              //   child: IconButton(
+                              //     icon: Icon(
+                              //       _isDrawerPinned ? Icons.menu_open : Icons.menu,
+                              //       color: colorScheme.primary,
+                              //     ),
+                              //     onPressed: () => setState(() => _isDrawerPinned = !_isDrawerPinned),
+                              //   ),
+                              // ),
+                            ),
+                          ),
+                          // Your actual drawer content
+                          Expanded(
+                            child: HomepageDrawer(
+                              onDestinationSelected: () {
+                                // If you want unpinned overlay to close when an item is selected:
+                                if (!_isDrawerPinned) {
+                                  setState(() => _isDrawerHovered = false);
+                                }
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -109,7 +205,7 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      drawer: const HomepageDrawer(),
+      // drawer: const HomepageDrawer(),
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(kToolbarHeight),
         child: DragToMoveArea(
@@ -123,6 +219,16 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
                   },
                 )
               : AppBar(
+
+            // Drawer
+            leading: MouseRegion(
+              onEnter: (_) => _handleMenuHover(true),
+              onExit: (_) => _handleMenuHover(false),
+              child: IconButton(
+                icon: Icon(Icons.menu, color: colorScheme.primary),
+                onPressed: () => setState(() => _isDrawerPinned = !_isDrawerPinned),
+              ),
+            ),
                   title: const Text('Note-It', style: TextStyle(fontWeight: FontWeight.bold)),
                   elevation: 0,
                   actions: [
@@ -177,9 +283,22 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
                     decoration: InputDecoration(
                       hintText: 'search...',
                       prefixIcon: const Icon(Icons.search),
-                      suffixIcon: _searchController.text.isNotEmpty
-                          ? IconButton(icon: const Icon(Icons.clear, size: 20), onPressed: _clearSearch)
-                          : null,
+
+
+                      suffixIcon: ValueListenableBuilder<TextEditingValue>(
+                        valueListenable: _searchController,
+                        builder: (context, value, child) {
+                          return value.text.isNotEmpty
+                              ? IconButton(
+                            icon: const Icon(Icons.clear, size: 20),
+                            onPressed: _clearSearch,
+                          )
+                              : const SizedBox.shrink();
+                        },
+                      ),
+                      // suffixIcon: _searchController.text.isNotEmpty
+                      //     ? IconButton(icon: const Icon(Icons.clear, size: 20), onPressed: _clearSearch)
+                      //     : null,
                       filled: true,
                       fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
@@ -245,7 +364,7 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
             // title: const Text('Note-It', style: TextStyle(fontWeight: FontWeight.bold)),
             elevation: 0,
             actions: [
-              const Spacer(),
+              // const Spacer(),
 
               WebSocketConnectionIndicator(isConnected: isConnected),
 
