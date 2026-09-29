@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/database/drift/notes/notes_dao.dart';
+import 'package:noteit/features/local_sync/provider/sync_session_provider.dart';
 
 import '../../../../core/helpers/device_helper.dart';
 import '../../../../database/sync/sync_orchestrator.dart';
@@ -28,16 +29,17 @@ class EditNoteViewModel extends Notifier<EditNoteState> {
   Future<void> saveNote(String title, String content) async {
     state = state.copyWith(isLoading: true, error: null);
 
+    final deviceInfo = await ref.read(deviceInfoProvider.future);
+
     try {
-      final deviceInfo = await DeviceHelper.getDeviceInfo();
 
       await ref
           .read(notesDaoProvider)
           .addNote(
             title: title,
             content: content,
-            creationPlatform: deviceInfo['platform'],
-            creationDevice: deviceInfo['deviceName'],
+            creationPlatform: deviceInfo.extractPlatform,
+            creationDevice: deviceInfo.extractName,
           );
 
       // Fire background sync via Orchestrator

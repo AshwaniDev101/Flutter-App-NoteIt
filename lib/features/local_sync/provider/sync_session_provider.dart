@@ -101,18 +101,28 @@ final localIPProvide = FutureProvider<String?>((ref) async {
 });
 
 extension DeviceInfoExtension on BaseDeviceInfo {
+
+  /// Extracts a human-readable device name based on the platform
   String get extractName {
     if (this is AndroidDeviceInfo) return (this as AndroidDeviceInfo).model;
     if (this is IosDeviceInfo) return (this as IosDeviceInfo).name;
-    if (this is WindowsDeviceInfo) {
-      return (this as WindowsDeviceInfo).computerName;
-    }
+    if (this is WindowsDeviceInfo) return (this as WindowsDeviceInfo).computerName;
     if (this is MacOsDeviceInfo) return (this as MacOsDeviceInfo).computerName;
     if (this is LinuxDeviceInfo) return (this as LinuxDeviceInfo).prettyName;
-    if (this is WebBrowserInfo) {
-      return (this as WebBrowserInfo).browserName.toString();
-    }
+    if (this is WebBrowserInfo) return (this as WebBrowserInfo).browserName.toString();
 
     return 'Unknown Device';
+  }
+
+  /// Extracts the platform string natively (Safe for Web as well)
+  String get extractPlatform {
+    if (this is AndroidDeviceInfo) return 'android';
+    if (this is IosDeviceInfo) return 'ios';
+    if (this is WindowsDeviceInfo) return 'windows';
+    if (this is MacOsDeviceInfo) return 'macos';
+    if (this is LinuxDeviceInfo) return 'linux';
+    if (this is WebBrowserInfo) return 'web';
+
+    return 'unknown';
   }
 }

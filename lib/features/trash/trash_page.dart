@@ -340,30 +340,30 @@ class _TrashPageState extends ConsumerState<TrashPage> {
                       _toggleSelection(note.uuid);
                     }
                   },
-                  hoverActions: [
-                    IconButton(
-                      icon: Icon(
-                        isSelected
-                            ? Icons.check_circle
-                            : Icons.radio_button_unchecked_rounded,
-                        size: 18,
-                        color: colorScheme.primary,
-                      ),
-                      visualDensity: VisualDensity.compact,
-                      onPressed: () {
-                        if (!isSelectMode) setState(() => isSelectMode = true);
-                        _toggleSelection(note.uuid);
-                      },
-                    ),
-
-                    if (!isSelectMode)
-                      IconButton(
-                        icon: const Icon(Icons.restore, size: 18),
-                        visualDensity: VisualDensity.compact,
-                        tooltip: 'Restore',
-                        onPressed: () => _restoreNote(note.uuid),
-                      ),
-                  ],
+                  // hoverActions: [
+                  //   IconButton(
+                  //     icon: Icon(
+                  //       isSelected
+                  //           ? Icons.check_circle
+                  //           : Icons.radio_button_unchecked_rounded,
+                  //       size: 18,
+                  //       color: colorScheme.primary,
+                  //     ),
+                  //     visualDensity: VisualDensity.compact,
+                  //     onPressed: () {
+                  //       if (!isSelectMode) setState(() => isSelectMode = true);
+                  //       _toggleSelection(note.uuid);
+                  //     },
+                  //   ),
+                  //
+                  //   if (!isSelectMode)
+                  //     IconButton(
+                  //       icon: const Icon(Icons.restore, size: 18),
+                  //       visualDensity: VisualDensity.compact,
+                  //       tooltip: 'Restore',
+                  //       onPressed: () => _restoreNote(note.uuid),
+                  //     ),
+                  // ],
                 );
               },
             );

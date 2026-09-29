@@ -60,27 +60,27 @@ class DynamicNotesLayout extends ConsumerWidget {
           onToggleSelection(currentNote.uuid);
         }
       },
-      hoverActions: [
-        IconButton(
-          icon: Icon(
-            isSelected ? Icons.check_circle : Icons.radio_button_unchecked_rounded,
-            size: 18,
-            color: colorScheme.primary,
-          ),
-          visualDensity: VisualDensity.compact,
-          onPressed: () {
-            if (!isSelectMode) onEnableSelectMode();
-            onToggleSelection(currentNote.uuid);
-          },
-        ),
-        if (!isSelectMode) ...[
-          IconButton(
-            icon: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
-            visualDensity: VisualDensity.compact,
-            onPressed: () => _deleteNote(ref, currentNote.uuid),
-          ),
-        ],
-      ],
+      // hoverActions: [
+      //   IconButton(
+      //     icon: Icon(
+      //       isSelected ? Icons.check_circle : Icons.radio_button_unchecked_rounded,
+      //       size: 18,
+      //       color: colorScheme.primary,
+      //     ),
+      //     visualDensity: VisualDensity.compact,
+      //     onPressed: () {
+      //       if (!isSelectMode) onEnableSelectMode();
+      //       onToggleSelection(currentNote.uuid);
+      //     },
+      //   ),
+      //   if (!isSelectMode) ...[
+      //     IconButton(
+      //       icon: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
+      //       visualDensity: VisualDensity.compact,
+      //       onPressed: () => _deleteNote(ref, currentNote.uuid),
+      //     ),
+      //   ],
+      // ],
     );
   }
 
