@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/helpers/time_helper.dart';
 import '../../core/theme/note_theme.dart';
 import '../../database/drift/local_database.dart';
 import '../../features/home/note_view.dart';
@@ -152,7 +153,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
             children: [
               Text(
 
-                "2 hr ago", // Replace with actual time formatter
+                TimeHelper.formatTimeAgo(widget.note.updatedAt),
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
@@ -240,7 +241,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "2 hr ago", // Replace with actual time formatter
+                TimeHelper.formatTimeAgo(widget.note.updatedAt),
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
