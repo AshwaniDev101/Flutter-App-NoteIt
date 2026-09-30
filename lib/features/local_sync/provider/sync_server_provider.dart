@@ -6,7 +6,7 @@ import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_web_socket/shelf_web_socket.dart';
 
 import '../../../core/util/logger.dart';
-import '../../../database/drift/device_pairs/synced_devices_dao.dart';
+import '../../../database/drift/synced_devices/synced_devices_dao.dart';
 import '../../../database/shared_preference/shared_preference_manager.dart';
 import '../../../database/sync/local_sync_service.dart';
 

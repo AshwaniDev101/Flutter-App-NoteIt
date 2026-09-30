@@ -4,7 +4,7 @@ import 'package:noteit/features/local_sync/provider/sync_session_provider.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../../../core/util/logger.dart';
-import '../../../database/drift/device_pairs/synced_devices_dao.dart';
+import '../../../database/drift/synced_devices/synced_devices_dao.dart';
 import '../../../database/shared_preference/shared_preference_manager.dart';
 import '../../../database/sync/local_sync_service.dart';
 import '../view/qr/qr_page.dart';

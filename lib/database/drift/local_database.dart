@@ -4,8 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
-import 'device_pairs/synced_devices_dao.dart';
-import 'device_pairs/synced_devices_table.dart';
+import 'keybindings/keybindings_dao.dart';
+import 'keybindings/keybindings_table.dart';
+import 'synced_devices/synced_devices_dao.dart';
+import 'synced_devices/synced_devices_table.dart';
 import 'notes/notes_dao.dart';
 import 'notes/notes_table.dart';
 
@@ -20,7 +22,7 @@ final localDatabaseProvider = Provider((ref) {
   return LocalDatabase();
 });
 
-@DriftDatabase(tables: [Notes, SyncedDevices], daos: [NotesDao, SyncedDevicesDao])
+@DriftDatabase(tables: [Notes, SyncedDevices, AppKeybindings], daos: [NotesDao, SyncedDevicesDao, KeybindingsDao])
 class LocalDatabase extends _$LocalDatabase {
   LocalDatabase()
     : super(
@@ -29,14 +31,9 @@ class LocalDatabase extends _$LocalDatabase {
           // Routes native persistent storage to the application's sandboxed support directory (`AppData` on Windows)
           // to comply with MSIX packaging and avoid OneDrive locking collisions.
           // Without this the 'my_notes_db' will be created in Windows Document folder
-          native: const DriftNativeOptions(
-            databaseDirectory: getApplicationSupportDirectory,
-          ),
+          native: const DriftNativeOptions(databaseDirectory: getApplicationSupportDirectory),
 
-          web: DriftWebOptions(
-            sqlite3Wasm: Uri.parse('sqlite3.wasm'),
-            driftWorker: Uri.parse('drift_worker.js'),
-          ),
+          web: DriftWebOptions(sqlite3Wasm: Uri.parse('sqlite3.wasm'), driftWorker: Uri.parse('drift_worker.js')),
         ),
       );
 

@@ -2063,20 +2063,594 @@ class SyncedDevicesCompanion extends UpdateCompanion<SyncedDevice> {
   }
 }
 
+class $AppKeybindingsTable extends AppKeybindings
+    with TableInfo<$AppKeybindingsTable, AppKeybinding> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AppKeybindingsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _actionNameMeta = const VerificationMeta(
+    'actionName',
+  );
+  @override
+  late final GeneratedColumn<String> actionName = GeneratedColumn<String>(
+    'action_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _keyLabelMeta = const VerificationMeta(
+    'keyLabel',
+  );
+  @override
+  late final GeneratedColumn<String> keyLabel = GeneratedColumn<String>(
+    'key_label',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _keyIdMeta = const VerificationMeta('keyId');
+  @override
+  late final GeneratedColumn<int> keyId = GeneratedColumn<int>(
+    'key_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _useCtrlMeta = const VerificationMeta(
+    'useCtrl',
+  );
+  @override
+  late final GeneratedColumn<bool> useCtrl = GeneratedColumn<bool>(
+    'use_ctrl',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("use_ctrl" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _useAltMeta = const VerificationMeta('useAlt');
+  @override
+  late final GeneratedColumn<bool> useAlt = GeneratedColumn<bool>(
+    'use_alt',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("use_alt" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _useShiftMeta = const VerificationMeta(
+    'useShift',
+  );
+  @override
+  late final GeneratedColumn<bool> useShift = GeneratedColumn<bool>(
+    'use_shift',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("use_shift" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _useMetaMeta = const VerificationMeta(
+    'useMeta',
+  );
+  @override
+  late final GeneratedColumn<bool> useMeta = GeneratedColumn<bool>(
+    'use_meta',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("use_meta" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _isEnabledMeta = const VerificationMeta(
+    'isEnabled',
+  );
+  @override
+  late final GeneratedColumn<bool> isEnabled = GeneratedColumn<bool>(
+    'is_enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_enabled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _categoryMeta = const VerificationMeta(
+    'category',
+  );
+  @override
+  late final GeneratedColumn<String> category = GeneratedColumn<String>(
+    'category',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('General'),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    actionName,
+    keyLabel,
+    keyId,
+    useCtrl,
+    useAlt,
+    useShift,
+    useMeta,
+    isEnabled,
+    category,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'app_keybindings';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<AppKeybinding> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('action_name')) {
+      context.handle(
+        _actionNameMeta,
+        actionName.isAcceptableOrUnknown(data['action_name']!, _actionNameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_actionNameMeta);
+    }
+    if (data.containsKey('key_label')) {
+      context.handle(
+        _keyLabelMeta,
+        keyLabel.isAcceptableOrUnknown(data['key_label']!, _keyLabelMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_keyLabelMeta);
+    }
+    if (data.containsKey('key_id')) {
+      context.handle(
+        _keyIdMeta,
+        keyId.isAcceptableOrUnknown(data['key_id']!, _keyIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_keyIdMeta);
+    }
+    if (data.containsKey('use_ctrl')) {
+      context.handle(
+        _useCtrlMeta,
+        useCtrl.isAcceptableOrUnknown(data['use_ctrl']!, _useCtrlMeta),
+      );
+    }
+    if (data.containsKey('use_alt')) {
+      context.handle(
+        _useAltMeta,
+        useAlt.isAcceptableOrUnknown(data['use_alt']!, _useAltMeta),
+      );
+    }
+    if (data.containsKey('use_shift')) {
+      context.handle(
+        _useShiftMeta,
+        useShift.isAcceptableOrUnknown(data['use_shift']!, _useShiftMeta),
+      );
+    }
+    if (data.containsKey('use_meta')) {
+      context.handle(
+        _useMetaMeta,
+        useMeta.isAcceptableOrUnknown(data['use_meta']!, _useMetaMeta),
+      );
+    }
+    if (data.containsKey('is_enabled')) {
+      context.handle(
+        _isEnabledMeta,
+        isEnabled.isAcceptableOrUnknown(data['is_enabled']!, _isEnabledMeta),
+      );
+    }
+    if (data.containsKey('category')) {
+      context.handle(
+        _categoryMeta,
+        category.isAcceptableOrUnknown(data['category']!, _categoryMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {actionName};
+  @override
+  AppKeybinding map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AppKeybinding(
+      actionName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}action_name'],
+      )!,
+      keyLabel: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}key_label'],
+      )!,
+      keyId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}key_id'],
+      )!,
+      useCtrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}use_ctrl'],
+      )!,
+      useAlt: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}use_alt'],
+      )!,
+      useShift: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}use_shift'],
+      )!,
+      useMeta: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}use_meta'],
+      )!,
+      isEnabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_enabled'],
+      )!,
+      category: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}category'],
+      )!,
+    );
+  }
+
+  @override
+  $AppKeybindingsTable createAlias(String alias) {
+    return $AppKeybindingsTable(attachedDatabase, alias);
+  }
+}
+
+class AppKeybinding extends DataClass implements Insertable<AppKeybinding> {
+  final String actionName;
+  final String keyLabel;
+  final int keyId;
+  final bool useCtrl;
+  final bool useAlt;
+  final bool useShift;
+  final bool useMeta;
+  final bool isEnabled;
+  final String category;
+  const AppKeybinding({
+    required this.actionName,
+    required this.keyLabel,
+    required this.keyId,
+    required this.useCtrl,
+    required this.useAlt,
+    required this.useShift,
+    required this.useMeta,
+    required this.isEnabled,
+    required this.category,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['action_name'] = Variable<String>(actionName);
+    map['key_label'] = Variable<String>(keyLabel);
+    map['key_id'] = Variable<int>(keyId);
+    map['use_ctrl'] = Variable<bool>(useCtrl);
+    map['use_alt'] = Variable<bool>(useAlt);
+    map['use_shift'] = Variable<bool>(useShift);
+    map['use_meta'] = Variable<bool>(useMeta);
+    map['is_enabled'] = Variable<bool>(isEnabled);
+    map['category'] = Variable<String>(category);
+    return map;
+  }
+
+  AppKeybindingsCompanion toCompanion(bool nullToAbsent) {
+    return AppKeybindingsCompanion(
+      actionName: Value(actionName),
+      keyLabel: Value(keyLabel),
+      keyId: Value(keyId),
+      useCtrl: Value(useCtrl),
+      useAlt: Value(useAlt),
+      useShift: Value(useShift),
+      useMeta: Value(useMeta),
+      isEnabled: Value(isEnabled),
+      category: Value(category),
+    );
+  }
+
+  factory AppKeybinding.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AppKeybinding(
+      actionName: serializer.fromJson<String>(json['actionName']),
+      keyLabel: serializer.fromJson<String>(json['keyLabel']),
+      keyId: serializer.fromJson<int>(json['keyId']),
+      useCtrl: serializer.fromJson<bool>(json['useCtrl']),
+      useAlt: serializer.fromJson<bool>(json['useAlt']),
+      useShift: serializer.fromJson<bool>(json['useShift']),
+      useMeta: serializer.fromJson<bool>(json['useMeta']),
+      isEnabled: serializer.fromJson<bool>(json['isEnabled']),
+      category: serializer.fromJson<String>(json['category']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'actionName': serializer.toJson<String>(actionName),
+      'keyLabel': serializer.toJson<String>(keyLabel),
+      'keyId': serializer.toJson<int>(keyId),
+      'useCtrl': serializer.toJson<bool>(useCtrl),
+      'useAlt': serializer.toJson<bool>(useAlt),
+      'useShift': serializer.toJson<bool>(useShift),
+      'useMeta': serializer.toJson<bool>(useMeta),
+      'isEnabled': serializer.toJson<bool>(isEnabled),
+      'category': serializer.toJson<String>(category),
+    };
+  }
+
+  AppKeybinding copyWith({
+    String? actionName,
+    String? keyLabel,
+    int? keyId,
+    bool? useCtrl,
+    bool? useAlt,
+    bool? useShift,
+    bool? useMeta,
+    bool? isEnabled,
+    String? category,
+  }) => AppKeybinding(
+    actionName: actionName ?? this.actionName,
+    keyLabel: keyLabel ?? this.keyLabel,
+    keyId: keyId ?? this.keyId,
+    useCtrl: useCtrl ?? this.useCtrl,
+    useAlt: useAlt ?? this.useAlt,
+    useShift: useShift ?? this.useShift,
+    useMeta: useMeta ?? this.useMeta,
+    isEnabled: isEnabled ?? this.isEnabled,
+    category: category ?? this.category,
+  );
+  AppKeybinding copyWithCompanion(AppKeybindingsCompanion data) {
+    return AppKeybinding(
+      actionName: data.actionName.present
+          ? data.actionName.value
+          : this.actionName,
+      keyLabel: data.keyLabel.present ? data.keyLabel.value : this.keyLabel,
+      keyId: data.keyId.present ? data.keyId.value : this.keyId,
+      useCtrl: data.useCtrl.present ? data.useCtrl.value : this.useCtrl,
+      useAlt: data.useAlt.present ? data.useAlt.value : this.useAlt,
+      useShift: data.useShift.present ? data.useShift.value : this.useShift,
+      useMeta: data.useMeta.present ? data.useMeta.value : this.useMeta,
+      isEnabled: data.isEnabled.present ? data.isEnabled.value : this.isEnabled,
+      category: data.category.present ? data.category.value : this.category,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AppKeybinding(')
+          ..write('actionName: $actionName, ')
+          ..write('keyLabel: $keyLabel, ')
+          ..write('keyId: $keyId, ')
+          ..write('useCtrl: $useCtrl, ')
+          ..write('useAlt: $useAlt, ')
+          ..write('useShift: $useShift, ')
+          ..write('useMeta: $useMeta, ')
+          ..write('isEnabled: $isEnabled, ')
+          ..write('category: $category')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    actionName,
+    keyLabel,
+    keyId,
+    useCtrl,
+    useAlt,
+    useShift,
+    useMeta,
+    isEnabled,
+    category,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AppKeybinding &&
+          other.actionName == this.actionName &&
+          other.keyLabel == this.keyLabel &&
+          other.keyId == this.keyId &&
+          other.useCtrl == this.useCtrl &&
+          other.useAlt == this.useAlt &&
+          other.useShift == this.useShift &&
+          other.useMeta == this.useMeta &&
+          other.isEnabled == this.isEnabled &&
+          other.category == this.category);
+}
+
+class AppKeybindingsCompanion extends UpdateCompanion<AppKeybinding> {
+  final Value<String> actionName;
+  final Value<String> keyLabel;
+  final Value<int> keyId;
+  final Value<bool> useCtrl;
+  final Value<bool> useAlt;
+  final Value<bool> useShift;
+  final Value<bool> useMeta;
+  final Value<bool> isEnabled;
+  final Value<String> category;
+  final Value<int> rowid;
+  const AppKeybindingsCompanion({
+    this.actionName = const Value.absent(),
+    this.keyLabel = const Value.absent(),
+    this.keyId = const Value.absent(),
+    this.useCtrl = const Value.absent(),
+    this.useAlt = const Value.absent(),
+    this.useShift = const Value.absent(),
+    this.useMeta = const Value.absent(),
+    this.isEnabled = const Value.absent(),
+    this.category = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  AppKeybindingsCompanion.insert({
+    required String actionName,
+    required String keyLabel,
+    required int keyId,
+    this.useCtrl = const Value.absent(),
+    this.useAlt = const Value.absent(),
+    this.useShift = const Value.absent(),
+    this.useMeta = const Value.absent(),
+    this.isEnabled = const Value.absent(),
+    this.category = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : actionName = Value(actionName),
+       keyLabel = Value(keyLabel),
+       keyId = Value(keyId);
+  static Insertable<AppKeybinding> custom({
+    Expression<String>? actionName,
+    Expression<String>? keyLabel,
+    Expression<int>? keyId,
+    Expression<bool>? useCtrl,
+    Expression<bool>? useAlt,
+    Expression<bool>? useShift,
+    Expression<bool>? useMeta,
+    Expression<bool>? isEnabled,
+    Expression<String>? category,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (actionName != null) 'action_name': actionName,
+      if (keyLabel != null) 'key_label': keyLabel,
+      if (keyId != null) 'key_id': keyId,
+      if (useCtrl != null) 'use_ctrl': useCtrl,
+      if (useAlt != null) 'use_alt': useAlt,
+      if (useShift != null) 'use_shift': useShift,
+      if (useMeta != null) 'use_meta': useMeta,
+      if (isEnabled != null) 'is_enabled': isEnabled,
+      if (category != null) 'category': category,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  AppKeybindingsCompanion copyWith({
+    Value<String>? actionName,
+    Value<String>? keyLabel,
+    Value<int>? keyId,
+    Value<bool>? useCtrl,
+    Value<bool>? useAlt,
+    Value<bool>? useShift,
+    Value<bool>? useMeta,
+    Value<bool>? isEnabled,
+    Value<String>? category,
+    Value<int>? rowid,
+  }) {
+    return AppKeybindingsCompanion(
+      actionName: actionName ?? this.actionName,
+      keyLabel: keyLabel ?? this.keyLabel,
+      keyId: keyId ?? this.keyId,
+      useCtrl: useCtrl ?? this.useCtrl,
+      useAlt: useAlt ?? this.useAlt,
+      useShift: useShift ?? this.useShift,
+      useMeta: useMeta ?? this.useMeta,
+      isEnabled: isEnabled ?? this.isEnabled,
+      category: category ?? this.category,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (actionName.present) {
+      map['action_name'] = Variable<String>(actionName.value);
+    }
+    if (keyLabel.present) {
+      map['key_label'] = Variable<String>(keyLabel.value);
+    }
+    if (keyId.present) {
+      map['key_id'] = Variable<int>(keyId.value);
+    }
+    if (useCtrl.present) {
+      map['use_ctrl'] = Variable<bool>(useCtrl.value);
+    }
+    if (useAlt.present) {
+      map['use_alt'] = Variable<bool>(useAlt.value);
+    }
+    if (useShift.present) {
+      map['use_shift'] = Variable<bool>(useShift.value);
+    }
+    if (useMeta.present) {
+      map['use_meta'] = Variable<bool>(useMeta.value);
+    }
+    if (isEnabled.present) {
+      map['is_enabled'] = Variable<bool>(isEnabled.value);
+    }
+    if (category.present) {
+      map['category'] = Variable<String>(category.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AppKeybindingsCompanion(')
+          ..write('actionName: $actionName, ')
+          ..write('keyLabel: $keyLabel, ')
+          ..write('keyId: $keyId, ')
+          ..write('useCtrl: $useCtrl, ')
+          ..write('useAlt: $useAlt, ')
+          ..write('useShift: $useShift, ')
+          ..write('useMeta: $useMeta, ')
+          ..write('isEnabled: $isEnabled, ')
+          ..write('category: $category, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$LocalDatabase extends GeneratedDatabase {
   _$LocalDatabase(QueryExecutor e) : super(e);
   $LocalDatabaseManager get managers => $LocalDatabaseManager(this);
   late final $NotesTable notes = $NotesTable(this);
   late final $SyncedDevicesTable syncedDevices = $SyncedDevicesTable(this);
+  late final $AppKeybindingsTable appKeybindings = $AppKeybindingsTable(this);
   late final NotesDao notesDao = NotesDao(this as LocalDatabase);
   late final SyncedDevicesDao syncedDevicesDao = SyncedDevicesDao(
+    this as LocalDatabase,
+  );
+  late final KeybindingsDao keybindingsDao = KeybindingsDao(
     this as LocalDatabase,
   );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities => [notes, syncedDevices];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [
+    notes,
+    syncedDevices,
+    appKeybindings,
+  ];
 }
 
 typedef $$NotesTableCreateCompanionBuilder =
@@ -2992,6 +3566,290 @@ typedef $$SyncedDevicesTableProcessedTableManager =
       SyncedDevice,
       PrefetchHooks Function()
     >;
+typedef $$AppKeybindingsTableCreateCompanionBuilder =
+    AppKeybindingsCompanion Function({
+      required String actionName,
+      required String keyLabel,
+      required int keyId,
+      Value<bool> useCtrl,
+      Value<bool> useAlt,
+      Value<bool> useShift,
+      Value<bool> useMeta,
+      Value<bool> isEnabled,
+      Value<String> category,
+      Value<int> rowid,
+    });
+typedef $$AppKeybindingsTableUpdateCompanionBuilder =
+    AppKeybindingsCompanion Function({
+      Value<String> actionName,
+      Value<String> keyLabel,
+      Value<int> keyId,
+      Value<bool> useCtrl,
+      Value<bool> useAlt,
+      Value<bool> useShift,
+      Value<bool> useMeta,
+      Value<bool> isEnabled,
+      Value<String> category,
+      Value<int> rowid,
+    });
+
+class $$AppKeybindingsTableFilterComposer
+    extends Composer<_$LocalDatabase, $AppKeybindingsTable> {
+  $$AppKeybindingsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get actionName => $composableBuilder(
+    column: $table.actionName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get keyLabel => $composableBuilder(
+    column: $table.keyLabel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get keyId => $composableBuilder(
+    column: $table.keyId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get useCtrl => $composableBuilder(
+    column: $table.useCtrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get useAlt => $composableBuilder(
+    column: $table.useAlt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get useShift => $composableBuilder(
+    column: $table.useShift,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get useMeta => $composableBuilder(
+    column: $table.useMeta,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isEnabled => $composableBuilder(
+    column: $table.isEnabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get category => $composableBuilder(
+    column: $table.category,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$AppKeybindingsTableOrderingComposer
+    extends Composer<_$LocalDatabase, $AppKeybindingsTable> {
+  $$AppKeybindingsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get actionName => $composableBuilder(
+    column: $table.actionName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get keyLabel => $composableBuilder(
+    column: $table.keyLabel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get keyId => $composableBuilder(
+    column: $table.keyId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get useCtrl => $composableBuilder(
+    column: $table.useCtrl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get useAlt => $composableBuilder(
+    column: $table.useAlt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get useShift => $composableBuilder(
+    column: $table.useShift,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get useMeta => $composableBuilder(
+    column: $table.useMeta,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isEnabled => $composableBuilder(
+    column: $table.isEnabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get category => $composableBuilder(
+    column: $table.category,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$AppKeybindingsTableAnnotationComposer
+    extends Composer<_$LocalDatabase, $AppKeybindingsTable> {
+  $$AppKeybindingsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get actionName => $composableBuilder(
+    column: $table.actionName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get keyLabel =>
+      $composableBuilder(column: $table.keyLabel, builder: (column) => column);
+
+  GeneratedColumn<int> get keyId =>
+      $composableBuilder(column: $table.keyId, builder: (column) => column);
+
+  GeneratedColumn<bool> get useCtrl =>
+      $composableBuilder(column: $table.useCtrl, builder: (column) => column);
+
+  GeneratedColumn<bool> get useAlt =>
+      $composableBuilder(column: $table.useAlt, builder: (column) => column);
+
+  GeneratedColumn<bool> get useShift =>
+      $composableBuilder(column: $table.useShift, builder: (column) => column);
+
+  GeneratedColumn<bool> get useMeta =>
+      $composableBuilder(column: $table.useMeta, builder: (column) => column);
+
+  GeneratedColumn<bool> get isEnabled =>
+      $composableBuilder(column: $table.isEnabled, builder: (column) => column);
+
+  GeneratedColumn<String> get category =>
+      $composableBuilder(column: $table.category, builder: (column) => column);
+}
+
+class $$AppKeybindingsTableTableManager
+    extends
+        RootTableManager<
+          _$LocalDatabase,
+          $AppKeybindingsTable,
+          AppKeybinding,
+          $$AppKeybindingsTableFilterComposer,
+          $$AppKeybindingsTableOrderingComposer,
+          $$AppKeybindingsTableAnnotationComposer,
+          $$AppKeybindingsTableCreateCompanionBuilder,
+          $$AppKeybindingsTableUpdateCompanionBuilder,
+          (
+            AppKeybinding,
+            BaseReferences<
+              _$LocalDatabase,
+              $AppKeybindingsTable,
+              AppKeybinding
+            >,
+          ),
+          AppKeybinding,
+          PrefetchHooks Function()
+        > {
+  $$AppKeybindingsTableTableManager(
+    _$LocalDatabase db,
+    $AppKeybindingsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AppKeybindingsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AppKeybindingsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AppKeybindingsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> actionName = const Value.absent(),
+                Value<String> keyLabel = const Value.absent(),
+                Value<int> keyId = const Value.absent(),
+                Value<bool> useCtrl = const Value.absent(),
+                Value<bool> useAlt = const Value.absent(),
+                Value<bool> useShift = const Value.absent(),
+                Value<bool> useMeta = const Value.absent(),
+                Value<bool> isEnabled = const Value.absent(),
+                Value<String> category = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => AppKeybindingsCompanion(
+                actionName: actionName,
+                keyLabel: keyLabel,
+                keyId: keyId,
+                useCtrl: useCtrl,
+                useAlt: useAlt,
+                useShift: useShift,
+                useMeta: useMeta,
+                isEnabled: isEnabled,
+                category: category,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String actionName,
+                required String keyLabel,
+                required int keyId,
+                Value<bool> useCtrl = const Value.absent(),
+                Value<bool> useAlt = const Value.absent(),
+                Value<bool> useShift = const Value.absent(),
+                Value<bool> useMeta = const Value.absent(),
+                Value<bool> isEnabled = const Value.absent(),
+                Value<String> category = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => AppKeybindingsCompanion.insert(
+                actionName: actionName,
+                keyLabel: keyLabel,
+                keyId: keyId,
+                useCtrl: useCtrl,
+                useAlt: useAlt,
+                useShift: useShift,
+                useMeta: useMeta,
+                isEnabled: isEnabled,
+                category: category,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$AppKeybindingsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$LocalDatabase,
+      $AppKeybindingsTable,
+      AppKeybinding,
+      $$AppKeybindingsTableFilterComposer,
+      $$AppKeybindingsTableOrderingComposer,
+      $$AppKeybindingsTableAnnotationComposer,
+      $$AppKeybindingsTableCreateCompanionBuilder,
+      $$AppKeybindingsTableUpdateCompanionBuilder,
+      (
+        AppKeybinding,
+        BaseReferences<_$LocalDatabase, $AppKeybindingsTable, AppKeybinding>,
+      ),
+      AppKeybinding,
+      PrefetchHooks Function()
+    >;
 
 class $LocalDatabaseManager {
   final _$LocalDatabase _db;
@@ -3000,4 +3858,6 @@ class $LocalDatabaseManager {
       $$NotesTableTableManager(_db, _db.notes);
   $$SyncedDevicesTableTableManager get syncedDevices =>
       $$SyncedDevicesTableTableManager(_db, _db.syncedDevices);
+  $$AppKeybindingsTableTableManager get appKeybindings =>
+      $$AppKeybindingsTableTableManager(_db, _db.appKeybindings);
 }

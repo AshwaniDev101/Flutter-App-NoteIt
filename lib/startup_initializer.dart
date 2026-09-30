@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:noteit/database/drift/device_pairs/synced_devices_dao.dart';
+import 'package:noteit/database/drift/synced_devices/synced_devices_dao.dart';
 import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
 import 'package:noteit/features/local_sync/provider/sync_session_provider.dart';
 
@@ -146,7 +146,7 @@ class StartupInitializer extends Notifier<void> {
 // import 'dart:convert';
 // import 'package:flutter/material.dart';
 // import 'package:flutter_riverpod/flutter_riverpod.dart';
-// import '../../../database/drift/device_pairs/synced_devices_dao.dart';
+// import '../../../database/drift/synced_devices/synced_devices_dao.dart';
 // import '../../../database/shared_preference/shared_preference_manager.dart';
 // import 'features/local_sync/auto_connect/mdns_searcher.dart';
 // import 'features/local_sync/provider/sync_client_provider.dart';
