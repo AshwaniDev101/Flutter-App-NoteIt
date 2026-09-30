@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:noteit/database/drift/local_database.dart';
@@ -85,112 +86,134 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
 
     // final viewType = ref.watch(noteViewTypeProvider);
 
-    return PopScope(
-      canPop: !homeState.isSelectMode,
-      onPopInvokedWithResult: (bool didPop, Object? result) {
-        if (!didPop && homeState.isSelectMode) viewModel.clearSelection();
+    return CallbackShortcuts(
+      bindings: {
+        // Windows & Linux: Ctrl + N
+        const SingleActivator(LogicalKeyboardKey.keyN, control: true): _addNote,
+        // macOS: Command + N
+        const SingleActivator(LogicalKeyboardKey.keyN, meta: true): _addNote,
       },
-      child: Scaffold(
-        // appBar: _buildAppBar(homeState, viewModel),
-        body: Stack(
-          children: [
-            Row(
+      child: FocusScope(
+        // As soon as this screen loads, put the invisible keyboard focus right here so I can hear shortcut keys.
+        autofocus: true,
+        child: PopScope(
+          canPop: !homeState.isSelectMode,
+          onPopInvokedWithResult: (bool didPop, Object? result) {
+            if (!didPop && homeState.isSelectMode) viewModel.clearSelection();
+          },
+          child: Scaffold(
+            // appBar: _buildAppBar(homeState, viewModel),
+            body: Stack(
               children: [
-                SizedBox(width: _leftPanelWidth, child: _buildLeftPanel(homeState, viewModel)),
-
-                // const VerticalDivider(width: 1, thickness: 1),
-                MouseRegion(
-                  cursor: SystemMouseCursors.resizeColumn,
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.translucent,
-                    onPanUpdate: (details) {
-                      setState(() {
-                        _leftPanelWidth += details.delta.dx;
-
-                        // Prevent the panel from getting too small or too large
-                        if (_leftPanelWidth < 250) _leftPanelWidth = 250;
-                        if (_leftPanelWidth > 600) _leftPanelWidth = 600;
-                      });
-                    },
-                    child: const SizedBox(
-                      width: 8, // Makes the grab area slightly wider than the visual line
-                      child: VerticalDivider(width: 1, thickness: 1),
-                    ),
-                  ),
+        
+                Row(
+                  children: [
+                    SizedBox(width: _leftPanelWidth, child: _buildLeftPanel(homeState, viewModel)),
+                    const VerticalDivider(width: 1, thickness: 1), // Only 1px wide visually
+                    Expanded(child: _buildRightPanel()),
+                  ],
                 ),
-
-                // Right Panel
-                Expanded(child: _buildRightPanel()),
-              ],
-            ),
-
-            // Top Layer: The Instant Windows-Style Hover Drawer
-            if (_isDrawerOpen)
-              Positioned(
-                top: 0,
-                bottom: 0,
-                left: 0,
-                child: MouseRegion(
-                  onEnter: (_) => _handleMenuHover(true),
-                  onExit: (_) => _handleMenuHover(false),
-                  child: Material(
-                    elevation: 16, // Gives a beautiful desktop shadow over the content
-                    color: Theme.of(context).scaffoldBackgroundColor,
-                    child: SizedBox(
-                      width: 250, // Your drawer width
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Header area matches AppBar height precisely
-                          SizedBox(
-                            height: kToolbarHeight,
-                            child: Align(
-                              alignment: Alignment.centerLeft,
-                              child: //The Instant Windows-Style Hover Drawer
-                              SizedBox(
-                                height: kToolbarHeight,
-                                width: 56.0, // Matches default AppBar leading width
-                                child: Center(
-                                  // Centers perfectly like the AppBar does
-                                  child: IconButton(
-                                    icon: Icon(
-                                      _isDrawerPinned ? Icons.menu_open : Icons.menu,
-                                      color: colorScheme.primary,
-                                    ),
-                                    onPressed: () => setState(() => _isDrawerPinned = !_isDrawerPinned),
-                                  ),
-                                ),
-                              ),
-                              // child: Padding(
-                              //   padding: const EdgeInsets.only(left: 8.0),
-                              //   child: IconButton(
-                              //     icon: Icon(
-                              //       _isDrawerPinned ? Icons.menu_open : Icons.menu,
-                              //       color: colorScheme.primary,
-                              //     ),
-                              //     onPressed: () => setState(() => _isDrawerPinned = !_isDrawerPinned),
-                              //   ),
-                              // ),
-                            ),
-                          ),
-                          // Your actual drawer content
-                          Expanded(
-                            child: HomepageDrawer(
-                              onDestinationSelected: () {
-                                // If you want unpinned overlay to close when an item is selected:
-                                if (!_isDrawerPinned) {
-                                  setState(() => _isDrawerHovered = false);
-                                }
-                              },
-                            ),
-                          ),
-                        ],
+        
+        
+        
+                Positioned(
+                  left: _leftPanelWidth - 6, // Centers a 13px box right over the 1px line
+                  width: 13,
+                  top: 0,
+                  bottom: 0,
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.resizeColumn,
+                    child: GestureDetector(
+                      // MUST be opaque so it completely blocks the panels underneath from stealing the mouse click
+                      behavior: HitTestBehavior.opaque,
+                      onPanUpdate: (details) {
+                        setState(() {
+                          _leftPanelWidth += details.delta.dx;
+        
+                          // Prevent the panel from getting too small or too large
+                          if (_leftPanelWidth < 250) _leftPanelWidth = 250;
+                          if (_leftPanelWidth > 600) _leftPanelWidth = 600;
+                        });
+                      },
+                      child: Container(
+                        // Completely empty and transparent!
+                        // No width (it inherits 13 from Positioned) and no VerticalDivider.
+                        color: Colors.transparent,
                       ),
                     ),
                   ),
                 ),
-              ),
-          ],
+        
+        
+                // Top Layer: The Instant Windows-Style Hover Drawer
+                if (_isDrawerOpen)
+                  Positioned(
+                    top: 0,
+                    bottom: 0,
+                    left: 0,
+                    child: MouseRegion(
+                      onEnter: (_) => _handleMenuHover(true),
+                      onExit: (_) => _handleMenuHover(false),
+                      child: Material(
+                        elevation: 16, // Gives a beautiful desktop shadow over the content
+                        color: Theme.of(context).scaffoldBackgroundColor,
+                        child: SizedBox(
+                          width: 250, // Your drawer width
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Header area matches AppBar height precisely
+                              SizedBox(
+                                height: kToolbarHeight,
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: //The Instant Windows-Style Hover Drawer
+                                  SizedBox(
+                                    height: kToolbarHeight,
+                                    width: 56.0, // Matches default AppBar leading width
+                                    child: Center(
+                                      // Centers perfectly like the AppBar does
+                                      child: IconButton(
+                                        icon: Icon(
+                                          _isDrawerPinned ? Icons.menu_open : Icons.menu,
+                                          color: colorScheme.primary,
+                                        ),
+                                        onPressed: () => setState(() => _isDrawerPinned = !_isDrawerPinned),
+                                      ),
+                                    ),
+                                  ),
+                                  // child: Padding(
+                                  //   padding: const EdgeInsets.only(left: 8.0),
+                                  //   child: IconButton(
+                                  //     icon: Icon(
+                                  //       _isDrawerPinned ? Icons.menu_open : Icons.menu,
+                                  //       color: colorScheme.primary,
+                                  //     ),
+                                  //     onPressed: () => setState(() => _isDrawerPinned = !_isDrawerPinned),
+                                  //   ),
+                                  // ),
+                                ),
+                              ),
+                              // Your actual drawer content
+                              Expanded(
+                                child: HomepageDrawer(
+                                  onDestinationSelected: () {
+                                    // If you want unpinned overlay to close when an item is selected:
+                                    if (!_isDrawerPinned) {
+                                      setState(() => _isDrawerHovered = false);
+                                    }
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -203,10 +226,9 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
 
     return Scaffold(
       floatingActionButton: FloatingActionButton(
-        child: Icon(Icons.edit, color: Colors.white),
-        onPressed: () {
-          _addNote();
-        },
+        tooltip: 'New Note (Ctrl+N)',
+        onPressed: _addNote,
+        child: const Icon(Icons.edit, color: Colors.white),
       ),
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(kToolbarHeight),
@@ -282,7 +304,7 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
                   child: TextField(
                     controller: _searchController,
                     decoration: InputDecoration(
-                      hintText: 'search...',
+                      hintText: 'Search...',
                       prefixIcon: const Icon(Icons.search),
 
                       suffixIcon: ValueListenableBuilder<TextEditingValue>(
@@ -362,7 +384,7 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
                 },
               ),
               // Re-add standard window controls manually
-              const VerticalDivider(indent: 12, endIndent: 12, width: 1),
+              // const VerticalDivider(indent: 12, endIndent: 12, width: 1),
               const SizedBox(width: 8),
               IconButton(icon: const Icon(Icons.minimize, size: 16), onPressed: () => windowManager.minimize()),
               IconButton(

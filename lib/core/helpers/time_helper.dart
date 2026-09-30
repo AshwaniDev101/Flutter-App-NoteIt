@@ -16,7 +16,7 @@ class TimeHelper {
       return 'Just now';
     }
 
-    // 1. Calculate raw calendar differences
+    // Calculate raw calendar differences
     int years = now.year - updatedAt.year;
     int months = now.month - updatedAt.month;
 
@@ -25,7 +25,7 @@ class TimeHelper {
       months += 12;
     }
 
-    // 2. Create a calendar baseline by stepping forward exact years and months
+    // Create a calendar baseline by stepping forward exact years and months
     int clampedDay = _clampDay(updatedAt.year + years, updatedAt.month + months, updatedAt.day);
     DateTime baseline = DateTime(
       updatedAt.year + years,
@@ -36,7 +36,7 @@ class TimeHelper {
       updatedAt.second,
     );
 
-    // 3. If our exact calendar step overshot "now" (due to hours/minutes being later),
+    // If our exact calendar step overshot "now" (due to hours/minutes being later),
     // we back up exactly one month.
     if (baseline.isAfter(now)) {
       months--;
@@ -55,7 +55,7 @@ class TimeHelper {
       );
     }
 
-    // 4. Calculate exact remaining time after our calendar baseline
+    // Calculate exact remaining time after our calendar baseline
     final Duration remaining = now.difference(baseline);
     final int days = remaining.inDays;
     final int hours = remaining.inHours % 24;
