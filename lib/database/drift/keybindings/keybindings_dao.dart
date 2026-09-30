@@ -11,6 +11,22 @@ final keybindingsDaoProvider = Provider(
       (ref) => ref.watch(localDatabaseProvider).keybindingsDao,
 );
 
+class AppActions {
+  AppActions._();
+  static const String search = 'search';
+  static const String newNote = 'new_note';
+  static const String toggleMenu = 'toggle_menu';
+  static const String deleteNote = 'delete_note';
+  static const String saveNote = 'save_note';
+}
+
+class ShortcutCategories {
+  ShortcutCategories._();
+  static const String global = 'global';
+  static const String navigation = 'navigation';
+
+}
+
 @DriftAccessor(tables: [AppKeybindings])
 class KeybindingsDao extends DatabaseAccessor<LocalDatabase> with _$KeybindingsDaoMixin {
   KeybindingsDao(super.db);
@@ -26,25 +42,25 @@ class KeybindingsDao extends DatabaseAccessor<LocalDatabase> with _$KeybindingsD
         appKeybindings,
         [
           AppKeybindingsCompanion.insert(
-            actionName: 'search',
+            actionName: AppActions.search,
             keyLabel: 'S',
             keyId: LogicalKeyboardKey.keyS.keyId,
             useCtrl: const Value(true),
-            category: const Value('Global'), // Group for settings UI
+            category: const Value(ShortcutCategories.global), // Group for settings UI
           ),
           AppKeybindingsCompanion.insert(
-            actionName: 'new_note',
+            actionName: AppActions.newNote,
             keyLabel: 'N',
             keyId: LogicalKeyboardKey.keyN.keyId,
             useCtrl: const Value(true),
-            category: const Value('Global'),
+            category: const Value(ShortcutCategories.global),
           ),
           AppKeybindingsCompanion.insert(
-            actionName: 'toggle_menu',
+            actionName: AppActions.toggleMenu,
             keyLabel: 'M',
             keyId: LogicalKeyboardKey.keyM.keyId,
             useCtrl: const Value(true),
-            category: const Value('Navigation'),
+            category: const Value(ShortcutCategories.navigation),
           ),
         ],
         mode: InsertMode.insertOrIgnore,

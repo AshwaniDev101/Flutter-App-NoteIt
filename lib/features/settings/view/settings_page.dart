@@ -4,28 +4,11 @@ import 'package:go_router/go_router.dart';
 import 'package:noteit/core/routing/routing.dart';
 import '../../../../database/sync/sync_engine.dart';
 import '../../../../database/sync/sync_orchestrator.dart';
+import '../../keybinding/keybindings_provider.dart';
 import '../../unlock/lock_manger/lock_manager.dart';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
-
-  // Future<void> _signInWithGoogle(WidgetRef ref) async {
-  //   try {
-  //     final googleSignIn = ref.read(googleSignInProvider);
-  //     final GoogleSignInCredentials? credentials = await googleSignIn.signInOnline();
-  //
-  //     if (credentials == null) return;
-  //
-  //     final AuthCredential credential = GoogleAuthProvider.credential(
-  //       accessToken: credentials.accessToken,
-  //       idToken: credentials.idToken,
-  //     );
-  //
-  //     await FirebaseAuth.instance.signInWithCredential(credential);
-  //   } catch (e) {
-  //     AppLogger.d('('Google Sign-In failed: $e');
-  //   }
-  // }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -35,6 +18,9 @@ class SettingsPage extends ConsumerWidget {
     // Listen to states
     final lockState = ref.watch(lockManagerProvider);
     final currentEngine = ref.watch(syncEngineProvider);
+
+    // Watch shortcut preferences
+    final shortcutPrefs = ref.watch(shortcutPreferencesProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -134,12 +120,10 @@ class SettingsPage extends ConsumerWidget {
                         onSelectionChanged: (Set<SyncEngine> newSelection) {
                           final selectedMode = newSelection.first;
 
-                          // Uses your Notifier's specific setEngine method!
                           ref
                               .read(syncEngineProvider.notifier)
                               .setEngine(selectedMode);
 
-                          // Tell the Orchestrator to switch gears immediately
                           ref.read(syncOrchestratorProvider).triggerSync();
                         },
                       ),
@@ -205,6 +189,62 @@ class SettingsPage extends ConsumerWidget {
                         ref
                             .read(lockManagerProvider.notifier)
                             .setKeepUnlockedPreference(value);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // ==================== INTERFACE & KEYBOARD SECTION ====================
+              Padding(
+                padding: const EdgeInsets.only(left: 8.0, bottom: 8.0),
+                child: Text(
+                  'Interface & Keyboard',
+                  style: textTheme.titleSmall?.copyWith(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              Card(
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    SettingsSwitchTile(
+                      icon: Icons.keyboard_alt_outlined,
+                      iconColor: Colors.amber.shade700,
+                      title: 'Dynamic key hints',
+                      subtitle: 'Show key badges when holding Ctrl/Cmd',
+                      value: shortcutPrefs.showDynamicKeyHints,
+                      onChanged: (bool value) {
+                        ref
+                            .read(shortcutPreferencesProvider.notifier)
+                            .toggleHints(value);
+                      },
+                    ),
+                    Divider(
+                      height: 1,
+                      indent: 64,
+                      color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                    ),
+                    SettingsSwitchTile(
+                      icon: Icons.info_outline,
+                      iconColor: Colors.deepPurple,
+                      title: 'Shortcuts in tooltips',
+                      subtitle: 'Append shortcuts to hover labels (e.g., Ctrl+N)',
+                      value: shortcutPrefs.appendShortcutToTooltips,
+                      onChanged: (bool value) {
+                        ref
+                            .read(shortcutPreferencesProvider.notifier)
+                            .toggleTooltips(value);
                       },
                     ),
                   ],

@@ -29,6 +29,9 @@ class SharedPreferenceManager {
   static const String _keySyncEngine = 'sync_engine';
   static const String _keyHostUuid = 'host_uuid'; // Need when this device ever becomes a host
   static const String _keySyncRole = 'sync_role'; //  0 = undefine, 1 = Host, 2 = Client
+  static const String _keyShowDynamicKeyHints = 'show_dynamic_key_hints';
+  static const String _keyAppendShortcutToTooltips = 'append_shortcut_to_tooltips';
+
 
   // Key for keeping notes unlocked during session
   static const String _keyKeepUnlockedSession = 'keep_unlocked_session';
@@ -136,5 +139,20 @@ class SharedPreferenceManager {
         _prefs.setInt(_keySyncRole, 2);
         break;
     }
+  }
+
+
+  // Defaults to true so users see the hints by default
+  bool get showDynamicKeyHints => _prefs.getBool(_keyShowDynamicKeyHints) ?? true;
+
+  Future<bool> setShowDynamicKeyHints(bool value) async {
+    return await _prefs.setBool(_keyShowDynamicKeyHints, value);
+  }
+
+  // Defaults to true so users see (Ctrl+N) in tooltips by default
+  bool get appendShortcutToTooltips => _prefs.getBool(_keyAppendShortcutToTooltips) ?? true;
+
+  Future<bool> setAppendShortcutToTooltips(bool value) async {
+    return await _prefs.setBool(_keyAppendShortcutToTooltips, value);
   }
 }
