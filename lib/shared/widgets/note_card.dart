@@ -30,6 +30,10 @@ class NoteCard extends ConsumerStatefulWidget {
 
 class _NoteCardState extends ConsumerState<NoteCard> {
 
+
+  // Track if the keyboard spotlight is on this card
+  bool _isFocused = false;
+
   @override
   Widget build(BuildContext context) {
     final noteTheme = Theme.of(context).extension<NoteTheme>()!;
@@ -38,32 +42,60 @@ class _NoteCardState extends ConsumerState<NoteCard> {
     // Watch the global view type! Any time it changes, this card redraws itself.
     final viewType = ref.watch(noteViewTypeProvider);
 
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: Card(
-        elevation: widget.isSelected ? 1 : 0,
-        clipBehavior: Clip.antiAlias,
-        color: widget.isSelected
-            ? colorScheme.primaryContainer.withValues(alpha: 0.3)
-            : noteTheme.cardContentBackground,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-          side: BorderSide(
-            color: colorScheme.outlineVariant.withValues(alpha: 0.3),
-            width: 1, // Keep width at 1 so the size never jumps
+
+    return FocusableActionDetector(
+      // Fires when arrow keys move onto or off of this widget
+        onShowFocusHighlight: (hasFocus) {
+          setState(() => _isFocused = hasFocus);
+        },
+
+        // THE ACTION: Pressing Enter or Space triggers the onTap
+        actions: {
+          ActivateIntent: CallbackAction<ActivateIntent>(
+            onInvoke: (intent) {
+              if (widget.onTap != null) widget.onTap!();
+              return null; // Required return type
+            },
           ),
-        ),
-        child: InkWell(
-          onTap: widget.onTap,
-          onLongPress: widget.onLongPress,
-          child: Stack(
-            children: [
-              _buildInternalLayout(context, noteTheme, colorScheme, viewType),
-            ],
+        },
+
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: Card(
+          // elevation: widget.isSelected ? 1 : 0,
+          elevation: widget.isSelected ? 1 : (_isFocused ? 4 : 0), // Pop up slightly when focused
+          clipBehavior: Clip.antiAlias,
+          color: widget.isSelected
+              ? colorScheme.primaryContainer.withValues(alpha: 0.3)
+              : noteTheme.cardContentBackground,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: BorderSide(
+              // color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+              // 4. THE VISUAL HINT: Change border color when focused
+              color: _isFocused
+                  ? colorScheme.primary // Bright theme color when spotlighted
+                  : colorScheme.outlineVariant.withValues(alpha: 0.3),
+              // width: 1, // Keep width at 1 so the size never jumps
+              width: _isFocused ? 2 : 1,
+            ),
+          ),
+          child: InkWell(
+            onTap: widget.onTap,
+            onLongPress: widget.onLongPress,
+            // Keep the InkWell focus properties disabled so it doesn't fight our custom detector
+            focusNode: FocusNode(canRequestFocus: false),
+            child: Stack(
+              children: [
+                _buildInternalLayout(context, noteTheme, colorScheme, viewType),
+              ],
+            ),
           ),
         ),
       ),
     );
+
+
   }
 
   // ==== LAYOUT ROUTER ====

@@ -103,34 +103,27 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
     return shortcutsAsync.when(
       loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (err, stack) => Scaffold(body: Center(child: Text('Error loading shortcuts: $err'))),
-      data: (shortcuts) {
+      data: (Map<String, ShortcutConfig> shortcuts) {
         // Map database configs to actual app functions
-        final Map<ShortcutActivator, VoidCallback> activeBindings = {};
 
-        if (shortcuts.containsKey('search')) {
-          activeBindings[shortcuts['search']!.activator] = () {
-            if (!homeState.isSearchMode) viewModel.enterSearchMode();
-            _searchFocusNode.requestFocus();
-          };
-        }
-        if (shortcuts.containsKey('new_note')) {
-          activeBindings[shortcuts['new_note']!.activator] = _addNote;
-        }
-        if (shortcuts.containsKey('toggle_menu')) {
-          activeBindings[shortcuts['toggle_menu']!.activator] = () {
-            setState(() => _isDrawerPinned = !_isDrawerPinned);
-          };
-        }
+        final activeBindings = <ShortcutActivator, VoidCallback>{
+          if (shortcuts[AppActions.search] != null)
+            shortcuts[AppActions.search]!.activator: () {
+              if (!homeState.isSearchMode) viewModel.enterSearchMode();
+              _searchFocusNode.requestFocus();
+            },
 
+          if (shortcuts[AppActions.newNote] != null) shortcuts[AppActions.newNote]!.activator: _addNote,
 
+          if (shortcuts[AppActions.toggleMenu] != null)
+            shortcuts[AppActions.toggleMenu]!.activator: () {
+              setState(() => _isDrawerPinned = !_isDrawerPinned);
+            },
+        };
 
+        // const SingleActivator(LogicalKeyboardKey.keyN, control: true): _addNote,
         return CallbackShortcuts(
-          bindings: {
-            // Windows & Linux: Ctrl + N
-            const SingleActivator(LogicalKeyboardKey.keyN, control: true): _addNote,
-            // macOS: Command + N
-            const SingleActivator(LogicalKeyboardKey.keyN, meta: true): _addNote,
-          },
+          bindings: activeBindings,
           child: FocusScope(
             // As soon as this screen loads, put the invisible keyboard focus right here so I can hear shortcut keys.
             autofocus: true,
@@ -141,122 +134,122 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
               },
               child: Scaffold(
                 // appBar: _buildAppBar(homeState, viewModel),
-                body: Stack(
-                  children: [
-                    Row(
-                      children: [
-                        SizedBox(width: _leftPanelWidth, child: _buildLeftPanel(homeState, viewModel)),
-                        const VerticalDivider(width: 1, thickness: 1), // Only 1px wide visually
-                        Expanded(child: _buildRightPanel()),
-                      ],
-                    ),
-
-                    Positioned(
-                      left: _leftPanelWidth - 6,
-                      // Centers a 13px box right over the 1px line
-                      width: 13,
-                      top: 0,
-                      bottom: 0,
-                      child: MouseRegion(
-                        cursor: SystemMouseCursors.resizeColumn,
-                        child: GestureDetector(
-                          // MUST be opaque so it completely blocks the panels underneath from stealing the mouse click
-                          behavior: HitTestBehavior.opaque,
-                          onPanUpdate: (details) {
-                            setState(() {
-                              _leftPanelWidth += details.delta.dx;
-
-                              // Prevent the panel from getting too small or too large
-                              if (_leftPanelWidth < 250) _leftPanelWidth = 250;
-                              if (_leftPanelWidth > 600) _leftPanelWidth = 600;
-                            });
-                          },
-                          child: Container(
-                            // Completely empty and transparent!
-                            // No width (it inherits 13 from Positioned) and no VerticalDivider.
-                            color: Colors.transparent,
-                          ),
-                        ),
+                body: FocusTraversalGroup(
+                  policy: OrderedTraversalPolicy(), // Controls the desktop spotlight
+                  child: Stack(
+                    children: [
+                      Row(
+                        children: [
+                          SizedBox(width: _leftPanelWidth, child: _buildLeftPanel(homeState, viewModel)),
+                          const VerticalDivider(width: 1, thickness: 1), // Only 1px wide visually
+                          Expanded(child: _buildRightPanel()),
+                        ],
                       ),
-                    ),
-
-                    // Top Layer: The Instant Windows-Style Hover Drawer
-                    if (_isDrawerOpen)
+                  
                       Positioned(
+                        left: _leftPanelWidth - 6,
+                        // Centers a 13px box right over the 1px line
+                        width: 13,
                         top: 0,
                         bottom: 0,
-                        left: 0,
                         child: MouseRegion(
-                          onEnter: (_) => _handleMenuHover(true),
-                          onExit: (_) => _handleMenuHover(false),
-                          child: Material(
-                            elevation: 16, // Gives a beautiful desktop shadow over the content
-                            color: Theme.of(context).scaffoldBackgroundColor,
-                            child: SizedBox(
-                              width: 250, // Your drawer width
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Header area matches AppBar height precisely
-                                  SizedBox(
-                                    height: kToolbarHeight,
-                                    child: Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: //The Instant Windows-Style Hover Drawer
-                                      SizedBox(
-                                        height: kToolbarHeight,
-                                        width: 56.0, // Matches default AppBar leading width
-                                        child: Center(
-                                          // Centers perfectly like the AppBar does
-                                          child: IconButton(
-                                            icon: Icon(
-                                              _isDrawerPinned ? Icons.menu_open : Icons.menu,
-                                              color: colorScheme.primary,
-                                            ),
-                                            onPressed: () => setState(() => _isDrawerPinned = !_isDrawerPinned),
-                                          ),
-                                        ),
-                                      ),
-                                      // child: Padding(
-                                      //   padding: const EdgeInsets.only(left: 8.0),
-                                      //   child: IconButton(
-                                      //     icon: Icon(
-                                      //       _isDrawerPinned ? Icons.menu_open : Icons.menu,
-                                      //       color: colorScheme.primary,
-                                      //     ),
-                                      //     onPressed: () => setState(() => _isDrawerPinned = !_isDrawerPinned),
-                                      //   ),
-                                      // ),
-                                    ),
-                                  ),
-                                  // Your actual drawer content
-                                  Expanded(
-                                    child: HomepageDrawer(
-                                      onDestinationSelected: () {
-                                        // If you want unpinned overlay to close when an item is selected:
-                                        if (!_isDrawerPinned) {
-                                          setState(() => _isDrawerHovered = false);
-                                        }
-                                      },
-                                    ),
-                                  ),
-                                ],
-                              ),
+                          cursor: SystemMouseCursors.resizeColumn,
+                          child: GestureDetector(
+                            // MUST be opaque so it completely blocks the panels underneath from stealing the mouse click
+                            behavior: HitTestBehavior.opaque,
+                            onPanUpdate: (details) {
+                              setState(() {
+                                _leftPanelWidth += details.delta.dx;
+                  
+                                // Prevent the panel from getting too small or too large
+                                if (_leftPanelWidth < 250) _leftPanelWidth = 250;
+                                if (_leftPanelWidth > 600) _leftPanelWidth = 600;
+                              });
+                            },
+                            child: Container(
+                              // Completely empty and transparent!
+                              // No width (it inherits 13 from Positioned) and no VerticalDivider.
+                              color: Colors.transparent,
                             ),
                           ),
                         ),
                       ),
-                  ],
+                  
+                      // Top Layer: The Instant Windows-Style Hover Drawer
+                      if (_isDrawerOpen)
+                        Positioned(
+                          top: 0,
+                          bottom: 0,
+                          left: 0,
+                          child: MouseRegion(
+                            onEnter: (_) => _handleMenuHover(true),
+                            onExit: (_) => _handleMenuHover(false),
+                            child: Material(
+                              elevation: 16, // Gives a beautiful desktop shadow over the content
+                              color: Theme.of(context).scaffoldBackgroundColor,
+                              child: SizedBox(
+                                width: 250, // Your drawer width
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Header area matches AppBar height precisely
+                                    SizedBox(
+                                      height: kToolbarHeight,
+                                      child: Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: //The Instant Windows-Style Hover Drawer
+                                        SizedBox(
+                                          height: kToolbarHeight,
+                                          width: 56.0, // Matches default AppBar leading width
+                                          child: Center(
+                                            // Centers perfectly like the AppBar does
+                                            child: IconButton(
+                                              icon: Icon(
+                                                _isDrawerPinned ? Icons.menu_open : Icons.menu,
+                                                color: colorScheme.primary,
+                                              ),
+                                              onPressed: () => setState(() => _isDrawerPinned = !_isDrawerPinned),
+                                            ),
+                                          ),
+                                        ),
+                                        // child: Padding(
+                                        //   padding: const EdgeInsets.only(left: 8.0),
+                                        //   child: IconButton(
+                                        //     icon: Icon(
+                                        //       _isDrawerPinned ? Icons.menu_open : Icons.menu,
+                                        //       color: colorScheme.primary,
+                                        //     ),
+                                        //     onPressed: () => setState(() => _isDrawerPinned = !_isDrawerPinned),
+                                        //   ),
+                                        // ),
+                                      ),
+                                    ),
+                                    // Your actual drawer content
+                                    Expanded(
+                                      child: HomepageDrawer(
+                                        onDestinationSelected: () {
+                                          // If you want unpinned overlay to close when an item is selected:
+                                          if (!_isDrawerPinned) {
+                                            setState(() => _isDrawerHovered = false);
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
         );
-
       },
-
     );
-
   }
 
   Widget _buildLeftPanel(HomePageState homeState, HomeViewModel viewModel) {
@@ -265,13 +258,18 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      floatingActionButton: SmartActionWidget(
-        action: AppActions.newNote, // Pulls the exact config from the DB
-        baseTooltip: 'New Note',    // The smart widget will append "(Ctrl+N)" automatically
-        child: FloatingActionButton(
-          onPressed: _addNote,
-          // 'tooltip' are added automatically
-          child: const Icon(Icons.edit, color: Colors.white),
+      floatingActionButton: FocusTraversalOrder(
+        order: const NumericFocusOrder(3),
+        child: SmartActionWidget(
+          action: AppActions.newNote, // Pulls the exact config from the DB
+          baseTooltip: 'New Note', // The smart widget will append "(Ctrl+N)" automatically
+          child: FloatingActionButton(
+            onPressed: _addNote,
+            // 'tooltip' are added automatically cause of the 'SmartActionWidget'
+            focusColor: colorScheme.primaryContainer, // Makes it visibly light up
+            focusElevation: 8, // Makes it pop up
+            child: const Icon(Icons.edit, color: Colors.white),
+          ),
         ),
       ),
       appBar: PreferredSize(
@@ -300,31 +298,6 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
                   elevation: 0,
                   actions: [
                     // IconButton(
-                    //   tooltip: "New Note",
-                    //   icon: Icon(Icons.edit_square, color: colorScheme.primary),
-                    //   onPressed: () {
-                    //     final emptyNote = Note(
-                    //       uuid: const Uuid().v4(),
-                    //       title: '',
-                    //       content: '',
-                    //       createdAt: DateTime.now().toUtc(),
-                    //       updatedAt: DateTime.now().toUtc(),
-                    //       isLocked: false,
-                    //       isPinned: false,
-                    //       color: 0,
-                    //       isArchived: false,
-                    //       position: 0,
-                    //       hasAttachments: false,
-                    //       contentType: 'text',
-                    //       isShared: false,
-                    //       cloudSyncStatus: 0,
-                    //       localSyncStatus: 0,
-                    //       versionCounter: 1,
-                    //     );
-                    //     setState(() => _activeNote = emptyNote);
-                    //   },
-                    // ),
-                    // IconButton(
                     //   tooltip: "Settings",
                     //   icon: Icon(Icons.settings, color: colorScheme.primary),
                     //   onPressed: () {
@@ -332,7 +305,7 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
                     //   },
                     // ),
                     // WebSocketConnectionIndicator(isConnected: isConnected),
-                    const SizedBox(width: 8),
+                    // const SizedBox(width: 8),
                   ],
                 ),
         ),
@@ -345,39 +318,57 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
             child: Row(
               children: [
                 Expanded(
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: 'Search...',
-                      prefixIcon: const Icon(Icons.search),
-
-                      suffixIcon: ValueListenableBuilder<TextEditingValue>(
-                        valueListenable: _searchController,
-                        builder: (context, value, child) {
-                          return value.text.isNotEmpty
-                              ? IconButton(icon: const Icon(Icons.clear, size: 20), onPressed: _clearSearch)
-                              : const SizedBox.shrink();
+                  child: FocusTraversalOrder(
+                    // Allow user to set focus order
+                    order: const NumericFocusOrder(1),
+                    child: Focus(
+                      // If user press down arrow in search, jump to notes!
+                      onKeyEvent: (node, event) {
+                        if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                          node.nextFocus();
+                          return KeyEventResult.handled;
+                        }
+                        return KeyEventResult.ignored;
+                      },
+    
+                      child: TextField(
+                        controller: _searchController,
+                        decoration: InputDecoration(
+                          hintText: 'Search...',
+                          prefixIcon: const Icon(Icons.search),
+    
+                          suffixIcon: ValueListenableBuilder<TextEditingValue>(
+                            valueListenable: _searchController,
+                            builder: (context, value, child) {
+                              return value.text.isNotEmpty
+                                  ? IconButton(icon: const Icon(Icons.clear, size: 20), onPressed: _clearSearch)
+                                  : const SizedBox.shrink();
+                            },
+                          ),
+                          // suffixIcon: _searchController.text.isNotEmpty
+                          //     ? IconButton(icon: const Icon(Icons.clear, size: 20), onPressed: _clearSearch)
+                          //     : null,
+                          filled: true,
+                          fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(30),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                        ),
+                        onTap: () {
+                          if (!homeState.isSearchMode) viewModel.enterSearchMode();
+                        },
+                        onChanged: (value) {
+                          if (value.isNotEmpty && !homeState.isSearchMode) viewModel.enterSearchMode();
+                          if (value.isEmpty) {
+                            _clearSearch();
+                          } else {
+                            ref.read(searchQueryProvider.notifier).updateQuery(value);
+                          }
                         },
                       ),
-                      // suffixIcon: _searchController.text.isNotEmpty
-                      //     ? IconButton(icon: const Icon(Icons.clear, size: 20), onPressed: _clearSearch)
-                      //     : null,
-                      filled: true,
-                      fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
-                      contentPadding: const EdgeInsets.symmetric(vertical: 0),
                     ),
-                    onTap: () {
-                      if (!homeState.isSearchMode) viewModel.enterSearchMode();
-                    },
-                    onChanged: (value) {
-                      if (value.isNotEmpty && !homeState.isSearchMode) viewModel.enterSearchMode();
-                      if (value.isEmpty) {
-                        _clearSearch();
-                      } else {
-                        ref.read(searchQueryProvider.notifier).updateQuery(value);
-                      }
-                    },
                   ),
                 ),
                 const SizedBox(width: 4),
@@ -387,14 +378,17 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
             ),
           ),
           Expanded(
-            child: DynamicNotesLayout(
-              isSelectMode: homeState.isSelectMode,
-              noteIds: homeState.selectedNoteIds,
-              activeNoteId: _activeNote?.uuid,
-              onToggleSelection: viewModel.toggleSelection,
-              onEnableSelectMode: viewModel.enableSelectMode,
-              onPromptPassword: (ctx, note) => PasswordPromptHelper.promptAndVerify(ctx, ref, note),
-              onNoteTap: _handleNoteTap,
+            child: FocusTraversalOrder(
+              order: const NumericFocusOrder(2),
+              child: DynamicNotesLayout(
+                isSelectMode: homeState.isSelectMode,
+                noteIds: homeState.selectedNoteIds,
+                activeNoteId: _activeNote?.uuid,
+                onToggleSelection: viewModel.toggleSelection,
+                onEnableSelectMode: viewModel.enableSelectMode,
+                onPromptPassword: (ctx, note) => PasswordPromptHelper.promptAndVerify(ctx, ref, note),
+                onNoteTap: _handleNoteTap,
+              ),
             ),
           ),
         ],
