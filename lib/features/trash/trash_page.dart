@@ -325,6 +325,7 @@ class _TrashPageState extends ConsumerState<TrashPage> {
                 final isSelected = noteIds.contains(note.uuid);
 
                 return NoteCard(
+                  key: ValueKey(note.uuid),
                   note: note,
                   isSelected: isSelected,
                   onTap: () {

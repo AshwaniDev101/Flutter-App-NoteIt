@@ -42,6 +42,7 @@ class DynamicNotesLayout extends ConsumerWidget {
 
     return NoteCard(
       note: currentNote,
+      key: ValueKey(currentNote.uuid),
       // Tell the card to light up if it's selected OR if it's the active note being edited
       isSelected: isSelected || isActive,
       searchQuery: ref.read(searchQueryProvider),

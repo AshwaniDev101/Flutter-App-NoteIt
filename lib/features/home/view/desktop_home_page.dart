@@ -35,7 +35,7 @@ class DesktopHomePage extends ConsumerStatefulWidget {
 
 class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
   final TextEditingController _searchController = TextEditingController();
-  final FocusNode _searchFocusNode = FocusNode();
+  final FocusNode _searchFocusNode = FocusNode(); // // user for bringing focus to search using shortcut
 
   double _leftPanelWidth = 340.0;
   Note? _activeNote; // Tracks the currently selected note displayed in the right panel.
@@ -61,6 +61,16 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
   @override
   void initState() {
     super.initState();
+
+
+    _searchFocusNode.skipTraversal = true;
+
+    // Listen for every time the spotlight moves
+    FocusManager.instance.addListener(() {
+      final currentFocus = FocusManager.instance.primaryFocus;
+      print('FOCUS MOVED TO: ${currentFocus?.debugLabel ?? currentFocus}');
+    });
+
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(syncOrchestratorProvider).triggerSync();
@@ -203,12 +213,15 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
                                           width: 56.0, // Matches default AppBar leading width
                                           child: Center(
                                             // Centers perfectly like the AppBar does
-                                            child: IconButton(
-                                              icon: Icon(
-                                                _isDrawerPinned ? Icons.menu_open : Icons.menu,
-                                                color: colorScheme.primary,
+                                            child: FocusTraversalOrder(
+                                              order: const NumericFocusOrder(0),
+                                              child: IconButton(
+                                                icon: Icon(
+                                                  _isDrawerPinned ? Icons.menu_open : Icons.menu,
+                                                  color: colorScheme.primary,
+                                                ),
+                                                onPressed: () => setState(() => _isDrawerPinned = !_isDrawerPinned),
                                               ),
-                                              onPressed: () => setState(() => _isDrawerPinned = !_isDrawerPinned),
                                             ),
                                           ),
                                         ),
@@ -258,17 +271,50 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
+
       floatingActionButton: FocusTraversalOrder(
         order: const NumericFocusOrder(3),
-        child: SmartActionWidget(
-          action: AppActions.newNote, // Pulls the exact config from the DB
-          baseTooltip: 'New Note', // The smart widget will append "(Ctrl+N)" automatically
-          child: FloatingActionButton(
-            onPressed: _addNote,
-            // 'tooltip' are added automatically cause of the 'SmartActionWidget'
-            focusColor: colorScheme.primaryContainer, // Makes it visibly light up
-            focusElevation: 8, // Makes it pop up
-            child: const Icon(Icons.edit, color: Colors.white),
+        child: Focus(
+          canRequestFocus: true,
+          onKeyEvent: (node, event) {
+            if (event is KeyDownEvent && (event.logicalKey == LogicalKeyboardKey.enter || event.logicalKey == LogicalKeyboardKey.space)) {
+              _addNote();
+              return KeyEventResult.handled;
+            }
+            return KeyEventResult.ignored;
+          },
+          child: Builder(
+              builder: (context) {
+                final isFocused = Focus.of(context).hasFocus;
+
+                return AnimatedContainer(
+                  // Lightning fast duration for a snappy, mechanical feel
+                  duration: const Duration(milliseconds: 50),
+                  // Tighter gap
+                  padding: const EdgeInsets.all(3),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isFocused ? colorScheme.primary : Colors.transparent,
+                      // Thicker, sharper solid line
+                      width: 2,
+                    ),
+
+                  ),
+                  child: SmartActionWidget(
+                    action: AppActions.newNote,
+                    baseTooltip: 'New Note',
+                    child: ExcludeFocus(
+                      child: FloatingActionButton(
+                        onPressed: _addNote,
+                        // Button stays anchored instead of popping up
+                        elevation: 3,
+                        child: const Icon(Icons.edit, color: Colors.white),
+                      ),
+                    ),
+                  ),
+                );
+              }
           ),
         ),
       ),
@@ -317,56 +363,89 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
             padding: const EdgeInsets.fromLTRB(12, 12, 8, 8),
             child: Row(
               children: [
+
                 Expanded(
                   child: FocusTraversalOrder(
-                    // Allow user to set focus order
                     order: const NumericFocusOrder(1),
                     child: Focus(
-                      // If user press down arrow in search, jump to notes!
+                      // The wrapper catches the Tab key spotlight
+                      canRequestFocus: true,
                       onKeyEvent: (node, event) {
-                        if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.arrowDown) {
-                          node.nextFocus();
-                          return KeyEventResult.handled;
+                        if (event is KeyDownEvent) {
+                          // ENTER: Dive into the text box to start typing
+                          if (event.logicalKey == LogicalKeyboardKey.enter) {
+                            _searchFocusNode.requestFocus();
+                            return KeyEventResult.handled;
+                          }
+                          // DOWN ARROW: Jump out of search and into the notes list
+                          if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                            node.nextFocus();
+                            return KeyEventResult.handled;
+                          }
+                          // ESCAPE: Drop out of typing mode, back to just highlighting the border
+                          if (event.logicalKey == LogicalKeyboardKey.escape) {
+                            node.requestFocus();
+                            return KeyEventResult.handled;
+                          }
                         }
                         return KeyEventResult.ignored;
                       },
-    
-                      child: TextField(
-                        controller: _searchController,
-                        decoration: InputDecoration(
-                          hintText: 'Search...',
-                          prefixIcon: const Icon(Icons.search),
-    
-                          suffixIcon: ValueListenableBuilder<TextEditingValue>(
-                            valueListenable: _searchController,
-                            builder: (context, value, child) {
-                              return value.text.isNotEmpty
-                                  ? IconButton(icon: const Icon(Icons.clear, size: 20), onPressed: _clearSearch)
-                                  : const SizedBox.shrink();
-                            },
-                          ),
-                          // suffixIcon: _searchController.text.isNotEmpty
-                          //     ? IconButton(icon: const Icon(Icons.clear, size: 20), onPressed: _clearSearch)
-                          //     : null,
-                          filled: true,
-                          fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                        ),
-                        onTap: () {
-                          if (!homeState.isSearchMode) viewModel.enterSearchMode();
-                        },
-                        onChanged: (value) {
-                          if (value.isNotEmpty && !homeState.isSearchMode) viewModel.enterSearchMode();
-                          if (value.isEmpty) {
-                            _clearSearch();
-                          } else {
-                            ref.read(searchQueryProvider.notifier).updateQuery(value);
+                      child: Builder(
+                          builder: (context) {
+                            // Checks if either the Wrapper OR the Text Field has focus
+                            final isFocused = Focus.of(context).hasFocus;
+
+                            return AnimatedContainer(
+                              duration: const Duration(milliseconds: 100),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8),
+                                // Draws the primary color border when focused
+                                border: Border.all(
+                                  color: isFocused ? colorScheme.primary : Colors.transparent,
+                                  width: 2,
+                                ),
+                              ),
+                              child: TextField(
+                                controller: _searchController,
+                                focusNode: _searchFocusNode, // Ensure this is attached!
+                                decoration: InputDecoration(
+                                  hintText: 'Search...',
+                                  prefixIcon: const Icon(Icons.search),
+                                  suffixIcon: ValueListenableBuilder<TextEditingValue>(
+                                    valueListenable: _searchController,
+                                    builder: (context, value, child) {
+                                      return value.text.isNotEmpty
+                                          ? ExcludeFocus(
+                                        child: IconButton(
+                                          icon: const Icon(Icons.clear, size: 20),
+                                          onPressed: _clearSearch,
+                                        ),
+                                      )
+                                          : const SizedBox.shrink();
+                                    },
+                                  ),
+                                  filled: true,
+                                  fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide.none, // Hide the default text border, we are using the AnimatedContainer!
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                                ),
+                                onTap: () {
+                                  if (!homeState.isSearchMode) viewModel.enterSearchMode();
+                                },
+                                onChanged: (value) {
+                                  if (value.isNotEmpty && !homeState.isSearchMode) viewModel.enterSearchMode();
+                                  if (value.isEmpty) {
+                                    _clearSearch();
+                                  } else {
+                                    ref.read(searchQueryProvider.notifier).updateQuery(value);
+                                  }
+                                },
+                              ),
+                            );
                           }
-                        },
                       ),
                     ),
                   ),

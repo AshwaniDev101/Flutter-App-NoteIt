@@ -84,7 +84,8 @@ class _NoteCardState extends ConsumerState<NoteCard> {
             onTap: widget.onTap,
             onLongPress: widget.onLongPress,
             // Keep the InkWell focus properties disabled so it doesn't fight our custom detector
-            focusNode: FocusNode(canRequestFocus: false),
+            // focusNode: FocusNode(canRequestFocus: false),
+            canRequestFocus: false,
             child: Stack(
               children: [
                 _buildInternalLayout(context, noteTheme, colorScheme, viewType),
