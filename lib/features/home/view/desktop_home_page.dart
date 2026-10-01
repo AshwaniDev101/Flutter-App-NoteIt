@@ -46,6 +46,8 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
 
   bool get _isDrawerOpen => _isDrawerHovered || _isDrawerPinned;
 
+  bool _isKeyboardDriven = FocusManager.instance.highlightMode == FocusHighlightMode.traditional;
+
   void _handleMenuHover(bool isHovering) {
     _hoverTimer?.cancel(); // Cancel any pending close actions
     if (isHovering) {
@@ -62,21 +64,45 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
   void initState() {
     super.initState();
 
-
-    _searchFocusNode.skipTraversal = true;
+    // _searchFocusNode.skipTraversal = true;
 
     // Listen for every time the spotlight moves
-    FocusManager.instance.addListener(() {
-      final currentFocus = FocusManager.instance.primaryFocus;
-      print('FOCUS MOVED TO: ${currentFocus?.debugLabel ?? currentFocus}');
-    });
+    // FocusManager.instance.addListener(() {
+    //   final currentFocus = FocusManager.instance.primaryFocus;
+    //   print('FOCUS MOVED TO: ${currentFocus?.debugLabel ?? currentFocus}');
+    // });
+    _searchFocusNode.skipTraversal = true;
 
+    _searchFocusNode.onKeyEvent = (FocusNode node, KeyEvent event) {
+      if (event is KeyDownEvent) {
+        if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+          node.nextFocus();
+          return KeyEventResult.handled;
+        }
+        if (event.logicalKey == LogicalKeyboardKey.escape) {
+          node.unfocus(); // Drops focus completely
+          return KeyEventResult.handled;
+        }
+      }
+      return KeyEventResult.ignored;
+    };
+
+    FocusManager.instance.addHighlightModeListener(_handleHighlightModeChange);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(syncOrchestratorProvider).triggerSync();
     });
 
     HardwareKeyboard.instance.addHandler(_handleKeyEvent);
+  }
+
+  // Trigger a UI rebuild when they switch between mouse and keyboard
+  void _handleHighlightModeChange(FocusHighlightMode mode) {
+    if (mounted) {
+      setState(() {
+        _isKeyboardDriven = mode == FocusHighlightMode.traditional;
+      });
+    }
   }
 
   @override
@@ -86,6 +112,9 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
 
     _searchFocusNode.dispose();
     HardwareKeyboard.instance.removeHandler(_handleKeyEvent);
+
+    FocusManager.instance.removeHighlightModeListener(_handleHighlightModeChange);
+
     super.dispose();
   }
 
@@ -134,127 +163,134 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
         // const SingleActivator(LogicalKeyboardKey.keyN, control: true): _addNote,
         return CallbackShortcuts(
           bindings: activeBindings,
-          child: FocusScope(
-            // As soon as this screen loads, put the invisible keyboard focus right here so I can hear shortcut keys.
-            autofocus: true,
-            child: PopScope(
-              canPop: !homeState.isSelectMode,
-              onPopInvokedWithResult: (bool didPop, Object? result) {
-                if (!didPop && homeState.isSelectMode) viewModel.clearSelection();
-              },
-              child: Scaffold(
-                // appBar: _buildAppBar(homeState, viewModel),
-                body: FocusTraversalGroup(
-                  policy: OrderedTraversalPolicy(), // Controls the desktop spotlight
-                  child: Stack(
-                    children: [
-                      Row(
-                        children: [
-                          SizedBox(width: _leftPanelWidth, child: _buildLeftPanel(homeState, viewModel)),
-                          const VerticalDivider(width: 1, thickness: 1), // Only 1px wide visually
-                          Expanded(child: _buildRightPanel()),
-                        ],
-                      ),
-                  
-                      Positioned(
-                        left: _leftPanelWidth - 6,
-                        // Centers a 13px box right over the 1px line
-                        width: 13,
-                        top: 0,
-                        bottom: 0,
-                        child: MouseRegion(
-                          cursor: SystemMouseCursors.resizeColumn,
-                          child: GestureDetector(
-                            // MUST be opaque so it completely blocks the panels underneath from stealing the mouse click
-                            behavior: HitTestBehavior.opaque,
-                            onPanUpdate: (details) {
-                              setState(() {
-                                _leftPanelWidth += details.delta.dx;
-                  
-                                // Prevent the panel from getting too small or too large
-                                if (_leftPanelWidth < 250) _leftPanelWidth = 250;
-                                if (_leftPanelWidth > 600) _leftPanelWidth = 600;
-                              });
-                            },
-                            child: Container(
-                              // Completely empty and transparent!
-                              // No width (it inherits 13 from Positioned) and no VerticalDivider.
-                              color: Colors.transparent,
-                            ),
-                          ),
+          child: GestureDetector(
+            // This catches any clicks that don't hit a specific button or textfield
+            onTap: () {
+              FocusManager.instance.primaryFocus?.unfocus();
+            },
+            // 2. Opaque ensures it catches clicks on empty transparent areas
+            child: FocusScope(
+              // As soon as this screen loads, put the invisible keyboard focus right here so I can hear shortcut keys.
+              autofocus: true,
+              child: PopScope(
+                canPop: !homeState.isSelectMode,
+                onPopInvokedWithResult: (bool didPop, Object? result) {
+                  if (!didPop && homeState.isSelectMode) viewModel.clearSelection();
+                },
+                child: Scaffold(
+                  // appBar: _buildAppBar(homeState, viewModel),
+                  body: FocusTraversalGroup(
+                    policy: OrderedTraversalPolicy(), // Controls the desktop spotlight
+                    child: Stack(
+                      children: [
+                        Row(
+                          children: [
+                            SizedBox(width: _leftPanelWidth, child: _buildLeftPanel(homeState, viewModel)),
+                            const VerticalDivider(width: 1, thickness: 1), // Only 1px wide visually
+                            Expanded(child: _buildRightPanel()),
+                          ],
                         ),
-                      ),
-                  
-                      // Top Layer: The Instant Windows-Style Hover Drawer
-                      if (_isDrawerOpen)
+
                         Positioned(
+                          left: _leftPanelWidth - 6,
+                          // Centers a 13px box right over the 1px line
+                          width: 13,
                           top: 0,
                           bottom: 0,
-                          left: 0,
                           child: MouseRegion(
-                            onEnter: (_) => _handleMenuHover(true),
-                            onExit: (_) => _handleMenuHover(false),
-                            child: Material(
-                              elevation: 16, // Gives a beautiful desktop shadow over the content
-                              color: Theme.of(context).scaffoldBackgroundColor,
-                              child: SizedBox(
-                                width: 250, // Your drawer width
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    // Header area matches AppBar height precisely
-                                    SizedBox(
-                                      height: kToolbarHeight,
-                                      child: Align(
-                                        alignment: Alignment.centerLeft,
-                                        child: //The Instant Windows-Style Hover Drawer
-                                        SizedBox(
-                                          height: kToolbarHeight,
-                                          width: 56.0, // Matches default AppBar leading width
-                                          child: Center(
-                                            // Centers perfectly like the AppBar does
-                                            child: FocusTraversalOrder(
-                                              order: const NumericFocusOrder(0),
-                                              child: IconButton(
-                                                icon: Icon(
-                                                  _isDrawerPinned ? Icons.menu_open : Icons.menu,
-                                                  color: colorScheme.primary,
-                                                ),
-                                                onPressed: () => setState(() => _isDrawerPinned = !_isDrawerPinned),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        // child: Padding(
-                                        //   padding: const EdgeInsets.only(left: 8.0),
-                                        //   child: IconButton(
-                                        //     icon: Icon(
-                                        //       _isDrawerPinned ? Icons.menu_open : Icons.menu,
-                                        //       color: colorScheme.primary,
-                                        //     ),
-                                        //     onPressed: () => setState(() => _isDrawerPinned = !_isDrawerPinned),
-                                        //   ),
-                                        // ),
-                                      ),
-                                    ),
-                                    // Your actual drawer content
-                                    Expanded(
-                                      child: HomepageDrawer(
-                                        onDestinationSelected: () {
-                                          // If you want unpinned overlay to close when an item is selected:
-                                          if (!_isDrawerPinned) {
-                                            setState(() => _isDrawerHovered = false);
-                                          }
-                                        },
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                            cursor: SystemMouseCursors.resizeColumn,
+                            child: GestureDetector(
+                              // MUST be opaque so it completely blocks the panels underneath from stealing the mouse click
+                              behavior: HitTestBehavior.opaque,
+                              onPanUpdate: (details) {
+                                setState(() {
+                                  _leftPanelWidth += details.delta.dx;
+
+                                  // Prevent the panel from getting too small or too large
+                                  if (_leftPanelWidth < 250) _leftPanelWidth = 250;
+                                  if (_leftPanelWidth > 600) _leftPanelWidth = 600;
+                                });
+                              },
+                              child: Container(
+                                // Completely empty and transparent!
+                                // No width (it inherits 13 from Positioned) and no VerticalDivider.
+                                color: Colors.transparent,
                               ),
                             ),
                           ),
                         ),
-                    ],
+
+                        // Top Layer: The Instant Windows-Style Hover Drawer
+                        if (_isDrawerOpen)
+                          Positioned(
+                            top: 0,
+                            bottom: 0,
+                            left: 0,
+                            child: MouseRegion(
+                              onEnter: (_) => _handleMenuHover(true),
+                              onExit: (_) => _handleMenuHover(false),
+                              child: Material(
+                                elevation: 16, // Gives a beautiful desktop shadow over the content
+                                color: Theme.of(context).scaffoldBackgroundColor,
+                                child: SizedBox(
+                                  width: 250, // Your drawer width
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      // Header area matches AppBar height precisely
+                                      SizedBox(
+                                        height: kToolbarHeight,
+                                        child: Align(
+                                          alignment: Alignment.centerLeft,
+                                          child: //The Instant Windows-Style Hover Drawer
+                                          SizedBox(
+                                            height: kToolbarHeight,
+                                            width: 56.0, // Matches default AppBar leading width
+                                            child: Center(
+                                              // Centers perfectly like the AppBar does
+                                              child: FocusTraversalOrder(
+                                                order: const NumericFocusOrder(0),
+                                                child: IconButton(
+                                                  icon: Icon(
+                                                    _isDrawerPinned ? Icons.menu_open : Icons.menu,
+                                                    color: colorScheme.primary,
+                                                  ),
+                                                  onPressed: () => setState(() => _isDrawerPinned = !_isDrawerPinned),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          // child: Padding(
+                                          //   padding: const EdgeInsets.only(left: 8.0),
+                                          //   child: IconButton(
+                                          //     icon: Icon(
+                                          //       _isDrawerPinned ? Icons.menu_open : Icons.menu,
+                                          //       color: colorScheme.primary,
+                                          //     ),
+                                          //     onPressed: () => setState(() => _isDrawerPinned = !_isDrawerPinned),
+                                          //   ),
+                                          // ),
+                                        ),
+                                      ),
+                                      // Your actual drawer content
+                                      Expanded(
+                                        child: HomepageDrawer(
+                                          onDestinationSelected: () {
+                                            // If you want unpinned overlay to close when an item is selected:
+                                            if (!_isDrawerPinned) {
+                                              setState(() => _isDrawerHovered = false);
+                                            }
+                                          },
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -271,50 +307,50 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-
       floatingActionButton: FocusTraversalOrder(
         order: const NumericFocusOrder(3),
         child: Focus(
           canRequestFocus: true,
           onKeyEvent: (node, event) {
-            if (event is KeyDownEvent && (event.logicalKey == LogicalKeyboardKey.enter || event.logicalKey == LogicalKeyboardKey.space)) {
+            if (event is KeyDownEvent &&
+                (event.logicalKey == LogicalKeyboardKey.enter || event.logicalKey == LogicalKeyboardKey.space)) {
               _addNote();
               return KeyEventResult.handled;
             }
             return KeyEventResult.ignored;
           },
           child: Builder(
-              builder: (context) {
-                final isFocused = Focus.of(context).hasFocus;
+            builder: (context) {
+              final isFocused = Focus.of(context).hasFocus;
 
-                return AnimatedContainer(
-                  // Lightning fast duration for a snappy, mechanical feel
-                  duration: const Duration(milliseconds: 50),
-                  // Tighter gap
-                  padding: const EdgeInsets.all(3),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: isFocused ? colorScheme.primary : Colors.transparent,
-                      // Thicker, sharper solid line
-                      width: 2,
-                    ),
 
+              return AnimatedContainer(
+                // Lightning fast duration for a snappy, mechanical feel
+                duration: const Duration(milliseconds: 50),
+                // Tighter gap
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  // Only draw the border if they are focused AND using the keyboard
+                  border: Border.all(
+                    color: (isFocused && _isKeyboardDriven) ? colorScheme.primary : Colors.transparent,
+                    width: 2,
                   ),
-                  child: SmartActionWidget(
-                    action: AppActions.newNote,
-                    baseTooltip: 'New Note',
-                    child: ExcludeFocus(
-                      child: FloatingActionButton(
-                        onPressed: _addNote,
-                        // Button stays anchored instead of popping up
-                        elevation: 3,
-                        child: const Icon(Icons.edit, color: Colors.white),
-                      ),
+                ),
+                child: SmartActionWidget(
+                  action: AppActions.newNote,
+                  baseTooltip: 'New Note',
+                  child: ExcludeFocus(
+                    child: FloatingActionButton(
+                      onPressed: _addNote,
+                      // Button stays anchored instead of popping up
+                      elevation: 3,
+                      child: const Icon(Icons.edit, color: Colors.white),
                     ),
                   ),
-                );
-              }
+                ),
+              );
+            },
           ),
         ),
       ),
@@ -368,21 +404,18 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
                   child: FocusTraversalOrder(
                     order: const NumericFocusOrder(1),
                     child: Focus(
-                      // The wrapper catches the Tab key spotlight
+                      // Your original wrapper catches the Tab key spotlight perfectly
                       canRequestFocus: true,
                       onKeyEvent: (node, event) {
                         if (event is KeyDownEvent) {
-                          // ENTER: Dive into the text box to start typing
                           if (event.logicalKey == LogicalKeyboardKey.enter) {
                             _searchFocusNode.requestFocus();
                             return KeyEventResult.handled;
                           }
-                          // DOWN ARROW: Jump out of search and into the notes list
                           if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
                             node.nextFocus();
                             return KeyEventResult.handled;
                           }
-                          // ESCAPE: Drop out of typing mode, back to just highlighting the border
                           if (event.logicalKey == LogicalKeyboardKey.escape) {
                             node.requestFocus();
                             return KeyEventResult.handled;
@@ -391,65 +424,75 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
                         return KeyEventResult.ignored;
                       },
                       child: Builder(
-                          builder: (context) {
-                            // Checks if either the Wrapper OR the Text Field has focus
-                            final isFocused = Focus.of(context).hasFocus;
+                        builder: (context) {
+                          final isFocused = Focus.of(context).hasFocus;
 
-                            return AnimatedContainer(
-                              duration: const Duration(milliseconds: 100),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
-                                // Draws the primary color border when focused
-                                border: Border.all(
-                                  color: isFocused ? colorScheme.primary : Colors.transparent,
-                                  width: 2,
-                                ),
+                          return AnimatedContainer(
+                            duration: const Duration(milliseconds: 100),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              // Your original logic, tied to the global state
+                              border: Border.all(
+                                color: (isFocused && _isKeyboardDriven) ? colorScheme.primary : Colors.transparent,
+                                width: 2,
                               ),
-                              child: TextField(
-                                controller: _searchController,
-                                focusNode: _searchFocusNode, // Ensure this is attached!
-                                decoration: InputDecoration(
-                                  hintText: 'Search...',
-                                  prefixIcon: const Icon(Icons.search),
-                                  suffixIcon: ValueListenableBuilder<TextEditingValue>(
-                                    valueListenable: _searchController,
-                                    builder: (context, value, child) {
-                                      return value.text.isNotEmpty
-                                          ? ExcludeFocus(
-                                        child: IconButton(
-                                          icon: const Icon(Icons.clear, size: 20),
-                                          onPressed: _clearSearch,
-                                        ),
-                                      )
-                                          : const SizedBox.shrink();
-                                    },
-                                  ),
-                                  filled: true,
-                                  fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: BorderSide.none, // Hide the default text border, we are using the AnimatedContainer!
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                            ),
+                            child: TextField(
+                              controller: _searchController,
+                              focusNode: _searchFocusNode,
+                              decoration: InputDecoration(
+                                hintText: 'Search...',
+                                prefixIcon: const Icon(Icons.search),
+                                suffixIcon: ValueListenableBuilder<TextEditingValue>(
+                                  valueListenable: _searchController,
+                                  builder: (context, value, child) {
+                                    return value.text.isNotEmpty
+                                        ? ExcludeFocus(
+                                      child: IconButton(
+                                        icon: const Icon(Icons.clear, size: 20),
+                                        onPressed: _clearSearch,
+                                      ),
+                                    )
+                                        : const SizedBox.shrink();
+                                  },
                                 ),
-                                onTap: () {
-                                  if (!homeState.isSearchMode) viewModel.enterSearchMode();
-                                },
-                                onChanged: (value) {
-                                  if (value.isNotEmpty && !homeState.isSearchMode) viewModel.enterSearchMode();
-                                  if (value.isEmpty) {
-                                    _clearSearch();
-                                  } else {
-                                    ref.read(searchQueryProvider.notifier).updateQuery(value);
-                                  }
-                                },
+                                filled: true,
+                                fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+
+                                // Hide the default un-focused border
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: BorderSide.none,
+                                ),
+                                // Hide the default text-focused border so it doesn't fight your AnimatedContainer
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: BorderSide.none,
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(vertical: 0),
                               ),
-                            );
-                          }
+                              onTap: () {
+                                // The crucial fix: Tell the app a mouse was used!
+                                if (mounted) setState(() => _isKeyboardDriven = false);
+
+                                if (!homeState.isSearchMode) viewModel.enterSearchMode();
+                              },
+                              onChanged: (value) {
+                                if (value.isNotEmpty && !homeState.isSearchMode) viewModel.enterSearchMode();
+                                if (value.isEmpty) {
+                                  _clearSearch();
+                                } else {
+                                  ref.read(searchQueryProvider.notifier).updateQuery(value);
+                                }
+                              },
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ),
                 ),
+
                 const SizedBox(width: 4),
                 const ViewSwitcherButton(),
                 _buildFilterMenu(currentSortOption, currentPlatformFilter, colorScheme),
