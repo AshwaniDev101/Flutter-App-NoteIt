@@ -1,16 +1,19 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/features/local_sync/view/role_selector_page.dart';
 
 import '../../features/dev_tools/dev_page.dart';
-import '../../features/home/view/home_page.dart';
+import '../../features/home/view/desktop/desktop_home_page.dart';
+import '../../features/home/view/mobile/mobile_home_page.dart';
 import '../../features/local_sync/view/mdns/broadcast/host_broadcast.dart';
 import '../../features/local_sync/view/mdns/searcher/host_searcher.dart';
 import '../../features/local_sync/view/mdns/searcher/pin_entry_dialog.dart';
 import '../../features/local_sync/view/qr/qr_page.dart';
 import '../../features/local_sync/view/qr/qr_scanner/qr_scanner_page.dart';
-import '../../features/note_editor/screens/view/edit_note_page.dart';
+import '../../features/note_editor/screens/view/desktop_edit_page.dart';
+import '../../features/note_editor/screens/view/mobile_edit_page.dart';
 import '../../features/settings/view/options/master_password_page.dart';
 import '../../features/settings/view/settings_page.dart';
 import '../../features/themes/view/theme_page.dart';
@@ -36,14 +39,34 @@ class AppRoutes {
 final routerProvider = Provider((ref) {
   return GoRouter(
     initialLocation: AppRoutes.home,
-    // initialLocation: AppRoutes.search,
     routes: <RouteBase>[
-      GoRoute(path: AppRoutes.home, builder: (context, state) => const HomePage()),
+      GoRoute(path: AppRoutes.home, builder: (context, state) {
+        final isDesktop =
+            defaultTargetPlatform == TargetPlatform.windows ||
+                defaultTargetPlatform == TargetPlatform.macOS ||
+                defaultTargetPlatform == TargetPlatform.linux;
+
+        if (isDesktop) {
+          return DesktopHomePage();
+        } else {
+          return MobileHomePage();
+        }
+      }),
       GoRoute(
         path: AppRoutes.edit,
         builder: (context, state) {
           final note = state.extra as Note?;
-          return EditNotePage(existingNote: note);
+
+          final isDesktop =
+              defaultTargetPlatform == TargetPlatform.windows ||
+                  defaultTargetPlatform == TargetPlatform.macOS ||
+                  defaultTargetPlatform == TargetPlatform.linux;
+
+          if (isDesktop) {
+            return DesktopEditNotePage(existingNote: note);
+          } else {
+            return MobileEditNotePage(existingNote: note);
+          }
         },
       ),
 
