@@ -10,6 +10,7 @@ import '../../../../database/drift/keybindings/keybindings_dao.dart';
 import '../../../../database/sync/sync_orchestrator.dart';
 import '../../../drawer/homepage_drawer.dart';
 import '../../../keybinding/shortcut_config.dart';
+import '../../core/providers.dart';
 import '../../viewmodel/home_view_model.dart';
 import '../password_prompt_helper.dart';
 import 'desktop_left_panel.dart';
@@ -34,7 +35,7 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
   double _leftPanelWidth = 340.0;
 
   /// Tracks the currently selected note displayed in the right panel editor.
-  Note? _activeNote;
+  // Note? _activeNote;
 
   // DRAWER STATE
   bool _isDrawerHovered = false;
@@ -142,10 +143,10 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
     if (note.isLocked) {
       final success = await PasswordPromptHelper.promptAndVerify(context, ref, note);
       if (success && mounted) {
-        setState(() => _activeNote = note);
+        ref.read(activeNoteProvider.notifier).setNote(note);
       }
     } else {
-      setState(() => _activeNote = note);
+      ref.read(activeNoteProvider.notifier).setNote(note);
     }
   }
 
@@ -169,13 +170,15 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
       localSyncStatus: 0,
       versionCounter: 1,
     );
-    setState(() => _activeNote = emptyNote);
+    ref.read(activeNoteProvider.notifier).setNote(emptyNote);
   }
 
   @override
   Widget build(BuildContext context) {
     final homeState = ref.watch(homeViewModelProvider);
     final viewModel = ref.read(homeViewModelProvider.notifier);
+    final activeNote = ref.watch(activeNoteProvider);
+
 
     ref.watch(syncOrchestratorProvider);
     final shortcutsAsync = ref.watch(keybindingsProvider);
@@ -221,7 +224,7 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
                               child: DesktopLeftPanel(
                                 searchController: _searchController,
                                 searchFocusNode: _searchFocusNode,
-                                activeNoteId: _activeNote?.uuid,
+                                activeNoteId: activeNote?.uuid,
                                 isKeyboardDriven: _isKeyboardDriven,
                                 onMenuToggle: () => setState(() => _isDrawerPinned = !_isDrawerPinned),
                                 onMenuHover: _handleMenuHover,
@@ -231,7 +234,7 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
                               ),
                             ),
                             const VerticalDivider(width: 1, thickness: 1), // Only 1px wide visually
-                            Expanded(child: DesktopRightPanel(activeNote: _activeNote)),
+                            Expanded(child: DesktopRightPanel(activeNote: activeNote)),
                           ],
                         ),
 

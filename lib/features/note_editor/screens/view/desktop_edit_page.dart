@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:noteit/database/drift/local_database.dart';
 
 import '../../../../shared/widgets/snack_bar_manager.dart';
+import '../../../home/core/providers.dart';
 import '../../../unlock/lock_manger/lock_manager.dart';
 import '../../../unlock/view/setup_password_page.dart';
 import '../view_model/edit_note_view_model.dart';
@@ -59,7 +61,11 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
     _titleFocusNode = FocusNode()..addListener(() => setState(() {}));
     _contentFocusNode = FocusNode();
 
-    if (_titleController.text.isEmpty) _isAutoSyncingTitle = true;
+    if (_titleController.text.isEmpty && _contentController.text.isEmpty) {
+      _isAutoSyncingTitle = true;
+    } else {
+      _isAutoSyncingTitle = false;
+    }
 
     _contentController.addListener(_syncTitleFromContent);
     _titleController.addListener(_onTitleChanged);
@@ -89,7 +95,14 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
   void _syncTitleFromContent() {
     if (!_isAutoSyncingTitle) return;
 
-    final firstLine = _contentController.text.isNotEmpty ? _contentController.text.split('\n').first : '';
+    String firstLine = _contentController.text.isNotEmpty ? _contentController.text.split('\n').first : '';
+
+
+    // FIX: Restrict to exactly 30 characters maximum
+    if (firstLine.length > 30) {
+      firstLine = firstLine.substring(0, 30);
+    }
+
     if (_titleController.text != firstLine) {
       _titleController.value = _titleController.value.copyWith(
         text: firstLine,
@@ -99,10 +112,18 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
   }
 
   void _onTitleChanged() {
-    if (_titleController.text.isEmpty) {
+    if (_titleController.text.isEmpty && _contentController.text.isEmpty) {
       _isAutoSyncingTitle = true;
     } else {
-      if (_titleController.text != _contentController.text.split('\n').first) _isAutoSyncingTitle = false;
+      // Calculate what the auto-sync text should look like right now
+      String expectedSync = _contentController.text.isNotEmpty ? _contentController.text.split('\n').first : '';
+      if (expectedSync.length > 30) expectedSync = expectedSync.substring(0, 30);
+
+      // If the actual title text doesn't match the expected sync text,
+      // it means the user manually typed in the title field. Turn off auto-sync!
+      if (_titleController.text != expectedSync) {
+        _isAutoSyncingTitle = false;
+      }
     }
   }
 
@@ -197,7 +218,8 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
           appBar: AppBar(
             backgroundColor: panelColor,
             automaticallyImplyLeading: false,
-            titleSpacing: 24,
+            titleSpacing: 8,
+            // titleSpacing: 24,
             title: _buildTitleField(maxWidth: 300),
             actions: [
               _buildUndoRedoButtons(),
@@ -422,6 +444,11 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
             icon: const Icon(Icons.delete_outline),
             onPressed: _handleDeleteNote,
           ),
+          IconButton(
+            tooltip: 'Close Note',
+            icon: const Icon(Icons.close_outlined),
+            onPressed: _handleCloseNote,
+          ),
         ],
       ),
     );
@@ -467,7 +494,13 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
       }
     }
   }
+  void _handleCloseNote() {
+    // send signal the parent class to pop the note
+    ref.read(activeNoteProvider.notifier).clear();
 
+    // Pop if opened via router/mobile
+    if (context.canPop()) context.pop();
+  }
   void _handleDeleteNote() {
     if (!_isNewNote && widget.existingNote != null) {
 
@@ -475,5 +508,6 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
       // _hasTriggeredFinalSave = true;
       ref.read(editNoteViewModelProvider.notifier).deleteNote(widget.existingNote!.uuid);
     }
+    _handleCloseNote();
   }
 }

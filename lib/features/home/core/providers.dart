@@ -4,10 +4,30 @@ import '../../../database/drift/local_database.dart';
 import '../../unlock/lock_manger/lock_manager.dart';
 import 'options.dart';
 
-final platformFilterProvider =
-    NotifierProvider<PlatformFilterNotifier, PlatformOptions>(
-      PlatformFilterNotifier.new,
-    );
+class ActiveNoteNotifier extends Notifier<Note?> {
+  @override
+  Note? build() {
+    // Initial state: no note is selected
+    return null;
+  }
+
+  // Action to select a note
+  void setNote(Note note) {
+    state = note;
+  }
+
+  // Action to close/clear the editor
+  void clear() {
+    state = null;
+  }
+}
+
+// The modern provider declaration
+final activeNoteProvider = NotifierProvider<ActiveNoteNotifier, Note?>(() {
+  return ActiveNoteNotifier();
+});
+
+final platformFilterProvider = NotifierProvider<PlatformFilterNotifier, PlatformOptions>(PlatformFilterNotifier.new);
 
 final filteredNotesProvider = Provider<AsyncValue<List<Note>>>((ref) {
   final sortedNotesAsync = ref.watch(sortedNotesProvider);
@@ -20,9 +40,7 @@ final filteredNotesProvider = Provider<AsyncValue<List<Note>>>((ref) {
     List<Note> result = notes;
 
     if (platformFilter != PlatformOptions.all) {
-      final targetPlatform = platformFilter == PlatformOptions.android
-          ? 'android'
-          : 'windows';
+      final targetPlatform = platformFilter == PlatformOptions.android ? 'android' : 'windows';
       result = result.where((note) {
         return note.creationPlatform?.toLowerCase() == targetPlatform;
       }).toList();
@@ -32,11 +50,8 @@ final filteredNotesProvider = Provider<AsyncValue<List<Note>>>((ref) {
       result = result.where((note) {
         final matchesTitle = note.title.toLowerCase().contains(searchQuery);
 
-        final canReadContent =
-            !note.isLocked ||
-            lockState.sessionUnlockedNoteIds.contains(note.uuid);
-        final matchesContent =
-            canReadContent && note.content.toLowerCase().contains(searchQuery);
+        final canReadContent = !note.isLocked || lockState.sessionUnlockedNoteIds.contains(note.uuid);
+        final matchesContent = canReadContent && note.content.toLowerCase().contains(searchQuery);
         // final matchesContent = !note.isLocked && note.content.toLowerCase().contains(searchQuery);
         return matchesTitle || matchesContent;
       }).toList();
@@ -46,9 +61,7 @@ final filteredNotesProvider = Provider<AsyncValue<List<Note>>>((ref) {
   });
 });
 
-final searchQueryProvider = NotifierProvider<SearchQueryNotifier, String>(
-  SearchQueryNotifier.new,
-);
+final searchQueryProvider = NotifierProvider<SearchQueryNotifier, String>(SearchQueryNotifier.new);
 
 class PlatformFilterNotifier extends Notifier<PlatformOptions> {
   @override
