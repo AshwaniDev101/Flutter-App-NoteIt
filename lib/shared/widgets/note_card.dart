@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/helpers/time_helper.dart';
-import '../../core/theme/note_theme.dart';
 import '../../database/drift/local_database.dart';
 import '../../features/home/note_view.dart';
 import 'highlighted_text.dart';
@@ -29,91 +28,77 @@ class NoteCard extends ConsumerStatefulWidget {
 }
 
 class _NoteCardState extends ConsumerState<NoteCard> {
-
-
   // Track if the keyboard spotlight is on this card
   bool _isFocused = false;
 
   @override
   Widget build(BuildContext context) {
-    final noteTheme = Theme.of(context).extension<NoteTheme>()!;
-    final colorScheme = Theme.of(context).colorScheme;
-
     // Watch the global view type! Any time it changes, this card redraws itself.
     final viewType = ref.watch(noteViewTypeProvider);
 
-
     return FocusableActionDetector(
       // Fires when arrow keys move onto or off of this widget
-        onShowFocusHighlight: (hasFocus) {
-          setState(() => _isFocused = hasFocus);
-        },
+      onShowFocusHighlight: (hasFocus) {
+        setState(() => _isFocused = hasFocus);
+      },
 
-        // THE ACTION: Pressing Enter or Space triggers the onTap
-        actions: {
-          ActivateIntent: CallbackAction<ActivateIntent>(
-            onInvoke: (intent) {
-              if (widget.onTap != null) widget.onTap!();
-              return null; // Required return type
-            },
-          ),
-        },
+      // THE ACTION: Pressing Enter or Space triggers the onTap
+      actions: {
+        ActivateIntent: CallbackAction<ActivateIntent>(
+          onInvoke: (intent) {
+            if (widget.onTap != null) widget.onTap!();
+            return null; // Required return type
+          },
+        ),
+      },
 
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
         child: Card(
-          // elevation: widget.isSelected ? 1 : 0,
-          elevation: widget.isSelected ? 1 : (_isFocused ? 4 : 0), // Pop up slightly when focused
+          elevation: widget.isSelected ? 1 : (_isFocused ? 4 : 0),
           clipBehavior: Clip.antiAlias,
-          color: widget.isSelected
-              ? colorScheme.primaryContainer.withValues(alpha: 0.3)
-              : noteTheme.cardContentBackground,
+
+          color: widget.isSelected ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.5) : null,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
             side: BorderSide(
-              // color: colorScheme.outlineVariant.withValues(alpha: 0.3),
-              // 4. THE VISUAL HINT: Change border color when focused
               color: _isFocused
-                  ? colorScheme.primary // Bright theme color when spotlighted
-                  : colorScheme.outlineVariant.withValues(alpha: 0.3),
-              // width: 1, // Keep width at 1 so the size never jumps
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.3), // very dim card boarder
               width: _isFocused ? 2 : 1,
             ),
           ),
           child: InkWell(
             onTap: widget.onTap,
             onLongPress: widget.onLongPress,
-            // Keep the InkWell focus properties disabled so it doesn't fight our custom detector
-            // focusNode: FocusNode(canRequestFocus: false),
             canRequestFocus: false,
             child: Stack(
               children: [
-                _buildInternalLayout(context, noteTheme, colorScheme, viewType),
+                // No more prop drilling! Just pass the viewType.
+                _buildInternalLayout(viewType),
               ],
             ),
           ),
         ),
       ),
     );
-
-
   }
 
   // ==== LAYOUT ROUTER ====
-  Widget _buildInternalLayout(BuildContext context, NoteTheme noteTheme, ColorScheme colorScheme, NoteViewType viewType) {
+  Widget _buildInternalLayout(NoteViewType viewType) {
     switch (viewType) {
       case NoteViewType.list:
-        return _buildCompactList(noteTheme, colorScheme);
+        return _buildCompactList();
       case NoteViewType.detailedList:
-        return _buildDetailedList(noteTheme, colorScheme);
+        return _buildDetailedList();
       case NoteViewType.grid:
       case NoteViewType.largeGrid:
-        return _buildGrid(noteTheme, colorScheme, viewType);
+        return _buildGrid(viewType);
     }
   }
 
   // ==== GRID LAYOUT ====
-  Widget _buildGrid(NoteTheme noteTheme, ColorScheme colorScheme, NoteViewType viewType) {
+  Widget _buildGrid(NoteViewType viewType) {
     final platform = widget.note.deletedPlatform ?? widget.note.creationPlatform;
     final int maxLines = viewType == NoteViewType.largeGrid ? 8 : 5;
 
@@ -121,7 +106,6 @@ class _NoteCardState extends ConsumerState<NoteCard> {
       padding: const EdgeInsets.all(12.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        // Grids provide bounded height, so we use max to push the footer to the bottom
         mainAxisSize: MainAxisSize.max,
         children: [
           Row(
@@ -133,65 +117,54 @@ class _NoteCardState extends ConsumerState<NoteCard> {
                   query: widget.searchQuery,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  normalStyle: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                    color: noteTheme.cardTitleForeground,
-                  ),
+                  normalStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                   highlightStyle: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
-                    backgroundColor: colorScheme.primaryContainer,
-                    color: colorScheme.onPrimaryContainer,
+                    backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
                   ),
                 ),
               ),
               if (widget.note.isPinned) ...[
                 const SizedBox(width: 8),
-                Icon(Icons.push_pin, size: 16, color: colorScheme.onSurfaceVariant),
+                Icon(Icons.push_pin, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
               ],
             ],
           ),
           const SizedBox(height: 6),
-
-          // Expanded forces the text to take up remaining space, pushing footer down
           Expanded(
             child: Align(
               alignment: Alignment.topLeft,
               child: widget.note.isLocked
-                  ? Icon(Icons.lock_outlined, size: 20, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5))
+                  ? Icon(
+                      Icons.lock_outlined,
+                      size: 20,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                    )
                   : HighlightedText(
-                text: widget.note.content,
-                query: widget.searchQuery,
-                maxLines: maxLines,
-                overflow: TextOverflow.ellipsis,
-                normalStyle: TextStyle(
-                  fontSize: 13,
-                  height: 1.4,
-                  color: noteTheme.cardContentForeground,
-                ),
-                highlightStyle: TextStyle(
-                  fontSize: 13,
-                  height: 1.4,
-                  backgroundColor: colorScheme.primaryContainer,
-                  color: colorScheme.onPrimaryContainer,
-                ),
-              ),
+                      text: widget.note.content,
+                      query: widget.searchQuery,
+                      maxLines: maxLines,
+                      overflow: TextOverflow.ellipsis,
+                      normalStyle: const TextStyle(fontSize: 13, height: 1.4),
+                      highlightStyle: TextStyle(
+                        fontSize: 13,
+                        height: 1.4,
+                        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                        color: Theme.of(context).colorScheme.onPrimaryContainer,
+                      ),
+                    ),
             ),
           ),
-
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-
                 TimeHelper.formatTimeAgo(widget.note.updatedAt),
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: noteTheme.cardContentForeground,
-                ),
+                // Color removed: Uses default text color
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
               ),
               if (platform != null)
                 Tooltip(
@@ -206,14 +179,13 @@ class _NoteCardState extends ConsumerState<NoteCard> {
   }
 
   // ==== DETAILED LIST LAYOUT ====
-  Widget _buildDetailedList(NoteTheme noteTheme, ColorScheme colorScheme) {
+  Widget _buildDetailedList() {
     final platform = widget.note.deletedPlatform ?? widget.note.creationPlatform;
 
     return Padding(
       padding: const EdgeInsets.all(12.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        // Lists dictate their own height, so we use min
         mainAxisSize: MainAxisSize.min,
         children: [
           Row(
@@ -225,61 +197,51 @@ class _NoteCardState extends ConsumerState<NoteCard> {
                   query: widget.searchQuery,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  normalStyle: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                    color: noteTheme.cardTitleForeground,
-                  ),
+                  normalStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                   highlightStyle: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
-                    backgroundColor: colorScheme.primaryContainer,
-                    color: colorScheme.onPrimaryContainer,
+                    backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
                   ),
                 ),
               ),
               if (widget.note.isPinned) ...[
                 const SizedBox(width: 8),
-                Icon(Icons.push_pin, size: 16, color: colorScheme.onSurfaceVariant),
+                Icon(Icons.push_pin, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
               ],
             ],
           ),
           const SizedBox(height: 6),
-
           widget.note.isLocked
               ? Align(
-            alignment: Alignment.centerLeft,
-            child: Icon(Icons.lock_outlined, size: 20, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
-          )
+                  alignment: Alignment.centerLeft,
+                  child: Icon(
+                    Icons.lock_outlined,
+                    size: 20,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                  ),
+                )
               : HighlightedText(
-            text: widget.note.content,
-            query: widget.searchQuery,
-            maxLines: 2, // Fixed to 2 lines for detailed lists
-            overflow: TextOverflow.ellipsis,
-            normalStyle: TextStyle(
-              fontSize: 13,
-              height: 1.4,
-              color: noteTheme.cardContentForeground,
-            ),
-            highlightStyle: TextStyle(
-              fontSize: 13,
-              height: 1.4,
-              backgroundColor: colorScheme.primaryContainer,
-              color: colorScheme.onPrimaryContainer,
-            ),
-          ),
-
+                  text: widget.note.content,
+                  query: widget.searchQuery,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  normalStyle: const TextStyle(fontSize: 13, height: 1.4),
+                  highlightStyle: TextStyle(
+                    fontSize: 13,
+                    height: 1.4,
+                    backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  ),
+                ),
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 TimeHelper.formatTimeAgo(widget.note.updatedAt),
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: noteTheme.cardContentForeground,
-                ),
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
               ),
               if (platform != null)
                 Tooltip(
@@ -294,7 +256,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
   }
 
   // ==== COMPACT LIST LAYOUT ====
-  Widget _buildCompactList(NoteTheme noteTheme, ColorScheme colorScheme) {
+  Widget _buildCompactList() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
@@ -305,22 +267,18 @@ class _NoteCardState extends ConsumerState<NoteCard> {
               query: widget.searchQuery,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              normalStyle: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 15,
-                color: noteTheme.cardTitleForeground,
-              ),
+              normalStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
               highlightStyle: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 15,
-                backgroundColor: colorScheme.primaryContainer,
-                color: colorScheme.onPrimaryContainer,
+                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                color: Theme.of(context).colorScheme.onPrimaryContainer,
               ),
             ),
           ),
           if (widget.note.isPinned) ...[
             const SizedBox(width: 8),
-            Icon(Icons.push_pin, size: 16, color: colorScheme.onSurfaceVariant),
+            Icon(Icons.push_pin, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
           ],
         ],
       ),
@@ -329,11 +287,17 @@ class _NoteCardState extends ConsumerState<NoteCard> {
 
   // ==== SHARED ICONS ====
   Widget _getPlatformIcon(String platform) {
+    // Icons naturally inherit default colors too, but retaining the grey here
+    // keeps them subtle as meta-information.
     switch (platform.toLowerCase()) {
-      case 'android': return const Icon(Icons.phone_android_rounded, size: 14, color: Colors.grey);
-      case 'ios': return const Icon(Icons.phone_iphone_rounded, size: 14, color: Colors.grey);
-      case 'windows': return const Icon(Icons.desktop_windows_sharp, size: 14, color: Colors.grey);
-      default: return const Icon(Icons.computer, size: 14, color: Colors.grey);
+      case 'android':
+        return const Icon(Icons.phone_android_rounded, size: 14, color: Colors.grey);
+      case 'ios':
+        return const Icon(Icons.phone_iphone_rounded, size: 14, color: Colors.grey);
+      case 'windows':
+        return const Icon(Icons.desktop_windows_sharp, size: 14, color: Colors.grey);
+      default:
+        return const Icon(Icons.computer, size: 14, color: Colors.grey);
     }
   }
 }

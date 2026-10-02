@@ -7,15 +7,15 @@ import 'package:noteit/features/home/view/widgets/home_app_bars.dart';
 import 'package:noteit/features/home/view/widgets/notes_grid_view.dart';
 import 'package:noteit/shared/widgets/websocket_connection_indicator.dart';
 
-import '../../../../database/sync/sync_orchestrator.dart';
-import '../../../database/sync/local_sync_service.dart';
-import '../../../shared/widgets/spinning_sync_icon.dart';
-import '../../drawer/homepage_drawer.dart';
-import '../core/providers.dart';
-import '../core/sort.dart';
-import '../core/options.dart';
-import '../viewmodel/home_view_model.dart';
-import 'password_prompt_helper.dart';
+import '../../../../../database/sync/sync_orchestrator.dart';
+import '../../../../database/sync/local_sync_service.dart';
+import '../../../../shared/widgets/spinning_sync_icon.dart';
+import '../../../drawer/homepage_drawer.dart';
+import '../../core/providers.dart';
+import '../../core/sort.dart';
+import '../../core/options.dart';
+import '../../viewmodel/home_view_model.dart';
+import '../password_prompt_helper.dart';
 
 class MobileHomePage extends ConsumerStatefulWidget {
   const MobileHomePage({super.key});
@@ -155,8 +155,7 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
             Expanded(
               child: NotesGridView(
                 isSelectMode: homeState.isSelectMode,
-                noteIds: homeState.selectedNoteIds,
-                // Make sure NotesGridView expects a Set<String> now!
+                noteIds: homeState.selectedNoteIds,   // NotesGridView expects a Set<String>
                 activeNoteId: null,
                 onToggleSelection: viewModel.toggleSelection,
                 onEnableSelectMode: viewModel.enableSelectMode,
