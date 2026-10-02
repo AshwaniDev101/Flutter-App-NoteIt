@@ -489,6 +489,12 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
         if (mounted) {
           setState(() => _isLocked = !_isLocked);
         }
+
+        // If we are unlocking (!isCurrentlyLocked == false), Notes it stays open!
+        if (!isCurrentlyLocked) {
+          _handleCloseNote();
+        }
+
       } else {
         if (mounted) SnackBarManager.show(msg: 'Action failed');
       }

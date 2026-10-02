@@ -139,13 +139,16 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
   }
 
   void _handleNoteTap(Note note) async {
-    // Check security layer before loading the note into the right panel editor
     if (note.isLocked) {
+      // The Shell coordinates the security check
       final success = await PasswordPromptHelper.promptAndVerify(context, ref, note);
-      if (success && mounted) {
+
+      // If successful, update the state. No 'mounted' check needed for Riverpod.
+      if (success) {
         ref.read(activeNoteProvider.notifier).setNote(note);
       }
     } else {
+      // Unlocked notes open instantly
       ref.read(activeNoteProvider.notifier).setNote(note);
     }
   }

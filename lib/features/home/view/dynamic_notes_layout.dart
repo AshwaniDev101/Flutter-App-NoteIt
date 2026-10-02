@@ -14,7 +14,7 @@ class DynamicNotesLayout extends ConsumerWidget {
   final String? activeNoteId;
   final Function(String) onToggleSelection;
   final Function() onEnableSelectMode;
-  final Future<void> Function(BuildContext, Note) onPromptPassword;
+  // final Future<bool> Function(BuildContext, Note) onPromptPassword;
   final void Function(Note) onNoteTap;
 
   const DynamicNotesLayout({
@@ -24,7 +24,7 @@ class DynamicNotesLayout extends ConsumerWidget {
     this.activeNoteId,
     required this.onToggleSelection,
     required this.onEnableSelectMode,
-    required this.onPromptPassword,
+    // required this.onPromptPassword,
     required this.onNoteTap,
   });
 
@@ -49,8 +49,7 @@ class DynamicNotesLayout extends ConsumerWidget {
       onTap: () async {
         if (isSelectMode) {
           onToggleSelection(currentNote.uuid);
-        } else if (displayAsLocked) {
-          await onPromptPassword(context, currentNote);
+
         } else {
           onNoteTap(currentNote);
         }

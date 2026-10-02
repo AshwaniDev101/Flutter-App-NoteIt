@@ -235,7 +235,6 @@ class DesktopLeftPanel extends ConsumerWidget {
                 activeNoteId: activeNoteId,
                 onToggleSelection: viewModel.toggleSelection,
                 onEnableSelectMode: viewModel.enableSelectMode,
-                onPromptPassword: (ctx, note) => PasswordPromptHelper.promptAndVerify(ctx, ref, note),
                 onNoteTap: onNoteTap,
               ),
             ),
