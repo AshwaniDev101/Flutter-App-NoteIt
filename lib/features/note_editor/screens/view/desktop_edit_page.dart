@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -28,8 +30,11 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
 
   bool _isAutoSyncingTitle = false;
   late bool _isLocked;
-  bool _hasTriggeredFinalSave = false;
+  // bool _hasTriggeredFinalSave = false;
   bool _hasCreatedNewNote = false;
+  Timer? _autoSaveTimer;
+  bool _isDeleted = false;
+  bool _isSaved = true;
 
 
   late final FocusNode _titleFocusNode;
@@ -58,6 +63,27 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
 
     _contentController.addListener(_syncTitleFromContent);
     _titleController.addListener(_onTitleChanged);
+
+    // used for saving changes to the note automatically
+    _titleController.addListener(_scheduleAutoSave);
+    _contentController.addListener(_scheduleAutoSave);
+  }
+
+  void _scheduleAutoSave() {
+
+    // Hide the "Saved" text the moment they start typing
+    if (_isSaved && mounted) {
+      setState(() => _isSaved = false);
+    }
+
+    // If the user is still typing, cancel the previous countdown
+    if (_autoSaveTimer?.isActive ?? false) _autoSaveTimer!.cancel();
+
+    // Start a new 1-second countdown
+    _autoSaveTimer = Timer(const Duration(seconds: 2), () {
+      if (!mounted) return;
+      _executeSave(); // Silently save in the background
+    });
   }
 
   void _syncTitleFromContent() {
@@ -82,10 +108,29 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
 
   @override
   void dispose() {
-    _executeSave(isManualSave: false);
+    // Cancel the auto-save timer
+    _autoSaveTimer?.cancel();
 
+    // Grab the exact text before the controllers are destroyed
+    final finalTitle = _titleController.text;
+    final finalContent = _contentController.text;
+
+    // Push the final DB save to the next event loop, completely escaping Flutter's widget teardown cycle!
+    Future(() {
+      _executeSave(
+        isManualSave: false,
+        isDisposing: true,
+        overrideTitle: finalTitle,
+        overrideContent: finalContent,
+      );
+    });
+
+    // Clean up listeners and controllers
     _contentController.removeListener(_syncTitleFromContent);
     _titleController.removeListener(_onTitleChanged);
+    _titleController.removeListener(_scheduleAutoSave);
+    _contentController.removeListener(_scheduleAutoSave);
+
     _titleFocusNode.dispose();
     _titleController.dispose();
     _contentController.dispose();
@@ -94,31 +139,41 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
     super.dispose();
   }
 
-  void _executeSave({bool isManualSave = false}) {
-    if (_hasTriggeredFinalSave && !isManualSave) return;
+  void _executeSave({
+    bool isManualSave = false,
+    bool isDisposing = false,
+    String? overrideTitle,
+    String? overrideContent,
+  }) {
+    if (_isDeleted) return;
 
-    final title = _titleController.text.trim();
-    final content = _contentController.text.trim();
+    // Use the overrides if we are disposing, otherwise read directly from controllers
+    final title = (overrideTitle ?? _titleController.text).trim();
+    final content = (overrideContent ?? _contentController.text).trim();
 
     if (title.isEmpty && content.isEmpty) return;
 
     if (_isNewNote) {
       if (_hasCreatedNewNote) return;
       _viewModel.saveNote(title, content);
-      _hasCreatedNewNote = true;
+      // Don't update local variables if the widget is already dead
+      if (!isDisposing) _hasCreatedNewNote = true;
     } else {
       if (title != widget.existingNote!.title || content != widget.existingNote!.content) {
         _viewModel.updateNote(widget.existingNote!.uuid, title, content);
       }
     }
 
-    if (isManualSave && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Saved!'), behavior: SnackBarBehavior.floating, duration: Duration(seconds: 1)),
-      );
-    }
+    // Only touch setState if we are 100% sure the widget is alive and not disposing
+    if (!isDisposing && mounted) {
+      setState(() => _isSaved = true);
 
-    if (!isManualSave) _hasTriggeredFinalSave = true;
+      if (isManualSave) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Saved!'), behavior: SnackBarBehavior.floating, duration: Duration(seconds: 1)),
+        );
+      }
+    }
   }
 
   String _getFormattedDate() {
@@ -183,7 +238,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
                   focusNode: _titleFocusNode,
                   autofocus: _isNewNote,
                   textAlignVertical: TextAlignVertical.center,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
                   decoration: InputDecoration(
                     isDense: true,
                     hintText: "Title",
@@ -204,19 +259,48 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
                       },
                     )
                         : const SizedBox.shrink(),
+
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide.none,
+                    ),
                   ),
                 ),
               ),
             ),
           ),
         ),
-        // Desktop always shows the save button inline
-        const SizedBox(width: 8),
-        TextButton.icon(
-          onPressed: () => _executeSave(isManualSave: true),
-          icon: const Icon(Icons.save),
-          label: const Text("Save"),
+
+        // Auto save indicator
+        AnimatedOpacity(
+          opacity: _isSaved ? 1.0 : 0.0,
+          duration: const Duration(milliseconds: 100),
+          child: Row(
+            children: [
+              Icon(
+                Icons.cloud_done_outlined, // Cute cloud checkmark
+                size: 16,
+                color: Theme.of(context).colorScheme.outline,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                "Saved",
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.outline,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ),
         ),
+
+        // const SizedBox(width: 16),
+        // Desktop always shows the save button inline
+        // TextButton.icon(
+        //   onPressed: () => _executeSave(isManualSave: true),
+        //   icon: const Icon(Icons.save),
+        //   label: const Text("Save"),
+        // ),
       ],
     );
   }
@@ -386,7 +470,9 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
 
   void _handleDeleteNote() {
     if (!_isNewNote && widget.existingNote != null) {
-      _hasTriggeredFinalSave = true;
+
+      _isDeleted = true;
+      // _hasTriggeredFinalSave = true;
       ref.read(editNoteViewModelProvider.notifier).deleteNote(widget.existingNote!.uuid);
     }
   }

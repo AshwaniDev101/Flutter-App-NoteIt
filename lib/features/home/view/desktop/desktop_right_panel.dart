@@ -9,7 +9,6 @@ import '../../../../shared/widgets/spinning_sync_icon.dart';
 import '../../../../shared/widgets/websocket_connection_indicator.dart';
 import '../../../note_editor/screens/view/desktop_edit_page.dart';
 
-
 class DesktopRightPanel extends ConsumerWidget {
   final Note? activeNote;
 
@@ -30,7 +29,7 @@ class DesktopRightPanel extends ConsumerWidget {
               WebSocketConnectionIndicator(isConnected: isConnected),
               IconButton(
                 tooltip: "Sync Notes",
-                icon: SpinningSyncIcon(isSyncing: isSyncing, color: Colors.white,),
+                icon: SpinningSyncIcon(isSyncing: isSyncing, color: Colors.white),
                 onPressed: () {
                   ref.read(syncOrchestratorProvider).triggerSync();
                 },
@@ -56,10 +55,28 @@ class DesktopRightPanel extends ConsumerWidget {
       ),
 
       // Inject the Editor widget if a note is selected, otherwise show a placeholder graphic.
-      // Using ValueKey ensures the editor completely destroys and rebuilds when swapping notes.
-      body: activeNote == null
-          ? const _HomepagePlaceholder()
-          : DesktopEditNotePage(key: ValueKey(activeNote!.uuid), existingNote: activeNote),
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 200),
+        reverseDuration: const Duration(milliseconds: 150),
+        switchInCurve: Curves.easeOutCubic,
+        // Decelerates smoothly into place
+        switchOutCurve: Curves.easeIn,
+
+        transitionBuilder: (Widget child, Animation<double> animation) {
+          // Scale from 96% to 100% while fading in
+          final scaleAnimation = Tween<double>(begin: 0.96, end: 1.0).animate(animation);
+
+          return FadeTransition(
+            opacity: animation,
+            child: ScaleTransition(scale: scaleAnimation, child: child),
+          );
+        },
+
+        // The ValueKey is important here. It tells the AnimatedSwitcher when to trigger!
+        child: activeNote == null
+            ? const _HomepagePlaceholder()
+            : DesktopEditNotePage(key: ValueKey(activeNote!.uuid), existingNote: activeNote),
+      ),
     );
   }
 }

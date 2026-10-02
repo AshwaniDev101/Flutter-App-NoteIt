@@ -171,6 +171,7 @@ class DesktopLeftPanel extends ConsumerWidget {
                               focusNode: searchFocusNode,
                               decoration: InputDecoration(
                                 hintText: 'Search...',
+                                // fillColor: Theme.of(context).colorScheme.surfaceContainerLow,
                                 prefixIcon: const Icon(Icons.search),
                                 suffixIcon: ValueListenableBuilder<TextEditingValue>(
                                   valueListenable: searchController,
