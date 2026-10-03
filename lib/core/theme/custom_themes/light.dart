@@ -1,4 +1,4 @@
-part of '../../app_theme.dart';
+part of '../app_theme.dart';
 
 ThemeData get _lightThemeData => ThemeData(
   useMaterial3: true,
@@ -24,14 +24,14 @@ ThemeData get _lightThemeData => ThemeData(
       statusBarBrightness: Brightness.light,
     ),
   ),
-  extensions: const [
-    NoteTheme(
-      selectedAppBar: Color(0xFFE5A040),
-      selectedCheckColor: Color(0xFFC78532),
-      cardTitleBackground: Color(0xFFF5F4F1),
-      cardTitleForeground: Color(0xFF292524),
-      cardContentBackground: Color(0xFFFFFFFF),
-      cardContentForeground: Color(0xFF57534E),
-    ),
-  ],
+  // extensions: const [
+  //   NoteTheme(
+  //     selectedAppBar: Color(0xFFE5A040),
+  //     selectedCheckColor: Color(0xFFC78532),
+  //     cardTitleBackground: Color(0xFFF5F4F1),
+  //     cardTitleForeground: Color(0xFF292524),
+  //     cardContentBackground: Color(0xFFFFFFFF),
+  //     cardContentForeground: Color(0xFF57534E),
+  //   ),
+  // ],
 );

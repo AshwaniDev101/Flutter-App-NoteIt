@@ -158,26 +158,26 @@ class _TrashPageState extends ConsumerState<TrashPage> {
           );
         }
       } catch (e) {
-        if (mounted)
+        if (mounted) {
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        }
       }
     }
   }
 
   // App Bar Builder (Handles Default vs Select Mode)
   PreferredSizeWidget _buildAppBar(List<Note> currentNotes) {
-    final noteTheme = Theme.of(context).extension<NoteTheme>();
-    final colorScheme = Theme.of(context).colorScheme;
+
+    // final colorScheme = Theme.of(context).colorScheme;
 
     if (isSelectMode) {
       final isAllSelected =
           currentNotes.isNotEmpty && noteIds.length == currentNotes.length;
 
       return AppBar(
-        backgroundColor:
-            noteTheme?.selectedAppBar ?? Theme.of(context).primaryColor,
+        backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Colors.white,
         leading: IconButton(
           icon: const Icon(Icons.close),
@@ -262,7 +262,7 @@ class _TrashPageState extends ConsumerState<TrashPage> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8.0),
                     ),
-                    side: BorderSide(color: colorScheme.primary, width: 1),
+                    side: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1),
                   ),
                 )
               : IconButton(

@@ -1,9 +1,88 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:noteit/features/home/core/sort.dart';
+import 'package:noteit/features/home/core/db_sorting_filtering.dart';
 import '../../../database/drift/local_database.dart';
 import '../../unlock/lock_manger/lock_manager.dart';
-import 'options.dart';
 
+
+/// This is the ultimate provider that glues everything together. It takes the raw sorted notes
+/// and applies the active search query, platform filter, and lock state.
+final filteredNotesProvider = Provider<AsyncValue<List<Note>>>((ref) {
+  // Watch dependencies. If any of these 4 change, this entire function re-runs automatically.
+  final sortedNotesAsync = ref.watch(sortedNotesStreamProvider);
+  final searchQuery = ref.watch(searchQueryProvider).toLowerCase().trim();
+  final platformFilter = ref.watch(platformFilterProvider);
+  final lockState = ref.watch(lockManagerProvider);
+
+  // states, and only runs filter logic if the database successfully returned data.
+  return sortedNotesAsync.whenData((notes) {
+    // Start with the full list
+    List<Note> result = notes;
+
+    // Apply Platform Filter
+    if (platformFilter != FilterPlatformOptions.all) {
+      final targetPlatform = platformFilter == FilterPlatformOptions.android ? 'android' : 'windows';
+      result = result.where((note) {
+        return note.creationPlatform?.toLowerCase() == targetPlatform;
+      }).toList();
+    }
+
+    // Apply Text Search
+    if (searchQuery.isNotEmpty) {
+      result = result.where((note) {
+        final matchesTitle = note.title.toLowerCase().contains(searchQuery);
+
+        // Security check: Only search content if the note is unlocked or currently open in session
+        final canReadContent = !note.isLocked || lockState.sessionUnlockedNoteIds.contains(note.uuid);
+        final matchesContent = canReadContent && note.content.toLowerCase().contains(searchQuery);
+
+        return matchesTitle || matchesContent;
+      }).toList();
+    }
+
+    return result; // Return the final UI-ready list
+  });
+});
+
+/// State Holder : holds for platform filter
+enum FilterPlatformOptions { all, android, windows }
+/// Stores the user's current platform filter selection (All, Android, Windows).
+final platformFilterProvider = NotifierProvider<PlatformFilterNotifier, FilterPlatformOptions>(
+  PlatformFilterNotifier.new,
+);
+class PlatformFilterNotifier extends Notifier<FilterPlatformOptions> {
+  @override
+  FilterPlatformOptions build() => FilterPlatformOptions.all;
+
+  void toggleFilter(FilterPlatformOptions filter) {
+    // Toggle off if tapping the same active filter
+    if (state == filter) {
+      state = FilterPlatformOptions.all;
+    } else {
+      state = filter;
+    }
+  }
+}
+
+/// Holds the current raw text typed into the search bar.
+final searchQueryProvider = NotifierProvider<SearchQueryNotifier, String>(SearchQueryNotifier.new);
+class SearchQueryNotifier extends Notifier<String> {
+  @override
+  String build() => '';
+
+  void updateQuery(String query) {
+    state = query;
+  }
+
+  void clear() {
+    state = '';
+  }
+}
+
+
+/// Stores the state of the currently selected/edited note.
+final activeNoteProvider = NotifierProvider<ActiveNoteNotifier, Note?>(() {
+  return ActiveNoteNotifier();
+});
 class ActiveNoteNotifier extends Notifier<Note?> {
   @override
   Note? build() {
@@ -19,72 +98,5 @@ class ActiveNoteNotifier extends Notifier<Note?> {
   // Action to close/clear the editor
   void clear() {
     state = null;
-  }
-}
-
-// The modern provider declaration
-final activeNoteProvider = NotifierProvider<ActiveNoteNotifier, Note?>(() {
-  return ActiveNoteNotifier();
-});
-
-final platformFilterProvider = NotifierProvider<PlatformFilterNotifier, PlatformOptions>(PlatformFilterNotifier.new);
-
-final filteredNotesProvider = Provider<AsyncValue<List<Note>>>((ref) {
-  final sortedNotesAsync = ref.watch(sortedNotesProvider);
-  final searchQuery = ref.watch(searchQueryProvider).toLowerCase().trim();
-  final platformFilter = ref.watch(platformFilterProvider);
-
-  final lockState = ref.watch(lockManagerProvider);
-
-  return sortedNotesAsync.whenData((notes) {
-    List<Note> result = notes;
-
-    if (platformFilter != PlatformOptions.all) {
-      final targetPlatform = platformFilter == PlatformOptions.android ? 'android' : 'windows';
-      result = result.where((note) {
-        return note.creationPlatform?.toLowerCase() == targetPlatform;
-      }).toList();
-    }
-
-    if (searchQuery.isNotEmpty) {
-      result = result.where((note) {
-        final matchesTitle = note.title.toLowerCase().contains(searchQuery);
-
-        final canReadContent = !note.isLocked || lockState.sessionUnlockedNoteIds.contains(note.uuid);
-        final matchesContent = canReadContent && note.content.toLowerCase().contains(searchQuery);
-        // final matchesContent = !note.isLocked && note.content.toLowerCase().contains(searchQuery);
-        return matchesTitle || matchesContent;
-      }).toList();
-    }
-
-    return result;
-  });
-});
-
-final searchQueryProvider = NotifierProvider<SearchQueryNotifier, String>(SearchQueryNotifier.new);
-
-class PlatformFilterNotifier extends Notifier<PlatformOptions> {
-  @override
-  PlatformOptions build() => PlatformOptions.all;
-
-  void toggleFilter(PlatformOptions filter) {
-    if (state == filter) {
-      state = PlatformOptions.all;
-    } else {
-      state = filter;
-    }
-  }
-}
-
-class SearchQueryNotifier extends Notifier<String> {
-  @override
-  String build() => '';
-
-  void updateQuery(String query) {
-    state = query;
-  }
-
-  void clear() {
-    state = '';
   }
 }

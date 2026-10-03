@@ -1,4 +1,4 @@
-part of '../../app_theme.dart';
+part of '../app_theme.dart';
 
 ThemeData get _amoledThemeData => ThemeData(
   useMaterial3: true,
@@ -25,14 +25,14 @@ ThemeData get _amoledThemeData => ThemeData(
       statusBarBrightness: Brightness.dark,
     ),
   ),
-  extensions: const [
-    NoteTheme(
-      selectedAppBar: Color(0xFF939BEA),
-      selectedCheckColor: Color(0xFF73C5A8),
-      cardTitleBackground: Color(0xFF0F0F0F),
-      cardTitleForeground: Color(0xFFE0E0E0),
-      cardContentBackground: Colors.black,
-      cardContentForeground: Color(0xFFA0A0A0),
-    ),
-  ],
+  // extensions: const [
+  //   NoteTheme(
+  //     selectedAppBar: Color(0xFF939BEA),
+  //     selectedCheckColor: Color(0xFF73C5A8),
+  //     cardTitleBackground: Color(0xFF0F0F0F),
+  //     cardTitleForeground: Color(0xFFE0E0E0),
+  //     cardContentBackground: Colors.black,
+  //     cardContentForeground: Color(0xFFA0A0A0),
+  //   ),
+  // ],
 );

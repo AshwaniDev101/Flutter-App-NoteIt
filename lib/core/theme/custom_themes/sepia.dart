@@ -1,4 +1,4 @@
-part of '../../app_theme.dart';
+part of '../app_theme.dart';
 
 ThemeData get _sepiaThemeData => ThemeData(
   useMaterial3: true,
@@ -25,14 +25,14 @@ ThemeData get _sepiaThemeData => ThemeData(
       statusBarBrightness: Brightness.light,
     ),
   ),
-  extensions: const [
-    NoteTheme(
-      selectedAppBar: Color(0xFFD97757),
-      selectedCheckColor: Color(0xFFD97757),
-      cardTitleBackground: Color(0xFFF3E3C8),
-      cardTitleForeground: Color(0xFF433422),
-      cardContentBackground: Color(0xFFFDF6E3),
-      cardContentForeground: Color(0xFF5C4435),
-    ),
-  ],
+  // extensions: const [
+  //   NoteTheme(
+  //     selectedAppBar: Color(0xFFD97757),
+  //     selectedCheckColor: Color(0xFFD97757),
+  //     cardTitleBackground: Color(0xFFF3E3C8),
+  //     cardTitleForeground: Color(0xFF433422),
+  //     cardContentBackground: Color(0xFFFDF6E3),
+  //     cardContentForeground: Color(0xFF5C4435),
+  //   ),
+  // ],
 );
