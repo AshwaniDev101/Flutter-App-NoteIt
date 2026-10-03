@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../features/keybinding/keybindings_provider.dart';
-import '../../features/keybinding/shortcut_config.dart';
+import 'keybindings_provider.dart';
+import 'shortcut_config.dart';
 
 class SmartActionWidget extends ConsumerWidget {
   final String action;
@@ -24,7 +24,7 @@ class SmartActionWidget extends ConsumerWidget {
     final shortcuts = ref.watch(keybindingsProvider).value ?? {};
     final config = shortcuts[action];
 
-    // 1. Calculate Tooltip Text
+    // Calculate Tooltip Text
     String finalTooltip = baseTooltip;
     if (prefs.appendShortcutToTooltips && config != null) {
       finalTooltip = '$baseTooltip ${config.formattedLabel}';

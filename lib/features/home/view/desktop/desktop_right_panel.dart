@@ -5,8 +5,8 @@ import 'package:noteit/database/sync/local_sync_service.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../../../../database/sync/sync_orchestrator.dart';
-import '../../../../shared/widgets/spinning_sync_icon.dart';
-import '../../../../shared/widgets/websocket_connection_indicator.dart';
+import '../shared_widgets/spinning_sync_icon.dart';
+import '../shared_widgets/websocket_connection_indicator.dart';
 import '../../../note_editor/screens/view/desktop_edit_page.dart';
 
 class DesktopRightPanel extends ConsumerWidget {

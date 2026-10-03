@@ -7,7 +7,7 @@ import '../../database/drift/local_database.dart';
 import '../../database/drift/notes/notes_dao.dart';
 import '../../database/firebase/firebase_database.dart';
 import '../../database/sync/sync_orchestrator.dart';
-import '../../shared/widgets/note_card.dart';
+import '../../shared/widgets/note_card/note_card.dart';
 
 final trashNotesProvider = StreamProvider.autoDispose<List<Note>>((ref) {
   final notesDao = ref.watch(notesDaoProvider);

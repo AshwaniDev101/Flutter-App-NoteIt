@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/helpers/time_helper.dart';
-import '../../database/drift/local_database.dart';
-import '../../features/home/note_view.dart';
+import '../../../core/helpers/time_helper.dart';
+import '../../../database/drift/local_database.dart';
+import '../../../features/home/note_view.dart';
 import 'highlighted_text.dart';
 
 class NoteCard extends ConsumerStatefulWidget {

@@ -5,7 +5,7 @@ import 'package:noteit/database/drift/local_database.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../../../../database/drift/keybindings/keybindings_dao.dart';
-import '../../../../shared/widgets/smart_action_widget.dart';
+import '../../../keybinding/smart_action_widget.dart';
 import '../shared_widgets/sort_filter_option_menu.dart';
 import '../../core/providers.dart';
 import '../../note_view.dart';

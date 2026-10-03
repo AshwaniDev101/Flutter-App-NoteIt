@@ -4,12 +4,12 @@ import 'package:go_router/go_router.dart';
 import 'package:noteit/core/routing/routing.dart';
 import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/features/home/view/shared_widgets/select_mode_app_bars.dart';
-import 'package:noteit/shared/widgets/websocket_connection_indicator.dart';
+import 'package:noteit/features/home/view/shared_widgets/websocket_connection_indicator.dart';
 
 import '../../../../../database/sync/sync_orchestrator.dart';
 import '../../../../database/sync/local_sync_service.dart';
 import '../shared_widgets/sort_filter_option_menu.dart';
-import '../../../../shared/widgets/spinning_sync_icon.dart';
+import '../shared_widgets/spinning_sync_icon.dart';
 import '../../../drawer/homepage_drawer.dart';
 import '../../core/providers.dart';
 import '../shared_widgets/switch_view_option_menu.dart';
