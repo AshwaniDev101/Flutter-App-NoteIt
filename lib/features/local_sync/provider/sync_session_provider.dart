@@ -9,7 +9,7 @@ import '../../../core/util/logger.dart';
 import '../../../database/shared_preference/shared_preference_manager.dart';
 import '../auto_connect/mdns_broadcast.dart';
 
-// Note: .autoDispose: when no widgets are listening to this provider, destroy the cache
+// Note: .autoDispose: when no shared_widgets are listening to this provider, destroy the cache
 // Without it you will get a same url and ip value you have already fetched before
 final syncSessionProvider = FutureProvider.autoDispose<({String ip, String qrUrl, String deviceName, String pin})>((
   ref,

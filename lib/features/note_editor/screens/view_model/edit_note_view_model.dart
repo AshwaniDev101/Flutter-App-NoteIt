@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/database/drift/notes/notes_dao.dart';
 import 'package:noteit/features/local_sync/provider/sync_session_provider.dart';
 
-import '../../../../core/helpers/device_helper.dart';
 import '../../../../database/sync/sync_orchestrator.dart';
 
 class EditNoteState {
