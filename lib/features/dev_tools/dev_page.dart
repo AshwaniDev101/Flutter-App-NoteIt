@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../database/shared_preference/shared_preference_manager.dart';
-import '../unlock/lock_manger/lock_manager.dart';
+import '../lock/lock_manger/lock_manager.dart';
 
 class DevPage extends ConsumerWidget {
   const DevPage({super.key});

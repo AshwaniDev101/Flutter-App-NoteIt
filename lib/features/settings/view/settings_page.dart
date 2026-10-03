@@ -5,7 +5,7 @@ import 'package:noteit/core/routing/routing.dart';
 import '../../../../database/sync/sync_engine.dart';
 import '../../../../database/sync/sync_orchestrator.dart';
 import '../../keybinding/keybindings_provider.dart';
-import '../../unlock/lock_manger/lock_manager.dart';
+import '../../lock/lock_manger/lock_manager.dart';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});

@@ -26,44 +26,35 @@ class LockState {
     bool? keepUnlockedDuringSession,
   }) {
     return LockState(
-      sessionUnlockedNoteIds:
-          sessionUnlockedNoteIds ?? this.sessionUnlockedNoteIds,
+      sessionUnlockedNoteIds: sessionUnlockedNoteIds ?? this.sessionUnlockedNoteIds,
       isAuthenticating: isAuthenticating ?? this.isAuthenticating,
       error: error ?? this.error,
-      keepUnlockedDuringSession:
-          keepUnlockedDuringSession ?? this.keepUnlockedDuringSession,
+      keepUnlockedDuringSession: keepUnlockedDuringSession ?? this.keepUnlockedDuringSession,
     );
   }
 }
+
+final lockManagerProvider = NotifierProvider<LockNotifier, LockState>(() => LockNotifier());
 
 class LockNotifier extends Notifier<LockState> {
   @override
   LockState build() {
     // Initialize the state using the saved preference
-    final keepUnlocked = ref
-        .read(sharedPreferenceProvider)
-        .keepUnlockedDuringSession;
+    final keepUnlocked = ref.read(sharedPreferenceProvider).keepUnlockedDuringSession;
     return LockState(keepUnlockedDuringSession: keepUnlocked);
   }
 
-  bool get hasMasterPassword =>
-      ref.read(sharedPreferenceProvider).hasMasterPassword;
+  bool get hasMasterPassword => ref.read(sharedPreferenceProvider).hasMasterPassword;
 
   // Update the preference both in memory and storage
   Future<void> setKeepUnlockedPreference(bool keepUnlocked) async {
     state = state.copyWith(keepUnlockedDuringSession: keepUnlocked);
-    await ref
-        .read(sharedPreferenceProvider)
-        .setKeepUnlockedDuringSession(keepUnlocked);
+    await ref.read(sharedPreferenceProvider).setKeepUnlockedDuringSession(keepUnlocked);
 
     // If the user turns the feature OFF, immediately clear all active sessions for security
     if (!keepUnlocked) {
       clearAllSessions();
     }
-  }
-
-  bool isNoteSessionUnlocked(String uuid) {
-    return state.sessionUnlockedNoteIds.contains(uuid);
   }
 
   bool verifyPassword(String password) {
@@ -73,9 +64,14 @@ class LockNotifier extends Notifier<LockState> {
 
   bool verifyAndSessionUnlock(String uuid, String password) {
     if (verifyPassword(password)) {
-      final updatedSet = Set<String>.from(state.sessionUnlockedNoteIds)
-        ..add(uuid);
-      state = state.copyWith(sessionUnlockedNoteIds: updatedSet, error: null);
+      //  Only cache the UUID if the user has the setting enabled
+      if (state.keepUnlockedDuringSession) {
+        final updatedSet = Set<String>.from(state.sessionUnlockedNoteIds)..add(uuid);
+        state = state.copyWith(sessionUnlockedNoteIds: updatedSet, error: null);
+      } else {
+        //  If the setting is off, clear errors but do NOT cache the session
+        state = state.copyWith(error: null);
+      }
       return true;
     } else {
       state = state.copyWith(error: 'Incorrect Password');
@@ -86,16 +82,11 @@ class LockNotifier extends Notifier<LockState> {
   Future<bool> setupMasterPassword(String password) async {
     state = state.copyWith(isAuthenticating: true, error: null);
     try {
-      final success = await ref
-          .read(sharedPreferenceProvider)
-          .setMasterPassword(password);
+      final success = await ref.read(sharedPreferenceProvider).setMasterPassword(password);
       state = state.copyWith(isAuthenticating: false);
       return success;
     } catch (e) {
-      state = state.copyWith(
-        isAuthenticating: false,
-        error: 'Failed to save password',
-      );
+      state = state.copyWith(isAuthenticating: false, error: 'Failed to save password');
       return false;
     }
   }
@@ -105,8 +96,7 @@ class LockNotifier extends Notifier<LockState> {
   }
 
   void lockSessionNote(String uuid) {
-    final updatedSet = Set<String>.from(state.sessionUnlockedNoteIds)
-      ..remove(uuid);
+    final updatedSet = Set<String>.from(state.sessionUnlockedNoteIds)..remove(uuid);
     state = state.copyWith(sessionUnlockedNoteIds: updatedSet);
   }
 
@@ -142,7 +132,3 @@ class LockNotifier extends Notifier<LockState> {
     }
   }
 }
-
-final lockManagerProvider = NotifierProvider<LockNotifier, LockState>(
-  () => LockNotifier(),
-);

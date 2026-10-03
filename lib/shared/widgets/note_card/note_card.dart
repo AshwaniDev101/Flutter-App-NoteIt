@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/shared/widgets/note_card/widgets/lock_overlay.dart';
 
 import '../../../core/helpers/time_helper.dart';
 import '../../../database/drift/local_database.dart';
 import '../../../features/home/note_view.dart';
+import '../../../features/lock/lock_manger/lock_manager.dart';
 import 'highlighted_text.dart';
 
 class NoteCard extends ConsumerStatefulWidget {
@@ -74,7 +76,6 @@ class _NoteCardState extends ConsumerState<NoteCard> {
             canRequestFocus: false,
             child: Stack(
               children: [
-                // No more prop drilling! Just pass the viewType.
                 _buildInternalLayout(viewType),
               ],
             ),
@@ -101,6 +102,8 @@ class _NoteCardState extends ConsumerState<NoteCard> {
   Widget _buildGrid(NoteViewType viewType) {
     final platform = widget.note.deletedPlatform ?? widget.note.creationPlatform;
     final int maxLines = viewType == NoteViewType.largeGrid ? 8 : 5;
+
+    final isSessionUnlocked = ref.watch(lockManagerProvider).sessionUnlockedNoteIds.contains(widget.note.uuid);
 
     return Padding(
       padding: const EdgeInsets.all(12.0),
@@ -134,27 +137,30 @@ class _NoteCardState extends ConsumerState<NoteCard> {
           ),
           const SizedBox(height: 6),
           Expanded(
-            child: Align(
-              alignment: Alignment.topLeft,
-              child: widget.note.isLocked
-                  ? Icon(
-                      Icons.lock_outlined,
-                      size: 20,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-                    )
-                  : HighlightedText(
-                      text: widget.note.content,
-                      query: widget.searchQuery,
-                      maxLines: maxLines,
-                      overflow: TextOverflow.ellipsis,
-                      normalStyle: const TextStyle(fontSize: 13, height: 1.4),
-                      highlightStyle: TextStyle(
-                        fontSize: 13,
-                        height: 1.4,
-                        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                        color: Theme.of(context).colorScheme.onPrimaryContainer,
-                      ),
+            child: Stack(
+              children: [
+                Align(
+                  alignment: Alignment.topLeft,
+
+                  child:HighlightedText(
+                    //  Pass empty string if locked & not verified, SECURITY: not doing so, ill allow screen reader to fetch the content
+                    text: (widget.note.isLocked && !isSessionUnlocked) ? "" : widget.note.content,
+                    query: widget.searchQuery,
+                    maxLines: maxLines,
+                    overflow: TextOverflow.ellipsis,
+                    normalStyle: const TextStyle(fontSize: 13, height: 1.4),
+                    highlightStyle: TextStyle(
+                      fontSize: 13,
+                      height: 1.4,
+                      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
                     ),
+                  ),
+                ),
+
+                // Lock icon overlay
+                LockOverlayWidget(note: widget.note),
+              ],
             ),
           ),
           const SizedBox(height: 12),
@@ -163,7 +169,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
             children: [
               Text(
                 TimeHelper.formatTimeAgo(widget.note.updatedAt),
-                // Color removed: Uses default text color
+
                 style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
               ),
               if (platform != null)

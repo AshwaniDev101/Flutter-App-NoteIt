@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/features/local_sync/view/role_selector_page.dart';
 
+import '../../features/backup/export_page.dart';
 import '../../features/dev_tools/dev_page.dart';
 import '../../features/home/view/desktop/desktop_home_page.dart';
 import '../../features/home/view/mobile/mobile_home_page.dart';
@@ -14,7 +15,6 @@ import '../../features/local_sync/view/qr/qr_page.dart';
 import '../../features/local_sync/view/qr/qr_scanner/qr_scanner_page.dart';
 import '../../features/note_editor/screens/view/desktop_edit_page.dart';
 import '../../features/note_editor/screens/view/mobile_edit_page.dart';
-import '../../features/settings/view/options/master_password_page.dart';
 import '../../features/settings/view/settings_page.dart';
 import '../../features/themes/view/theme_page.dart';
 import '../../features/trash/trash_page.dart';
@@ -34,24 +34,29 @@ class AppRoutes {
   static const String qr = '/qr';
   static const String scan = '/qr-scan';
   static const String pin = '/pin-entry';
+  static const String backup = '/backup';
 }
 
 final routerProvider = Provider((ref) {
   return GoRouter(
     initialLocation: AppRoutes.home,
+    // initialLocation: AppRoutes.backup,
     routes: <RouteBase>[
-      GoRoute(path: AppRoutes.home, builder: (context, state) {
-        final isDesktop =
-            defaultTargetPlatform == TargetPlatform.windows ||
-                defaultTargetPlatform == TargetPlatform.macOS ||
-                defaultTargetPlatform == TargetPlatform.linux;
+      GoRoute(
+        path: AppRoutes.home,
+        builder: (context, state) {
+          final isDesktop =
+              defaultTargetPlatform == TargetPlatform.windows ||
+              defaultTargetPlatform == TargetPlatform.macOS ||
+              defaultTargetPlatform == TargetPlatform.linux;
 
-        if (isDesktop) {
-          return DesktopHomePage();
-        } else {
-          return MobileHomePage();
-        }
-      }),
+          if (isDesktop) {
+            return DesktopHomePage();
+          } else {
+            return MobileHomePage();
+          }
+        },
+      ),
       GoRoute(
         path: AppRoutes.edit,
         builder: (context, state) {
@@ -59,8 +64,8 @@ final routerProvider = Provider((ref) {
 
           final isDesktop =
               defaultTargetPlatform == TargetPlatform.windows ||
-                  defaultTargetPlatform == TargetPlatform.macOS ||
-                  defaultTargetPlatform == TargetPlatform.linux;
+              defaultTargetPlatform == TargetPlatform.macOS ||
+              defaultTargetPlatform == TargetPlatform.linux;
 
           if (isDesktop) {
             return DesktopEditNotePage(existingNote: note);
@@ -84,12 +89,12 @@ final routerProvider = Provider((ref) {
         },
       ),
 
-      GoRoute(
-        path: AppRoutes.masterPassword,
-        builder: (context, state) {
-          return const MasterPasswordPage();
-        },
-      ),
+      // GoRoute(
+      //   path: AppRoutes.masterPassword,
+      //   builder: (context, state) {
+      //     return const MasterPasswordPage();
+      //   },
+      // ),
 
       GoRoute(
         path: AppRoutes.trash,
@@ -139,10 +144,9 @@ final routerProvider = Provider((ref) {
           return const QrScannerPage();
         },
       ),
-      GoRoute(
-        path: AppRoutes.pin,
-        builder: (context, state) => const PinEntryDialog(),
-      )
+      GoRoute(path: AppRoutes.pin, builder: (context, state) => const PinEntryDialog()),
+
+      // GoRoute(path: AppRoutes.backup, builder: (context, state) => const ExportNotesPage()),
     ],
   );
 });

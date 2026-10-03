@@ -10,12 +10,12 @@ import '../../../../database/drift/keybindings/keybindings_dao.dart';
 import '../../../../database/sync/sync_orchestrator.dart';
 import '../../../drawer/homepage_drawer.dart';
 import '../../../keybinding/shortcut_config.dart';
+import '../../../lock/lock_manger/lock_manager.dart';
 import '../../core/providers.dart';
 import '../shared_widgets/switch_view_option_menu.dart';
-import '../../../unlock/password_prompt_helper.dart';
+import '../../../lock/password_prompt_helper.dart';
 import 'desktop_left_panel.dart';
 import 'desktop_right_panel.dart';
-
 
 class DesktopHomePage extends ConsumerStatefulWidget {
   const DesktopHomePage({super.key});
@@ -25,11 +25,8 @@ class DesktopHomePage extends ConsumerStatefulWidget {
 }
 
 class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
-
-
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
-
 
   /// Tracks the current width of the left panel (the note list). Modified by the draggable divider.
   double _leftPanelWidth = 340.0;
@@ -41,6 +38,7 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
   bool _isDrawerHovered = false;
   bool _isDrawerPinned = false;
   Timer? _hoverTimer;
+
   /// The drawer is visible if the user is hovering over it OR if they pinned it open.
   bool get _isDrawerOpen => _isDrawerHovered || _isDrawerPinned;
 
@@ -139,7 +137,9 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
   }
 
   void _handleNoteTap(Note note) async {
-    if (note.isLocked) {
+
+    final isSessionUnlocked = ref.watch(lockManagerProvider).sessionUnlockedNoteIds.contains(note.uuid);
+    if (note.isLocked && !isSessionUnlocked) {
       // The Shell coordinates the security check
       final success = await PasswordPromptHelper.promptAndVerify(context, ref, note);
 
@@ -181,7 +181,6 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
     final homeState = ref.watch(homeViewModelProvider);
     final viewModel = ref.read(homeViewModelProvider.notifier);
     final activeNote = ref.watch(activeNoteProvider);
-
 
     ref.watch(syncOrchestratorProvider);
     final shortcutsAsync = ref.watch(keybindingsProvider);

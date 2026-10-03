@@ -5,8 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:noteit/database/drift/local_database.dart';
 
 import '../../../../shared/widgets/snack_bar_manager.dart';
-import '../../../unlock/lock_manger/lock_manager.dart';
-import '../../../unlock/view/setup_password_page.dart';
+import '../../../lock/lock_manger/lock_manager.dart';
+import '../../../lock/view/setup_password_page.dart';
 import '../view_model/edit_note_view_model.dart';
 
 

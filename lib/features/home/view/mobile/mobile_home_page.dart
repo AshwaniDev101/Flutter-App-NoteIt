@@ -14,7 +14,7 @@ import '../../../drawer/homepage_drawer.dart';
 import '../../core/providers.dart';
 import '../shared_widgets/switch_view_option_menu.dart';
 import '../shared_widgets/dynamic_notes_layout.dart';
-import '../../../unlock/password_prompt_helper.dart';
+import '../../../lock/password_prompt_helper.dart';
 
 class MobileHomePage extends ConsumerStatefulWidget {
   const MobileHomePage({super.key});

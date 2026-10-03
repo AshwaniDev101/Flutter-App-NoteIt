@@ -4,12 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:noteit/database/drift/local_database.dart';
 
 import '../../../../shared/widgets/snack_bar_manager.dart';
 import '../../../home/core/providers.dart';
-import '../../../unlock/lock_manger/lock_manager.dart';
-import '../../../unlock/view/setup_password_page.dart';
+import '../../../lock/lock_manger/lock_manager.dart';
+import '../../../lock/view/setup_password_page.dart';
 import '../view_model/edit_note_view_model.dart';
 
 class DesktopEditNotePage extends ConsumerStatefulWidget {
@@ -22,32 +23,30 @@ class DesktopEditNotePage extends ConsumerStatefulWidget {
 }
 
 class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
-
   late final TextEditingController _titleController;
   late final TextEditingController _contentController;
   final UndoHistoryController _undoController = UndoHistoryController();
 
   late final EditNoteViewModel _viewModel;
 
-
   bool _isAutoSyncingTitle = false;
   late bool _isLocked;
+
   // bool _hasTriggeredFinalSave = false;
   bool _hasCreatedNewNote = false;
   Timer? _autoSaveTimer;
   bool _isDeleted = false;
   bool _isSaved = true;
 
-
   late final FocusNode _titleFocusNode;
   late final FocusNode _contentFocusNode;
 
   bool get _isNewNote =>
       widget.existingNote == null ||
-          (widget.existingNote!.title.isEmpty &&
-              widget.existingNote!.content.isEmpty &&
-              widget.existingNote!.cloudSyncStatus == 0 &&
-              widget.existingNote!.localSyncStatus == 0);
+      (widget.existingNote!.title.isEmpty &&
+          widget.existingNote!.content.isEmpty &&
+          widget.existingNote!.cloudSyncStatus == 0 &&
+          widget.existingNote!.localSyncStatus == 0);
 
   @override
   void initState() {
@@ -76,7 +75,6 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
   }
 
   void _scheduleAutoSave() {
-
     // Hide the "Saved" text the moment they start typing
     if (_isSaved && mounted) {
       setState(() => _isSaved = false);
@@ -96,7 +94,6 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
     if (!_isAutoSyncingTitle) return;
 
     String firstLine = _contentController.text.isNotEmpty ? _contentController.text.split('\n').first : '';
-
 
     // FIX: Restrict to exactly 30 characters maximum
     if (firstLine.length > 30) {
@@ -138,12 +135,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
 
     // Push the final DB save to the next event loop, completely escaping Flutter's widget teardown cycle!
     Future(() {
-      _executeSave(
-        isManualSave: false,
-        isDisposing: true,
-        overrideTitle: finalTitle,
-        overrideContent: finalContent,
-      );
+      _executeSave(isManualSave: false, isDisposing: true, overrideTitle: finalTitle, overrideContent: finalContent);
     });
 
     // Clean up listeners and controllers
@@ -206,126 +198,40 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
 
   @override
   Widget build(BuildContext context) {
-
     final panelColor = Theme.of(context).colorScheme.surfaceContainerLow;
 
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: ClipRRect(
-        borderRadius: const BorderRadius.all(Radius.circular(16.0)),
-        child: Scaffold(
-          backgroundColor: panelColor,
-          appBar: AppBar(
-            backgroundColor: panelColor,
-            automaticallyImplyLeading: false,
-            titleSpacing: 8,
-            // titleSpacing: 24,
-            title: _buildTitleField(maxWidth: 300),
-            actions: [
-              _buildUndoRedoButtons(),
-              const SizedBox(width: 8),
-              _buildDesktopOptionButtons(),
-            ],
-          ),
-          body: Column(
-            children: [
-              _buildMetaDataRow(padding: 24.0),
-              Expanded(child: _buildContentField(padding: 24.0)),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Calculate exactly 50% of this specific panel's available width
+        final dynamicMaxWidth = constraints.maxWidth * 0.50;
 
-  Widget _buildTitleField({double? maxWidth}) {
-    return Row(
-      children: [
-        Flexible(
-          child: Container(
-            height: 40,
-            constraints: maxWidth != null ? BoxConstraints(maxWidth: maxWidth) : null,
-            child: FocusTraversalOrder(
-              order: const NumericFocusOrder(4),
-              child: Focus(
-                onKeyEvent: (node, event) {
-                  if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
-                    node.unfocus();
-                    return KeyEventResult.handled;
-                  }
-                  return KeyEventResult.ignored;
-                },
-                child: TextField(
-                  controller: _titleController,
-                  focusNode: _titleFocusNode,
-                  autofocus: _isNewNote,
-                  textAlignVertical: TextAlignVertical.center,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
-                  decoration: InputDecoration(
-                    isDense: true,
-                    hintText: "Title",
-                    suffixIcon: _titleFocusNode.hasFocus
-                        ? ValueListenableBuilder<TextEditingValue>(
-                      valueListenable: _titleController,
-                      builder: (context, value, child) {
-                        if (value.text.isEmpty) {
-                          return const SizedBox.shrink();
-                        }
-                        return IconButton(
-                          icon: const Icon(Icons.close, size: 16),
-                          onPressed: () {
-                            _titleController.clear();
-                            _isAutoSyncingTitle = true;
-                          },
-                        );
-                      },
-                    )
-                        : const SizedBox.shrink(),
-
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                ),
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: ClipRRect(
+            borderRadius: const BorderRadius.all(Radius.circular(16.0)),
+            child: Scaffold(
+              backgroundColor: panelColor,
+              appBar: AppBar(
+                backgroundColor: panelColor,
+                automaticallyImplyLeading: false,
+                titleSpacing: 8,
+                // titleSpacing: 24,
+                title: _buildTitleField(maxWidth: dynamicMaxWidth),
+                actions: [_buildUndoRedoButtons(), const SizedBox(width: 8), _buildDesktopOptionButtons()],
+              ),
+              body: Column(
+                children: [
+                  _buildMetaDataRow(padding: 24.0),
+                  Expanded(child: _buildContentField(padding: 24.0)),
+                ],
               ),
             ),
           ),
-        ),
-
-        // Auto save indicator
-        AnimatedOpacity(
-          opacity: _isSaved ? 1.0 : 0.0,
-          duration: const Duration(milliseconds: 100),
-          child: Row(
-            children: [
-              Icon(
-                Icons.cloud_done_outlined, // Cute cloud checkmark
-                size: 16,
-                color: Theme.of(context).colorScheme.outline,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                "Saved",
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.outline,
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        // const SizedBox(width: 16),
-        // Desktop always shows the save button inline
-        // TextButton.icon(
-        //   onPressed: () => _executeSave(isManualSave: true),
-        //   icon: const Icon(Icons.save),
-        //   label: const Text("Save"),
-        // ),
-      ],
+        );
+      },
     );
   }
+
 
   Widget _buildContentField({required double padding}) {
     return Padding(
@@ -370,25 +276,16 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
             decoration: BoxDecoration(
               color: _isNewNote
                   ? Theme.of(context).colorScheme.primaryContainer
-                  : Theme.of(context).colorScheme.tertiaryContainer,
+                  : Theme.of(context).colorScheme.secondaryContainer,
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(
               _isNewNote ? 'New' : 'Updating...',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
           ),
           const Spacer(),
-          if (_isLocked) ...[
-            const Icon(Icons.lock_outline, size: 16),
-            const SizedBox(width: 8),
-          ],
-          Text(
-              _getFormattedDate(),
-              style: Theme.of(context).textTheme.bodySmall
-          ),
+          Text(_getFormattedDate(), style: Theme.of(context).textTheme.bodySmall),
         ],
       ),
     );
@@ -425,9 +322,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
         children: [
           IconButton(
             tooltip: widget.existingNote?.isPinned == true ? 'Unpin Note' : 'Pin Note',
-            icon: Icon(
-              widget.existingNote?.isPinned == true ? Icons.push_pin : Icons.push_pin_outlined,
-            ),
+            icon: Icon(widget.existingNote?.isPinned == true ? Icons.push_pin : Icons.push_pin_outlined),
             onPressed: () {
               // TODO: Add pin toggle logic here
             },
@@ -435,22 +330,102 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
 
           IconButton(
             tooltip: _isLocked ? 'Remove Lock' : 'Lock Note',
-            icon: Icon(_isLocked ? Icons.lock_clock_outlined : Icons.lock_outline),
+            icon: Icon(_isLocked ? Icons.lock_clock : Icons.lock_outline),
+            // icon: HugeIcon(icon:_isLocked ? HugeIcons.strokeRoundedSquareLockRemove01 : HugeIcons.strokeRoundedLockKeyhole, size: 20,),
             onPressed: _handleLockToggle,
           ),
 
-          IconButton(
-            tooltip: 'Delete Note',
-            icon: const Icon(Icons.delete_outline),
-            onPressed: _handleDeleteNote,
-          ),
-          IconButton(
-            tooltip: 'Close Note',
-            icon: const Icon(Icons.close_outlined),
-            onPressed: _handleCloseNote,
-          ),
+          IconButton(tooltip: 'Delete Note', icon: const Icon(Icons.delete_outline), onPressed: _handleDeleteNote),
+          IconButton(tooltip: 'Close Note', icon: const Icon(Icons.close_outlined), onPressed: _handleCloseNote),
         ],
       ),
+    );
+  }
+
+  Widget _buildTitleField({required double maxWidth}) {
+    return Row(
+      mainAxisSize: MainAxisSize.min, // Tells the Row to tightly hug its children
+      children: [
+        Flexible(
+          //  Protects the layout on tiny screens
+          child: IntrinsicWidth(
+            // Forces the text field to hug the typed text
+            child: Container(
+              height: 40,
+              constraints: BoxConstraints(
+                minWidth: 80, // Gives you enough space to click when the title is empty!
+                maxWidth: maxWidth, // Stops growing and starts scrolling at 300px
+              ),
+              child: FocusTraversalOrder(
+                order: const NumericFocusOrder(4),
+                child: Focus(
+                  onKeyEvent: (node, event) {
+                    if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
+                      node.unfocus();
+                      return KeyEventResult.handled;
+                    }
+                    return KeyEventResult.ignored;
+                  },
+                  child: TextField(
+                    controller: _titleController,
+                    focusNode: _titleFocusNode,
+                    autofocus: _isNewNote,
+                    textAlignVertical: TextAlignVertical.center,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+                    decoration: InputDecoration(
+                      isDense: true,
+                      hintText: "Title",
+                      suffixIcon: _titleFocusNode.hasFocus
+                          ? ValueListenableBuilder<TextEditingValue>(
+                              valueListenable: _titleController,
+                              builder: (context, value, child) {
+                                if (value.text.isEmpty) {
+                                  return const SizedBox.shrink();
+                                }
+                                return IconButton(
+                                  icon: const Icon(Icons.close, size: 16),
+                                  onPressed: () {
+                                    _titleController.clear();
+                                    _isAutoSyncingTitle = true;
+                                  },
+                                );
+                              },
+                            )
+                          : const SizedBox.shrink(),
+
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        // Auto save indicator
+        AnimatedOpacity(
+          opacity: _isSaved ? 1.0 : 0.0,
+          duration: const Duration(milliseconds: 100),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.cloud_done_outlined, // Swapped to a slightly more modern sync icon!
+                size: 16,
+                color: Theme.of(context).colorScheme.outline,
+              ),
+              // const SizedBox(width: 4),
+              Text(
+                "Saved",
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.outline,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -494,12 +469,12 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
         if (!isCurrentlyLocked) {
           _handleCloseNote();
         }
-
       } else {
         if (mounted) SnackBarManager.show(msg: 'Action failed');
       }
     }
   }
+
   void _handleCloseNote() {
     // send signal the parent class to pop the note
     ref.read(activeNoteProvider.notifier).clear();
@@ -507,9 +482,9 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
     // Pop if opened via router/mobile
     if (context.canPop()) context.pop();
   }
+
   void _handleDeleteNote() {
     if (!_isNewNote && widget.existingNote != null) {
-
       _isDeleted = true;
       // _hasTriggeredFinalSave = true;
       ref.read(editNoteViewModelProvider.notifier).deleteNote(widget.existingNote!.uuid);
