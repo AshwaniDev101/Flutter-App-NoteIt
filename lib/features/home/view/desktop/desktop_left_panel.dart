@@ -6,14 +6,12 @@ import 'package:window_manager/window_manager.dart';
 
 import '../../../../database/drift/keybindings/keybindings_dao.dart';
 import '../../../../shared/widgets/smart_action_widget.dart';
-import '../../core/options.dart';
+import '../shared_widgets/sort_filter_option_menu.dart';
 import '../../core/providers.dart';
-import '../../core/sort.dart';
 import '../../note_view.dart';
-import '../../viewmodel/home_view_model.dart';
-import '../dynamic_notes_layout.dart';
-import '../password_prompt_helper.dart';
-import '../widgets/home_app_bars.dart';
+import '../shared_widgets/switch_view_option_menu.dart';
+import '../shared_widgets/dynamic_notes_layout.dart';
+import '../shared_widgets/select_mode_app_bars.dart';
 
 class DesktopLeftPanel extends ConsumerWidget {
   final TextEditingController searchController;
@@ -39,18 +37,11 @@ class DesktopLeftPanel extends ConsumerWidget {
     required this.onKeyboardModeChanged,
   });
 
-  void _clearSearch(WidgetRef ref) {
-    searchController.clear();
-    ref.read(searchQueryProvider.notifier).clear();
-    ref.read(homeViewModelProvider.notifier).exitSearchMode();
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final homeState = ref.watch(homeViewModelProvider);
     final viewModel = ref.read(homeViewModelProvider.notifier);
-    final currentSortOption = ref.watch(noteSortOptionProvider);
-    final currentPlatformFilter = ref.watch(platformFilterProvider);
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
@@ -220,7 +211,8 @@ class DesktopLeftPanel extends ConsumerWidget {
                 ),
                 const SizedBox(width: 4),
                 const ViewSwitcherButton(),
-                _buildFilterMenu(ref, currentSortOption, currentPlatformFilter),
+                const SizedBox(width: 4),
+                SortFilterOptionMenu(),
               ],
             ),
           ),
@@ -244,74 +236,9 @@ class DesktopLeftPanel extends ConsumerWidget {
     );
   }
 
-  Widget _buildFilterMenu(WidgetRef ref, NoteSortOption currentSortOption, PlatformOptions? currentPlatformFilter) {
-    return PopupMenuButton<String>(
-      icon: const Icon(Icons.filter_list),
-      tooltip: 'Sort & Filter',
-      onSelected: (String value) {
-        switch (value) {
-          case 'sortCreated':
-            ref.read(noteSortOptionProvider.notifier).updateSort(NoteSortOption.createdAt);
-            break;
-          case 'sortName':
-            ref.read(noteSortOptionProvider.notifier).updateSort(NoteSortOption.name);
-            break;
-          case 'sortUpdated':
-            ref.read(noteSortOptionProvider.notifier).updateSort(NoteSortOption.updatedAt);
-            break;
-          case 'filterPhone':
-            ref.read(platformFilterProvider.notifier).toggleFilter(PlatformOptions.android);
-            break;
-          case 'filterWindows':
-            ref.read(platformFilterProvider.notifier).toggleFilter(PlatformOptions.windows);
-            break;
-        }
-      },
-      itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-        const PopupMenuItem<String>(enabled: false, child: Text('SORT BY', style: TextStyle(fontSize: 12))),
-        _buildSortItem('sortCreated', 'Created', currentSortOption == NoteSortOption.createdAt),
-        _buildSortItem('sortName', 'Name', currentSortOption == NoteSortOption.name),
-        _buildSortItem('sortUpdated', 'Last Updated', currentSortOption == NoteSortOption.updatedAt),
-        const PopupMenuDivider(),
-        const PopupMenuItem<String>(enabled: false, child: Text('FILTER PLATFORM', style: TextStyle(fontSize: 12))),
-        _buildFilterItem(
-          'filterPhone',
-          Icons.phone_android_outlined,
-          'Phone',
-          currentPlatformFilter == PlatformOptions.android,
-        ),
-        _buildFilterItem(
-          'filterWindows',
-          Icons.desktop_windows_outlined,
-          'Windows',
-          currentPlatformFilter == PlatformOptions.windows,
-        ),
-      ],
-    );
-  }
-
-  PopupMenuItem<String> _buildSortItem(String value, String label, bool isSelected) {
-    return PopupMenuItem<String>(
-      value: value,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [Text(label), Icon(isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked, size: 20)],
-      ),
-    );
-  }
-
-  PopupMenuItem<String> _buildFilterItem(String value, IconData icon, String label, bool isSelected) {
-    return PopupMenuItem<String>(
-      value: value,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(children: [Icon(icon, size: 16), const SizedBox(width: 8), Text(label)]),
-          IgnorePointer(
-            child: Checkbox(value: isSelected, onChanged: (_) {}),
-          ),
-        ],
-      ),
-    );
+  void _clearSearch(WidgetRef ref) {
+    searchController.clear();
+    ref.read(searchQueryProvider.notifier).clear();
+    ref.read(homeViewModelProvider.notifier).exitSearchMode();
   }
 }

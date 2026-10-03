@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/database/drift/local_database.dart';
 
-import '../../unlock/lock_manger/lock_manager.dart';
-import '../../unlock/view/password_page.dart';
+import 'lock_manger/lock_manager.dart';
+import 'view/password_page.dart';
 
 class PasswordPromptHelper {
   static Future<bool> promptAndVerify(

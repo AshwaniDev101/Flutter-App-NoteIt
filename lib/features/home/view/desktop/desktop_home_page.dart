@@ -11,8 +11,8 @@ import '../../../../database/sync/sync_orchestrator.dart';
 import '../../../drawer/homepage_drawer.dart';
 import '../../../keybinding/shortcut_config.dart';
 import '../../core/providers.dart';
-import '../../viewmodel/home_view_model.dart';
-import '../password_prompt_helper.dart';
+import '../shared_widgets/switch_view_option_menu.dart';
+import '../../../unlock/password_prompt_helper.dart';
 import 'desktop_left_panel.dart';
 import 'desktop_right_panel.dart';
 

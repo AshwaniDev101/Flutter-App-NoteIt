@@ -3,19 +3,18 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:noteit/core/routing/routing.dart';
 import 'package:noteit/database/drift/local_database.dart';
-import 'package:noteit/features/home/view/widgets/home_app_bars.dart';
-import 'package:noteit/features/home/view/widgets/notes_grid_view.dart';
+import 'package:noteit/features/home/view/shared_widgets/select_mode_app_bars.dart';
 import 'package:noteit/shared/widgets/websocket_connection_indicator.dart';
 
 import '../../../../../database/sync/sync_orchestrator.dart';
 import '../../../../database/sync/local_sync_service.dart';
+import '../shared_widgets/sort_filter_option_menu.dart';
 import '../../../../shared/widgets/spinning_sync_icon.dart';
 import '../../../drawer/homepage_drawer.dart';
 import '../../core/providers.dart';
-import '../../core/sort.dart';
-import '../../core/options.dart';
-import '../../viewmodel/home_view_model.dart';
-import '../password_prompt_helper.dart';
+import '../shared_widgets/switch_view_option_menu.dart';
+import '../shared_widgets/dynamic_notes_layout.dart';
+import '../../../unlock/password_prompt_helper.dart';
 
 class MobileHomePage extends ConsumerStatefulWidget {
   const MobileHomePage({super.key});
@@ -51,11 +50,7 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
 
   void _handleNoteTap(Note note) async {
     if (note.isLocked) {
-      final success = await PasswordPromptHelper.promptAndVerify(
-        context,
-        ref,
-        note,
-      );
+      final success = await PasswordPromptHelper.promptAndVerify(context, ref, note);
       if (success && mounted) {
         context.push(AppRoutes.edit, extra: note);
       }
@@ -69,8 +64,6 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
     final homeState = ref.watch(homeViewModelProvider);
     final viewModel = ref.read(homeViewModelProvider.notifier);
 
-    final currentSortOption = ref.watch(noteSortOptionProvider);
-    final currentPlatformFilter = ref.watch(platformFilterProvider);
     final colorScheme = Theme.of(context).colorScheme;
 
     // Watched solely to keep the sync manager alive in the widget tree.
@@ -82,9 +75,7 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
         if (!didPop && homeState.isSelectMode) viewModel.clearSelection();
       },
       child: Scaffold(
-        drawer: const Drawer(
-          child: HomepageDrawer(),
-        ),
+        drawer: const Drawer(child: HomepageDrawer()),
         appBar: _buildAppBar(homeState, viewModel),
         floatingActionButton: FloatingActionButton(
           onPressed: () => context.push(AppRoutes.edit),
@@ -108,18 +99,13 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
                           valueListenable: _searchController,
                           builder: (context, value, child) {
                             return value.text.isNotEmpty
-                                ? IconButton(
-                              icon: const Icon(Icons.clear, size: 20),
-                              onPressed: _clearSearch,
-                            )
+                                ? IconButton(icon: const Icon(Icons.clear, size: 20), onPressed: _clearSearch)
                                 : const SizedBox.shrink();
                           },
                         ),
 
-
                         filled: true,
-                        fillColor: colorScheme.surfaceContainerHighest
-                            .withValues(alpha: 0.5),
+                        fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(30),
                           borderSide: BorderSide.none,
@@ -127,42 +113,49 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
                         contentPadding: const EdgeInsets.symmetric(vertical: 0),
                       ),
                       onTap: () {
-                        if (!homeState.isSearchMode)
-                          viewModel.enterSearchMode();
+                        if (!homeState.isSearchMode) viewModel.enterSearchMode();
                       },
                       onChanged: (value) {
-                        if (value.isNotEmpty && !homeState.isSearchMode)
-                          viewModel.enterSearchMode();
+                        if (value.isNotEmpty && !homeState.isSearchMode) viewModel.enterSearchMode();
                         if (value.isEmpty) {
                           _clearSearch();
                         } else {
-                          ref
-                              .read(searchQueryProvider.notifier)
-                              .updateQuery(value);
+                          ref.read(searchQueryProvider.notifier).updateQuery(value);
                         }
                       },
                     ),
                   ),
                   const SizedBox(width: 8),
-                  _buildFilterMenu(
-                    currentSortOption,
-                    currentPlatformFilter,
-                    colorScheme,
-                  ),
+
+                  SortFilterOptionMenu(),
+                  // _buildFilterMenu(
+                  //   currentSortOption,
+                  //   currentPlatformFilter,
+                  //   colorScheme,
+                  // ),
                 ],
               ),
             ),
             Expanded(
-              child: NotesGridView(
+
+              child: DynamicNotesLayout(
                 isSelectMode: homeState.isSelectMode,
-                noteIds: homeState.selectedNoteIds,   // NotesGridView expects a Set<String>
+                noteIds: homeState.selectedNoteIds,
                 activeNoteId: null,
                 onToggleSelection: viewModel.toggleSelection,
                 onEnableSelectMode: viewModel.enableSelectMode,
-                onPromptPassword: (ctx, note) =>
-                    PasswordPromptHelper.promptAndVerify(ctx, ref, note),
                 onNoteTap: _handleNoteTap,
               ),
+              // child: NotesGridView(
+              //   isSelectMode: homeState.isSelectMode,
+              //   noteIds: homeState.selectedNoteIds,
+              //   // NotesGridView expects a Set<String>
+              //   activeNoteId: null,
+              //   onToggleSelection: viewModel.toggleSelection,
+              //   onEnableSelectMode: viewModel.enableSelectMode,
+              //   onPromptPassword: (ctx, note) => PasswordPromptHelper.promptAndVerify(ctx, ref, note),
+              //   onNoteTap: _handleNoteTap,
+              // ),
             ),
           ],
         ),
@@ -170,14 +163,9 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
     );
   }
 
-  PreferredSizeWidget _buildAppBar(
-    HomePageState state,
-    HomeViewModel viewModel,
-  ) {
+  PreferredSizeWidget _buildAppBar(HomePageState state, HomeViewModel viewModel) {
     // Just to get Connection state from local sync service
-    final SyncConnectionState syncConnectionState = ref.watch(
-      localSyncServiceProvider,
-    );
+    final SyncConnectionState syncConnectionState = ref.watch(localSyncServiceProvider);
     final isConnected = syncConnectionState == SyncConnectionState.connected;
     // Getting the sync state from the orchestrator
     final isSyncing = ref.watch(isSyncingProvider);
@@ -188,9 +176,7 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
         onClearSelection: viewModel.clearSelection,
         onSelectAll: () {
           // FIXED: Map to UUIDs instead of integer IDs
-          final allNoteUuids = (ref.read(filteredNotesProvider).value ?? [])
-              .map((n) => n.uuid)
-              .toList();
+          final allNoteUuids = (ref.read(filteredNotesProvider).value ?? []).map((n) => n.uuid).toList();
           viewModel.toggleSelectAll(allNoteUuids);
         },
       );
@@ -203,157 +189,15 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
         WebSocketConnectionIndicator(isConnected: isConnected),
         IconButton(
           // icon: const Icon(Icons.sync),
-          icon: SpinningSyncIcon(
-            isSyncing: isSyncing,
-            color: Theme.of(context).colorScheme.primary,
-          ),
+          icon: SpinningSyncIcon(isSyncing: isSyncing, color: Theme.of(context).colorScheme.primary),
           tooltip: 'Sync Notes',
           onPressed: () {
             ref.read(syncOrchestratorProvider).triggerSync();
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(const SnackBar(content: Text('Syncing notes...')));
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Syncing notes...')));
           },
         ),
         const SizedBox(width: 8),
       ],
-    );
-  }
-
-  Widget _buildFilterMenu(
-    NoteSortOption currentSortOption,
-    PlatformOptions? currentPlatformFilter,
-    ColorScheme colorScheme,
-  ) {
-    return PopupMenuButton<String>(
-      icon: const Icon(Icons.filter_list),
-      tooltip: 'Sort & Filter',
-      onSelected: (String value) {
-        switch (value) {
-          case 'sortCreated':
-            ref
-                .read(noteSortOptionProvider.notifier)
-                .updateSort(NoteSortOption.createdAt);
-            break;
-          case 'sortName':
-            ref
-                .read(noteSortOptionProvider.notifier)
-                .updateSort(NoteSortOption.name);
-            break;
-          case 'sortUpdated':
-            ref
-                .read(noteSortOptionProvider.notifier)
-                .updateSort(NoteSortOption.updatedAt);
-            break;
-          case 'filterPhone':
-            ref
-                .read(platformFilterProvider.notifier)
-                .toggleFilter(PlatformOptions.android);
-            break;
-          case 'filterWindows':
-            ref
-                .read(platformFilterProvider.notifier)
-                .toggleFilter(PlatformOptions.windows);
-            break;
-        }
-      },
-      itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-        const PopupMenuItem<String>(
-          enabled: false,
-          child: Text(
-            'SORT BY',
-            style: TextStyle(fontSize: 12, color: Colors.grey),
-          ),
-        ),
-        _buildSortItem(
-          'sortCreated',
-          'Created',
-          currentSortOption == NoteSortOption.createdAt,
-          colorScheme,
-        ),
-        _buildSortItem(
-          'sortName',
-          'Name',
-          currentSortOption == NoteSortOption.name,
-          colorScheme,
-        ),
-        _buildSortItem(
-          'sortUpdated',
-          'Last Updated',
-          currentSortOption == NoteSortOption.updatedAt,
-          colorScheme,
-        ),
-        const PopupMenuDivider(),
-        const PopupMenuItem<String>(
-          enabled: false,
-          child: Text(
-            'FILTER PLATFORM',
-            style: TextStyle(fontSize: 12, color: Colors.grey),
-          ),
-        ),
-        _buildFilterItem(
-          'filterPhone',
-          Icons.phone_android_outlined,
-          'Phone',
-          currentPlatformFilter == PlatformOptions.android,
-        ),
-        _buildFilterItem(
-          'filterWindows',
-          Icons.desktop_windows_outlined,
-          'Windows',
-          currentPlatformFilter == PlatformOptions.windows,
-        ),
-      ],
-    );
-  }
-
-  PopupMenuItem<String> _buildSortItem(
-    String value,
-    String label,
-    bool isSelected,
-    ColorScheme colorScheme,
-  ) {
-    return PopupMenuItem<String>(
-      value: value,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label),
-          Icon(
-            isSelected
-                ? Icons.radio_button_checked
-                : Icons.radio_button_unchecked,
-            size: 20,
-            color: isSelected ? colorScheme.primary : Colors.grey,
-          ),
-        ],
-      ),
-    );
-  }
-
-  PopupMenuItem<String> _buildFilterItem(
-    String value,
-    IconData icon,
-    String label,
-    bool isSelected,
-  ) {
-    return PopupMenuItem<String>(
-      value: value,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 18, color: Colors.grey),
-              const SizedBox(width: 8),
-              Text(label),
-            ],
-          ),
-          IgnorePointer(
-            child: Checkbox(value: isSelected, onChanged: (_) {}),
-          ),
-        ],
-      ),
     );
   }
 }

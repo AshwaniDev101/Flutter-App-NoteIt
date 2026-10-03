@@ -1,51 +1,74 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 
-enum NoteViewType { list, detailedList, grid, largeGrid }
+// Enhanced Enum: Centralizes the icon and label data
+enum NoteViewType {
+  list('Compact List', Icons.view_list_rounded),
+  detailedList('Detailed List', Icons.view_agenda_rounded),
+  grid('Grid View', Icons.grid_view_rounded),
+  largeGrid('Large Grid', Icons.calendar_view_month);
 
-final noteViewTypeProvider = StateProvider<NoteViewType>((ref) => NoteViewType.grid);
+  final String label;
+  final IconData icon;
+
+  const NoteViewType(this.label, this.icon);
+}
+
+class NoteViewTypeNotifier extends Notifier<NoteViewType> {
+  @override
+  NoteViewType build() => NoteViewType.grid;
+
+  void updateView(NoteViewType view) {
+    state = view;
+  }
+}
+
+final noteViewTypeProvider = NotifierProvider<NoteViewTypeNotifier, NoteViewType>(NoteViewTypeNotifier.new);
 
 class ViewSwitcherButton extends ConsumerWidget {
   const ViewSwitcherButton({super.key});
-
-  IconData _getIconForView(NoteViewType view) {
-    switch (view) {
-      case NoteViewType.list: return Icons.view_list_rounded;
-      case NoteViewType.detailedList: return Icons.view_agenda_rounded;
-      case NoteViewType.grid: return Icons.grid_view_rounded;
-      case NoteViewType.largeGrid: return Icons.calendar_view_month;
-    }
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentView = ref.watch(noteViewTypeProvider);
 
     return PopupMenuButton<NoteViewType>(
-      icon: Icon(_getIconForView(currentView)),
+      // The icon dynamically updates based on the current state via the enum
+      icon: Icon(currentView.icon),
       tooltip: 'Change View',
       onSelected: (NoteViewType selectedView) {
-        ref.read(noteViewTypeProvider.notifier).state = selectedView;
+        ref.read(noteViewTypeProvider.notifier).updateView(selectedView);
       },
-      itemBuilder: (BuildContext context) => <PopupMenuEntry<NoteViewType>>[
-        const PopupMenuItem<NoteViewType>(
-          value: NoteViewType.list,
-          child: ListTile(leading: Icon(Icons.view_list_rounded), title: Text('Compact List'), contentPadding: EdgeInsets.zero),
-        ),
-        const PopupMenuItem<NoteViewType>(
-          value: NoteViewType.detailedList,
-          child: ListTile(leading: Icon(Icons.view_agenda_rounded), title: Text('Detailed List'), contentPadding: EdgeInsets.zero),
-        ),
-        const PopupMenuItem<NoteViewType>(
-          value: NoteViewType.grid,
-          child: ListTile(leading: Icon(Icons.grid_view_rounded), title: Text('Grid View'), contentPadding: EdgeInsets.zero),
-        ),
-        const PopupMenuItem<NoteViewType>(
-          value: NoteViewType.largeGrid,
-          child: ListTile(leading: Icon(Icons.calendar_view_month), title: Text('Large Grid'), contentPadding: EdgeInsets.zero),
-        ),
-      ],
+      //  Dynamic Menu Generation using .map()
+      itemBuilder: (BuildContext context) {
+        return NoteViewType.values.map((view) {
+          final isSelected = view == currentView;
+
+          return PopupMenuItem<NoteViewType>(
+            value: view,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(view.icon, color: isSelected ? Colors.blue : Colors.black54, size: 20),
+                    const SizedBox(width: 12),
+                    Text(
+                      view.label,
+                      style: TextStyle(
+                        color: Colors.black87,
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                      ),
+                    ),
+                  ],
+                ),
+                // Show a checkmark for the currently selected view
+                if (isSelected) const Icon(Icons.check, color: Colors.blue, size: 20),
+              ],
+            ),
+          );
+        }).toList();
+      },
     );
   }
 }
