@@ -7,10 +7,8 @@ import 'package:window_manager/window_manager.dart';
 import '../../../../database/drift/keybindings/keybindings_dao.dart';
 import '../../../keybinding/smart_action_widget.dart';
 import '../../viewmodel/viewmodel.dart';
-import '../shared/sort_filter_option_menu.dart';
 import '../../core/providers.dart';
 import '../shared/tag_sort_view_menu.dart';
-import '../shared/view_switch_option_menu.dart';
 import '../shared/dynamic_notes_layout.dart';
 import '../shared/select_mode_app_bars.dart';
 

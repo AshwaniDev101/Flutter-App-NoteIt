@@ -9,12 +9,12 @@ import 'package:noteit/features/home/view/shared/websocket_connection_indicator.
 import '../../../../../database/sync/sync_orchestrator.dart';
 import '../../../../database/sync/local_sync_service.dart';
 import '../../viewmodel/viewmodel.dart';
-import '../shared/sort_filter_option_menu.dart';
 import '../shared/spinning_sync_icon.dart';
 import '../../../drawer/homepage_drawer.dart';
 import '../../core/providers.dart';
 import '../shared/dynamic_notes_layout.dart';
 import '../../../lock/password_prompt_helper.dart';
+import '../shared/tag_sort_view_menu.dart';
 
 class MobileHomePage extends ConsumerStatefulWidget {
   const MobileHomePage({super.key});
@@ -127,7 +127,9 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
                   ),
                   const SizedBox(width: 8),
 
-                  SortFilterOptionMenu(),
+                  FolderSortViewButton(),
+
+                  // SortFilterOptionMenu(),
                   // _buildFilterMenu(
                   //   currentSortOption,
                   //   currentPlatformFilter,
