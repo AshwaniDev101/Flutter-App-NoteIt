@@ -37,6 +37,7 @@ dependencies:
   shelf_web_socket: ^2.0.0
   web_socket_channel: ^3.0.3
   network_info_plus: ^8.2.1
+  nsd: ^5.0.1
 
   # Hardware & Camera Features
   device_info_plus: ^13.2.0
@@ -45,9 +46,12 @@ dependencies:
 
   #  Navigation dependencies
   go_router: ^17.2.2
-  nsd: ^5.0.1
+
+  #  Others
   logger: ^2.8.0
   window_manager: ^0.5.2
+  file_picker: ^13.1.0
+  hugeicons: ^1.2.0
 
 
 

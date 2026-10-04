@@ -297,4 +297,13 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
 
     return uuidsToDelete;
   }
+
+
+  Future<void> importNotes(List<Note> importedNotes) async {
+    await batch((batch) {
+      // insertAllOnConflictUpdate will insert new notes,
+      // and update existing ones if the UUID already exists.
+      batch.insertAllOnConflictUpdate(notes, importedNotes);
+    });
+  }
 }
