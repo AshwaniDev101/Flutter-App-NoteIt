@@ -5,6 +5,7 @@ import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/features/local_sync/view/role_selector_page.dart';
 
 import '../../features/backup/export_page.dart';
+import '../../features/backup/import_page.dart';
 import '../../features/dev_tools/dev_page.dart';
 import '../../features/home/view/desktop/desktop_home_page.dart';
 import '../../features/home/view/mobile/mobile_home_page.dart';
@@ -34,7 +35,8 @@ class AppRoutes {
   static const String qr = '/qr';
   static const String scan = '/qr-scan';
   static const String pin = '/pin-entry';
-  static const String backup = '/backup';
+  static const String export = '/export';
+  static const String import = '/import';
 }
 
 final routerProvider = Provider((ref) {
@@ -146,7 +148,8 @@ final routerProvider = Provider((ref) {
       ),
       GoRoute(path: AppRoutes.pin, builder: (context, state) => const PinEntryDialog()),
 
-      // GoRoute(path: AppRoutes.backup, builder: (context, state) => const ExportNotesPage()),
+      GoRoute(path: AppRoutes.export, builder: (context, state) => const ExportNotesPage()),
+      GoRoute(path: AppRoutes.import, builder: (context, state) => const ImportNotesPage()),
     ],
   );
 });
