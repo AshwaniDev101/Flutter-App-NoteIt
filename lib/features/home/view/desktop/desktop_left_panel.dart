@@ -8,8 +8,8 @@ import '../../../../database/drift/keybindings/keybindings_dao.dart';
 import '../../../keybinding/smart_action_widget.dart';
 import '../shared_widgets/sort_filter_option_menu.dart';
 import '../../core/providers.dart';
-import '../../note_view.dart';
-import '../shared_widgets/switch_view_option_menu.dart';
+import '../shared_widgets/view_switch_button.dart';
+import '../viewmodel/viewmodel.dart';
 import '../shared_widgets/dynamic_notes_layout.dart';
 import '../shared_widgets/select_mode_app_bars.dart';
 

@@ -5,7 +5,7 @@ import '../../../../../database/drift/local_database.dart';
 import '../../../../../../database/sync/sync_orchestrator.dart';
 import '../../../../shared/widgets/note_card/note_card.dart';
 import '../../core/providers.dart';
-import '../../note_view.dart';
+import 'view_switch_button.dart';
 
 class DynamicNotesLayout extends ConsumerWidget {
   final bool isSelectMode;

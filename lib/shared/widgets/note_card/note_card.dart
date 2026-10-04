@@ -4,7 +4,7 @@ import 'package:noteit/shared/widgets/note_card/widgets/lock_overlay.dart';
 
 import '../../../core/helpers/time_helper.dart';
 import '../../../database/drift/local_database.dart';
-import '../../../features/home/note_view.dart';
+import '../../../features/home/core/providers.dart';
 import '../../../features/lock/lock_manger/lock_manager.dart';
 import 'highlighted_text.dart';
 

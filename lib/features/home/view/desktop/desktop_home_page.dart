@@ -12,7 +12,7 @@ import '../../../drawer/homepage_drawer.dart';
 import '../../../keybinding/shortcut_config.dart';
 import '../../../lock/lock_manger/lock_manager.dart';
 import '../../core/providers.dart';
-import '../shared_widgets/switch_view_option_menu.dart';
+import '../viewmodel/viewmodel.dart';
 import '../../../lock/password_prompt_helper.dart';
 import 'desktop_left_panel.dart';
 import 'desktop_right_panel.dart';

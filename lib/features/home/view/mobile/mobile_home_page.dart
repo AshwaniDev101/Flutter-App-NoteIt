@@ -12,7 +12,7 @@ import '../shared_widgets/sort_filter_option_menu.dart';
 import '../shared_widgets/spinning_sync_icon.dart';
 import '../../../drawer/homepage_drawer.dart';
 import '../../core/providers.dart';
-import '../shared_widgets/switch_view_option_menu.dart';
+import '../viewmodel/viewmodel.dart';
 import '../shared_widgets/dynamic_notes_layout.dart';
 import '../../../lock/password_prompt_helper.dart';
 

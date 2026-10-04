@@ -1,29 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/features/home/core/providers.dart';
 
-// Enhanced Enum: Centralizes the icon and label data
-enum NoteViewType {
-  list('Compact List', Icons.view_list_rounded),
-  detailedList('Detailed List', Icons.view_agenda_rounded),
-  grid('Grid View', Icons.grid_view_rounded),
-  largeGrid('Large Grid', Icons.calendar_view_month);
-
-  final String label;
-  final IconData icon;
-
-  const NoteViewType(this.label, this.icon);
-}
-
-class NoteViewTypeNotifier extends Notifier<NoteViewType> {
-  @override
-  NoteViewType build() => NoteViewType.grid;
-
-  void updateView(NoteViewType view) {
-    state = view;
-  }
-}
-
-final noteViewTypeProvider = NotifierProvider<NoteViewTypeNotifier, NoteViewType>(NoteViewTypeNotifier.new);
 
 class ViewSwitcherButton extends ConsumerWidget {
   const ViewSwitcherButton({super.key});

@@ -1,11 +1,11 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/features/home/core/db_sorting_filtering.dart';
 import '../../../database/drift/local_database.dart';
 import '../../lock/lock_manger/lock_manager.dart';
 
 
-/// This is the ultimate provider that glues everything together. It takes the raw sorted notes
-/// and applies the active search query, platform filter, and lock state.
+/// MAIN FILTER: Combines all the filters (SORT + PLATFORM + SEARCH + LOCK-STATE)
 final filteredNotesProvider = Provider<AsyncValue<List<Note>>>((ref) {
   // Watch dependencies. If any of these 4 change, this entire function re-runs automatically.
   final sortedNotesAsync = ref.watch(sortedNotesStreamProvider);
@@ -41,11 +41,10 @@ final filteredNotesProvider = Provider<AsyncValue<List<Note>>>((ref) {
 
     return result; // Return the final UI-ready list
   });
-});
+}); // it combines all the filter into one,  search query, platform filter, and lock state.
 
-/// State Holder : holds for platform filter
-enum FilterPlatformOptions { all, android, windows }
-/// Stores the user's current platform filter selection (All, Android, Windows).
+/// PLATFORM FILTER
+enum FilterPlatformOptions { all, android, windows } // State Holder : holds for platform filter
 final platformFilterProvider = NotifierProvider<PlatformFilterNotifier, FilterPlatformOptions>(
   PlatformFilterNotifier.new,
 );
@@ -63,7 +62,7 @@ class PlatformFilterNotifier extends Notifier<FilterPlatformOptions> {
   }
 }
 
-/// Holds the current raw text typed into the search bar.
+/// SEARCH FILTER
 final searchQueryProvider = NotifierProvider<SearchQueryNotifier, String>(SearchQueryNotifier.new);
 class SearchQueryNotifier extends Notifier<String> {
   @override
@@ -78,8 +77,7 @@ class SearchQueryNotifier extends Notifier<String> {
   }
 }
 
-
-/// Stores the state of the currently selected/edited note.
+/// ACTIVE NOTE STATE HOLDER
 final activeNoteProvider = NotifierProvider<ActiveNoteNotifier, Note?>(() {
   return ActiveNoteNotifier();
 });
@@ -100,3 +98,26 @@ class ActiveNoteNotifier extends Notifier<Note?> {
     state = null;
   }
 }
+
+/// VIEW TYPE
+final noteViewTypeProvider = NotifierProvider<NoteViewTypeNotifier, NoteViewType>(NoteViewTypeNotifier.new);
+enum NoteViewType {
+  list('Compact List', Icons.view_list_rounded),
+  detailedList('Detailed List', Icons.view_agenda_rounded),
+  grid('Grid View', Icons.grid_view_rounded),
+  largeGrid('Large Grid', Icons.calendar_view_month);
+
+  final String label;
+  final IconData icon;
+
+  const NoteViewType(this.label, this.icon);
+}
+class NoteViewTypeNotifier extends Notifier<NoteViewType> {
+  @override
+  NoteViewType build() => NoteViewType.grid;
+
+  void updateView(NoteViewType view) {
+    state = view;
+  }
+}
+

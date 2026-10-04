@@ -52,4 +52,53 @@ class PasswordPromptHelper {
 
     return false;
   }
+
+
+  static Future<bool> promptAndVerifyForExport(
+      BuildContext context,
+      WidgetRef ref,
+      ) async {
+    final String? enteredPassword = await showGeneralDialog<String>(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'Dismiss Password Dialog',
+      barrierColor: Colors.black45,
+      transitionDuration: const Duration(milliseconds: 200),
+      pageBuilder: (context, animation, secondaryAnimation) =>
+      const PasswordPage(),
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        return FadeTransition(opacity: animation, child: child);
+      },
+    );
+
+    if (enteredPassword != null &&
+        enteredPassword.isNotEmpty &&
+        context.mounted) {
+      final lockManager = ref.read(lockManagerProvider.notifier);
+
+      if (!lockManager.hasMasterPassword) {
+        await lockManager.setupMasterPassword(enteredPassword);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('New Master Password Set!')),
+        );
+      }
+
+      // We use a dummy UUID string here because we just want to verify
+      // the password, not unlock a specific note's UI session.
+      final success = lockManager.verifyAndSessionUnlock(
+        'global_export_session',
+        enteredPassword,
+      );
+
+      if (!success && context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Incorrect Password')));
+      }
+
+      return success;
+    }
+
+    return false;
+  }
 }
