@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/features/home/core/providers.dart';
 
 
-class ViewSwitcherButton extends ConsumerWidget {
-  const ViewSwitcherButton({super.key});
+class ViewSwitcherOptionMenu extends ConsumerWidget {
+  const ViewSwitcherOptionMenu({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

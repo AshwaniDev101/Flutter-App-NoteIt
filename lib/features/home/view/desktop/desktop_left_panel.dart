@@ -6,12 +6,13 @@ import 'package:window_manager/window_manager.dart';
 
 import '../../../../database/drift/keybindings/keybindings_dao.dart';
 import '../../../keybinding/smart_action_widget.dart';
-import '../shared_widgets/sort_filter_option_menu.dart';
+import '../../viewmodel/viewmodel.dart';
+import '../shared/sort_filter_option_menu.dart';
 import '../../core/providers.dart';
-import '../shared_widgets/view_switch_button.dart';
-import '../viewmodel/viewmodel.dart';
-import '../shared_widgets/dynamic_notes_layout.dart';
-import '../shared_widgets/select_mode_app_bars.dart';
+import '../shared/tag_sort_view_menu.dart';
+import '../shared/view_switch_option_menu.dart';
+import '../shared/dynamic_notes_layout.dart';
+import '../shared/select_mode_app_bars.dart';
 
 class DesktopLeftPanel extends ConsumerWidget {
   final TextEditingController searchController;
@@ -209,10 +210,12 @@ class DesktopLeftPanel extends ConsumerWidget {
                     ),
                   ),
                 ),
+                // const SizedBox(width: 4),
+                // const ViewSwitcherOptionMenu(),
+                // const SizedBox(width: 4),
+                // const SortFilterOptionMenu(),
                 const SizedBox(width: 4),
-                const ViewSwitcherButton(),
-                const SizedBox(width: 4),
-                SortFilterOptionMenu(),
+                const FolderSortViewButton(),
               ],
             ),
           ),

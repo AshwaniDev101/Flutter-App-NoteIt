@@ -12,8 +12,8 @@ import '../../../drawer/homepage_drawer.dart';
 import '../../../keybinding/shortcut_config.dart';
 import '../../../lock/lock_manger/lock_manager.dart';
 import '../../core/providers.dart';
-import '../viewmodel/viewmodel.dart';
 import '../../../lock/password_prompt_helper.dart';
+import '../../viewmodel/viewmodel.dart';
 import 'desktop_left_panel.dart';
 import 'desktop_right_panel.dart';
 

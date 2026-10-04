@@ -11,7 +11,7 @@ import '../../../../shared/widgets/snack_bar_manager.dart';
 import '../../../home/core/providers.dart';
 import '../../../lock/lock_manger/lock_manager.dart';
 import '../../../lock/view/setup_password_page.dart';
-import '../view_model/edit_note_view_model.dart';
+import '../viewmodel/edit_note_view_model.dart';
 
 class DesktopEditNotePage extends ConsumerStatefulWidget {
   final Note? existingNote;

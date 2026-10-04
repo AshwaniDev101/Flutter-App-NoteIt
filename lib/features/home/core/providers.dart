@@ -102,10 +102,13 @@ class ActiveNoteNotifier extends Notifier<Note?> {
 /// VIEW TYPE
 final noteViewTypeProvider = NotifierProvider<NoteViewTypeNotifier, NoteViewType>(NoteViewTypeNotifier.new);
 enum NoteViewType {
-  list('Compact List', Icons.view_list_rounded),
-  detailedList('Detailed List', Icons.view_agenda_rounded),
-  grid('Grid View', Icons.grid_view_rounded),
-  largeGrid('Large Grid', Icons.calendar_view_month);
+  list('List', Icons.view_headline),
+  // detailedList('Details', Icons.view_agenda_rounded),
+  detailedList('Details', Icons.table_rows),
+  // grid('Grid', Icons.apps),
+  grid('Grid', Icons.apps),
+  // largeGrid('Large grid', Icons.view_agenda_rounded);
+  largeGrid('Large grid', Icons.grid_view_rounded);
 
   final String label;
   final IconData icon;
