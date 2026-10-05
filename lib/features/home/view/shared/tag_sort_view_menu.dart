@@ -20,9 +20,10 @@ class _FolderSortViewButtonState extends State<FolderSortViewButton> {
     return MouseRegion(
       // Open the menu when the user hovers over the button
       onEnter: (_) {
-        if (!_menuController.isOpen) {
-          _menuController.open();
-        }
+        // disabling opening menu when hover for now
+        // if (!_menuController.isOpen) {
+        //   _menuController.open();
+        // }
       },
       child: MenuAnchor(
         controller: _menuController,

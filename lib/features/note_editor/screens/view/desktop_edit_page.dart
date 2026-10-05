@@ -4,11 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:noteit/database/drift/local_database.dart';
 
 import '../../../../shared/widgets/snack_bar_manager.dart';
 import '../../../home/core/providers.dart';
+import '../../../home/view/shared/note_editor_options.dart';
 import '../../../lock/lock_manger/lock_manager.dart';
 import '../../../lock/view/setup_password_page.dart';
 import '../viewmodel/edit_note_view_model.dart';
@@ -217,7 +217,41 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
                 titleSpacing: 8,
                 // titleSpacing: 24,
                 title: _buildTitleField(maxWidth: dynamicMaxWidth),
-                actions: [_buildUndoRedoButtons(), const SizedBox(width: 8), _buildDesktopOptionButtons()],
+                actions: [
+                  _buildUndoRedoButtons(),
+                  const SizedBox(width: 8),
+                  // _buildDesktopOptionButtons()
+                  NoteEditorOptionButton(
+
+                    isLocked: _isLocked,
+                    isPinned: widget.existingNote?.isPinned ?? false,
+                    onPressed: (NoteEditorOption option) {
+                      switch (option) {
+                        case NoteEditorOption.delete:
+                          _handleDeleteNote();
+                         break;
+                        case NoteEditorOption.pin:
+                          break;
+                        case NoteEditorOption.lock:
+                          _handleLockToggle();
+                          break;
+                        case NoteEditorOption.checklist:
+                          break;
+                        case NoteEditorOption.archive:
+                          break;
+                        case NoteEditorOption.find:
+                          break;
+                        case NoteEditorOption.reminder:
+                          break;
+                      }
+                    },
+                  ),
+                  IconButton(
+                    tooltip: 'Close Note',
+                    icon: const Icon(Icons.close_outlined),
+                    onPressed: _handleCloseNote,
+                  ),
+                ],
               ),
               body: Column(
                 children: [
@@ -231,7 +265,6 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
       },
     );
   }
-
 
   Widget _buildContentField({required double padding}) {
     return Padding(
@@ -298,17 +331,28 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
       children: [
         ValueListenableBuilder<UndoHistoryValue>(
           valueListenable: _undoController,
-          builder: (context, value, child) => IconButton(
-            onPressed: value.canUndo ? () => _undoController.undo() : null,
-            icon: const Icon(Icons.undo, size: 20),
-          ),
+          builder: (context, value, child) {
+            return Opacity(
+              // Hides the button completely when false, but keeps its layout space
+              opacity: value.canUndo ? 1.0 : 0.0,
+              child: IconButton(
+                onPressed: value.canUndo ? () => _undoController.undo() : null,
+                icon: const Icon(Icons.undo, size: 20),
+              ),
+            );
+          },
         ),
         ValueListenableBuilder<UndoHistoryValue>(
           valueListenable: _undoController,
-          builder: (context, value, child) => IconButton(
-            onPressed: value.canRedo ? () => _undoController.redo() : null,
-            icon: const Icon(Icons.redo, size: 20),
-          ),
+          builder: (context, value, child) {
+            return Opacity(
+              opacity: value.canRedo ? 1.0 : 0.0,
+              child: IconButton(
+                onPressed: value.canRedo ? () => _undoController.redo() : null,
+                icon: const Icon(Icons.redo, size: 20),
+              ),
+            );
+          },
         ),
       ],
     );
