@@ -5,6 +5,7 @@ import 'package:noteit/shared/widgets/note_card/widgets/lock_overlay.dart';
 import '../../../core/helpers/time_helper.dart';
 import '../../../database/drift/local_database.dart';
 import '../../../features/home/core/providers.dart';
+import '../../../features/home/view/shared/tag_sort_view_menu.dart';
 import '../../../features/lock/lock_manger/lock_manager.dart';
 import 'highlighted_text.dart';
 
@@ -101,12 +102,12 @@ class _NoteCardState extends ConsumerState<NoteCard> {
   // ==== GRID LAYOUT ====
   Widget _buildGrid(NoteViewType viewType) {
     final platform = widget.note.deletedPlatform ?? widget.note.creationPlatform;
-    final int maxLines = viewType == NoteViewType.largeGrid ? 8 : 5;
+    // final int maxLines = viewType == NoteViewType.largeGrid ? 8 : 5;
 
     final isSessionUnlocked = ref.watch(lockManagerProvider).sessionUnlockedNoteIds.contains(widget.note.uuid);
 
     return Padding(
-      padding: const EdgeInsets.all(12.0),
+      padding: const EdgeInsets.all(8.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.max,
@@ -135,7 +136,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
               ],
             ],
           ),
-          const SizedBox(height: 6),
+          SizedBox(height: 4,),
           Expanded(
             child: Stack(
               children: [
@@ -146,8 +147,8 @@ class _NoteCardState extends ConsumerState<NoteCard> {
                     //  Pass empty string if locked & not verified, SECURITY: not doing so, ill allow screen reader to fetch the content
                     text: (widget.note.isLocked && !isSessionUnlocked) ? "" : widget.note.content,
                     query: widget.searchQuery,
-                    maxLines: maxLines,
-                    overflow: TextOverflow.ellipsis,
+                    // maxLines: maxLines,
+                    overflow: TextOverflow.fade,
                     normalStyle: const TextStyle(fontSize: 13, height: 1.4),
                     highlightStyle: TextStyle(
                       fontSize: 13,
@@ -163,7 +164,9 @@ class _NoteCardState extends ConsumerState<NoteCard> {
               ],
             ),
           ),
-          const SizedBox(height: 12),
+
+          // Bloating the UI
+          const SizedBox(height: 4),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -218,7 +221,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
               ],
             ],
           ),
-          const SizedBox(height: 6),
+          // const SizedBox(height: 2),
           widget.note.isLocked
               ? Align(
                   alignment: Alignment.centerLeft,

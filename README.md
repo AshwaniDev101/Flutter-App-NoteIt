@@ -1,41 +1,73 @@
-
-### Android
-| Homepage |                              Search bar                              |                            Sort & Filters                             |
-| :---: |:--------------------------------------------------------------------:|:---------------------------------------------------------------------:|
-| <img src="docs/screenshots/android/android_homepage.jpg" width="250"/> | <img src="docs/screenshots/android/android_search.jpg" width="250"/> | <img src="docs/screenshots/android/android_filters.jpg" width="250"/> |
-
-| New Note | Password Lock |                                Trash Bin                                 |
-| :---: | :---: |:------------------------------------------------------------------------:|
-| <img src="docs/screenshots/android/android_notepage.jpg" width="250"/> | <img src="docs/screenshots/android/android_enter_password.jpg" width="250"/> | <img src="docs/screenshots/android/android_trash_bin.jpg" width="250"/> |
-
-| Sidebar | Theme Settings | Google Sign-In |
-| :---: | :---: | :---: |
-| <img src="docs/screenshots/android/android_sidebar.jpg" width="250"/> | <img src="docs/screenshots/android/android_theme_change.jpg" width="250"/> | <img src="docs/screenshots/android/android_google_signin.jpg" width="250"/> |
-
-|                            Desktop Hosting                            | Host Found |
-|:---------------------------------------------------------------------:| :---: |
-| <img src="docs/screenshots/windows/desktop_hosting.jpg" width="500"/> | <img src="docs/screenshots/android/android_host_found.jpg" width="250"/> |
-
-### Windows
-| Desktop Homepage |                       Sidebar & Google Sign-in                        |
-| :---: |:---------------------------------------------------------------------:|
-| <img src="docs/screenshots/windows/desktop_homepage.jpg" width="400"/> | <img src="docs/screenshots/windows/desktop_sidebar.jpg" width="400"/> |
-
-| Open Note | New Note |
-| :---: | :---: |
-| <img src="docs/screenshots/windows/desktop_homepage_note.jpg" width="400"/> | <img src="docs/screenshots/windows/desktop_new_note.jpg" width="400"/> |
-
-|                                Themes                                | Trash Bin |
-|:--------------------------------------------------------------------:| :---: |
-| <img src="docs/screenshots/windows/desktop_themes.jpg" width="400"/> | <img src="docs/screenshots/windows/desktop_trashbin.jpg" width="400"/> |
-
-
-
 # <img src="assets/icons/note_icon.png" alt="Note-It Logo" width="30" align="center" /> Note-It
 
-A fast, offline-first cross-platform note-taking application for Android and Windows.
+A cross-platform note-taking app for mobile and desktop, built from the ground up to prioritize data ownership and peace of mind.
 
-The core focus of this project is data ownership and sync reliability. Note-It handles state across three environments: a local SQLite database, a Firebase cloud backend, and a peer-to-peer local WiFi network using WebSockets.
+I built Note-It because I was tired of bloated, insecure alternatives. It lets you work seamlessly across devices with flexible sync options ranging from local storage and zero-cloud Wi-Fi syncing to full cloud backups. Paired with military-grade encryption for sensitive data, Note-It ensures your notes stay completely under your control.
+<!-- Tech Stack & Networking -->
+![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?logo=Flutter&logoColor=white)
+![Dart](https://img.shields.io/badge/dart-%230175C2.svg?logo=dart&logoColor=white)
+![Riverpod](https://img.shields.io/badge/Riverpod-0052CC?logo=dart&logoColor=white)
+![MVVM](https://img.shields.io/badge/MVVM-8A2BE2)
+![SQLite](https://img.shields.io/badge/SQLite-%2307405e.svg?logo=sqlite&logoColor=white)
+![Firebase](https://img.shields.io/badge/Firebase-%23039BE5.svg?logo=firebase)
+![Google](https://img.shields.io/badge/Google_Auth-4285F4?logo=google&logoColor=white)
+![WebSockets](https://img.shields.io/badge/WebSockets-25D366)
+![mDNS](https://img.shields.io/badge/mDNS-FF9900)
+
+
+| Desktop | Mobile |
+| :---: | :---: |
+| <img src="docs/screenshots/windows/desktop_homepage.jpg" width="1000"/> | <img src="docs/screenshots/android/android_homepage.jpg" width="240"/> |
+
+I chose a simple design approach that encapsulates the app's complex capabilities, allowing users to ease into the experience without feeling overwhelmed.
+
+---
+
+| Desktop | Mobile |
+| :---: | :---: |
+| <img src="docs/screenshots/windows/desktop_sidebar.jpg" width="1000"/> | <img src="docs/screenshots/android/android_google_signin.jpg" width="240"/> |
+
+Supports Google authentication for Firebase synchronization. The benefit of syncing notes to the cloud is that you can access them from any device, anywhere in the world.
+
+---
+
+| Desktop | Mobile |
+| :---: | :---: |
+| <img src="docs/screenshots/windows/desktop_homepage_note.jpg" width="1000"/> | <img src="docs/screenshots/android/android_notepage.jpg" width="240"/> |
+
+A simple note editor. The design is not finalized yet.
+
+---
+
+| Desktop | Mobile |
+| :---: | :---: |
+| <img src="docs/screenshots/windows/desktop_themes.jpg" width="1000"/> | <img src="docs/screenshots/android/android_theme_change.jpg" width="240"/> |
+
+The themes page allows users to choose from a variety of themes. We currently support 4 themes, with plans to add 6 more before publishing the app to the Play Store.
+
+---
+
+| Desktop | Mobile |
+| :---: | :---: |
+| <img src="docs/screenshots/windows/desktop_trashbin.jpg" width="1000"/> | <img src="docs/screenshots/android/android_trash_bin.jpg" width="240"/> |
+
+Added a trash bin to recover accidentally deleted notes, which can be configured to auto-clean after a month or a year.
+
+---
+
+| Desktop | Mobile |
+| :---: | :---: |
+| <img src="docs/screenshots/windows/desktop_hosting.jpg" width="1000"/> | <img src="docs/screenshots/android/android_host_found.jpg" width="240"/> |
+
+Hosting and connecting: uses mDNS for broadcasting device names over a custom TCP tag. Other devices can discover it, enter the correct PIN, and connect. *(Note: This screenshot is old; there is supposed to be a PIN display in the middle).*
+
+
+### Some Other Screenshots
+
+| Custom Highlighting | Filters | Password Lock |
+| :---: | :---: | :---: |
+| <img src="docs/screenshots/android/android_search.jpg" width="250"/> | <img src="docs/screenshots/android/android_filters.jpg" width="250"/> | <img src="docs/screenshots/android/android_enter_password.jpg" width="250"/> |
+
 
 ## ✨ Features
 
@@ -98,3 +130,8 @@ The core focus of this project is data ownership and sync reliability. Note-It h
 **Dev Dependencies**
 - `build_runner` & `drift_dev` - Code generation.
 - `flutter_launcher_icons` - Automated app icon generation.
+
+
+# License
+
+This software is free for personal use and modification, but commercial use and selling for profit are strictly prohibited. Thank you

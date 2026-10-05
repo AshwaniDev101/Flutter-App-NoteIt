@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/routing/routing.dart';
@@ -11,6 +10,7 @@ import 'package:noteit/shared/widgets/snack_bar_manager.dart';
 import 'package:noteit/startup_initializer.dart';
 import 'package:window_manager/window_manager.dart';
 
+import 'core/helpers/platform_helper.dart';
 import 'core/theme/app_theme.dart';
 
 // Window Release : flutter build windows
@@ -25,8 +25,7 @@ import 'core/theme/app_theme.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-
-  if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
+  if (PlatformHelper.isNativeDesktop) {
     // Remove the default windows form and add ability to add a custom one
     await windowManager.ensureInitialized();
     WindowOptions windowOptions = const WindowOptions(
@@ -35,14 +34,10 @@ Future<void> main() async {
       center: true,
     );
     await windowManager.waitUntilReadyToShow(windowOptions, () async {
-
       await windowManager.show();
       await windowManager.focus();
     });
-
   }
-
-
 
   await SharedPreferenceManager.init();
 

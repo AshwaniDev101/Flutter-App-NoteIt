@@ -21,12 +21,7 @@ class NoteEditorOptionButton extends StatefulWidget {
   final bool isLocked;
   final bool isPinned;
 
-  const NoteEditorOptionButton({
-    super.key,
-    required this.onPressed,
-    this.isLocked = false,
-    this.isPinned = false,
-  });
+  const NoteEditorOptionButton({super.key, required this.onPressed, this.isLocked = false, this.isPinned = false});
 
   @override
   State<NoteEditorOptionButton> createState() => _NoteEditorOptionButtonState();
@@ -37,37 +32,30 @@ class _NoteEditorOptionButtonState extends State<NoteEditorOptionButton> {
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) {
-        // disabling opening menu when hover for now
-        // if (!_menuController.isOpen) {
-        //   _menuController.open();
-        // }
-      },
-      child: MenuAnchor(
-        controller: _menuController,
-        style: const MenuStyle(
-          padding: WidgetStatePropertyAll(EdgeInsets.zero),
-          backgroundColor: WidgetStatePropertyAll(Colors.transparent),
-          elevation: WidgetStatePropertyAll(0),
-        ),
-        builder: (BuildContext context, MenuController controller, Widget? child) {
-          return IconButton(
-            onPressed: () {
-              if (controller.isOpen) {
-                controller.close();
-              } else {
-                controller.open();
-              }
-            },
-            icon: const Icon(Icons.list),
-            // icon: const Icon(Icons.keyboard_double_arrow_down),
-          );
-        },
-        menuChildren: [NoteEditorOptionMenu(onPressed: widget.onPressed,
-          isLocked: widget.isLocked,
-          isPinned: widget.isPinned,)],
+    return MenuAnchor(
+      controller: _menuController,
+      // Removes default menu background/padding so your Card looks native
+      style: const MenuStyle(
+        padding: WidgetStatePropertyAll(EdgeInsets.zero),
+        backgroundColor: WidgetStatePropertyAll(Colors.transparent),
+        elevation: WidgetStatePropertyAll(0),
       ),
+      builder: (BuildContext context, MenuController controller, Widget? child) {
+        return IconButton(
+          onPressed: () {
+            if (controller.isOpen) {
+              controller.close();
+            } else {
+              controller.open();
+            }
+          },
+          icon: const Icon(Icons.list),
+          // icon: const Icon(Icons.keyboard_double_arrow_down),
+        );
+      },
+      menuChildren: [
+        NoteEditorOptionMenu(onPressed: widget.onPressed, isLocked: widget.isLocked, isPinned: widget.isPinned),
+      ],
     );
   }
 }
@@ -77,17 +65,12 @@ class NoteEditorOptionMenu extends StatelessWidget {
   final bool isLocked;
   final bool isPinned;
 
-  const NoteEditorOptionMenu({
-    super.key,
-    required this.onPressed,
-    this.isLocked = false,
-    this.isPinned = false,
-  });
-
+  const NoteEditorOptionMenu({super.key, required this.onPressed, this.isLocked = false, this.isPinned = false});
 
   @override
   Widget build(BuildContext context) {
     return Card(
+      color: Theme.of(context).colorScheme.surfaceContainer,
       elevation: 2,
       margin: const EdgeInsets.all(4.0),
       // Padding around the Wrap
@@ -99,24 +82,33 @@ class NoteEditorOptionMenu extends StatelessWidget {
             spacing: 8.0,
             runSpacing: 8.0,
             children: NoteEditorOption.values.map((option) {
-
               IconData currentIcon = option.icon;
               String currentTooltip = option.tooltip;
               String currentLabel = option.label;
 
-              // Override based on dynamic state
+              //  Check if this specific option is currently active
+              bool isActive = false;
               if (option == NoteEditorOption.lock) {
                 currentIcon = isLocked ? Icons.lock_clock : Icons.lock_outline;
                 currentTooltip = isLocked ? 'Remove Lock' : 'Lock Note';
                 currentLabel = isLocked ? 'Unlock' : 'Lock';
+                isActive = isLocked;
               } else if (option == NoteEditorOption.pin) {
                 currentIcon = isPinned ? Icons.push_pin : Icons.push_pin_outlined;
                 currentTooltip = isPinned ? 'Unpin Note' : 'Pin Note';
                 currentLabel = isPinned ? 'Unpin' : 'Pin';
+                isActive = isPinned;
               }
 
+              // Only active options get the primary color; others use the default
+              final Color iconColor = isActive
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.onSurfaceVariant;
+
+              final mainIcon = Icon(currentIcon, size: 24, color: iconColor);
+
               return _editorOption(
-                icon: currentIcon,
+                icon: mainIcon,
                 name: currentLabel,
                 tooltip: currentTooltip,
                 onPressed: () {
@@ -132,7 +124,7 @@ class NoteEditorOptionMenu extends StatelessWidget {
   }
 
   Widget _editorOption({
-    required IconData icon,
+    required Icon icon,
     required String name,
     required String tooltip,
     required VoidCallback onPressed,
@@ -150,7 +142,7 @@ class NoteEditorOptionMenu extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(icon, size: 24),
+                icon,
                 const SizedBox(height: 4),
                 Text(name, style: const TextStyle(fontSize: 10), maxLines: 1, overflow: TextOverflow.ellipsis),
               ],

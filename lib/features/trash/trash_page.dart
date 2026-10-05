@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/theme/note_theme.dart';
+import '../../core/helpers/platform_helper.dart';
 import '../../database/drift/local_database.dart';
 import '../../database/drift/notes/notes_dao.dart';
 import '../../database/firebase/firebase_database.dart';
@@ -246,7 +245,7 @@ class _TrashPageState extends ConsumerState<TrashPage> {
       );
     }
 
-    final showLabel = kIsWeb || defaultTargetPlatform == TargetPlatform.windows;
+    final showLabel = PlatformHelper.isDesktopScreen;
 
     // Default App Bar
     return AppBar(
@@ -310,7 +309,7 @@ class _TrashPageState extends ConsumerState<TrashPage> {
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.only(bottom: 80, top: 8),
               gridDelegate:
-                  defaultTargetPlatform == TargetPlatform.android && !kIsWeb
+              PlatformHelper.isDesktopScreen
                   ? const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 3,
                       childAspectRatio: 0.85,

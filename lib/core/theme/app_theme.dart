@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:noteit/core/theme/note_theme.dart';
 import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
 
 part 'custom_themes/light.dart';

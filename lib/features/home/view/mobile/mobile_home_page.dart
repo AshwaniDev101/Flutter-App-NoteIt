@@ -78,9 +78,12 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
         drawer: const Drawer(child: HomepageDrawer()),
         appBar: _buildAppBar(homeState, viewModel),
         floatingActionButton: FloatingActionButton(
+
           onPressed: () => context.push(AppRoutes.edit),
-          child: const Icon(Icons.add),
+            elevation: 3,
+          child: const Icon(Icons.edit),
         ),
+
         body: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -177,7 +180,7 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
         noteIds: state.selectedNoteIds,
         onClearSelection: viewModel.clearSelection,
         onSelectAll: () {
-          // FIXED: Map to UUIDs instead of integer IDs
+          // Map to UUIDs instead of integer IDs
           final allNoteUuids = (ref.read(filteredNotesProvider).value ?? []).map((n) => n.uuid).toList();
           viewModel.toggleSelectAll(allNoteUuids);
         },

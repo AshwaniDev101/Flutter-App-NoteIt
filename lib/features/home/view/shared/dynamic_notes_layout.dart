@@ -1,8 +1,9 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/features/home/view/shared/tag_sort_view_menu.dart';
 import '../../../../../database/drift/local_database.dart';
 import '../../../../../../database/sync/sync_orchestrator.dart';
+import '../../../../core/helpers/platform_helper.dart';
 import '../../../../shared/widgets/note_card/note_card.dart';
 import '../../core/providers.dart';
 
@@ -78,31 +79,50 @@ class DynamicNotesLayout extends ConsumerWidget {
     switch (viewType) {
       case NoteViewType.list:
       case NoteViewType.detailedList:
-        // Use ListView for list layouts
         return ListView.builder(
           physics: const AlwaysScrollableScrollPhysics(),
-          // padding: const EdgeInsets.only(bottom: 80),
           itemCount: notes.length,
           itemBuilder: (context, index) => _buildNoteItem(context, ref, notes[index]),
         );
 
       case NoteViewType.grid:
-      case NoteViewType.largeGrid:
-        // Adjust the crossAxisCount based on standard vs large grid
-        final isLargeGrid = viewType == NoteViewType.largeGrid;
-
         return GridView.builder(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.only(bottom: 80),
-          gridDelegate: defaultTargetPlatform == TargetPlatform.android && !kIsWeb
-              ? SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: isLargeGrid ? 1 : 3, // Android dynamic columns
-                  childAspectRatio: isLargeGrid ? 2.0 : 0.85,
-                )
-              : SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: isLargeGrid ? 400 : 220, // Desktop dynamic size
-                  childAspectRatio: isLargeGrid ? 1.5 : 0.85,
-                ),
+          padding: const EdgeInsets.only(bottom: 80, left: 4, right: 4), // Added slight side padding
+
+          gridDelegate: PlatformHelper.isMobileScreen
+              ? const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            mainAxisExtent: 140, // Reduced from 200 for a better width-to-height ratio
+            crossAxisSpacing: 8, // Increased from 4
+            mainAxisSpacing: 8,  // Increased from 4
+          )
+              : const SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent: 200,
+            mainAxisExtent: 180,
+            crossAxisSpacing: 8, // Increased from 4
+            mainAxisSpacing: 8,  // Increased from 4
+          ),
+          itemCount: notes.length,
+          itemBuilder: (context, index) => _buildNoteItem(context, ref, notes[index]),
+        );
+
+      case NoteViewType.largeGrid:
+        return GridView.builder(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.only(bottom: 80, left: 4, right: 4),
+          gridDelegate: PlatformHelper.isMobileScreen
+              ? const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 1, // Full width on mobile
+            mainAxisExtent: 160,
+            mainAxisSpacing: 0,
+          )
+              : const SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent: 400,
+            mainAxisExtent: 200,
+            crossAxisSpacing: 0,
+            mainAxisSpacing: 0,
+          ),
           itemCount: notes.length,
           itemBuilder: (context, index) => _buildNoteItem(context, ref, notes[index]),
         );

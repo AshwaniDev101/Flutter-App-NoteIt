@@ -1,9 +1,8 @@
-import 'dart:io' show Platform;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in_all_platforms/google_sign_in_all_platforms.dart';
+import 'package:noteit/core/helpers/platform_helper.dart';
 import 'package:noteit/core/secrets/app_secrets.dart';
 
 // Provides the FirebaseAuth instance
@@ -19,7 +18,7 @@ final authStateProvider = StreamProvider<User?>((ref) {
 
 final googleSignInProvider = Provider<GoogleSignIn>((ref) {
   // Determine if we are running on Windows Desktop
-  final isWindows = !kIsWeb && Platform.isWindows;
+  final isWindows = PlatformHelper.isWindows;
 
   // Your Desktop Client ID, You have set it up yourself
   // Go to project Credentials > click create credentials > OAuth client ID > now ur on 'Create OAuth client ID' page> Select Application type to "Desktop app" and Name it anything example : "Desktop-Client-1"

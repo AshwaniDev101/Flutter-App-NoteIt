@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../database/sync/sync_orchestrator.dart';
+import '../../../../core/helpers/platform_helper.dart';
 import '../../../../database/drift/notes/notes_dao.dart';
 import '../../core/providers.dart';
 
@@ -44,7 +44,7 @@ class SelectModeAppBar extends ConsumerWidget implements PreferredSizeWidget {
           onPressed: () async {
             final noteDao = ref.read(notesDaoProvider);
 
-            await noteDao.softDeleteNotes(noteIds, platform: defaultTargetPlatform.name);
+            await noteDao.softDeleteNotes(noteIds, platform: PlatformHelper.name);
 
             ref.read(syncOrchestratorProvider).triggerSync();
             onClearSelection();

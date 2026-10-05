@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/features/home/core/db_sorting_filtering.dart';
 import '../../../database/drift/local_database.dart';
 import '../../lock/lock_manger/lock_manager.dart';
+import '../view/shared/tag_sort_view_menu.dart';
 
 
 /// MAIN FILTER: Combines all the filters (SORT + PLATFORM + SEARCH + LOCK-STATE)
@@ -101,20 +102,6 @@ class ActiveNoteNotifier extends Notifier<Note?> {
 
 /// VIEW TYPE
 final noteViewTypeProvider = NotifierProvider<NoteViewTypeNotifier, NoteViewType>(NoteViewTypeNotifier.new);
-enum NoteViewType {
-  list('List', Icons.view_headline),
-  // detailedList('Details', Icons.view_agenda_rounded),
-  detailedList('Details', Icons.table_rows),
-  // grid('Grid', Icons.apps),
-  grid('Grid', Icons.apps),
-  // largeGrid('Large grid', Icons.view_agenda_rounded);
-  largeGrid('Large grid', Icons.grid_view_rounded);
-
-  final String label;
-  final IconData icon;
-
-  const NoteViewType(this.label, this.icon);
-}
 class NoteViewTypeNotifier extends Notifier<NoteViewType> {
   @override
   NoteViewType build() => NoteViewType.grid;

@@ -1,5 +1,6 @@
-import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
+
+import '../helpers/platform_helper.dart';
 
 /// Central logging utility used across the app.
 /// Wraps the 'logger' package so logging behavior can be controlled
@@ -21,19 +22,19 @@ class AppLogger {
       colors: true,
       printTime: false,
     ),
-    level: kDebugMode ? Level.debug : Level.warning, // Less verbose logging in release
+    level: PlatformHelper.isDebugMode ? Level.debug : Level.warning, // Less verbose logging in release
   );
 
   /// Trace log for very detailed debugging information.
   /// Only runs in debug mode.
   static void t(dynamic message, [Object? error, StackTrace? stack]) {
-    if (kDebugMode) _logger.t(message, error: error, stackTrace: stack);
+    if (PlatformHelper.isDebugMode) _logger.t(message, error: error, stackTrace: stack);
   }
 
   /// Debug log for development details such as variable values or state changes.
   /// Only runs in debug mode.
   static void d(dynamic message, [Object? error, StackTrace? stack]) {
-    if (kDebugMode) _logger.d(message, error: error, stackTrace: stack);
+    if (PlatformHelper.isDebugMode) _logger.d(message, error: error, stackTrace: stack);
   }
 
   /// Informational log for normal app flow or successful operations.

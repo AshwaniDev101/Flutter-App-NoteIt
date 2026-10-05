@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:noteit/database/drift/local_database.dart';
@@ -19,6 +18,7 @@ import '../../features/note_editor/screens/view/mobile_edit_page.dart';
 import '../../features/settings/view/settings_page.dart';
 import '../../features/themes/view/theme_page.dart';
 import '../../features/trash/trash_page.dart';
+import '../helpers/platform_helper.dart';
 
 class AppRoutes {
   static const String home = '/';
@@ -47,12 +47,8 @@ final routerProvider = Provider((ref) {
       GoRoute(
         path: AppRoutes.home,
         builder: (context, state) {
-          final isDesktop =
-              defaultTargetPlatform == TargetPlatform.windows ||
-              defaultTargetPlatform == TargetPlatform.macOS ||
-              defaultTargetPlatform == TargetPlatform.linux;
 
-          if (isDesktop) {
+          if (PlatformHelper.isDesktopScreen) {
             return DesktopHomePage();
           } else {
             return MobileHomePage();
@@ -64,12 +60,8 @@ final routerProvider = Provider((ref) {
         builder: (context, state) {
           final note = state.extra as Note?;
 
-          final isDesktop =
-              defaultTargetPlatform == TargetPlatform.windows ||
-              defaultTargetPlatform == TargetPlatform.macOS ||
-              defaultTargetPlatform == TargetPlatform.linux;
 
-          if (isDesktop) {
+          if (PlatformHelper.isDesktopScreen) {
             return DesktopEditNotePage(existingNote: note);
           } else {
             return MobileEditNotePage(existingNote: note);

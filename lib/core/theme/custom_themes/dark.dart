@@ -51,11 +51,11 @@ ThemeData get _darkThemeData => ThemeData(
     // ==== Surface levels ====
     // surfaceContainerHighest :Color(0xFF1B1E27),
     // surfaceContainerHigh :Color(0xFF1B1E27),
-    // surfaceContainer :Color(0xFF1B1E27),
-    surfaceContainerLow: Color(0xFF1B1E27),
-    // * Used for card backgrounds
+    surfaceContainer :Color(0xFF222733),
+    surfaceContainerLow: Color(0xFF1B1E27), // * Used for card backgrounds
+
     surfaceContainerLowest: Color(0xFF1B1E27),
-    surface: Color(0xFF14161C),
+    surface: Color(0xFF14161C), // * Used for Bottom Layer
     // The vast majority of your app's background space (Scaffold backgrounds).
 
     // High-emphasis text (headings, standard text) and default icons sitting directly on top of 'surface'.
@@ -98,14 +98,5 @@ ThemeData get _darkThemeData => ThemeData(
       statusBarBrightness: Brightness.dark,
     ),
   ),
-  // extensions: const [
-  //   NoteTheme(
-  //     selectedAppBar: Color(0xFF939BEA),
-  //     selectedCheckColor: Color(0xFF73C5A8),
-  //     cardTitleBackground: Color(0xFF232733),
-  //     cardTitleForeground: Color(0xFFE2E4E9),
-  //     cardContentBackground: Color(0xFF1B1E26),
-  //     cardContentForeground: Color(0xFFA3A8B5),
-  //   ),
-  // ],
+
 );
