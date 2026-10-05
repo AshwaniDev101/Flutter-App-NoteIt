@@ -2,6 +2,7 @@ part of '../app_theme.dart';
 
 ThemeData get _sepiaThemeData => ThemeData(
   useMaterial3: true,
+  textTheme: AppTypography.textTheme,
   brightness: Brightness.light,
   colorScheme: const ColorScheme(
     brightness: Brightness.light,

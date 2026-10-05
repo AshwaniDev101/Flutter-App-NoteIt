@@ -75,11 +75,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
             onTap: widget.onTap,
             onLongPress: widget.onLongPress,
             canRequestFocus: false,
-            child: Stack(
-              children: [
-                _buildInternalLayout(viewType),
-              ],
-            ),
+            child: Stack(children: [_buildInternalLayout(viewType)]),
           ),
         ),
       ),
@@ -121,13 +117,21 @@ class _NoteCardState extends ConsumerState<NoteCard> {
                   query: widget.searchQuery,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  normalStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                  highlightStyle: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                    backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  normalStyle: Theme.of(context).textTheme.titleMedium,
+
+                  highlightStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
                   ),
+                  // normalStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  // highlightStyle: TextStyle(
+                  //   fontWeight: FontWeight.bold,
+                  //   fontSize: 15,
+                  //   backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                  //   color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  // ),
                 ),
               ),
               if (widget.note.isPinned) ...[
@@ -136,26 +140,34 @@ class _NoteCardState extends ConsumerState<NoteCard> {
               ],
             ],
           ),
-          SizedBox(height: 4,),
+          SizedBox(height: 4),
           Expanded(
             child: Stack(
               children: [
                 Align(
                   alignment: Alignment.topLeft,
 
-                  child:HighlightedText(
+                  child: HighlightedText(
                     //  Pass empty string if locked & not verified, SECURITY: not doing so, ill allow screen reader to fetch the content
                     text: (widget.note.isLocked && !isSessionUnlocked) ? "" : widget.note.content,
                     query: widget.searchQuery,
                     // maxLines: maxLines,
                     overflow: TextOverflow.fade,
-                    normalStyle: const TextStyle(fontSize: 13, height: 1.4),
-                    highlightStyle: TextStyle(
+                    normalStyle: Theme.of(context).textTheme.bodyMedium,
+
+                    highlightStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       fontSize: 13,
                       height: 1.4,
                       backgroundColor: Theme.of(context).colorScheme.primaryContainer,
                       color: Theme.of(context).colorScheme.onPrimaryContainer,
                     ),
+                    // normalStyle: const TextStyle(fontSize: 13, height: 1.4),
+                    // highlightStyle: TextStyle(
+                    //   fontSize: 13,
+                    //   height: 1.4,
+                    //   backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                    //   color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    // ),
                   ),
                 ),
 

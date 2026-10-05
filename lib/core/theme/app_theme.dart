@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
 
+import 'app_typography.dart';
+
 part 'custom_themes/light.dart';
 
 part 'custom_themes/dark.dart';

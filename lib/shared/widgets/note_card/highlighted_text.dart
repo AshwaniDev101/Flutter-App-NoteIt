@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 class HighlightedText extends StatelessWidget {
   final String text;
   final String query;
-  final TextStyle normalStyle;
-  final TextStyle highlightStyle;
+  final TextStyle? normalStyle;
+  final TextStyle? highlightStyle;
   final int? maxLines;
   final TextOverflow overflow;
 
@@ -12,18 +12,28 @@ class HighlightedText extends StatelessWidget {
     super.key,
     required this.text,
     required this.query,
-    required this.normalStyle,
-    required this.highlightStyle,
+    this.normalStyle,
+    this.highlightStyle,
     this.maxLines,
     this.overflow = TextOverflow.clip,
   });
 
   @override
   Widget build(BuildContext context) {
+
+
+    final defaultStyle = normalStyle ?? Theme.of(context).textTheme.bodyMedium ?? const TextStyle();
+
+    final defaultHighlight = highlightStyle ?? defaultStyle.copyWith(
+      fontWeight: FontWeight.bold,
+      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+      color: Theme.of(context).colorScheme.onPrimaryContainer,
+    );
+
     if (query.isEmpty) {
       return Text(
         text,
-        style: normalStyle,
+        style: defaultStyle,
         maxLines: maxLines,
         overflow: overflow,
       );
@@ -41,7 +51,7 @@ class HighlightedText extends StatelessWidget {
         spans.add(
           TextSpan(
             text: text.substring(start, indexOfMatch),
-            style: normalStyle,
+            style: defaultStyle,
           ),
         );
       }
@@ -49,7 +59,7 @@ class HighlightedText extends StatelessWidget {
       spans.add(
         TextSpan(
           text: text.substring(indexOfMatch, indexOfMatch + query.length),
-          style: highlightStyle,
+          style: defaultHighlight,
         ),
       );
 
@@ -58,7 +68,7 @@ class HighlightedText extends StatelessWidget {
     }
 
     if (start < text.length) {
-      spans.add(TextSpan(text: text.substring(start), style: normalStyle));
+      spans.add(TextSpan(text: text.substring(start), style: defaultStyle));
     }
 
     return RichText(

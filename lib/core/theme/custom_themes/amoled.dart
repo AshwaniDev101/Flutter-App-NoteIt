@@ -2,6 +2,7 @@ part of '../app_theme.dart';
 
 ThemeData get _amoledThemeData => ThemeData(
   useMaterial3: true,
+  textTheme: AppTypography.textTheme,
   brightness: Brightness.dark,
   colorScheme: const ColorScheme(
     brightness: Brightness.dark,

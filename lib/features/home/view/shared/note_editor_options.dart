@@ -105,7 +105,7 @@ class NoteEditorOptionMenu extends StatelessWidget {
                   ? Theme.of(context).colorScheme.primary
                   : Theme.of(context).colorScheme.onSurfaceVariant;
 
-              final mainIcon = Icon(currentIcon, size: 24, color: iconColor);
+              final mainIcon = Icon(currentIcon, color: iconColor);
 
               return _editorOption(
                 icon: mainIcon,
@@ -144,7 +144,7 @@ class NoteEditorOptionMenu extends StatelessWidget {
               children: [
                 icon,
                 const SizedBox(height: 4),
-                Text(name, style: const TextStyle(fontSize: 10), maxLines: 1, overflow: TextOverflow.ellipsis),
+                Text(name, style: const TextStyle(fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
               ],
             ),
           ),

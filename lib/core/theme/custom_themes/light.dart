@@ -2,6 +2,7 @@ part of '../app_theme.dart';
 
 ThemeData get _lightThemeData => ThemeData(
   useMaterial3: true,
+  textTheme: AppTypography.textTheme,
   colorScheme: const ColorScheme(
     brightness: Brightness.light,
     primary: Color(0xFFE5A040),
