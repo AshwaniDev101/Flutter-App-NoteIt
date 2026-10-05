@@ -70,4 +70,7 @@ class Notes extends Table {
   // Tracks which platform initiated the soft-delete (e.g., 'android', 'windows')
   TextColumn get deletedPlatform => text().nullable()();
   TextColumn get deletedDevice => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {uuid};
 }

@@ -23,7 +23,7 @@ class _ExportNotesPageState extends ConsumerState<ExportNotesPage> {
 
   // Schema fields mapped to their selection state.
   final Map<String, bool> _fieldSelections = {
-    'uuid': false,
+    'uuid': true,
     'title': true,
     'content': true,
     'color': false,
