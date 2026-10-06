@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in_all_platforms/google_sign_in_all_platforms.dart';
-import 'package:noteit/core/helpers/platform_helper.dart';
+import 'package:noteit/core/util/platform_helper.dart';
 import 'package:noteit/core/secrets/app_secrets.dart';
 
 // Provides the FirebaseAuth instance

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:noteit/database/drift/local_database.dart';
 
 import '../../../../shared/widgets/snack_bar_manager.dart';
+import '../../../home/view/shared/note_editor_options.dart';
 import '../../../lock/lock_manger/lock_manager.dart';
 import '../../../lock/view/setup_password_page.dart';
 import '../viewmodel/edit_note_view_model.dart';
@@ -159,7 +160,32 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
           leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: _handleMobileBack),
           titleSpacing: 0,
           title: _buildTitleField(),
-          actions: [if (!_isNewNote) _buildOptionMenu(), const SizedBox(width: 8)],
+          // actions: [if (!_isNewNote) _buildOptionMenu(), const SizedBox(width: 8)],
+          actions: [ NoteEditorOptionButton(
+
+            isLocked: _isLocked,
+            isPinned: widget.existingNote?.isPinned ?? false,
+            onPressed: (NoteEditorOption option) {
+              switch (option) {
+                case NoteEditorOption.delete:
+                  _handleDeleteNote();
+                  break;
+                case NoteEditorOption.pin:
+                  break;
+                case NoteEditorOption.lock:
+                  _handleLockToggle();
+                  break;
+                case NoteEditorOption.checklist:
+                  break;
+                case NoteEditorOption.archive:
+                  break;
+                case NoteEditorOption.find:
+                  break;
+                case NoteEditorOption.reminder:
+                  break;
+              }
+            },
+          ),],
         ),
         body: SafeArea(
           child: Column(
@@ -250,7 +276,7 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
           textAlignVertical: TextAlignVertical.top,
           textCapitalization: TextCapitalization.sentences,
           decoration: const InputDecoration(border: InputBorder.none),
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontSize: 16, height: 1.6),
+          style: Theme.of(context).textTheme.bodyLarge,
         ),
       ),
     );

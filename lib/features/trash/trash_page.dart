@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/helpers/platform_helper.dart';
+import '../../core/util/platform_helper.dart';
 import '../../database/drift/local_database.dart';
 import '../../database/drift/notes/notes_dao.dart';
 import '../../database/firebase/firebase_database.dart';
@@ -187,7 +187,7 @@ class _TrashPageState extends ConsumerState<TrashPage> {
         ),
         title: Text(
           '${noteIds.length} Selected',
-          style: const TextStyle(color: Colors.white),
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white),
         ),
         actions: [
           Padding(
@@ -230,10 +230,11 @@ class _TrashPageState extends ConsumerState<TrashPage> {
                 isSelectMode = false;
                 noteIds.clear();
               });
-              if (mounted)
+              if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Notes restored.')),
                 );
+              }
             },
           ),
           IconButton(
@@ -290,15 +291,15 @@ class _TrashPageState extends ConsumerState<TrashPage> {
           error: (error, stack) => Center(child: Text('Error: $error')),
           data: (notes) {
             if (notes.isEmpty) {
-              return const Center(
+              return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.delete_outline, size: 64, color: Colors.grey),
-                    SizedBox(height: 16),
+                    const Icon(Icons.delete_outline, size: 64, color: Colors.grey),
+                    const SizedBox(height: 16),
                     Text(
                       'Trash is empty',
-                      style: TextStyle(color: Colors.grey, fontSize: 18),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                     ),
                   ],
                 ),

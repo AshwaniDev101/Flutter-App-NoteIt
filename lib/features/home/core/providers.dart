@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/features/home/core/db_sorting_filtering.dart';
 import '../../../database/drift/local_database.dart';

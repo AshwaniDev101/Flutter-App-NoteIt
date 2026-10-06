@@ -108,6 +108,7 @@ class NoteEditorOptionMenu extends StatelessWidget {
               final mainIcon = Icon(currentIcon, color: iconColor);
 
               return _editorOption(
+                context: context,
                 icon: mainIcon,
                 name: currentLabel,
                 tooltip: currentTooltip,
@@ -128,6 +129,7 @@ class NoteEditorOptionMenu extends StatelessWidget {
     required String name,
     required String tooltip,
     required VoidCallback onPressed,
+    required BuildContext context,
   }) {
     return Tooltip(
       message: tooltip,
@@ -144,7 +146,7 @@ class NoteEditorOptionMenu extends StatelessWidget {
               children: [
                 icon,
                 const SizedBox(height: 4),
-                Text(name, style: const TextStyle(fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
+                Text(name, style: Theme.of(context).textTheme.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
               ],
             ),
           ),

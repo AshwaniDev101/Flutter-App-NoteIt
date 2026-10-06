@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../provider/sync_session_provider.dart';
-import '../../qr/qr_page.dart';
 
 class HostBroadcastPage extends ConsumerWidget {
   const HostBroadcastPage({super.key});
@@ -76,7 +75,7 @@ class HostBroadcastPage extends ConsumerWidget {
                       const SizedBox(height: 8),
                       Text(
                         hostData.pin, // Ensure your hostData provides this 4-digit string
-                        style: const TextStyle(
+                        style: Theme.of(context).textTheme.displayLarge?.copyWith(
                           fontSize: 56,
                           letterSpacing: 16, // Spreads the digits out
                           fontWeight: FontWeight.bold,

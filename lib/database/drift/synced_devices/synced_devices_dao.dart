@@ -1,7 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/database/drift/synced_devices/synced_devices_table.dart';
-import 'package:noteit/database/drift/synced_devices/synced_devices_table.dart';
 
 import '../local_database.dart';
 

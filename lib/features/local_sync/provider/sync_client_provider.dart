@@ -7,7 +7,6 @@ import '../../../core/util/logger.dart';
 import '../../../database/drift/synced_devices/synced_devices_dao.dart';
 import '../../../database/shared_preference/shared_preference_manager.dart';
 import '../../../database/sync/local_sync_service.dart';
-import '../view/qr/qr_page.dart';
 
 final syncClientProvider = NotifierProvider<SyncClientNotifier, WebSocketChannel?>(() {
   return SyncClientNotifier();

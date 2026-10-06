@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:noteit/core/theme/app_typography.dart';
 
 final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
@@ -11,7 +12,7 @@ class SnackBarManager {
         width: 400,
         content: Text(
           msg,
-          style: const TextStyle(
+          style: AppTypography.textTheme.bodyMedium?.copyWith(
             color: Colors.white,
             fontWeight: FontWeight.w500,
           ),

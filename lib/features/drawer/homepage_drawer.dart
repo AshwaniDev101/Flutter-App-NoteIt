@@ -218,7 +218,7 @@ class HomepageDrawer extends ConsumerWidget {
                         await FirebaseAuth.instance.signOut();
                       },
                       icon: Icon(Icons.logout_rounded, color: colorScheme.onSurfaceVariant),
-                      label: Text('Sign Out', style: TextStyle(color: colorScheme.onSurfaceVariant)),
+                      label: Text('Sign Out', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant)),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                         side: BorderSide(color: colorScheme.outlineVariant),

@@ -62,9 +62,8 @@ class SmartActionWidget extends ConsumerWidget {
                 ),
                 child: Text(
                   config.label,
-                  style: TextStyle(
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     color: colorScheme.onTertiaryContainer,
-                    fontSize: 11,
                     fontWeight: FontWeight.bold,
                   ),
                 ),

@@ -2,20 +2,30 @@ import 'package:flutter/material.dart';
 
 class AppTypography {
   static const TextTheme textTheme = TextTheme(
-    displayLarge: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: -1.0),
-    displayMedium: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: -0.5),
-    displaySmall: TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
-    headlineLarge: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: -0.5),
-    headlineMedium: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-    headlineSmall: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-    titleLarge: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-    titleMedium: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-    titleSmall: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-    bodyLarge: TextStyle(fontSize: 14, fontWeight: FontWeight.normal),
-    bodyMedium: TextStyle(fontSize: 13, fontWeight: FontWeight.normal, height: 1.4),
-    bodySmall: TextStyle(fontSize: 11, fontWeight: FontWeight.w400),
-    labelLarge: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-    labelMedium: TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
-    labelSmall: TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
+    // Large UI Elements (Empty states, Settings headers)
+    displayLarge: TextStyle(fontSize: 32, fontWeight: FontWeight.w400, letterSpacing: 0),
+    displayMedium: TextStyle(fontSize: 28, fontWeight: FontWeight.w400, letterSpacing: 0),
+    displaySmall: TextStyle(fontSize: 24, fontWeight: FontWeight.w400, letterSpacing: 0),
+
+    // Dialog Headers & App Bars
+    headlineLarge: TextStyle(fontSize: 22, fontWeight: FontWeight.w400, letterSpacing: 0),
+    headlineMedium: TextStyle(fontSize: 20, fontWeight: FontWeight.w500, letterSpacing: 0.15),
+    headlineSmall: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, letterSpacing: 0.15),
+
+
+    // Note Title
+    titleLarge: TextStyle(fontSize: 22, fontWeight: FontWeight.w500, letterSpacing: 0),
+    titleMedium: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, letterSpacing: 0.15), // * Card Title
+    titleSmall: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, letterSpacing: 0.1),
+
+    // Note Body
+    bodyLarge: TextStyle(fontSize: 16, fontWeight: FontWeight.w400, letterSpacing: 0.5, height: 1.5),
+    bodyMedium: TextStyle(fontSize: 14, fontWeight: FontWeight.w400, letterSpacing: 0.25, height: 1.45), // *  Card Body
+    bodySmall: TextStyle(fontSize: 12, fontWeight: FontWeight.w400, letterSpacing: 0.4),
+
+    // Metadata (Timestamps, bottom row)
+    labelLarge: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, letterSpacing: 0.1),
+    labelMedium: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, letterSpacing: 0.5), // * Card Date/Time
+    labelSmall: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, letterSpacing: 0.5),
   );
 }

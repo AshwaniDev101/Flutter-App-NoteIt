@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:noteit/core/helpers/platform_helper.dart';
+import 'package:noteit/core/util/platform_helper.dart';
 import 'package:noteit/database/drift/notes/notes_dao.dart';
 import 'package:noteit/features/local_sync/provider/sync_session_provider.dart';
 

@@ -86,10 +86,9 @@ class DevPage extends ConsumerWidget {
                         }
                       },
                       icon: const Icon(Icons.lock_reset_rounded),
-                      label: const Text(
+                      label: Text(
                         'Wipe Master Password',
-                        style: TextStyle(
-                          fontSize: 16,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                       ),

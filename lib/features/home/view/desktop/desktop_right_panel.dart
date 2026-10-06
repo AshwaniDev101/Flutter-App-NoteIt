@@ -87,15 +87,15 @@ class _HomepagePlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.edit_note, size: 64),
-          SizedBox(height: 16),
-          Text('No note selected', style: TextStyle(fontSize: 18)),
-          SizedBox(height: 8),
-          Text('Select a note from the list or click + to start editing.'),
+          const Icon(Icons.edit_note, size: 64),
+          const SizedBox(height: 16),
+          Text('No note selected', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 8),
+          const Text('Select a note from the list or click + to start editing.'),
         ],
       ),
     );

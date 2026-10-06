@@ -66,7 +66,7 @@ class _PinEntryDialogState extends State<PinEntryDialog> {
                     autofocus: true,
                     textAlign: TextAlign.center,
                     onSubmitted: (_) => _submitPin(),
-                    style: const TextStyle(
+                    style: Theme.of(context).textTheme.displayLarge?.copyWith(
                       fontSize: 32,
                       letterSpacing: 20,
                       fontWeight: FontWeight.bold,
@@ -91,7 +91,7 @@ class _PinEntryDialogState extends State<PinEntryDialog> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: _submitPin,
-                child: const Text('Connect', style: TextStyle(fontSize: 16)),
+                child: Text('Connect', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Theme.of(context).colorScheme.onPrimary)),
               ),
             ],
           ),

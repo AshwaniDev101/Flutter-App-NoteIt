@@ -52,16 +52,16 @@ class RoleSelectorPage extends StatelessWidget {
             padding: const EdgeInsets.all(24.0),
             shrinkWrap: true,
             children: [
-              const Text(
+              Text(
                 'Choose Device Role',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.displaySmall?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'How do you want to connect this device?',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
               ),
               const SizedBox(height: 32),
 
@@ -151,11 +151,9 @@ class RoleTile extends StatelessWidget {
                         ),
                         child: Text(
                           'RECOMMENDED',
-                          style: TextStyle(
-                            fontSize: 10,
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
                             fontWeight: FontWeight.bold,
                             color: color,
-                            letterSpacing: 0.5,
                           ),
                         ),
                       ),
@@ -178,8 +176,7 @@ class RoleTile extends StatelessWidget {
                       children: [
                         Text(
                           roleBadge,
-                          style: TextStyle(
-                            fontSize: 12,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             fontWeight: FontWeight.w600,
                             color: color,
                           ),

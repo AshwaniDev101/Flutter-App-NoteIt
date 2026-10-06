@@ -181,16 +181,16 @@ class _ImportNotesPageState extends ConsumerState<ImportNotesPage> {
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
             children: [
-              const Text(
+              Text(
                 'Restore your Backup',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'Select a previously exported .json or .csv file to restore your notes. '
                     'If a note already exists, it will be updated. JSON format is highly recommended for perfect restoration.',
-                style: TextStyle(fontSize: 14, color: Colors.grey),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
@@ -206,7 +206,7 @@ class _ImportNotesPageState extends ConsumerState<ImportNotesPage> {
                         _selectedFile != null
                             ? 'Selected: ${_selectedFile!.name}'
                             : 'No file selected',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 24),
@@ -243,7 +243,7 @@ class _ImportNotesPageState extends ConsumerState<ImportNotesPage> {
                       Expanded(
                         child: Text(
                           _statusMessage!,
-                          style: TextStyle(
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: _isError ? Colors.red.shade700 : Colors.green.shade700,
                             fontWeight: FontWeight.w500,
                           ),
@@ -268,7 +268,7 @@ class _ImportNotesPageState extends ConsumerState<ImportNotesPage> {
                       : const Icon(Icons.restore),
                   label: Text(
                     _isImporting ? 'Processing...' : 'Restore Notes',
-                    style: const TextStyle(fontSize: 16),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.white),
                   ),
                 ),
               ),

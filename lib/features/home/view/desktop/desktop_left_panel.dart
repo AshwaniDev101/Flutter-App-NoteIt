@@ -105,7 +105,7 @@ class DesktopLeftPanel extends ConsumerWidget {
                     onExit: (_) => onMenuHover(false),
                     child: IconButton(icon: const Icon(Icons.menu), onPressed: onMenuToggle),
                   ),
-                  title: const Text('Note-It', style: TextStyle(fontWeight: FontWeight.bold)),
+                  title: Text('Note-It', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
                   elevation: 0,
                   actions: const [],
                 ),

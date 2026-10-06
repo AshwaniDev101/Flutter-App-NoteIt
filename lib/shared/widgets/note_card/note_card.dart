@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/core/util/platform_helper.dart';
 import 'package:noteit/shared/widgets/note_card/widgets/lock_overlay.dart';
 
 import '../../../core/helpers/time_helper.dart';
@@ -90,110 +91,38 @@ class _NoteCardState extends ConsumerState<NoteCard> {
       case NoteViewType.detailedList:
         return _buildDetailedList();
       case NoteViewType.grid:
+        return _buildGrid();
       case NoteViewType.largeGrid:
-        return _buildGrid(viewType);
+        return _buildLargeGrid();
     }
   }
 
-  // ==== GRID LAYOUT ====
-  Widget _buildGrid(NoteViewType viewType) {
-    final platform = widget.note.deletedPlatform ?? widget.note.creationPlatform;
-    // final int maxLines = viewType == NoteViewType.largeGrid ? 8 : 5;
-
-    final isSessionUnlocked = ref.watch(lockManagerProvider).sessionUnlockedNoteIds.contains(widget.note.uuid);
-
+  // ==== COMPACT LIST LAYOUT ====
+  Widget _buildCompactList() {
     return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.max,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: HighlightedText(
-                  text: widget.note.title.isEmpty ? "Untitled" : widget.note.title,
-                  query: widget.searchQuery,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  normalStyle: Theme.of(context).textTheme.titleMedium,
-
-                  highlightStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                      color: Theme.of(context).colorScheme.onPrimaryContainer,
-                  ),
-                  // normalStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                  // highlightStyle: TextStyle(
-                  //   fontWeight: FontWeight.bold,
-                  //   fontSize: 15,
-                  //   backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                  //   color: Theme.of(context).colorScheme.onPrimaryContainer,
-                  // ),
-                ),
-              ),
-              if (widget.note.isPinned) ...[
-                const SizedBox(width: 8),
-                Icon(Icons.push_pin, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
-              ],
-            ],
-          ),
-          SizedBox(height: 4),
           Expanded(
-            child: Stack(
-              children: [
-                Align(
-                  alignment: Alignment.topLeft,
-
-                  child: HighlightedText(
-                    //  Pass empty string if locked & not verified, SECURITY: not doing so, ill allow screen reader to fetch the content
-                    text: (widget.note.isLocked && !isSessionUnlocked) ? "" : widget.note.content,
-                    query: widget.searchQuery,
-                    // maxLines: maxLines,
-                    overflow: TextOverflow.fade,
-                    normalStyle: Theme.of(context).textTheme.bodyMedium,
-
-                    highlightStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontSize: 13,
-                      height: 1.4,
-                      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                      color: Theme.of(context).colorScheme.onPrimaryContainer,
-                    ),
-                    // normalStyle: const TextStyle(fontSize: 13, height: 1.4),
-                    // highlightStyle: TextStyle(
-                    //   fontSize: 13,
-                    //   height: 1.4,
-                    //   backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                    //   color: Theme.of(context).colorScheme.onPrimaryContainer,
-                    // ),
-                  ),
-                ),
-
-                // Lock icon overlay
-                LockOverlayWidget(note: widget.note),
-              ],
+            child: HighlightedText(
+              text: widget.note.title.isEmpty ? "Untitled" : widget.note.title,
+              query: widget.searchQuery,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              // normalStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+              normalStyle: Theme.of(context).textTheme.titleMedium,
+              highlightStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                color: Theme.of(context).colorScheme.onPrimaryContainer,
+              ),
             ),
           ),
-
-          // Bloating the UI
-          const SizedBox(height: 4),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                TimeHelper.formatTimeAgo(widget.note.updatedAt),
-
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-              ),
-              if (platform != null)
-                Tooltip(
-                  message: widget.note.deletedPlatform != null ? 'Deleted on $platform' : 'Created on $platform',
-                  child: _getPlatformIcon(platform),
-                ),
-            ],
-          ),
+          if (widget.note.isPinned) ...[
+            const SizedBox(width: 8),
+            Icon(Icons.push_pin, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          ],
         ],
       ),
     );
@@ -218,10 +147,10 @@ class _NoteCardState extends ConsumerState<NoteCard> {
                   query: widget.searchQuery,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  normalStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                  highlightStyle: TextStyle(
+                  // normalStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  normalStyle: Theme.of(context).textTheme.titleMedium,
+                  highlightStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
-                    fontSize: 15,
                     backgroundColor: Theme.of(context).colorScheme.primaryContainer,
                     color: Theme.of(context).colorScheme.onPrimaryContainer,
                   ),
@@ -236,33 +165,32 @@ class _NoteCardState extends ConsumerState<NoteCard> {
           // const SizedBox(height: 2),
           widget.note.isLocked
               ? Align(
-                  alignment: Alignment.centerLeft,
-                  child: Icon(
-                    Icons.lock_outlined,
-                    size: 20,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-                  ),
-                )
+            alignment: Alignment.centerLeft,
+            child: Icon(
+              Icons.lock_outlined,
+              size: 20,
+              color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+            ),
+          )
               : HighlightedText(
-                  text: widget.note.content,
-                  query: widget.searchQuery,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  normalStyle: const TextStyle(fontSize: 13, height: 1.4),
-                  highlightStyle: TextStyle(
-                    fontSize: 13,
-                    height: 1.4,
-                    backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                    color: Theme.of(context).colorScheme.onPrimaryContainer,
-                  ),
-                ),
+            text: widget.note.content,
+            query: widget.searchQuery,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            // normalStyle: const TextStyle(fontSize: 13, height: 1.4),
+            normalStyle: Theme.of(context).textTheme.bodyMedium,
+            highlightStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+              color: Theme.of(context).colorScheme.onPrimaryContainer,
+            ),
+          ),
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 TimeHelper.formatTimeAgo(widget.note.updatedAt),
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                style: Theme.of(context).textTheme.labelMedium,
               ),
               if (platform != null)
                 Tooltip(
@@ -276,35 +204,192 @@ class _NoteCardState extends ConsumerState<NoteCard> {
     );
   }
 
-  // ==== COMPACT LIST LAYOUT ====
-  Widget _buildCompactList() {
+  // ==== GRID LAYOUT ====
+  Widget _buildGrid() {
+    final platform = widget.note.deletedPlatform ?? widget.note.creationPlatform;
+
+    final isSessionUnlocked = ref.watch(lockManagerProvider).sessionUnlockedNoteIds.contains(widget.note.uuid);
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
+      padding: const EdgeInsets.all(8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.max,
         children: [
-          Expanded(
-            child: HighlightedText(
-              text: widget.note.title.isEmpty ? "Untitled" : widget.note.title,
-              query: widget.searchQuery,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              normalStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-              highlightStyle: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 15,
-                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                color: Theme.of(context).colorScheme.onPrimaryContainer,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: HighlightedText(
+                  text: widget.note.title.isEmpty ? "Untitled" : widget.note.title,
+                  query: widget.searchQuery,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  normalStyle: Theme.of(context).textTheme.titleMedium,
+
+                  highlightStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  ),
+                ),
               ),
+              if (widget.note.isPinned) ...[
+                const SizedBox(width: 8),
+                Icon(Icons.push_pin, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
+              ],
+            ],
+          ),
+          SizedBox(height: 4),
+          Expanded(
+            child: Stack(
+              children: [
+                Align(
+                  alignment: Alignment.topLeft,
+
+                  child: HighlightedText(
+                    //  Pass empty string if locked & not verified, SECURITY: not doing so, ill allow screen reader to fetch the content
+                    text: (widget.note.isLocked && !isSessionUnlocked) ? "" : widget.note.content,
+                    query: widget.searchQuery,
+                    // maxLines: maxLines,
+                    overflow: TextOverflow.fade,
+                    normalStyle: Theme.of(context).textTheme.bodyMedium,
+
+                    highlightStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    ),
+
+                  ),
+                ),
+
+                // Lock icon overlay
+                LockOverlayWidget(note: widget.note),
+              ],
             ),
           ),
-          if (widget.note.isPinned) ...[
-            const SizedBox(width: 8),
-            Icon(Icons.push_pin, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
-          ],
+
+          // Looks better in Android this way
+          if (PlatformHelper.isDesktopScreen)...[
+            const SizedBox(height: 4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  TimeHelper.formatTimeAgo(widget.note.updatedAt),
+
+                  style: Theme.of(context).textTheme.labelMedium,
+                ),
+                if (platform != null)
+                  Tooltip(
+                    message: widget.note.deletedPlatform != null ? 'Deleted on $platform' : 'Created on $platform',
+                    child: _getPlatformIcon(platform),
+                  ),
+              ],
+            ),
+          ]
+
+
+
         ],
       ),
     );
   }
+
+  // ==== Large GRID LAYOUT ====
+  Widget _buildLargeGrid() {
+    final platform = widget.note.deletedPlatform ?? widget.note.creationPlatform;
+
+    final isSessionUnlocked = ref.watch(lockManagerProvider).sessionUnlockedNoteIds.contains(widget.note.uuid);
+
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.max,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: HighlightedText(
+                  text: widget.note.title.isEmpty ? "Untitled" : widget.note.title,
+                  query: widget.searchQuery,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  normalStyle: Theme.of(context).textTheme.titleMedium,
+
+                  highlightStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  ),
+                ),
+              ),
+              if (widget.note.isPinned) ...[
+                const SizedBox(width: 8),
+                Icon(Icons.push_pin, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
+              ],
+            ],
+          ),
+          SizedBox(height: 4),
+          Expanded(
+            child: Stack(
+              children: [
+                Align(
+                  alignment: Alignment.topLeft,
+
+                  child: HighlightedText(
+                    //  Pass empty string if locked & not verified, SECURITY: not doing so, ill allow screen reader to fetch the content
+                    text: (widget.note.isLocked && !isSessionUnlocked) ? "" : widget.note.content,
+                    query: widget.searchQuery,
+                    // maxLines: maxLines,
+                    overflow: TextOverflow.fade,
+                    normalStyle: Theme.of(context).textTheme.bodyMedium,
+
+                    highlightStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    ),
+
+                  ),
+                ),
+
+                // Lock icon overlay
+                LockOverlayWidget(note: widget.note),
+              ],
+            ),
+          ),
+
+          // Looks better in Android this way
+          if (PlatformHelper.isDesktopScreen)...[
+            const SizedBox(height: 4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  TimeHelper.formatTimeAgo(widget.note.updatedAt),
+
+                  style: Theme.of(context).textTheme.labelMedium,
+                ),
+                if (platform != null)
+                  Tooltip(
+                    message: widget.note.deletedPlatform != null ? 'Deleted on $platform' : 'Created on $platform',
+                    child: _getPlatformIcon(platform),
+                  ),
+              ],
+            ),
+          ]
+
+
+
+        ],
+      ),
+    );
+  }
+
+
+
 
   // ==== SHARED ICONS ====
   Widget _getPlatformIcon(String platform) {

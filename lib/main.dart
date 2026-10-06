@@ -1,4 +1,3 @@
-import 'dart:io';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -10,7 +9,7 @@ import 'package:noteit/shared/widgets/snack_bar_manager.dart';
 import 'package:noteit/startup_initializer.dart';
 import 'package:window_manager/window_manager.dart';
 
-import 'core/helpers/platform_helper.dart';
+import 'core/util/platform_helper.dart';
 import 'core/theme/app_theme.dart';
 
 // Window Release : flutter build windows

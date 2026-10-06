@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../database/sync/sync_orchestrator.dart';
-import '../../../../core/helpers/platform_helper.dart';
+import '../../../../core/util/platform_helper.dart';
 import '../../../../database/drift/notes/notes_dao.dart';
 import '../../core/providers.dart';
 
@@ -24,7 +24,7 @@ class SelectModeAppBar extends ConsumerWidget implements PreferredSizeWidget {
       backgroundColor: Theme.of(context).colorScheme.primary,
       foregroundColor: Colors.white,
       leading: IconButton(icon: const Icon(Icons.close), onPressed: onClearSelection),
-      title: Text('${noteIds.length} Selected', style: const TextStyle(color: Colors.white)),
+      title: Text('${noteIds.length} Selected', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white)),
       actions: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 10.0),

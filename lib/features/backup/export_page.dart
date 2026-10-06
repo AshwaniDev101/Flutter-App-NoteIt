@@ -204,9 +204,9 @@ class _ExportNotesPageState extends ConsumerState<ExportNotesPage> {
                 padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
                 children: [
                   // FORMAT SELECTION
-                  const Text(
+                  Text(
                     '1. Select Format',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   Card(
@@ -232,9 +232,9 @@ class _ExportNotesPageState extends ConsumerState<ExportNotesPage> {
                   const SizedBox(height: 32),
 
                   // SECURITY SETTINGS
-                  const Text(
+                  Text(
                     '2. Security',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   Card(
@@ -252,9 +252,9 @@ class _ExportNotesPageState extends ConsumerState<ExportNotesPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
+                      Text(
                         '3. Fields to Export',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       TextButton(
                         onPressed: () {
@@ -281,7 +281,7 @@ class _ExportNotesPageState extends ConsumerState<ExportNotesPage> {
                             child: CheckboxListTile(
                               dense: true, // Keeps it compact
                               contentPadding: EdgeInsets.zero, // Removes default messy padding
-                              title: Text(field, style: const TextStyle(fontSize: 13)),
+                              title: Text(field, style: Theme.of(context).textTheme.bodySmall),
                               value: _fieldSelections[field],
                               controlAffinity: ListTileControlAffinity.leading,
                               onChanged: (val) {
@@ -303,7 +303,7 @@ class _ExportNotesPageState extends ConsumerState<ExportNotesPage> {
                     child: FilledButton.icon(
                       onPressed: _exportNotes,
                       icon: const Icon(Icons.download),
-                      label: const Text('Generate Export File', style: TextStyle(fontSize: 16)),
+                      label: Text('Generate Export File', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.white)),
                     ),
                   ),
                   const SizedBox(height: 48),

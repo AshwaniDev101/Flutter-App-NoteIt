@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/features/home/view/shared/tag_sort_view_menu.dart';
 import '../../../../../database/drift/local_database.dart';
 import '../../../../../../database/sync/sync_orchestrator.dart';
-import '../../../../core/helpers/platform_helper.dart';
+import '../../../../core/util/platform_helper.dart';
 import '../../../../shared/widgets/note_card/note_card.dart';
 import '../../core/providers.dart';
 
@@ -88,20 +88,20 @@ class DynamicNotesLayout extends ConsumerWidget {
       case NoteViewType.grid:
         return GridView.builder(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.only(bottom: 80, left: 4, right: 4), // Added slight side padding
+          padding: const EdgeInsets.only(bottom: 100, left: 4, right: 4),
 
           gridDelegate: PlatformHelper.isMobileScreen
               ? const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 3,
-            mainAxisExtent: 140, // Reduced from 200 for a better width-to-height ratio
-            crossAxisSpacing: 8, // Increased from 4
-            mainAxisSpacing: 8,  // Increased from 4
+            childAspectRatio: 0.85,
+            crossAxisSpacing: 4,
+            mainAxisSpacing: 4,
           )
               : const SliverGridDelegateWithMaxCrossAxisExtent(
             maxCrossAxisExtent: 200,
-            mainAxisExtent: 180,
-            crossAxisSpacing: 8, // Increased from 4
-            mainAxisSpacing: 8,  // Increased from 4
+            childAspectRatio: 0.85,
+            crossAxisSpacing: 4,
+            mainAxisSpacing: 4,
           ),
           itemCount: notes.length,
           itemBuilder: (context, index) => _buildNoteItem(context, ref, notes[index]),

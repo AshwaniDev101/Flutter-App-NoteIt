@@ -1,6 +1,6 @@
 import 'package:logger/logger.dart';
 
-import '../helpers/platform_helper.dart';
+import 'platform_helper.dart';
 
 /// Central logging utility used across the app.
 /// Wraps the 'logger' package so logging behavior can be controlled

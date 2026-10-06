@@ -292,7 +292,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
             textAlignVertical: TextAlignVertical.top,
             textCapitalization: TextCapitalization.sentences,
             decoration: const InputDecoration(border: InputBorder.none),
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontSize: 16, height: 1.6),
+            style: Theme.of(context).textTheme.bodyLarge,
           ),
         ),
       ),
@@ -358,33 +358,6 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
     );
   }
 
-  /// Displays actions inline on the Desktop App Bar.
-  Widget _buildDesktopOptionButtons() {
-    return FocusTraversalOrder(
-      order: const NumericFocusOrder(6),
-      child: Row(
-        children: [
-          IconButton(
-            tooltip: widget.existingNote?.isPinned == true ? 'Unpin Note' : 'Pin Note',
-            icon: Icon(widget.existingNote?.isPinned == true ? Icons.push_pin : Icons.push_pin_outlined),
-            onPressed: () {
-              // TODO: Add pin toggle logic here
-            },
-          ),
-
-          IconButton(
-            tooltip: _isLocked ? 'Remove Lock' : 'Lock Note',
-            icon: Icon(_isLocked ? Icons.lock_clock : Icons.lock_outline),
-            // icon: HugeIcon(icon:_isLocked ? HugeIcons.strokeRoundedSquareLockRemove01 : HugeIcons.strokeRoundedLockKeyhole, size: 20,),
-            onPressed: _handleLockToggle,
-          ),
-
-          IconButton(tooltip: 'Delete Note', icon: const Icon(Icons.delete_outline), onPressed: _handleDeleteNote),
-          IconButton(tooltip: 'Close Note', icon: const Icon(Icons.close_outlined), onPressed: _handleCloseNote),
-        ],
-      ),
-    );
-  }
 
   Widget _buildTitleField({required double maxWidth}) {
     return Row(

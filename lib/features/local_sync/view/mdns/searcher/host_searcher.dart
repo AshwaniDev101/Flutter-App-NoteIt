@@ -65,11 +65,11 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
         ],
       ),
       body: searchState.status == ScanStatus.error
-          ? const Center(
+          ? Center(
               child: Text(
                 'Failed to start radar.\nCheck your console for the exact error.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.red),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.red),
               ),
             )
           : devices.isEmpty && isScanning

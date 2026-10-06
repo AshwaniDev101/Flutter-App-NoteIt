@@ -18,7 +18,7 @@ import '../../features/note_editor/screens/view/mobile_edit_page.dart';
 import '../../features/settings/view/settings_page.dart';
 import '../../features/themes/view/theme_page.dart';
 import '../../features/trash/trash_page.dart';
-import '../helpers/platform_helper.dart';
+import '../util/platform_helper.dart';
 
 class AppRoutes {
   static const String home = '/';

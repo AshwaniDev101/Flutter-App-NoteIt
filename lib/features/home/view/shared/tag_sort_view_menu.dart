@@ -114,7 +114,7 @@ class _FolderTabState extends State<FolderTab> {
         Padding(
           padding: const EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 0),
           child: TextField(
-            style: const TextStyle(fontSize: 12),
+            style: Theme.of(context).textTheme.bodySmall,
             onChanged: (value) {
               setState(() {
                 _folderSearchQuery = value;
@@ -124,7 +124,7 @@ class _FolderTabState extends State<FolderTab> {
               isDense: true,
               contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
               hintText: 'Search folders...',
-              hintStyle: const TextStyle(fontSize: 12),
+              hintStyle: Theme.of(context).textTheme.bodySmall,
               prefixIcon: const Icon(Icons.search, size: 16),
               prefixIconConstraints: const BoxConstraints(minWidth: 28, minHeight: 28),
               border: OutlineInputBorder(
@@ -145,7 +145,7 @@ class _FolderTabState extends State<FolderTab> {
                   final isSelected = _selectedFolder == folder;
                   return ChoiceChip(
                     visualDensity: VisualDensity.compact,
-                    label: Text(folder, style: const TextStyle(fontSize: 12)),
+                    label: Text(folder, style: Theme.of(context).textTheme.bodySmall),
                     selected: isSelected,
                     onSelected: (bool selected) {
                       setState(() {
@@ -202,7 +202,7 @@ class SortTab extends ConsumerWidget {
       leading: action.icon != null ? Icon(action.icon,color: isSelected?Theme.of(context).colorScheme.primary:Theme.of(context).colorScheme.onSurfaceVariant) : null,
       title: Text(
         action.label,
-        style: TextStyle(fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,color: isSelected? Theme.of(context).colorScheme.primary:Theme.of(context).colorScheme.onSurfaceVariant),
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal, color: isSelected? Theme.of(context).colorScheme.primary:Theme.of(context).colorScheme.onSurfaceVariant),
       ),
       onTap: () {
         switch (action) {
@@ -256,7 +256,7 @@ class ViewTab extends ConsumerWidget {
           leading: Icon(view.icon,color: isSelected?Theme.of(context).colorScheme.primary:Theme.of(context).colorScheme.onSurfaceVariant),
           title: Text(
             view.label,
-            style: TextStyle(fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,color: isSelected?Theme.of(context).colorScheme.primary:Theme.of(context).colorScheme.onSurfaceVariant),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal, color: isSelected?Theme.of(context).colorScheme.primary:Theme.of(context).colorScheme.onSurfaceVariant),
             
           ),
           onTap: () {
