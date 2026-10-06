@@ -45,12 +45,6 @@ class _FolderSortViewButtonState extends State<FolderSortViewButton> {
 }
 
 
-// ENUMS
-
-
-
-
-
 // MAIN MENU MENU
 class FolderSortViewMenu extends StatelessWidget {
   const FolderSortViewMenu({super.key});
