@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -100,7 +102,7 @@ class _DrawerMenuButtonState extends ConsumerState<DrawerMenuButton> {
               controller.open();
             }
           },
-          icon: const Icon(Icons.settings_rounded),
+          icon: const Icon(Icons.menu),
         );
       },
       menuChildren: [
@@ -147,6 +149,20 @@ class DrawerMenu extends ConsumerWidget {
     final colorScheme = theme.colorScheme;
     final isDarkMode = theme.brightness == Brightness.dark;
 
+    // --- Dynamic Width Calculations ---
+    final screenWidth = MediaQuery.sizeOf(context).width;
+
+    // Cap the menu at your original 680, but shrink it for mobile with 32px of breathing room.
+    final double menuWidth = math.min(680.0, screenWidth - 32.0);
+
+    // Calculate the width for the inner tiles.
+    // We subtract 48.0 because of the 24.0 padding on both the left and right side of the Wrap.
+    final double availableWidth = menuWidth - 48.0;
+
+    // Original tile width was 308. If we have enough room for 2 columns (308*2 + 16 spacing = 632),
+    // use 308. Otherwise, use the full available width to create a single column on mobile.
+    final double tileWidth = availableWidth >= 632.0 ? 308.0 : availableWidth;
+
     return Card(
       color: colorScheme.surface,
       elevation: 12,
@@ -160,7 +176,7 @@ class DrawerMenu extends ConsumerWidget {
       ),
       margin: const EdgeInsets.all(4.0),
       child: SizedBox(
-        width: 680,
+        width: menuWidth, // <-- Uses dynamic width here
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -237,6 +253,7 @@ class DrawerMenu extends ConsumerWidget {
                 children: DrawerOption.values.map((option) {
                   return _SettingsTile(
                     option: option,
+                    width: tileWidth, // <-- Pass the safe calculated width
                     onTap: () => onOptionSelected(option),
                   );
                 }).toList(),
@@ -296,10 +313,12 @@ class DrawerMenu extends ConsumerWidget {
 class _SettingsTile extends StatefulWidget {
   final DrawerOption option;
   final VoidCallback onTap;
+  final double width;
 
   const _SettingsTile({
     required this.option,
     required this.onTap,
+    required this.width,
   });
 
   @override
@@ -320,7 +339,7 @@ class _SettingsTileState extends State<_SettingsTile> {
       child: GestureDetector(
         onTap: widget.onTap,
         child: Container(
-          width: 308,
+          width: widget.width, // <-- Applies the dynamic safe width
           decoration: BoxDecoration(
             color: _isHovering ? colorScheme.surfaceContainerHigh : Colors.transparent,
             borderRadius: BorderRadius.circular(6.0),

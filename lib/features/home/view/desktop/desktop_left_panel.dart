@@ -5,6 +5,7 @@ import 'package:noteit/database/drift/local_database.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../../../../database/drift/keybindings/keybindings_dao.dart';
+import '../../../drawer/drawer_page.dart';
 import '../../../keybinding/smart_action_widget.dart';
 import '../../viewmodel/viewmodel.dart';
 import '../../core/providers.dart';
@@ -17,8 +18,6 @@ class DesktopLeftPanel extends ConsumerWidget {
   final FocusNode searchFocusNode;
   final String? activeNoteId;
   final bool isKeyboardDriven;
-  final VoidCallback onMenuToggle;
-  final Function(bool) onMenuHover;
   final VoidCallback onAddNote;
   final Function(Note) onNoteTap;
   final Function(bool) onKeyboardModeChanged;
@@ -29,8 +28,6 @@ class DesktopLeftPanel extends ConsumerWidget {
     required this.searchFocusNode,
     required this.activeNoteId,
     required this.isKeyboardDriven,
-    required this.onMenuToggle,
-    required this.onMenuHover,
     required this.onAddNote,
     required this.onNoteTap,
     required this.onKeyboardModeChanged,
@@ -100,11 +97,7 @@ class DesktopLeftPanel extends ConsumerWidget {
                   },
                 )
               : AppBar(
-                  leading: MouseRegion(
-                    onEnter: (_) => onMenuHover(true),
-                    onExit: (_) => onMenuHover(false),
-                    child: IconButton(icon: const Icon(Icons.menu), onPressed: onMenuToggle),
-                  ),
+                  leading: DrawerMenuButton(),
                   title: Text('Note-It', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
                   elevation: 0,
                   actions: const [],

@@ -8,9 +8,9 @@ import 'package:noteit/features/home/view/shared/websocket_connection_indicator.
 
 import '../../../../../database/sync/sync_orchestrator.dart';
 import '../../../../database/sync/local_sync_service.dart';
+import '../../../drawer/drawer_page.dart';
 import '../../viewmodel/viewmodel.dart';
 import '../shared/spinning_sync_icon.dart';
-import '../../../drawer/homepage_drawer.dart';
 import '../../core/providers.dart';
 import '../shared/dynamic_notes_layout.dart';
 import '../../../lock/password_prompt_helper.dart';
@@ -75,7 +75,7 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
         if (!didPop && homeState.isSelectMode) viewModel.clearSelection();
       },
       child: Scaffold(
-        drawer: const Drawer(child: HomepageDrawer()),
+
         appBar: _buildAppBar(homeState, viewModel),
         floatingActionButton: FloatingActionButton(
 
@@ -187,6 +187,7 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
       );
     }
     return AppBar(
+      leading: DrawerMenuButton(),
       title: const Text('Notes'),
       elevation: 0,
       centerTitle: true,

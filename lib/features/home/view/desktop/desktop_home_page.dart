@@ -8,7 +8,6 @@ import 'package:uuid/uuid.dart';
 
 import '../../../../database/drift/keybindings/keybindings_dao.dart';
 import '../../../../database/sync/sync_orchestrator.dart';
-import '../../../drawer/homepage_drawer.dart';
 import '../../../keybinding/shortcut_config.dart';
 import '../../../lock/lock_manger/lock_manager.dart';
 import '../../core/providers.dart';
@@ -31,16 +30,6 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
   /// Tracks the current width of the left panel (the note list). Modified by the draggable divider.
   double _leftPanelWidth = 340.0;
 
-  /// Tracks the currently selected note displayed in the right panel editor.
-  // Note? _activeNote;
-
-  // DRAWER STATE
-  bool _isDrawerHovered = false;
-  bool _isDrawerPinned = false;
-  Timer? _hoverTimer;
-
-  /// The drawer is visible if the user is hovering over it OR if they pinned it open.
-  bool get _isDrawerOpen => _isDrawerHovered || _isDrawerPinned;
 
   // ==== ACCESSIBILITY & UX ====
   /// Tracks if the user is currently navigating via keyboard (Tab/Arrows) vs Mouse.
@@ -83,7 +72,6 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
 
   @override
   void dispose() {
-    _hoverTimer?.cancel();
     _searchController.dispose();
     _searchFocusNode.dispose();
     HardwareKeyboard.instance.removeHandler(_handleKeyEvent);
@@ -96,16 +84,6 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
   /// Handles the hover mechanics for the slide-out drawer.
   /// Uses a 150ms debounce timer to prevent the drawer from violently flickering
   /// open and closed if the mouse accidentally slips off the edge for a split second.
-  void _handleMenuHover(bool isHovering) {
-    _hoverTimer?.cancel();
-    if (isHovering) {
-      setState(() => _isDrawerHovered = true);
-    } else {
-      _hoverTimer = Timer(const Duration(milliseconds: 150), () {
-        if (mounted) setState(() => _isDrawerHovered = false);
-      });
-    }
-  }
 
   void _handleHighlightModeChange(FocusHighlightMode mode) {
     if (mounted) {
@@ -196,10 +174,7 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
               _searchFocusNode.requestFocus();
             },
           if (shortcuts[AppActions.newNote] != null) shortcuts[AppActions.newNote]!.activator: _addNote,
-          if (shortcuts[AppActions.toggleMenu] != null)
-            shortcuts[AppActions.toggleMenu]!.activator: () {
-              setState(() => _isDrawerPinned = !_isDrawerPinned);
-            },
+
         };
 
         return CallbackShortcuts(
@@ -228,8 +203,6 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
                                 searchFocusNode: _searchFocusNode,
                                 activeNoteId: activeNote?.uuid,
                                 isKeyboardDriven: _isKeyboardDriven,
-                                onMenuToggle: () => setState(() => _isDrawerPinned = !_isDrawerPinned),
-                                onMenuHover: _handleMenuHover,
                                 onAddNote: _addNote,
                                 onNoteTap: _handleNoteTap,
                                 onKeyboardModeChanged: (mode) => setState(() => _isKeyboardDriven = mode),
@@ -262,56 +235,6 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
                           ),
                         ),
 
-                        // Top Layer: The Hover/Pinned Drawer
-                        if (_isDrawerOpen)
-                          Positioned(
-                            top: 0,
-                            bottom: 0,
-                            left: 0,
-                            child: MouseRegion(
-                              onEnter: (_) => _handleMenuHover(true),
-                              onExit: (_) => _handleMenuHover(false),
-                              child: Material(
-                                elevation: 16, // Beautiful desktop drop-shadow
-                                child: SizedBox(
-                                  width: 250,
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      SizedBox(
-                                        height: kToolbarHeight,
-                                        child: Align(
-                                          alignment: Alignment.centerLeft,
-                                          child: SizedBox(
-                                            height: kToolbarHeight,
-                                            width: 56.0,
-                                            child: Center(
-                                              child: FocusTraversalOrder(
-                                                order: const NumericFocusOrder(0),
-                                                child: IconButton(
-                                                  icon: Icon(_isDrawerPinned ? Icons.menu_open : Icons.menu),
-                                                  onPressed: () => setState(() => _isDrawerPinned = !_isDrawerPinned),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      Expanded(
-                                        child: HomepageDrawer(
-                                          onDestinationSelected: () {
-                                            if (!_isDrawerPinned) {
-                                              setState(() => _isDrawerHovered = false);
-                                            }
-                                          },
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
                       ],
                     ),
                   ),
