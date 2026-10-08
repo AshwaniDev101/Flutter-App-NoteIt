@@ -176,7 +176,7 @@ class DrawerMenu extends ConsumerWidget {
       ),
       margin: const EdgeInsets.all(4.0),
       child: SizedBox(
-        width: menuWidth, // <-- Uses dynamic width here
+        width: menuWidth,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -253,7 +253,7 @@ class DrawerMenu extends ConsumerWidget {
                 children: DrawerOption.values.map((option) {
                   return _SettingsTile(
                     option: option,
-                    width: tileWidth, // <-- Pass the safe calculated width
+                    width: tileWidth,
                     onTap: () => onOptionSelected(option),
                   );
                 }).toList(),

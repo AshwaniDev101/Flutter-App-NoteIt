@@ -8,6 +8,7 @@ import 'package:noteit/features/home/view/shared/websocket_connection_indicator.
 
 import '../../../../../database/sync/sync_orchestrator.dart';
 import '../../../../database/sync/local_sync_service.dart';
+import '../../../drawer/app_drawer.dart';
 import '../../../drawer/drawer_page.dart';
 import '../../viewmodel/viewmodel.dart';
 import '../shared/spinning_sync_icon.dart';
@@ -76,6 +77,7 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
       },
       child: Scaffold(
 
+        drawer: AppDrawer(),
         appBar: _buildAppBar(homeState, viewModel),
         floatingActionButton: FloatingActionButton(
 
@@ -187,7 +189,7 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
       );
     }
     return AppBar(
-      leading: DrawerMenuButton(),
+      // leading: DrawerMenuButton(),
       title: const Text('Notes'),
       elevation: 0,
       centerTitle: true,

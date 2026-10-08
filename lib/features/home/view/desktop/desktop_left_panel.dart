@@ -5,6 +5,7 @@ import 'package:noteit/database/drift/local_database.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../../../../database/drift/keybindings/keybindings_dao.dart';
+import '../../../drawer/app_drawer.dart';
 import '../../../drawer/drawer_page.dart';
 import '../../../keybinding/smart_action_widget.dart';
 import '../../viewmodel/viewmodel.dart';
@@ -22,6 +23,10 @@ class DesktopLeftPanel extends ConsumerWidget {
   final Function(Note) onNoteTap;
   final Function(bool) onKeyboardModeChanged;
 
+  // for closing the drawer on right panel click
+  final GlobalKey<ScaffoldState> scaffoldKey;
+  final ValueChanged<bool> onDrawerChanged;
+
   const DesktopLeftPanel({
     super.key,
     required this.searchController,
@@ -31,6 +36,10 @@ class DesktopLeftPanel extends ConsumerWidget {
     required this.onAddNote,
     required this.onNoteTap,
     required this.onKeyboardModeChanged,
+
+    // for closing the drawer on right panel click
+    required this.scaffoldKey,
+    required this.onDrawerChanged,
   });
 
 
@@ -41,7 +50,12 @@ class DesktopLeftPanel extends ConsumerWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      // The Floating Action Button (New Note)
+
+      // for closing the drawer on right panel click
+      key: scaffoldKey,
+      onDrawerChanged: onDrawerChanged,
+
+      drawer: AppDrawer(),
       floatingActionButton: FocusTraversalOrder(
         order: const NumericFocusOrder(3),
         child: Focus(
@@ -97,7 +111,7 @@ class DesktopLeftPanel extends ConsumerWidget {
                   },
                 )
               : AppBar(
-                  leading: DrawerMenuButton(),
+                  // leading: DrawerMenuButton(),
                   title: Text('Note-It', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
                   elevation: 0,
                   actions: const [],

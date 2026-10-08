@@ -31,6 +31,10 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
   double _leftPanelWidth = 340.0;
 
 
+  // For helping close the drawer when user click on the invisible barrier on top of the right panel
+  final GlobalKey<ScaffoldState> _leftScaffoldKey = GlobalKey<ScaffoldState>();
+  bool _isDrawerOpen = false;
+
   // ==== ACCESSIBILITY & UX ====
   /// Tracks if the user is currently navigating via keyboard (Tab/Arrows) vs Mouse.
   /// Used to selectively show/hide focus rings so mouse users don't see ugly boxes.
@@ -199,6 +203,13 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
                             SizedBox(
                               width: _leftPanelWidth,
                               child: DesktopLeftPanel(
+
+                                // Pass the key and a callback down to the left panel
+                                scaffoldKey: _leftScaffoldKey,
+                                onDrawerChanged: (isOpen) {
+                                  setState(() => _isDrawerOpen = isOpen);
+                                },
+
                                 searchController: _searchController,
                                 searchFocusNode: _searchFocusNode,
                                 activeNoteId: activeNote?.uuid,
@@ -234,6 +245,28 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
                             ),
                           ),
                         ),
+
+
+                        // Invisible barrier over the Right Panel to close drawer on click
+                        if (_isDrawerOpen)
+                          Positioned(
+                            left: _leftPanelWidth + 1, // Starts right after the divider
+                            top: 0,
+                            bottom: 0,
+                            right: 0,
+                            child: GestureDetector(
+                              // behavior: HitTestBehavior.opaque is critical for transparent containers to catch taps!
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () {
+                                _leftScaffoldKey.currentState?.closeDrawer();
+                              },
+                              child: MouseRegion(
+                                // Resets cursor so it doesn't look like you can click things on the right pane
+                                cursor: SystemMouseCursors.basic,
+                                child: Container(color: Colors.transparent),
+                              ),
+                            ),
+                          ),
 
                       ],
                     ),

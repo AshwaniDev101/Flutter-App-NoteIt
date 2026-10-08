@@ -23,40 +23,40 @@ I chose a simple design approach that encapsulates the app's complex capabilitie
 
 ---
 
-| Desktop | Mobile |
-| :---: | :---: |
+|                                Desktop                                 |                                   Mobile                                    |
+|:----------------------------------------------------------------------:|:---------------------------------------------------------------------------:|
 | <img src="docs/screenshots/windows/desktop_sidebar.jpg" width="1000"/> | <img src="docs/screenshots/android/android_google_signin.jpg" width="240"/> |
 
 Supports Google authentication for Firebase synchronization. The benefit of syncing notes to the cloud is that you can access them from any device, anywhere in the world.
 
 ---
 
-| Desktop | Mobile |
-| :---: | :---: |
+|                                   Desktop                                    |                                 Mobile                                 |
+|:----------------------------------------------------------------------------:|:----------------------------------------------------------------------:|
 | <img src="docs/screenshots/windows/desktop_homepage_note.jpg" width="1000"/> | <img src="docs/screenshots/android/android_notepage.jpg" width="240"/> |
 
 A simple note editor. The design is not finalized yet.
 
 ---
 
-| Desktop | Mobile |
-| :---: | :---: |
+|                                Desktop                                |                                   Mobile                                   |
+|:---------------------------------------------------------------------:|:--------------------------------------------------------------------------:|
 | <img src="docs/screenshots/windows/desktop_themes.jpg" width="1000"/> | <img src="docs/screenshots/android/android_theme_change.jpg" width="240"/> |
 
 The themes page allows users to choose from a variety of themes. We currently support 4 themes, with plans to add 6 more before publishing the app to the Play Store.
 
 ---
 
-| Desktop | Mobile |
-| :---: | :---: |
+|                                 Desktop                                 |                                 Mobile                                  |
+|:-----------------------------------------------------------------------:|:-----------------------------------------------------------------------:|
 | <img src="docs/screenshots/windows/desktop_trashbin.jpg" width="1000"/> | <img src="docs/screenshots/android/android_trash_bin.jpg" width="240"/> |
 
 Added a trash bin to recover accidentally deleted notes, which can be configured to auto-clean after a month or a year.
 
 ---
 
-| Desktop | Mobile |
-| :---: | :---: |
+|                                Desktop                                 |                                  Mobile                                  |
+|:----------------------------------------------------------------------:|:------------------------------------------------------------------------:|
 | <img src="docs/screenshots/windows/desktop_hosting.jpg" width="1000"/> | <img src="docs/screenshots/android/android_host_found.jpg" width="240"/> |
 
 Hosting and connecting: uses mDNS for broadcasting device names over a custom TCP tag. Other devices can discover it, enter the correct PIN, and connect. *(Note: This screenshot is old; there is supposed to be a PIN display in the middle).*
@@ -64,8 +64,8 @@ Hosting and connecting: uses mDNS for broadcasting device names over a custom TC
 
 ### Some Other Screenshots
 
-| Custom Highlighting | Filters | Password Lock |
-| :---: | :---: | :---: |
+|                         Custom Highlighting                          |                                Filters                                |                                Password Lock                                 |
+|:--------------------------------------------------------------------:|:---------------------------------------------------------------------:|:----------------------------------------------------------------------------:|
 | <img src="docs/screenshots/android/android_search.jpg" width="250"/> | <img src="docs/screenshots/android/android_filters.jpg" width="250"/> | <img src="docs/screenshots/android/android_enter_password.jpg" width="250"/> |
 
 
@@ -73,8 +73,8 @@ Hosting and connecting: uses mDNS for broadcasting device names over a custom TC
 
 **Dual-Sync Architecture**
 - ✅ **Cloud Sync:** Standard real-time sync using Firebase.
-- ✅ **Local WiFi Sync:** Peer-to-peer syncing without an internet connection. Uses mDNS for device discovery and WebSockets for data transfer. Includes dedicated Host/Client roles for stable pairing.
-- ✅ **Manual Controls:** Pull-to-sync gesture (Android), dedicated sync buttons, and a control panel to toggle between Cloud, WiFi, and Offline modes.
+- ✅ **Local Wi-Fi Sync:** Peer-to-peer syncing without an internet connection. Uses mDNS for device discovery and WebSockets for data transfer. Includes dedicated Host/Client roles for stable pairing.
+- ✅ **Manual Controls:** Pull-to-sync gesture (Android), dedicated sync buttons, and a control panel to toggle between Cloud, Wi-Fi, and Offline modes.
 
 **Note Management**
 - ✅ **Smart Search:** Queries titles and content with real-time text highlighting for matched queries.
