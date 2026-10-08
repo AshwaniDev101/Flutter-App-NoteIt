@@ -1,5 +1,6 @@
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/features/local_sync/provider/sync_server_provider.dart';
 import 'package:noteit/features/local_sync/provider/sync_session_provider.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
@@ -7,6 +8,7 @@ import '../../../core/util/logger.dart';
 import '../../../database/drift/synced_devices/synced_devices_dao.dart';
 import '../../../database/shared_preference/shared_preference_manager.dart';
 import '../../../database/sync/local_sync_service.dart';
+import '../auto_connect/mdns_broadcast.dart';
 
 final syncClientProvider = NotifierProvider<SyncClientNotifier, WebSocketChannel?>(() {
   return SyncClientNotifier();
@@ -31,6 +33,21 @@ class SyncClientNotifier extends Notifier<WebSocketChannel?> {
     required String hostName,
     String? pin,
   }) async {
+
+
+    // --- POLICE CODE: ENFORCE MUTUAL EXCLUSIVITY ---
+    // If we are currently running a Host server, shut it down.
+    final isHostActive = ref.read(syncServerProvider) != null;
+    if (isHostActive) {
+      AppLogger.d('Police: Device is hosting. Shutting down server before connecting as Client...');
+      ref.read(syncServerProvider.notifier).stopHosting();
+
+      // Also ensure we stop shouting our presence on the network
+      ref.read(mdnsBroadcastProvider.notifier).stopBroadcasting();
+    }
+    // -----------------------------------------------
+
+
     // Close any existing connection first
     disconnect();
 

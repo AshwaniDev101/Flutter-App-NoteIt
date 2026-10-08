@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/features/local_sync/provider/sync_client_provider.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_web_socket/shelf_web_socket.dart';
@@ -33,11 +34,15 @@ class SyncServerNotifier extends Notifier<HttpServer?> {
     VoidCallback? onClientConnected,
     VoidCallback? onClientDisconnected,
   }) async {
-    // // If a PIN is provided (e.g., UI screen generated one), update it.
-    // // If it's null (e.g., background auto-start), keep whatever the last PIN was.
-    // if (expectedPin != null) {
-    //   _currentPin = expectedPin;
-    // }
+
+    // --- POLICE CODE: ENFORCE MUTUAL EXCLUSIVITY ---
+    // If we are currently connected as a Client, kill it before hosting.
+    final isClientActive = ref.read(syncClientProvider) != null;
+    if (isClientActive) {
+      AppLogger.d('Police: Device is acting as Client. Disconnecting before starting Host...');
+      ref.read(syncClientProvider.notifier).disconnect();
+    }
+    // -----------------------------------------------
 
     if (state != null) {
       // Server is already running, just hand back its existing port

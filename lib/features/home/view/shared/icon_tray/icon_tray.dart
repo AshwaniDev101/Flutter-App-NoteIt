@@ -4,7 +4,8 @@ import 'package:noteit/features/home/view/shared/icon_tray/spinning_sync_icon.da
 import 'package:noteit/features/home/view/shared/icon_tray/websocket_connection_indicator.dart';
 
 import '../../../../../database/sync/sync_orchestrator.dart';
-import 'mdns_status_indicator.dart';
+import 'mdns_broadcast_indicator.dart';
+import 'mdns_search_indicator.dart';
 
 class IconTray extends ConsumerWidget {
   const IconTray({super.key});
@@ -17,7 +18,9 @@ class IconTray extends ConsumerWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         // mDNS Activity (Radar scanning or signal broadcasting)
-        const MdnsStatusIndicator(),
+        // They will automatically appear/disappear and slide out of the way
+        const MdnsSearchIndicator(),
+        const MdnsBroadcastIndicator(),
         const SizedBox(width: 6),
 
         // Live WebSocket connection status
