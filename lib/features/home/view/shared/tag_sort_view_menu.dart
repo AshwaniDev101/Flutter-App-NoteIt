@@ -34,7 +34,7 @@ class _FolderSortViewButtonState extends State<FolderSortViewButton> {
               controller.open();
             }
           },
-          icon: const Icon(Icons.filter_alt),
+          icon: Icon(Icons.filter_alt,color: Theme.of(context).colorScheme.primary,),
         );
       },
       menuChildren: const [
@@ -182,6 +182,7 @@ class SortTab extends ConsumerWidget {
     // final currentPlatformFilter = ref.watch(platformFilterProvider); // Disabled for now based on original code
 
     return ListView(
+
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       children: [
         _buildActionTile(context, ref, HomeMenuAction.sortCreated, currentSortOption == NoteSortPreference.createdAt),
@@ -193,10 +194,11 @@ class SortTab extends ConsumerWidget {
 
   Widget _buildActionTile(BuildContext context, WidgetRef ref, HomeMenuAction action, bool isSelected) {
     return ListTile(
+      dense: true,
       leading: action.icon != null ? Icon(action.icon,color: isSelected?Theme.of(context).colorScheme.primary:Theme.of(context).colorScheme.onSurfaceVariant) : null,
       title: Text(
         action.label,
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal, color: isSelected? Theme.of(context).colorScheme.primary:Theme.of(context).colorScheme.onSurfaceVariant),
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal, color: isSelected? Theme.of(context).colorScheme.primary:Theme.of(context).colorScheme.onSurfaceVariant),
       ),
       onTap: () {
         switch (action) {
@@ -242,15 +244,17 @@ class ViewTab extends ConsumerWidget {
     final currentView = ref.watch(noteViewTypeProvider);
 
     return ListView(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+
+      // padding: const EdgeInsets.symmetric(vertical: 0.0),
       children: NoteViewType.values.map((view) {
         final isSelected = view == currentView;
 
         return ListTile(
+          dense: true,
           leading: Icon(view.icon,color: isSelected?Theme.of(context).colorScheme.primary:Theme.of(context).colorScheme.onSurfaceVariant),
           title: Text(
             view.label,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal, color: isSelected?Theme.of(context).colorScheme.primary:Theme.of(context).colorScheme.onSurfaceVariant),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal, color: isSelected?Theme.of(context).colorScheme.primary:Theme.of(context).colorScheme.onSurfaceVariant),
             
           ),
           onTap: () {

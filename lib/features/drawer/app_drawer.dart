@@ -285,7 +285,7 @@ class _CompactDrawerTile extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onTap;
 
-  const _CompactDrawerTile({
+  const  _CompactDrawerTile({
     required this.option,
     required this.isSelected,
     required this.onTap,

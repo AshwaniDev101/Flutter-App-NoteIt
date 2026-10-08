@@ -1,12 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/database/drift/local_database.dart';
-import 'package:noteit/database/sync/local_sync_service.dart';
+import 'package:noteit/features/home/view/shared/icon_tray/icon_tray.dart';
 import 'package:window_manager/window_manager.dart';
-
-import '../../../../database/sync/sync_orchestrator.dart';
-import '../shared/spinning_sync_icon.dart';
-import '../shared/websocket_connection_indicator.dart';
 import '../../../note_editor/screens/view/desktop_edit_page.dart';
 
 class DesktopRightPanel extends ConsumerWidget {
@@ -16,8 +12,7 @@ class DesktopRightPanel extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isConnected = ref.watch(localSyncServiceProvider) == SyncConnectionState.connected;
-    final isSyncing = ref.watch(isSyncingProvider);
+
 
     return Scaffold(
       appBar: PreferredSize(
@@ -26,14 +21,8 @@ class DesktopRightPanel extends ConsumerWidget {
           child: AppBar(
             elevation: 0,
             actions: [
-              WebSocketConnectionIndicator(isConnected: isConnected),
-              IconButton(
-                tooltip: "Sync Notes",
-                icon: SpinningSyncIcon(isSyncing: isSyncing, color: Colors.white),
-                onPressed: () {
-                  ref.read(syncOrchestratorProvider).triggerSync();
-                },
-              ),
+              // WebSocketConnectionIndicator(isConnected: isConnected),
+              IconTray(),
               const SizedBox(width: 8),
               // Re-add standard window controls manually for desktop frame logic
               IconButton(icon: const Icon(Icons.minimize, size: 16), onPressed: () => windowManager.minimize()),

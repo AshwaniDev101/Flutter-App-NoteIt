@@ -3,15 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:noteit/core/routing/routing.dart';
 import 'package:noteit/database/drift/local_database.dart';
+import 'package:noteit/features/home/view/shared/icon_tray/icon_tray.dart';
 import 'package:noteit/features/home/view/shared/select_mode_app_bars.dart';
-import 'package:noteit/features/home/view/shared/websocket_connection_indicator.dart';
 
 import '../../../../../database/sync/sync_orchestrator.dart';
 import '../../../../database/sync/local_sync_service.dart';
 import '../../../drawer/app_drawer.dart';
-import '../../../drawer/drawer_page.dart';
 import '../../viewmodel/viewmodel.dart';
-import '../shared/spinning_sync_icon.dart';
+import '../shared/icon_tray/spinning_sync_icon.dart';
 import '../../core/providers.dart';
 import '../shared/dynamic_notes_layout.dart';
 import '../../../lock/password_prompt_helper.dart';
@@ -194,16 +193,18 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
       elevation: 0,
       centerTitle: true,
       actions: [
-        WebSocketConnectionIndicator(isConnected: isConnected),
-        IconButton(
-          // icon: const Icon(Icons.sync),
-          icon: SpinningSyncIcon(isSyncing: isSyncing, color: Theme.of(context).colorScheme.primary),
-          tooltip: 'Sync Notes',
-          onPressed: () {
-            ref.read(syncOrchestratorProvider).triggerSync();
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Syncing notes...')));
-          },
-        ),
+
+        IconTray(),
+        // WebSocketConnectionIndicator(isConnected: isConnected),
+        // IconButton(
+        //   // icon: const Icon(Icons.sync),
+        //   icon: SpinningSyncIcon(isSyncing: isSyncing, color: Theme.of(context).colorScheme.primary),
+        //   tooltip: 'Sync Notes',
+        //   onPressed: () {
+        //     ref.read(syncOrchestratorProvider).triggerSync();
+        //     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Syncing notes...')));
+        //   },
+        // ),
         const SizedBox(width: 8),
       ],
     );

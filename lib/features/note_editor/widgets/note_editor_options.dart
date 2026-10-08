@@ -49,7 +49,8 @@ class _NoteEditorOptionButtonState extends State<NoteEditorOptionButton> {
               controller.open();
             }
           },
-          icon: const Icon(Icons.list),
+          // icon: const Icon(Icons.tab),
+          icon: const Icon(Icons.segment),
           // icon: const Icon(Icons.keyboard_double_arrow_down),
         );
       },

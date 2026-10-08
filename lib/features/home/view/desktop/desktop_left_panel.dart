@@ -56,6 +56,7 @@ class DesktopLeftPanel extends ConsumerWidget {
       onDrawerChanged: onDrawerChanged,
 
       drawer: AppDrawer(),
+
       floatingActionButton: FocusTraversalOrder(
         order: const NumericFocusOrder(3),
         child: Focus(
@@ -115,6 +116,7 @@ class DesktopLeftPanel extends ConsumerWidget {
                   title: Text('Note-It', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
                   elevation: 0,
                   actions: const [],
+            iconTheme: IconThemeData(color: Theme.of(context).colorScheme.primary),
                 ),
         ),
       ),
