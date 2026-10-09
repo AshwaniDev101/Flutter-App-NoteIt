@@ -1,6 +1,8 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/features/home/core/db_sorting_filtering.dart';
 import '../../../database/drift/local_database.dart';
+import '../../drawer/app_drawer.dart';
 import '../../lock/lock_manger/lock_manager.dart';
 import '../view/shared/tag_sort_view_menu.dart';
 
@@ -109,4 +111,62 @@ class NoteViewTypeNotifier extends Notifier<NoteViewType> {
     state = view;
   }
 }
+
+
+/// RIGHT PANEL VIEW
+final desktopRightPanelViewProvider = NotifierProvider<DesktopRightPanelViewNotifier, DrawerOption>(
+  DesktopRightPanelViewNotifier.new,
+);
+class DesktopRightPanelViewNotifier extends Notifier<DrawerOption> {
+  @override
+  DrawerOption build() {
+    return DrawerOption.allNotes;
+  }
+
+  // Method to update the state
+  void setView(DrawerOption view) {
+    state = view;
+  }
+}
+
+// enum DesktopRightPanelView {
+//
+//   none(
+//     title: '',
+//     icon: Icons.edit_note,
+//   ),
+//   editor(
+//     title: 'Editor',
+//     icon: Icons.edit_note,
+//   ),
+//   trash(
+//     title: 'Trash',
+//     icon: Icons.delete_outline,
+//   ),
+//
+//   sync(
+//     title: 'Local Sync',
+//     icon: Icons.sync_alt,
+//   ),
+//   themes(
+//     title: 'Themes',
+//     icon: Icons.palette_outlined,
+//   ),
+//   settings(
+//     title: 'Settings',
+//     icon: Icons.settings,
+//   ),
+//   dev(
+//   title: 'Dev Tools',
+//   icon: Icons.bug_report_outlined,
+//   );
+//
+//   final String title;
+//   final IconData icon;
+//
+//   const DesktopRightPanelView({
+//     required this.title,
+//     required this.icon,
+//   });
+// }
 

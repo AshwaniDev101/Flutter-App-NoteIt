@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/theme/app_theme.dart';
 
+import '../../home/view/shared/desktop_close_button.dart';
+
 class ThemesPage extends ConsumerWidget {
   const ThemesPage({super.key});
 
@@ -10,7 +12,7 @@ class ThemesPage extends ConsumerWidget {
     final currentTheme = ref.watch(themeProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Appearance'), centerTitle: true),
+      appBar: AppBar(title: const Text('Appearance'), centerTitle: true, actions: [DesktopCloseButton()]),
 
       body: Center(
         child: ConstrainedBox(
@@ -30,9 +32,7 @@ class ThemesPage extends ConsumerWidget {
                 themeType: AppThemeType.light,
                 currentTheme: currentTheme,
                 iconColor: Colors.orange,
-                onTap: () => ref
-                    .read(themeProvider.notifier)
-                    .setTheme(AppThemeType.light),
+                onTap: () => ref.read(themeProvider.notifier).setTheme(AppThemeType.light),
               ),
               _ThemeTile(
                 title: 'Dark Mode',
@@ -40,9 +40,7 @@ class ThemesPage extends ConsumerWidget {
                 themeType: AppThemeType.dark,
                 currentTheme: currentTheme,
                 iconColor: Colors.indigo,
-                onTap: () => ref
-                    .read(themeProvider.notifier)
-                    .setTheme(AppThemeType.dark),
+                onTap: () => ref.read(themeProvider.notifier).setTheme(AppThemeType.dark),
               ),
               _ThemeTile(
                 title: 'AMOLED Black',
@@ -50,9 +48,7 @@ class ThemesPage extends ConsumerWidget {
                 themeType: AppThemeType.amoled,
                 currentTheme: currentTheme,
                 iconColor: Colors.black87,
-                onTap: () => ref
-                    .read(themeProvider.notifier)
-                    .setTheme(AppThemeType.amoled),
+                onTap: () => ref.read(themeProvider.notifier).setTheme(AppThemeType.amoled),
               ),
               _ThemeTile(
                 title: 'Sepia',
@@ -60,9 +56,7 @@ class ThemesPage extends ConsumerWidget {
                 themeType: AppThemeType.sepia,
                 currentTheme: currentTheme,
                 iconColor: Colors.brown,
-                onTap: () => ref
-                    .read(themeProvider.notifier)
-                    .setTheme(AppThemeType.sepia),
+                onTap: () => ref.read(themeProvider.notifier).setTheme(AppThemeType.sepia),
               ),
             ],
           ),
@@ -100,9 +94,7 @@ class _ThemeTile extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
-          color: isSelected
-              ? theme.colorScheme.primary
-              : theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+          color: isSelected ? theme.colorScheme.primary : theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
           width: isSelected ? 2 : 1,
         ),
       ),
@@ -112,30 +104,19 @@ class _ThemeTile extends StatelessWidget {
         onTap: onTap,
         child: Center(
           child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 8,
-            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             leading: CircleAvatar(
               backgroundColor: iconColor.withValues(alpha: 0.2),
               child: Icon(Icons.palette, color: iconColor),
             ),
             title: Text(
               title,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-            subtitle: Text(
-              subtitle,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            trailing: isSelected
-                ? Icon(Icons.check_circle, color: theme.colorScheme.primary)
-                : null,
+            subtitle: Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis),
+            trailing: isSelected ? Icon(Icons.check_circle, color: theme.colorScheme.primary) : null,
           ),
         ),
       ),

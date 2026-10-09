@@ -7,6 +7,7 @@ import '../../database/drift/notes/notes_dao.dart';
 import '../../database/firebase/firebase_database.dart';
 import '../../database/sync/sync_orchestrator.dart';
 import '../../shared/widgets/note_card/note_card.dart';
+import '../home/view/shared/desktop_close_button.dart';
 
 final trashNotesProvider = StreamProvider.autoDispose<List<Note>>((ref) {
   final notesDao = ref.watch(notesDaoProvider);
@@ -251,7 +252,11 @@ class _TrashPageState extends ConsumerState<TrashPage> {
     // Default App Bar
     return AppBar(
       title: const Text('Trash Bin'),
+
+      centerTitle: true,
       actions: [
+
+
         if (currentNotes.isNotEmpty)
           showLabel
               ? OutlinedButton.icon(
@@ -271,7 +276,8 @@ class _TrashPageState extends ConsumerState<TrashPage> {
                   tooltip: 'Empty Trash',
                 ),
 
-        const SizedBox(width: 8),
+        const SizedBox(width: 8), DesktopCloseButton(),
+
       ],
     );
   }

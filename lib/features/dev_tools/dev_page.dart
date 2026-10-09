@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../database/shared_preference/shared_preference_manager.dart';
+import '../../core/util/platform_helper.dart';
+import '../drawer/app_drawer.dart';
+import '../home/core/providers.dart';
+import '../home/view/shared/desktop_close_button.dart';
 import '../lock/lock_manger/lock_manager.dart';
 
 class DevPage extends ConsumerWidget {
@@ -11,10 +15,11 @@ class DevPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Developer Tools'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
+
+        centerTitle: true,
+        actions: [
+          DesktopCloseButton(),
+        ],
       ),
       body: Center(
         child: SingleChildScrollView(

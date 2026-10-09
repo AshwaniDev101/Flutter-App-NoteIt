@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/routing/routing.dart';
+import '../../../core/util/platform_helper.dart';
+import '../../drawer/app_drawer.dart';
+import '../../home/core/providers.dart';
+import '../../home/view/shared/desktop_close_button.dart';
 
-class RoleSelectorPage extends StatelessWidget {
+class RoleSelectorPage extends ConsumerWidget {
   const RoleSelectorPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, ref) {
     // Detect if the app is running on a desktop platform
     final platform = Theme.of(context).platform;
     final isDesktop = platform == TargetPlatform.macOS ||
@@ -44,6 +49,9 @@ class RoleSelectorPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Local Sync'),
         centerTitle: true,
+        actions: [
+          DesktopCloseButton(),
+        ],
       ),
       body: Center(
         child: ConstrainedBox(

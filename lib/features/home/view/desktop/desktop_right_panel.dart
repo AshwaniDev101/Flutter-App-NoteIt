@@ -3,7 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/features/home/view/shared/icon_tray/icon_tray.dart';
 import 'package:window_manager/window_manager.dart';
+import '../../../dev_tools/dev_page.dart';
+import '../../../drawer/app_drawer.dart';
+import '../../../local_sync/view/role_selector_page.dart';
 import '../../../note_editor/screens/view/desktop_edit_page.dart';
+import '../../../settings/view/settings_page.dart';
+import '../../../themes/view/theme_page.dart';
+import '../../../trash/trash_page.dart';
+import '../../core/providers.dart';
 
 class DesktopRightPanel extends ConsumerWidget {
   final Note? activeNote;
@@ -14,12 +21,20 @@ class DesktopRightPanel extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
 
 
+    final currentView = ref.watch(desktopRightPanelViewProvider);
+
     return Scaffold(
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(kToolbarHeight),
         child: DragToMoveArea(
           child: AppBar(
             elevation: 0,
+
+            // Automatically show the current page title
+            // title: currentView != DrawerOption.allNotes
+            //     ? Text(currentView.title)
+            //     : null,
+
             actions: [
               // WebSocketConnectionIndicator(isConnected: isConnected),
               IconTray(),
@@ -62,9 +77,25 @@ class DesktopRightPanel extends ConsumerWidget {
         },
 
         // The ValueKey is important here. It tells the AnimatedSwitcher when to trigger!
-        child: activeNote == null
-            ? const _HomepagePlaceholder()
-            : DesktopEditNotePage(key: ValueKey(activeNote!.uuid), existingNote: activeNote),
+        child: switch (currentView) {
+        // The Empty/None State
+        //   DrawerOption.none => const _HomepagePlaceholder(key: ValueKey('none_view')),
+
+        // The Editor State
+        // We keep the fallback just in case the activeNote gets cleared while still in editor mode
+          DrawerOption.allNotes => activeNote != null
+              ? DesktopEditNotePage(key: ValueKey(activeNote!.uuid), existingNote: activeNote)
+              : const _HomepagePlaceholder(key: ValueKey('editor_fallback')),
+
+        // The Utility Panels
+          DrawerOption.trash => const TrashPage(key: ValueKey('trash_view')),
+          DrawerOption.settings => const SettingsPage(key: ValueKey('settings_view')),
+
+        // New panels mapped to their respective widgets
+          DrawerOption.localSync => const RoleSelectorPage(key: ValueKey('sync_view')),
+          DrawerOption.themes => const ThemesPage(key: ValueKey('theme_view')),
+          DrawerOption.devTools => const DevPage(key: ValueKey('dev_view')),
+        },
       ),
     );
   }
@@ -72,7 +103,7 @@ class DesktopRightPanel extends ConsumerWidget {
 
 /// A visual placeholder shown when no note is currently selected.
 class _HomepagePlaceholder extends StatelessWidget {
-  const _HomepagePlaceholder();
+  const _HomepagePlaceholder({super.key,});
 
   @override
   Widget build(BuildContext context) {

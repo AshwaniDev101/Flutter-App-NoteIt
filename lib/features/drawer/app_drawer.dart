@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_sign_in_all_platforms/google_sign_in_all_platforms.dart';
+import 'package:noteit/core/util/platform_helper.dart';
 
 import '../../core/provider/provider.dart';
 import '../../core/routing/routing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/util/logger.dart';
+import '../home/core/providers.dart';
 
 enum DrawerOption {
   allNotes(
@@ -56,26 +58,60 @@ class AppDrawer extends ConsumerWidget {
     this.selectedOption = DrawerOption.allNotes,
   });
 
-  void _handleNavigation(BuildContext context, DrawerOption option) {
+  void _handleNavigation(BuildContext context, DrawerOption option, WidgetRef ref) {
     Navigator.of(context).pop();
 
     switch (option) {
       case DrawerOption.allNotes:
+
+        // if (PlatformHelper.isDesktopScreen) {
+        //   ref.read(desktopRightPanelViewProvider.notifier).setView(DesktopRightPanelView.editor);
+        //   Scaffold.of(context).closeDrawer();
+        // }
         break;
       case DrawerOption.trash:
-        context.push(AppRoutes.trash);
+        if (PlatformHelper.isDesktopScreen) {
+          ref.read(desktopRightPanelViewProvider.notifier).setView(DrawerOption.trash);
+          Scaffold.of(context).closeDrawer();
+        } else {
+          context.push(AppRoutes.trash);
+        }
         break;
       case DrawerOption.themes:
-        context.push(AppRoutes.themes);
+
+        if (PlatformHelper.isDesktopScreen) {
+          ref.read(desktopRightPanelViewProvider.notifier).setView(DrawerOption.themes);
+          Scaffold.of(context).closeDrawer();
+        } else {
+          context.push(AppRoutes.themes);
+        }
         break;
       case DrawerOption.localSync:
-        context.push(AppRoutes.roleSelector);
+
+        if (PlatformHelper.isDesktopScreen) {
+          ref.read(desktopRightPanelViewProvider.notifier).setView(DrawerOption.localSync);
+          Scaffold.of(context).closeDrawer();
+        } else {
+          context.push(AppRoutes.roleSelector);
+        }
         break;
       case DrawerOption.settings:
-        context.push(AppRoutes.settings);
+
+        if (PlatformHelper.isDesktopScreen) {
+          ref.read(desktopRightPanelViewProvider.notifier).setView(DrawerOption.settings);
+          Scaffold.of(context).closeDrawer();
+        } else {
+          context.push(AppRoutes.settings);
+        }
+
         break;
       case DrawerOption.devTools:
-        context.push(AppRoutes.dev);
+        if (PlatformHelper.isDesktopScreen) {
+          ref.read(desktopRightPanelViewProvider.notifier).setView(DrawerOption.devTools);
+          Scaffold.of(context).closeDrawer();
+        } else {
+          context.push(AppRoutes.dev);
+        }
         break;
     }
   }
@@ -146,12 +182,12 @@ class AppDrawer extends ConsumerWidget {
                   _CompactDrawerTile(
                     option: DrawerOption.allNotes,
                     isSelected: selectedOption == DrawerOption.allNotes,
-                    onTap: () => _handleNavigation(context, DrawerOption.allNotes),
+                    onTap: () => _handleNavigation(context, DrawerOption.allNotes,ref),
                   ),
                   _CompactDrawerTile(
                     option: DrawerOption.trash,
                     isSelected: selectedOption == DrawerOption.trash,
-                    onTap: () => _handleNavigation(context, DrawerOption.trash),
+                    onTap: () => _handleNavigation(context, DrawerOption.trash, ref),
                   ),
 
                   const SizedBox(height: 16),
@@ -160,22 +196,22 @@ class AppDrawer extends ConsumerWidget {
                   _CompactDrawerTile(
                     option: DrawerOption.localSync,
                     isSelected: selectedOption == DrawerOption.localSync,
-                    onTap: () => _handleNavigation(context, DrawerOption.localSync),
+                    onTap: () => _handleNavigation(context, DrawerOption.localSync,ref),
                   ),
                   _CompactDrawerTile(
                     option: DrawerOption.themes,
                     isSelected: selectedOption == DrawerOption.themes,
-                    onTap: () => _handleNavigation(context, DrawerOption.themes),
+                    onTap: () => _handleNavigation(context, DrawerOption.themes,ref),
                   ),
                   _CompactDrawerTile(
                     option: DrawerOption.settings,
                     isSelected: selectedOption == DrawerOption.settings,
-                    onTap: () => _handleNavigation(context, DrawerOption.settings),
+                    onTap: () => _handleNavigation(context, DrawerOption.settings,ref),
                   ),
                   _CompactDrawerTile(
                     option: DrawerOption.devTools,
                     isSelected: selectedOption == DrawerOption.devTools,
-                    onTap: () => _handleNavigation(context, DrawerOption.devTools),
+                    onTap: () => _handleNavigation(context, DrawerOption.devTools,ref),
                   ),
                 ],
               ),

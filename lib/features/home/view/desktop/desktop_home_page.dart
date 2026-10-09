@@ -8,6 +8,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../../database/drift/keybindings/keybindings_dao.dart';
 import '../../../../database/sync/sync_orchestrator.dart';
+import '../../../drawer/app_drawer.dart';
 import '../../../keybinding/shortcut_config.dart';
 import '../../../lock/lock_manger/lock_manager.dart';
 import '../../core/providers.dart';
@@ -119,6 +120,9 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
   }
 
   void _handleNoteTap(Note note) async {
+
+    // come back to the note editor if not already there
+    ref.read(desktopRightPanelViewProvider.notifier).setView(DrawerOption.allNotes);
 
     final isSessionUnlocked = ref.watch(lockManagerProvider).sessionUnlockedNoteIds.contains(note.uuid);
     if (note.isLocked && !isSessionUnlocked) {

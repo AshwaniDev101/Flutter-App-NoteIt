@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:noteit/core/routing/routing.dart';
 import '../../../../database/sync/sync_engine.dart';
 import '../../../../database/sync/sync_orchestrator.dart';
+import '../../home/view/shared/desktop_close_button.dart';
 import '../../keybinding/keybindings_provider.dart';
 import '../../lock/lock_manger/lock_manager.dart';
 
@@ -23,7 +24,7 @@ class SettingsPage extends ConsumerWidget {
     final shortcutPrefs = ref.watch(shortcutPreferencesProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings'), centerTitle: true, elevation: 0),
+      appBar: AppBar(title: const Text('Settings'), centerTitle: true, actions: [DesktopCloseButton()], elevation: 0),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 600),
