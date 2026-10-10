@@ -1,120 +1,88 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:google_sign_in_all_platforms/google_sign_in_all_platforms.dart';
-import 'package:noteit/core/util/platform_helper.dart';
 
 import '../../core/provider/provider.dart';
-import '../../core/routing/routing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/util/logger.dart';
-import '../home/core/providers.dart';
-
-enum DrawerOption {
-  allNotes(
-    'All Notes',
-    'View, search, and manage all your saved notes',
-    Icons.grid_view_rounded,
-  ),
-  trash(
-    'Trash',
-    'Recover deleted items or empty the recycle bin',
-    Icons.delete_outline_rounded,
-  ),
-  themes(
-    'Themes',
-    'Personalize your colors, background, and appearance',
-    Icons.palette_outlined,
-  ),
-  localSync(
-    'Local Sync',
-    'Connect and synchronize across your local network',
-    Icons.phonelink_outlined,
-  ),
-  settings(
-    'Settings',
-    'Configure app preferences, accounts, and behavior',
-    Icons.settings_outlined,
-  ),
-  devTools(
-    'Dev Tools',
-    'Advanced debugging and diagnostic utilities',
-    Icons.bug_report_outlined,
-  );
-
-  final String label;
-  final String description;
-  final IconData icon;
-
-  const DrawerOption(this.label, this.description, this.icon);
-}
+import '../home/view/desktop/right_panel/core/navigator.dart';
 
 class AppDrawer extends ConsumerWidget {
-  final DrawerOption? selectedOption;
+  final RightPanelPageOptions? selectedOption;
 
-  const AppDrawer({
-    super.key,
-    this.selectedOption = DrawerOption.allNotes,
-  });
+  const AppDrawer({super.key, this.selectedOption = RightPanelPageOptions.allNotes});
 
-  void _handleNavigation(BuildContext context, DrawerOption option, WidgetRef ref) {
-    Navigator.of(context).pop();
 
-    switch (option) {
-      case DrawerOption.allNotes:
-
-        // if (PlatformHelper.isDesktopScreen) {
-        //   ref.read(desktopRightPanelViewProvider.notifier).setView(DesktopRightPanelView.editor);
-        //   Scaffold.of(context).closeDrawer();
-        // }
-        break;
-      case DrawerOption.trash:
-        if (PlatformHelper.isDesktopScreen) {
-          ref.read(desktopRightPanelViewProvider.notifier).setView(DrawerOption.trash);
-          Scaffold.of(context).closeDrawer();
-        } else {
-          context.push(AppRoutes.trash);
-        }
-        break;
-      case DrawerOption.themes:
-
-        if (PlatformHelper.isDesktopScreen) {
-          ref.read(desktopRightPanelViewProvider.notifier).setView(DrawerOption.themes);
-          Scaffold.of(context).closeDrawer();
-        } else {
-          context.push(AppRoutes.themes);
-        }
-        break;
-      case DrawerOption.localSync:
-
-        if (PlatformHelper.isDesktopScreen) {
-          ref.read(desktopRightPanelViewProvider.notifier).setView(DrawerOption.localSync);
-          Scaffold.of(context).closeDrawer();
-        } else {
-          context.push(AppRoutes.roleSelector);
-        }
-        break;
-      case DrawerOption.settings:
-
-        if (PlatformHelper.isDesktopScreen) {
-          ref.read(desktopRightPanelViewProvider.notifier).setView(DrawerOption.settings);
-          Scaffold.of(context).closeDrawer();
-        } else {
-          context.push(AppRoutes.settings);
-        }
-
-        break;
-      case DrawerOption.devTools:
-        if (PlatformHelper.isDesktopScreen) {
-          ref.read(desktopRightPanelViewProvider.notifier).setView(DrawerOption.devTools);
-          Scaffold.of(context).closeDrawer();
-        } else {
-          context.push(AppRoutes.dev);
-        }
-        break;
-    }
+  void _handleNavigation(BuildContext context, RightPanelPageOptions option, WidgetRef ref) {
+    ref.read(drawerNavigationProvider).navigate(context, option);
   }
+
+  // Old handler
+  // void _handleNavigation(BuildContext context, RightPanelPageOptions option, WidgetRef ref) {
+  //   Navigator.of(context).pop();
+  //
+  //   switch (option) {
+  //     case RightPanelPageOptions.allNotes:
+  //       // if (PlatformHelper.isDesktopScreen) {
+  //       //   ref.read(desktopRightPanelViewProvider.notifier).setView(DesktopRightPanelView.editor);
+  //       //   Scaffold.of(context).closeDrawer();
+  //       // }
+  //       break;
+  //
+  //     case RightPanelPageOptions.trash:
+  //       if (PlatformHelper.isDesktopScreen) {
+  //         ref.read(desktopRightPanelViewProvider.notifier).setView(RightPanelPageOptions.trash);
+  //         Scaffold.of(context).closeDrawer();
+  //       } else {
+  //         context.push(AppRoutes.trash);
+  //       }
+  //       break;
+  //
+  //     case RightPanelPageOptions.themes:
+  //       if (PlatformHelper.isDesktopScreen) {
+  //         ref.read(desktopRightPanelViewProvider.notifier).setView(RightPanelPageOptions.themes);
+  //         Scaffold.of(context).closeDrawer();
+  //       } else {
+  //         context.push(AppRoutes.themes);
+  //       }
+  //       break;
+  //
+  //     case RightPanelPageOptions.localSync:
+  //       if (PlatformHelper.isDesktopScreen) {
+  //         ref.read(desktopRightPanelViewProvider.notifier).setView(RightPanelPageOptions.localSync);
+  //         Scaffold.of(context).closeDrawer();
+  //       } else {
+  //         context.push(AppRoutes.roleSelector);
+  //       }
+  //       break;
+  //
+  //     case RightPanelPageOptions.settings:
+  //       if (PlatformHelper.isDesktopScreen) {
+  //         ref.read(desktopRightPanelViewProvider.notifier).setView(RightPanelPageOptions.settings);
+  //         Scaffold.of(context).closeDrawer();
+  //       } else {
+  //         context.push(AppRoutes.settings);
+  //       }
+  //       break;
+  //
+  //     case RightPanelPageOptions.devTools:
+  //       if (PlatformHelper.isDesktopScreen) {
+  //         ref.read(desktopRightPanelViewProvider.notifier).setView(RightPanelPageOptions.devTools);
+  //         Scaffold.of(context).closeDrawer();
+  //       } else {
+  //         context.push(AppRoutes.dev);
+  //       }
+  //       break;
+  //
+  //     // --- ADD THESE TO SATISFY DART'S EXHAUSTIVE SWITCH REQUIREMENT ---
+  //     case RightPanelPageOptions.clientMode:
+  //     case RightPanelPageOptions.hostMode:
+  //       // These aren't in the drawer, so they won't be clicked here.
+  //       // We just break to satisfy the compiler.
+  //       break;
+  //   }
+  // }
 
   Future<void> _signInWithGoogle(WidgetRef ref) async {
     try {
@@ -145,9 +113,7 @@ class AppDrawer extends ConsumerWidget {
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       width: 280,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.zero,
-      ),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -158,10 +124,7 @@ class AppDrawer extends ConsumerWidget {
               child: Container(
                 width: 48,
                 height: 48,
-                decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                decoration: BoxDecoration(color: colorScheme.primaryContainer, borderRadius: BorderRadius.circular(12)),
                 alignment: Alignment.center,
                 child: Text(
                   'N', // NoteIt Logo Placeholder
@@ -180,38 +143,38 @@ class AppDrawer extends ConsumerWidget {
                 children: [
                   const _SectionHeader(title: 'WORKSPACE'),
                   _CompactDrawerTile(
-                    option: DrawerOption.allNotes,
-                    isSelected: selectedOption == DrawerOption.allNotes,
-                    onTap: () => _handleNavigation(context, DrawerOption.allNotes,ref),
+                    option: RightPanelPageOptions.allNotes,
+                    isSelected: selectedOption == RightPanelPageOptions.allNotes,
+                    onTap: () => _handleNavigation(context, RightPanelPageOptions.allNotes, ref),
                   ),
                   _CompactDrawerTile(
-                    option: DrawerOption.trash,
-                    isSelected: selectedOption == DrawerOption.trash,
-                    onTap: () => _handleNavigation(context, DrawerOption.trash, ref),
+                    option: RightPanelPageOptions.trash,
+                    isSelected: selectedOption == RightPanelPageOptions.trash,
+                    onTap: () => _handleNavigation(context, RightPanelPageOptions.trash, ref),
                   ),
 
                   const SizedBox(height: 16),
 
                   const _SectionHeader(title: 'SYSTEM'),
                   _CompactDrawerTile(
-                    option: DrawerOption.localSync,
-                    isSelected: selectedOption == DrawerOption.localSync,
-                    onTap: () => _handleNavigation(context, DrawerOption.localSync,ref),
+                    option: RightPanelPageOptions.localSync,
+                    isSelected: selectedOption == RightPanelPageOptions.localSync,
+                    onTap: () => _handleNavigation(context, RightPanelPageOptions.localSync, ref),
                   ),
                   _CompactDrawerTile(
-                    option: DrawerOption.themes,
-                    isSelected: selectedOption == DrawerOption.themes,
-                    onTap: () => _handleNavigation(context, DrawerOption.themes,ref),
+                    option: RightPanelPageOptions.themes,
+                    isSelected: selectedOption == RightPanelPageOptions.themes,
+                    onTap: () => _handleNavigation(context, RightPanelPageOptions.themes, ref),
                   ),
                   _CompactDrawerTile(
-                    option: DrawerOption.settings,
-                    isSelected: selectedOption == DrawerOption.settings,
-                    onTap: () => _handleNavigation(context, DrawerOption.settings,ref),
+                    option: RightPanelPageOptions.settings,
+                    isSelected: selectedOption == RightPanelPageOptions.settings,
+                    onTap: () => _handleNavigation(context, RightPanelPageOptions.settings, ref),
                   ),
                   _CompactDrawerTile(
-                    option: DrawerOption.devTools,
-                    isSelected: selectedOption == DrawerOption.devTools,
-                    onTap: () => _handleNavigation(context, DrawerOption.devTools,ref),
+                    option: RightPanelPageOptions.devTools,
+                    isSelected: selectedOption == RightPanelPageOptions.devTools,
+                    onTap: () => _handleNavigation(context, RightPanelPageOptions.devTools, ref),
                   ),
                 ],
               ),
@@ -317,15 +280,11 @@ class _SectionHeader extends StatelessWidget {
 }
 
 class _CompactDrawerTile extends StatelessWidget {
-  final DrawerOption option;
+  final RightPanelPageOptions option;
   final bool isSelected;
   final VoidCallback onTap;
 
-  const  _CompactDrawerTile({
-    required this.option,
-    required this.isSelected,
-    required this.onTap,
-  });
+  const _CompactDrawerTile({required this.option, required this.isSelected, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -345,11 +304,7 @@ class _CompactDrawerTile extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Row(
             children: [
-              Icon(
-                option.icon,
-                size: 20,
-                color: isSelected ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
-              ),
+              Icon(option.icon, size: 20, color: isSelected ? colorScheme.onSurface : colorScheme.onSurfaceVariant),
               const SizedBox(width: 16),
               Expanded(
                 child: Text(
@@ -392,10 +347,7 @@ class _ActionContainer extends StatelessWidget {
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(12),
-        ),
+        decoration: BoxDecoration(color: backgroundColor, borderRadius: BorderRadius.circular(12)),
         child: Row(
           children: [
             Icon(icon, color: foregroundColor, size: 22),
@@ -406,18 +358,11 @@ class _ActionContainer extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: TextStyle(
-                      color: foregroundColor,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: foregroundColor, fontWeight: FontWeight.w600, fontSize: 14),
                   ),
                   Text(
                     subtitle,
-                    style: TextStyle(
-                      color: foregroundColor.withValues(alpha: 0.8),
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: foregroundColor.withValues(alpha: 0.8), fontSize: 12),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),

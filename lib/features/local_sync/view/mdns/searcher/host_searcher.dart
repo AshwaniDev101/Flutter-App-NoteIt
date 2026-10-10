@@ -6,6 +6,7 @@ import 'package:noteit/core/routing/routing.dart';
 
 import '../../../../../core/util/logger.dart';
 import '../../../../../database/drift/synced_devices/synced_devices_dao.dart';
+import '../../../../home/view/shared/desktop_close_button.dart';
 import '../../../auto_connect/mdns_searcher.dart';
 import '../../../provider/sync_client_provider.dart';
 
@@ -17,7 +18,6 @@ class HostSearcher extends ConsumerStatefulWidget {
 }
 
 class _SearchNearByState extends ConsumerState<HostSearcher> {
-
   late final MdnsSearcherNotifier _mdnsNotifier;
 
   @override
@@ -46,9 +46,15 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
     final devices = searchState.devices;
     final isScanning = searchState.status == ScanStatus.scanning;
 
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
+      backgroundColor: colorScheme.surfaceContainerLowest,
       appBar: AppBar(
         title: const Text('Nearby Devices'),
+
+        centerTitle: true,
+        backgroundColor: colorScheme.surfaceContainerLowest,
         actions: [
           if (isScanning)
             const Padding(
@@ -62,6 +68,8 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
                 ref.read(mdnsSearcherProvider.notifier).startRadar();
               },
             ),
+
+          DesktopCloseButton(),
         ],
       ),
       body: searchState.status == ScanStatus.error

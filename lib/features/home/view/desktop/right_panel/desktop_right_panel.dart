@@ -3,15 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/features/home/view/shared/icon_tray/icon_tray.dart';
 import 'package:window_manager/window_manager.dart';
-import '../../../../core/util/platform_helper.dart';
-import '../../../dev_tools/dev_page.dart';
-import '../../../drawer/app_drawer.dart';
-import '../../../local_sync/view/role_selector_page.dart';
-import '../../../note_editor/screens/view/desktop_edit_page.dart';
-import '../../../settings/view/settings_page.dart';
-import '../../../themes/view/theme_page.dart';
-import '../../../trash/trash_page.dart';
-import '../../core/providers.dart';
+import '../../../../../core/util/platform_helper.dart';
+import '../../../../dev_tools/dev_page.dart';
+import '../../../../local_sync/view/mdns/broadcast/host_broadcast.dart';
+import '../../../../local_sync/view/mdns/searcher/host_searcher.dart';
+import '../../../../local_sync/view/role_selector_page.dart';
+import '../../../../note_editor/screens/view/desktop_edit_page.dart';
+import '../../../../settings/view/settings_page.dart';
+import '../../../../themes/view/theme_page.dart';
+import '../../../../trash/trash_page.dart';
+import '../../../core/providers.dart';
+import 'core/navigator.dart';
 
 class DesktopRightPanel extends ConsumerWidget {
   final Note? activeNote;
@@ -76,29 +78,31 @@ class DesktopRightPanel extends ConsumerWidget {
           );
         },
 
-        // The ValueKey is important here. It tells the AnimatedSwitcher when to trigger!
-        child: switch (currentView) {
-          // The Empty/None State
-          //   DrawerOption.none => const _HomepagePlaceholder(key: ValueKey('none_view')),
-
-          // The Editor State
-          // We keep the fallback just in case the activeNote gets cleared while still in editor mode
-          DrawerOption.allNotes =>
-            activeNote != null
-                ? DesktopEditNotePage(key: ValueKey(activeNote!.uuid), existingNote: activeNote)
-                : const _HomepagePlaceholder(key: ValueKey('editor_fallback')),
-
-          // The Utility Panels
-          DrawerOption.trash => _PaddingWrapper(child: const TrashPage(key: ValueKey('trash_view'))),
-          DrawerOption.settings => _PaddingWrapper(child: const SettingsPage(key: ValueKey('settings_view'))),
-
-          // New panels mapped to their respective widgets
-          DrawerOption.localSync => _PaddingWrapper(child: const RoleSelectorPage(key: ValueKey('sync_view'))),
-          DrawerOption.themes => _PaddingWrapper(child: const ThemesPage(key: ValueKey('theme_view'))),
-          DrawerOption.devTools => _PaddingWrapper(child: const DevPage(key: ValueKey('dev_view'))),
-        },
+        child: _buildRightPanelContent(currentView),
       ),
     );
+  }
+
+  Widget _buildRightPanelContent(RightPanelPageOptions view) {
+    return switch (view) {
+      RightPanelPageOptions.allNotes =>
+        activeNote != null
+            ? DesktopEditNotePage(key: ValueKey(activeNote!.uuid), existingNote: activeNote)
+            : const _HomepagePlaceholder(
+                key: ValueKey('editor_fallback'),
+              ), // The ValueKey is important here. It tells the AnimatedSwitcher when to trigger!
+
+      RightPanelPageOptions.trash => const _PaddingWrapper(key: ValueKey('trash_view'), child: TrashPage()),
+      RightPanelPageOptions.settings => const _PaddingWrapper(key: ValueKey('settings_view'), child: SettingsPage()),
+      RightPanelPageOptions.localSync => const _PaddingWrapper(key: ValueKey('sync_view'), child: RoleSelectorPage()),
+      RightPanelPageOptions.themes => const _PaddingWrapper(key: ValueKey('theme_view'), child: ThemesPage()),
+      RightPanelPageOptions.devTools => const _PaddingWrapper(key: ValueKey('dev_view'), child: DevPage()),
+      RightPanelPageOptions.clientMode => const _PaddingWrapper(key: ValueKey('search_view'), child: HostSearcher()),
+      RightPanelPageOptions.hostMode => const _PaddingWrapper(
+        key: ValueKey('broadcast_view'),
+        child: HostBroadcastPage(),
+      ),
+    };
   }
 }
 

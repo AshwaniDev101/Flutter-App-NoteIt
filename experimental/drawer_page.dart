@@ -1,3 +1,7 @@
+
+
+// ===================================  Alternative drawer page design  =======================================
+
 // import 'dart:math' as math;
 //
 // import 'package:firebase_auth/firebase_auth.dart';

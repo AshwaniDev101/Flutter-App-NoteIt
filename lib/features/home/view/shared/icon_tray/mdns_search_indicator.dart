@@ -11,6 +11,25 @@ class MdnsSearchIndicator extends ConsumerWidget {
     //  Watch strictly for the scanning status
     final isSearching = ref.watch(mdnsSearcherProvider).status == ScanStatus.scanning;
 
+    Widget content = Container(
+      width: 32,
+      alignment: Alignment.center,
+      child: Center(
+        child: Container(
+          width: 24,
+          height: 24,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: [// Inner tight glow
+              BoxShadow(color: Colors.amber.withValues(alpha: 0.5), blurRadius: 3, spreadRadius: 0),
+              // Outer soft glow
+              BoxShadow(color: Colors.amber.withValues(alpha: 0.3), blurRadius: 4, spreadRadius: 1),],
+          ),
+          child: const Icon(Icons.search, color: Colors.amber, size: 16),
+        ),
+      ),
+    );
+
     // AnimatedSwitcher handles smooth scaling and fading when the widget appears/disappears
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 300),
@@ -24,32 +43,7 @@ class MdnsSearchIndicator extends ConsumerWidget {
       },
       // Return the UI if searching, else return a zero-size widget
       child: isSearching
-          ? Padding(
-        // Padding added directly to the active element so the spacing also collapses
-        padding: const EdgeInsets.only(right: 8.0),
-        child: Tooltip(
-          message: 'Searching for nearby devices...',
-          child: Container(
-            width: 24,
-            height: 24,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.amber.withValues(alpha: 0.4),
-                  blurRadius: 4,
-                  spreadRadius: 1,
-                ),
-              ],
-            ),
-            child: const Icon(
-              Icons.search,
-              color: Colors.amber,
-              size: 16,
-            ),
-          ),
-        ),
-      )
+          ? Tooltip(message: 'Searching for nearby devices...', child: content)
           : const SizedBox.shrink(), // Takes up exactly 0 pixels when inactive
     );
   }

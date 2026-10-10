@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/util/platform_helper.dart';
-import '../../../drawer/app_drawer.dart';
 import '../../core/providers.dart';
+import '../desktop/right_panel/core/navigator.dart';
 
 /// Only visible when you're on the desktop right panel
 class DesktopCloseButton extends ConsumerWidget {
@@ -23,7 +23,7 @@ class DesktopCloseButton extends ConsumerWidget {
         icon: const Icon(Icons.close),
         tooltip: 'Close',
         onPressed: () {
-          ref.read(desktopRightPanelViewProvider.notifier).setView(DrawerOption.allNotes);
+          ref.read(desktopRightPanelViewProvider.notifier).setView(RightPanelPageOptions.allNotes);
         },
       ),
     );

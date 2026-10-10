@@ -1,21 +1,20 @@
-import 'dart:async';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:noteit/database/drift/local_database.dart';
+import 'package:noteit/features/home/view/desktop/right_panel/core/navigator.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../../database/drift/keybindings/keybindings_dao.dart';
 import '../../../../database/sync/sync_orchestrator.dart';
-import '../../../drawer/app_drawer.dart';
 import '../../../keybinding/shortcut_config.dart';
 import '../../../lock/lock_manger/lock_manager.dart';
 import '../../core/providers.dart';
 import '../../../lock/password_prompt_helper.dart';
 import '../../viewmodel/viewmodel.dart';
 import 'desktop_left_panel.dart';
-import 'desktop_right_panel.dart';
+import 'right_panel/desktop_right_panel.dart';
 
 class DesktopHomePage extends ConsumerStatefulWidget {
   const DesktopHomePage({super.key});
@@ -122,7 +121,7 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
   void _handleNoteTap(Note note) async {
 
     // come back to the note editor if not already there
-    ref.read(desktopRightPanelViewProvider.notifier).setView(DrawerOption.allNotes);
+    ref.read(desktopRightPanelViewProvider.notifier).setView(RightPanelPageOptions.allNotes);
 
     final isSessionUnlocked = ref.watch(lockManagerProvider).sessionUnlockedNoteIds.contains(note.uuid);
     if (note.isLocked && !isSessionUnlocked) {

@@ -10,7 +10,6 @@ import '../../../../../database/sync/sync_orchestrator.dart';
 import '../../../../database/sync/local_sync_service.dart';
 import '../../../drawer/app_drawer.dart';
 import '../../viewmodel/viewmodel.dart';
-import '../shared/icon_tray/spinning_sync_icon.dart';
 import '../../core/providers.dart';
 import '../shared/dynamic_notes_layout.dart';
 import '../../../lock/password_prompt_helper.dart';
@@ -189,22 +188,11 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
     }
     return AppBar(
       // leading: DrawerMenuButton(),
-      title: const Text('Notes'),
+      // title: const Text('Notes'),
       elevation: 0,
-      centerTitle: true,
+      // centerTitle: true,
       actions: [
-
         IconTray(),
-        // WebSocketConnectionIndicator(isConnected: isConnected),
-        // IconButton(
-        //   // icon: const Icon(Icons.sync),
-        //   icon: SpinningSyncIcon(isSyncing: isSyncing, color: Theme.of(context).colorScheme.primary),
-        //   tooltip: 'Sync Notes',
-        //   onPressed: () {
-        //     ref.read(syncOrchestratorProvider).triggerSync();
-        //     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Syncing notes...')));
-        //   },
-        // ),
         const SizedBox(width: 8),
       ],
     );

@@ -3,9 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/routing/routing.dart';
-import '../../../core/util/platform_helper.dart';
-import '../../drawer/app_drawer.dart';
-import '../../home/core/providers.dart';
+import '../../home/view/desktop/right_panel/core/navigator.dart';
 import '../../home/view/shared/desktop_close_button.dart';
 
 class RoleSelectorPage extends ConsumerWidget {
@@ -32,7 +30,8 @@ class RoleSelectorPage extends ConsumerWidget {
       color: Colors.blue,
       isRecommended: !isDesktop, // Recommended if on Mobile
       onTap: () {
-        context.push(AppRoutes.searchNearBy);
+        // context.push(AppRoutes.searchNearBy);
+        ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.clientMode);
       },
     );
 
@@ -45,7 +44,8 @@ class RoleSelectorPage extends ConsumerWidget {
       color: Colors.green,
       isRecommended: isDesktop, // Recommended if on Desktop
       onTap: () {
-        context.push(AppRoutes.broadcastNearBy);
+        // context.push(AppRoutes.broadcastNearBy);
+        ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.hostMode);
       },
     );
 

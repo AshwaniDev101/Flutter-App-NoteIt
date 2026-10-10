@@ -1,9 +1,8 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/features/home/core/db_sorting_filtering.dart';
 import '../../../database/drift/local_database.dart';
-import '../../drawer/app_drawer.dart';
 import '../../lock/lock_manger/lock_manager.dart';
+import '../view/desktop/right_panel/core/navigator.dart';
 import '../view/shared/tag_sort_view_menu.dart';
 
 
@@ -114,17 +113,17 @@ class NoteViewTypeNotifier extends Notifier<NoteViewType> {
 
 
 /// RIGHT PANEL VIEW
-final desktopRightPanelViewProvider = NotifierProvider<DesktopRightPanelViewNotifier, DrawerOption>(
+final desktopRightPanelViewProvider = NotifierProvider<DesktopRightPanelViewNotifier, RightPanelPageOptions>(
   DesktopRightPanelViewNotifier.new,
 );
-class DesktopRightPanelViewNotifier extends Notifier<DrawerOption> {
+class DesktopRightPanelViewNotifier extends Notifier<RightPanelPageOptions> {
   @override
-  DrawerOption build() {
-    return DrawerOption.allNotes;
+  RightPanelPageOptions build() {
+    return RightPanelPageOptions.allNotes;
   }
 
   // Method to update the state
-  void setView(DrawerOption view) {
+  void setView(RightPanelPageOptions view) {
     state = view;
   }
 }
