@@ -18,26 +18,21 @@ class IconTray extends ConsumerWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         // mDNS Activity (Radar scanning or signal broadcasting)
-        // They will automatically appear/disappear and slide out of the way
-        const MdnsSearchIndicator(),
         const MdnsBroadcastIndicator(),
-        const SizedBox(width: 6),
+        const MdnsSearchIndicator(),
 
         // Live WebSocket connection status
         const WebSocketConnectionIndicator(),
 
+        SizedBox(width: 8,),
+
         // Sync Trigger & Spinner
         IconButton(
-          icon: SpinningSyncIcon(
-            isSyncing: isSyncing,
-            color: Theme.of(context).colorScheme.primary,
-          ),
+          icon: SpinningSyncIcon(isSyncing: isSyncing, color: Theme.of(context).colorScheme.primary),
           tooltip: 'Sync Notes',
           onPressed: () {
             ref.read(syncOrchestratorProvider).triggerSync();
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Syncing notes...')),
-            );
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Syncing notes...')));
           },
         ),
       ],

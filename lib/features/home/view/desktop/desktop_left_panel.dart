@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/core/util/platform_helper.dart';
 import 'package:noteit/database/drift/local_database.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../../../../database/drift/keybindings/keybindings_dao.dart';
 import '../../../drawer/app_drawer.dart';
-import '../../../drawer/drawer_page.dart';
 import '../../../keybinding/smart_action_widget.dart';
 import '../../viewmodel/viewmodel.dart';
 import '../../core/providers.dart';
@@ -42,7 +42,6 @@ class DesktopLeftPanel extends ConsumerWidget {
     required this.onDrawerChanged,
   });
 
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final homeState = ref.watch(homeViewModelProvider);
@@ -50,7 +49,6 @@ class DesktopLeftPanel extends ConsumerWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-
       // for closing the drawer on right panel click
       key: scaffoldKey,
       onDrawerChanged: onDrawerChanged,
@@ -113,10 +111,15 @@ class DesktopLeftPanel extends ConsumerWidget {
                 )
               : AppBar(
                   // leading: DrawerMenuButton(),
-                  title: Text('Note-It', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                  title: Text(
+                    'Note-It',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  ),
                   elevation: 0,
+                  scrolledUnderElevation: PlatformHelper.isDesktopScreen ? 0.0 : null,
                   actions: const [],
-            iconTheme: IconThemeData(color: Theme.of(context).colorScheme.primary),
+                  // maker the left hamburger icon primary color
+                  iconTheme: IconThemeData(color: Theme.of(context).colorScheme.primary),
                 ),
         ),
       ),

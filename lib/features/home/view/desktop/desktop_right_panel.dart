@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/features/home/view/shared/icon_tray/icon_tray.dart';
 import 'package:window_manager/window_manager.dart';
+import '../../../../core/util/platform_helper.dart';
 import '../../../dev_tools/dev_page.dart';
 import '../../../drawer/app_drawer.dart';
 import '../../../local_sync/view/role_selector_page.dart';
@@ -34,6 +35,7 @@ class DesktopRightPanel extends ConsumerWidget {
             // title: currentView != DrawerOption.allNotes
             //     ? Text(currentView.title)
             //     : null,
+            scrolledUnderElevation: PlatformHelper.isDesktopScreen? 0.0 : null,
 
             actions: [
               // WebSocketConnectionIndicator(isConnected: isConnected),

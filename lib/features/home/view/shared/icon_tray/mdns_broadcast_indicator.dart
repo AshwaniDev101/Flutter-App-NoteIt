@@ -11,6 +11,31 @@ class MdnsBroadcastIndicator extends ConsumerWidget {
     // Watch strictly for active mDNS registrations
     final isBroadcasting = ref.watch(mdnsBroadcastProvider) != null;
 
+    Widget content = Container(
+      width: 32,
+      alignment: Alignment.center,
+      child: Center(
+        child: Container(
+          width: 24,
+          height: 24,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: [
+              // Inner tight glow
+              BoxShadow(color: Colors.cyanAccent.withValues(alpha: 0.5), blurRadius: 3, spreadRadius: 0),
+              // Outer soft glow
+              BoxShadow(color: Colors.cyanAccent.withValues(alpha: 0.3), blurRadius: 4, spreadRadius: 1),
+            ],
+          ),
+          child: const Icon(
+            Icons.wifi, // Or Icons.sensors
+            color: Colors.cyanAccent,
+            size: 16,
+          ),
+        ),
+      ),
+    );
+
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 300),
       transitionBuilder: (child, animation) {
@@ -21,31 +46,7 @@ class MdnsBroadcastIndicator extends ConsumerWidget {
         );
       },
       child: isBroadcasting
-          ? Padding(
-        padding: const EdgeInsets.only(right: 8.0),
-        child: Tooltip(
-          message: 'Broadcasting sync availability',
-          child: Container(
-            width: 24,
-            height: 24,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.cyanAccent.withValues(alpha: 0.4),
-                  blurRadius: 4,
-                  spreadRadius: 1,
-                ),
-              ],
-            ),
-            child: const Icon(
-              Icons.wifi, // Or Icons.sensors
-              color: Colors.cyanAccent,
-              size: 16,
-            ),
-          ),
-        ),
-      )
+          ? Tooltip(message: 'Broadcasting sync availability', child: content)
           : const SizedBox.shrink(),
     );
   }

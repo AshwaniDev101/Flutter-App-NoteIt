@@ -1,28 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../../core/util/platform_helper.dart';
 import '../../../../../database/sync/local_sync_service.dart';
 import '../../../../local_sync/provider/sync_server_provider.dart';
 
 /// Represents the high-level WebSocket connection lifecycle states.
 enum WebSocketActivity {
-  disconnected(icon: Icons.circle, color: Colors.transparent, tooltip: null),
+  disconnected( color: Colors.transparent, tooltip: null),
   hosting(
-    icon: Icons.circle_outlined,
-    color: Colors.orangeAccent,
+    color: Colors.blueAccent,
     tooltip: 'Host server running, waiting for client...',
   ),
-  connected(
-    icon: Icons.check_circle_outline,
-    color: Colors.greenAccent,
-    tooltip: 'Devices connected over Wi-Fi',
-  );
 
-  final IconData icon;
+
+  connected(color: Colors.greenAccent, tooltip: 'Devices connected over Wi-Fi');
+
   final Color color;
   final String? tooltip;
 
-  const WebSocketActivity({required this.icon, required this.color, this.tooltip});
+  const WebSocketActivity({required this.color, this.tooltip});
+
+
+  // Evaluate the icon dynamically at runtime using a getter
+  IconData get icon {
+    switch (this) {
+      case WebSocketActivity.disconnected:
+        return Icons.circle;
+      case WebSocketActivity.hosting:
+        return Icons.circle_outlined;
+      case WebSocketActivity.connected:
+        return PlatformHelper.isDesktopScreen ? Icons.phone_iphone_sharp : Icons.monitor;
+    }
+  }
 
   bool get isVisible => this != WebSocketActivity.disconnected;
 
@@ -44,16 +54,34 @@ class WebSocketConnectionIndicator extends ConsumerWidget {
     final activity = WebSocketActivity.resolve(isHosting: isHosting, isConnected: isConnected);
 
     Widget content = Container(
-      width: 24,
-      height: 24,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        boxShadow: [
-          if (activity.isVisible)
-            BoxShadow(color: activity.color.withValues(alpha: 0.5), blurRadius: 4, spreadRadius: 1),
-        ],
+      width: 32,
+      alignment: Alignment.center,
+      child: Center(
+        child: Container(
+          width: 24,
+          height: 24,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: [
+              if (activity.isVisible) ...[
+                // Inner tight glow (creates intensity)
+                BoxShadow(
+                    color: activity.color.withValues(alpha: 0.5),
+                    blurRadius: 3,
+                    spreadRadius: 0),
+
+                // Outer soft glow (creates the ambient light effect)
+                BoxShadow(
+                  color: activity.color.withValues(alpha: 0.3),
+                  blurRadius: 4,
+                  spreadRadius: 1,
+                ),
+              ],
+            ],
+          ),
+          child: Icon(activity.icon, color: activity.color, size: 16),
+        ),
       ),
-      child: Icon(activity.icon, color: activity.color, size: 16),
     );
 
     if (activity.tooltip != null) {
@@ -72,14 +100,7 @@ class WebSocketConnectionIndicator extends ConsumerWidget {
         );
       },
       child: activity.isVisible
-          ? Padding(
-        // Padding added here so it also collapses when the widget disappears
-        padding: const EdgeInsets.only(right: 8.0),
-        child: KeyedSubtree(
-          key: ValueKey(activity),
-          child: content,
-        ),
-      )
+          ? KeyedSubtree(key: ValueKey(activity), child: content)
           : const SizedBox.shrink(), // Takes up 0 pixels in the Row when disconnected
     );
   }
