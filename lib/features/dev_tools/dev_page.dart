@@ -12,10 +12,13 @@ class DevPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
+      backgroundColor: colorScheme.surfaceContainerLowest,
       appBar: AppBar(
         title: const Text('Developer Tools'),
-
+        backgroundColor: colorScheme.surfaceContainerLowest,
         centerTitle: true,
         actions: [
           DesktopCloseButton(),

@@ -20,8 +20,6 @@ class DesktopRightPanel extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-
-
     final currentView = ref.watch(desktopRightPanelViewProvider);
 
     return Scaffold(
@@ -35,7 +33,7 @@ class DesktopRightPanel extends ConsumerWidget {
             // title: currentView != DrawerOption.allNotes
             //     ? Text(currentView.title)
             //     : null,
-            scrolledUnderElevation: PlatformHelper.isDesktopScreen? 0.0 : null,
+            scrolledUnderElevation: PlatformHelper.isDesktopScreen ? 0.0 : null,
 
             actions: [
               // WebSocketConnectionIndicator(isConnected: isConnected),
@@ -80,23 +78,24 @@ class DesktopRightPanel extends ConsumerWidget {
 
         // The ValueKey is important here. It tells the AnimatedSwitcher when to trigger!
         child: switch (currentView) {
-        // The Empty/None State
-        //   DrawerOption.none => const _HomepagePlaceholder(key: ValueKey('none_view')),
+          // The Empty/None State
+          //   DrawerOption.none => const _HomepagePlaceholder(key: ValueKey('none_view')),
 
-        // The Editor State
-        // We keep the fallback just in case the activeNote gets cleared while still in editor mode
-          DrawerOption.allNotes => activeNote != null
-              ? DesktopEditNotePage(key: ValueKey(activeNote!.uuid), existingNote: activeNote)
-              : const _HomepagePlaceholder(key: ValueKey('editor_fallback')),
+          // The Editor State
+          // We keep the fallback just in case the activeNote gets cleared while still in editor mode
+          DrawerOption.allNotes =>
+            activeNote != null
+                ? DesktopEditNotePage(key: ValueKey(activeNote!.uuid), existingNote: activeNote)
+                : const _HomepagePlaceholder(key: ValueKey('editor_fallback')),
 
-        // The Utility Panels
-          DrawerOption.trash => const TrashPage(key: ValueKey('trash_view')),
-          DrawerOption.settings => const SettingsPage(key: ValueKey('settings_view')),
+          // The Utility Panels
+          DrawerOption.trash => _PaddingWrapper(child: const TrashPage(key: ValueKey('trash_view'))),
+          DrawerOption.settings => _PaddingWrapper(child: const SettingsPage(key: ValueKey('settings_view'))),
 
-        // New panels mapped to their respective widgets
-          DrawerOption.localSync => const RoleSelectorPage(key: ValueKey('sync_view')),
-          DrawerOption.themes => const ThemesPage(key: ValueKey('theme_view')),
-          DrawerOption.devTools => const DevPage(key: ValueKey('dev_view')),
+          // New panels mapped to their respective widgets
+          DrawerOption.localSync => _PaddingWrapper(child: const RoleSelectorPage(key: ValueKey('sync_view'))),
+          DrawerOption.themes => _PaddingWrapper(child: const ThemesPage(key: ValueKey('theme_view'))),
+          DrawerOption.devTools => _PaddingWrapper(child: const DevPage(key: ValueKey('dev_view'))),
         },
       ),
     );
@@ -105,7 +104,7 @@ class DesktopRightPanel extends ConsumerWidget {
 
 /// A visual placeholder shown when no note is currently selected.
 class _HomepagePlaceholder extends StatelessWidget {
-  const _HomepagePlaceholder({super.key,});
+  const _HomepagePlaceholder({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -120,6 +119,21 @@ class _HomepagePlaceholder extends StatelessWidget {
           const Text('Select a note from the list or click + to start editing.'),
         ],
       ),
+    );
+  }
+}
+
+/// A visual padding wrapper for selected drawer option pages
+class _PaddingWrapper extends StatelessWidget {
+  final Widget child;
+
+  const _PaddingWrapper({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: ClipRRect(borderRadius: const BorderRadius.all(Radius.circular(16.0)), child: child),
     );
   }
 }

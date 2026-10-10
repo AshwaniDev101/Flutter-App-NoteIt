@@ -170,14 +170,13 @@ class _TrashPageState extends ConsumerState<TrashPage> {
   // App Bar Builder (Handles Default vs Select Mode)
   PreferredSizeWidget _buildAppBar(List<Note> currentNotes) {
 
-    // final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = Theme.of(context).colorScheme;
 
     if (isSelectMode) {
       final isAllSelected =
           currentNotes.isNotEmpty && noteIds.length == currentNotes.length;
 
       return AppBar(
-        backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Colors.white,
         leading: IconButton(
           icon: const Icon(Icons.close),
@@ -252,7 +251,7 @@ class _TrashPageState extends ConsumerState<TrashPage> {
     // Default App Bar
     return AppBar(
       title: const Text('Trash Bin'),
-
+      backgroundColor: colorScheme.surfaceContainerLowest,
       centerTitle: true,
       actions: [
 
@@ -288,7 +287,7 @@ class _TrashPageState extends ConsumerState<TrashPage> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: colorScheme.surfaceContainerLowest,
       appBar: _buildAppBar(trashState.value ?? []),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 3.0),

@@ -13,6 +13,10 @@ class RoleSelectorPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, ref) {
+
+
+    final colorScheme = Theme.of(context).colorScheme;
+
     // Detect if the app is running on a desktop platform
     final platform = Theme.of(context).platform;
     final isDesktop = platform == TargetPlatform.macOS ||
@@ -46,9 +50,12 @@ class RoleSelectorPage extends ConsumerWidget {
     );
 
     return Scaffold(
+
+      backgroundColor: colorScheme.surfaceContainerLowest,
       appBar: AppBar(
         title: const Text('Local Sync'),
         centerTitle: true,
+        backgroundColor: colorScheme.surfaceContainerLowest,
         actions: [
           DesktopCloseButton(),
         ],

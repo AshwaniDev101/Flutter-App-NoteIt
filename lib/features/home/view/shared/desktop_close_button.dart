@@ -21,7 +21,7 @@ class DesktopCloseButton extends ConsumerWidget {
       padding: const EdgeInsets.only(right: 16.0),
       child: IconButton(
         icon: const Icon(Icons.close),
-        tooltip: 'Close View',
+        tooltip: 'Close',
         onPressed: () {
           ref.read(desktopRightPanelViewProvider.notifier).setView(DrawerOption.allNotes);
         },

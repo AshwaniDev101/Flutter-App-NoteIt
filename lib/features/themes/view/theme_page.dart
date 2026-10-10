@@ -11,9 +11,11 @@ class ThemesPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currentTheme = ref.watch(themeProvider);
 
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('Appearance'), centerTitle: true, actions: [DesktopCloseButton()]),
 
+      appBar: AppBar(title: const Text('Appearance'), centerTitle: true, actions: [DesktopCloseButton()],backgroundColor: colorScheme.surfaceContainerLowest,),
+      backgroundColor: colorScheme.surfaceContainerLowest,
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1000),
