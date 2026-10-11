@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/features/local_sync/provider/sync_server_provider.dart';
@@ -71,20 +73,23 @@ class SyncClientNotifier extends Notifier<WebSocketChannel?> {
       }
 
       // Safely construct the URI with all parameters
-      // We pass our own UUID and Name to the Host so they can save us!
       final finalUri = Uri(scheme: 'ws', host: ip, port: port, queryParameters: queryParams);
 
-      //Initiate Connection
+      // Initiate Connection
       final channel = WebSocketChannel.connect(finalUri);
 
-      // This pauses execution until the socket is officially OPEN!
-      // If the host is offline, this throws an error and drops into the catch block.
-      // This throws if the host rejects us (e.g., wrong PIN)
-      await channel.ready;
+      // Wait for connection with a strict 2-second timeout
+      await channel.ready.timeout(
+        const Duration(seconds: 2),
+        onTimeout: () {
+          // This triggers if we hit a ghost IP or the host is unreachable
+          throw TimeoutException('Ghost IP or Host unreachable');
+        },
+      );
 
       AppLogger.d('Client: Connection Confirmed!');
 
-      // Client role the set at the moment the connection is successful!
+      // Client role set at the moment the connection is successful!
       ref.read(sharedPreferenceProvider).setSyncRole(SyncRole.client);
 
       await ref.read(syncedDevicesDaoProvider).upsertDeviceAsHost(uuid: hostUuid, name: hostName);
@@ -93,16 +98,23 @@ class SyncClientNotifier extends Notifier<WebSocketChannel?> {
       // Save the connection to the state
       state = channel;
 
-      // Listen for incoming sync payloads from the PC/Host
-      // We pass the channel to the traffic controller, which handles all the listening,
-      // batching, and database saving automatically.
+      // Pass to traffic controller
       ref.read(localSyncServiceProvider.notifier).setActiveConnection(channel);
+
+    } on TimeoutException catch (e) {
+      // Caught the Ghost IP timeout specifically
+      AppLogger.d('Hit a Ghost IP or router blocked connection: $e');
+      state = null;
+      throw Exception('Host not found. Please try scanning the QR code.');
+
     } on WebSocketChannelException catch (e) {
+      // Caught a rejection (like a wrong PIN)
       AppLogger.d('Connection rejected by host. Wrong PIN? Error: $e');
       state = null;
-      // can catch it and show a Snackbar saying "Wrong PIN, try again!"
       throw Exception('Connection rejected. Please check the PIN and try again.');
+
     } catch (e) {
+      // Caught any other random error
       AppLogger.d('Failed to connect to host: $e');
       state = null;
       throw Exception('Failed to connect to device.');

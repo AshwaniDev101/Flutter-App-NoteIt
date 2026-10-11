@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nsd/nsd.dart';
 
 import '../../../core/util/logger.dart';
+import 'mdns_searcher.dart';
 
 // ==== Server side ===
 
@@ -41,6 +42,11 @@ class MdnsBroadcastNotifier extends Notifier<Registration?> {
     required String uuid,
     required String deviceName,
   }) async {
+
+    // --- POLICE CODE ---
+    AppLogger.d('mDNS Police: Stopping any active scans before broadcasting.');
+    ref.read(mdnsSearcherProvider.notifier).stopScan();
+    // -------------------
     if (_activeRegistration != null) return; // If server is already broadcasting, do nothing
 
     // Creates the service

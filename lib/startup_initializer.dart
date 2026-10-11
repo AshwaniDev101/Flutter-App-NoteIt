@@ -6,8 +6,10 @@ import 'package:noteit/features/local_sync/provider/sync_session_provider.dart';
 
 import 'core/util/logger.dart';
 import 'database/drift/local_database.dart';
+import 'features/local_sync/auto_connect/mdns_broadcast.dart';
 import 'features/local_sync/auto_connect/mdns_searcher.dart';
 import 'features/local_sync/provider/sync_client_provider.dart';
+import 'features/local_sync/provider/sync_server_provider.dart';
 
 final startupInitializerProvider = NotifierProvider<StartupInitializer, void>(() {
   return StartupInitializer();
@@ -107,7 +109,17 @@ class StartupInitializer extends Notifier<void> {
 
   void onAppPaused() {
     AppLogger.d('StartupInitializer: App went to the background');
-    ref.read(mdnsSearcherProvider.notifier).stopScan();
+
+    final syncRole = ref.read(sharedPreferenceProvider).syncRole;
+
+    if (syncRole == SyncRole.host) {
+      // Stop the server and unregister mDNS immediately
+      // before the OS suspends us and freezes the network state.
+      ref.read(syncServerProvider.notifier).stopHosting();
+      ref.read(mdnsBroadcastProvider.notifier).stopBroadcasting();
+    } else {
+      ref.read(mdnsSearcherProvider.notifier).stopScan();
+    }
   }
 
   void onAppResumed() {

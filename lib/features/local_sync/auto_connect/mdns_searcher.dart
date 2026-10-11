@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nsd/nsd.dart';
 
 import '../../../core/util/logger.dart';
+import '../../../database/shared_preference/shared_preference_manager.dart';
+import 'mdns_broadcast.dart';
 
 // ==== Client side ===
 enum ScanStatus { idle, scanning, found, error }
@@ -26,6 +28,12 @@ class MdnsSearcherNotifier extends Notifier<MdnsState> {
 
   /// RADAR MODE: Finds ALL NoteIt devices for the SearchNearBy UI (No UUID needed)
   Future<void> startRadar() async {
+
+    // --- POLICE CODE ---
+    AppLogger.d('mDNS Police: Stopping any active broadcasts before scanning.');
+    ref.read(mdnsBroadcastProvider.notifier).stopBroadcasting();
+    // -------------------
+
     if (state.status == ScanStatus.scanning) return;
 
     state = (status: ScanStatus.scanning, devices: []);
@@ -43,8 +51,22 @@ class MdnsSearcherNotifier extends Notifier<MdnsState> {
       // IMMEDIATELY populate the state in case it found devices instantly
       // Filter out invalid services before they hit the state
 
-      final validServices = _discovery!.services.where((s) => s.port != null).toList();
+      final myUuid = ref.read(sharedPreferenceProvider).hostUuid;
+
+      final validServices = _discovery!.services.where((s) {
+        if (s.port == null) return false;
+
+        // Extract UUID from the discovered service
+        final rawUuidBytes = s.txt?['uuid'];
+        if (rawUuidBytes != null) {
+          final discoveredUuid = utf8.decode(rawUuidBytes);
+          // IGNORE OUR OWN GHOST BROADCASTS
+          if (discoveredUuid == myUuid) return false;
+        }
+        return true;
+      }).toList();
       state = (status: ScanStatus.scanning, devices: validServices);
+
 
       _discovery!.addListener(() {
 
@@ -52,14 +74,19 @@ class MdnsSearcherNotifier extends Notifier<MdnsState> {
         // If _discovery is suddenly null here, abort.
         if (_discovery == null) return;
 
+        final currentValidServices = _discovery!.services.where((s) {
+          if (s.port == null) return false;
 
-        final currentValidServices = _discovery!.services.where((s) => s.port != null).toList();
-
+          final rawUuidBytes = s.txt?['uuid'];
+          if (rawUuidBytes != null) {
+            final discoveredUuid = utf8.decode(rawUuidBytes);
+            // MUST FILTER HERE TOO!
+            if (discoveredUuid == myUuid) return false;
+          }
+          return true;
+        }).toList();
         // Update the state with the live list of all found devices
         state = (status: ScanStatus.scanning, devices: currentValidServices);
-        // state = (status: ScanStatus.scanning, devices: _discovery!.services.toList());
-
-
       });
     } catch (e) {
       AppLogger.d('mDNS Radar Error: $e');
@@ -71,6 +98,12 @@ class MdnsSearcherNotifier extends Notifier<MdnsState> {
   /// Returns a Record (ip, port) if found, or null if it fails/times out.
   /// TARGETED MODE: Background auto-connect searching for a specific UUID
   Future<({String ip, int port})?> findServer(String targetUuid) async {
+
+    // --- POLICE CODE ---
+    AppLogger.d('mDNS Police: Stopping any active broadcasts before targeted scan.');
+    ref.read(mdnsBroadcastProvider.notifier).stopBroadcasting();
+    // -------------------
+
     if (state.status == ScanStatus.scanning) return null;
 
     state = (status: ScanStatus.scanning, devices: []);
@@ -121,7 +154,7 @@ class MdnsSearcherNotifier extends Notifier<MdnsState> {
         }
       });
 
-      Future.delayed(const Duration(seconds: 60), () {
+      Future.delayed(const Duration(seconds: 3), () {
         if (!completer.isCompleted) {
           AppLogger.d('mDNS: Scan timed out.');
           state = (status: ScanStatus.error, devices: []);
