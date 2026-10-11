@@ -9,6 +9,7 @@ import 'package:noteit/features/home/view/shared/select_mode_app_bars.dart';
 import '../../../../../database/sync/sync_orchestrator.dart';
 import '../../../../database/sync/local_sync_service.dart';
 import '../../../drawer/app_drawer.dart';
+import '../../../drawer/mobile_app_drawer.dart';
 import '../../viewmodel/viewmodel.dart';
 import '../../core/providers.dart';
 import '../shared/dynamic_notes_layout.dart';

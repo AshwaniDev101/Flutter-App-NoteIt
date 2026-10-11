@@ -153,6 +153,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
   }
 
   void _executeSave({
+    // when true show snack bar
     bool isManualSave = false,
     bool isDisposing = false,
     String? overrideTitle,
@@ -420,26 +421,77 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
         ),
 
         // Auto save indicator
-        AnimatedOpacity(
-          opacity: _isSaved ? 1.0 : 0.0,
-          duration: const Duration(milliseconds: 100),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.cloud_done_outlined, // Swapped to a slightly more modern sync icon!
-                size: 16,
-                color: Theme.of(context).colorScheme.outline,
+// Animated Save/Saved Button
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          // Creates a clean vertical swipe transition
+          transitionBuilder: (Widget child, Animation<double> animation) {
+            return SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0.0, 0.5),
+                end: Offset.zero,
+              ).animate(animation),
+              child: FadeTransition(
+                opacity: animation,
+                child: child,
               ),
-              // const SizedBox(width: 4),
-              Text(
-                "Saved",
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+            );
+          },
+          child: _isSaved
+              ? // ---- SAVED STATE (Passive) ----
+          Padding(
+            key: const ValueKey('saved_state'),
+            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.done_all,
+                  size: 16,
                   color: Theme.of(context).colorScheme.outline,
-                  fontStyle: FontStyle.italic,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  "Saved",
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.outline,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+            ),
+          )
+              : // ---- SAVE STATE (Clickable) ----
+          Material(
+            key: const ValueKey('save_state'),
+            color: Colors.transparent, // Keeps the label look without a button background
+            child: InkWell(
+              borderRadius: BorderRadius.circular(4),
+              onTap: () {
+                _executeSave(isManualSave: true);
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.done,
+                      size: 16,
+                      color: Theme.of(context).colorScheme.primary, // Highlights it as an action
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      "Save",
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.bold, // Makes the call-to-action stand out slightly
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
+            ),
           ),
         ),
       ],

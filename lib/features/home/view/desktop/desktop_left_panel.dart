@@ -6,6 +6,8 @@ import 'package:noteit/database/drift/local_database.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../../../../database/drift/keybindings/keybindings_dao.dart';
+import '../../../drawer/desktop_drawer_button.dart';
+import '../../../drawer/drawer_page.dart';
 import '../../../drawer/app_drawer.dart';
 import '../../../keybinding/smart_action_widget.dart';
 import '../../viewmodel/viewmodel.dart';
@@ -53,8 +55,7 @@ class DesktopLeftPanel extends ConsumerWidget {
       key: scaffoldKey,
       onDrawerChanged: onDrawerChanged,
 
-      drawer: AppDrawer(),
-
+      // drawer: AppDrawer(),
       floatingActionButton: FocusTraversalOrder(
         order: const NumericFocusOrder(3),
         child: Focus(
@@ -110,7 +111,7 @@ class DesktopLeftPanel extends ConsumerWidget {
                   },
                 )
               : AppBar(
-                  // leading: DrawerMenuButton(),
+                  leading: DrawerMenuButton(),
                   title: Text(
                     'Note-It',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
