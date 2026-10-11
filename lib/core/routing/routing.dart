@@ -10,7 +10,7 @@ import '../../features/home/view/desktop/desktop_home_page.dart';
 import '../../features/home/view/mobile/mobile_home_page.dart';
 import '../../features/local_sync/view/mdns/broadcast/host_broadcast.dart';
 import '../../features/local_sync/view/mdns/searcher/host_searcher.dart';
-import '../../features/local_sync/view/mdns/searcher/pin_entry_dialog.dart';
+import '../../features/local_sync/view/mdns/searcher/pin_dialog/pin_entry_dialog.dart';
 import '../../features/local_sync/view/qr/qr_page.dart';
 import '../../features/local_sync/view/qr/qr_scanner/qr_scanner_page.dart';
 import '../../features/local_sync/view/synced_list.dart';

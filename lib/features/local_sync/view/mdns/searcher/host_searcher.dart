@@ -9,6 +9,7 @@ import '../../../../../database/drift/synced_devices/synced_devices_dao.dart';
 import '../../../../home/view/shared/desktop_close_button.dart';
 import '../../../auto_connect/mdns_searcher.dart';
 import '../../../provider/sync_client_provider.dart';
+import 'pin_dialog/host_connection_controller.dart';
 
 class HostSearcher extends ConsumerStatefulWidget {
   const HostSearcher({super.key});
@@ -34,10 +35,9 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
 
   @override
   void dispose() {
-    // We MUST use Future.microtask so Riverpod doesn't panic during widget teardown.
-    // We MUST use our cached _mdnsNotifier instead of ref.read() because the widget is dead.
     Future.microtask(() {
       _mdnsNotifier.stopScan();
+      ref.read(hostConnectionControllerProvider.notifier).reset();
     });
 
     super.dispose();
@@ -45,6 +45,25 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
 
   @override
   Widget build(BuildContext context) {
+
+
+
+    ref.listen(hostConnectionControllerProvider, (previous, next) {
+      if (next.status == ConnectionStatus.error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.errorMessage ?? 'Connection failed'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } else if (next.status == ConnectionStatus.success) {
+        context.pop(); // Safely close the screen
+      }
+    });
+    // -----------------------------------------
+
+
     final searchState = ref.watch(mdnsSearcherProvider);
     final devices = searchState.devices;
     final isScanning = searchState.status == ScanStatus.scanning;
@@ -115,7 +134,7 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
                   title: Text(deviceName),
                   subtitle: Text(ip != null ? 'Tap to connect' : 'Resolving IP...'),
                   trailing: const Icon(Icons.chevron_right),
-                  onTap: () async {
+                  onTap: () {
                     if (ip == null || port == null || hostUuid.isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('Still resolving device info...'))
@@ -123,96 +142,26 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
                       return;
                     }
 
-                    // --- PREVENT RE-CONNECTING LOOP ---
-                    // If we already have an active WebSocket connection, stop the user from dialing again.
-                    final currentActiveConnection = ref.read(syncClientProvider);
-                    if (currentActiveConnection != null) {
+                    // Prevent double connections
+                    if (ref.read(syncClientProvider) != null) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('You are already connected to a host!'),
-                            behavior: SnackBarBehavior.floating,
-                          )
+                          const SnackBar(content: Text('You are already connected to a host!'))
                       );
                       return;
                     }
 
-                    // DB CHECK: Do we already know this UUID?
-                    final devicePairsDao = ref.read(syncedDevicesDaoProvider);
-                    final isKnown = await devicePairsDao.isDeviceKnown(hostUuid);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Connecting to $deviceName...'))
+                    );
 
-                    if (!mounted) return;
-
-                    if (isKnown) {
-                      AppLogger.d("UUID is Known");
-                      ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Connecting to $deviceName...'))
-                      );
-
-                      try {
-
-                        await ref.read(syncClientProvider.notifier).connectToHost(
-                            ip: ip,
-                            port: port,
-                            hostUuid: hostUuid,
-                            hostName: deviceName
-                        );
-
-                        if (mounted) {
-                          context.pop();
-                        }
-                      } catch (e) {
-                        // Catch Ghost IPs or _isBusy rejections
-                        if (mounted) {
-                          final errorMessage = e.toString().replaceAll('Exception: ', '');
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(errorMessage),
-                              backgroundColor: Colors.red,
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
-                        }
-                      }
-                    } else {
-                      AppLogger.d("UUID is not Known");
-
-                      // Prompt for PIN!
-                      final enteredPin = await context.push<String>(AppRoutes.pin);
-
-                      // Check mounted again after awaiting the PIN dialog
-                      if (!mounted) return;
-
-                      if (enteredPin != null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Verifying PIN with $deviceName...'))
-                        );
-
-                        try {
-                          await ref.read(syncClientProvider.notifier).connectToHost(
-                            ip: ip,
-                            port: port,
-                            hostUuid: hostUuid,
-                            hostName: deviceName,
-                            pin: enteredPin,
-                          );
-
-                          if (mounted) {
-                            context.pop();
-                          }
-                        } catch (e) {
-                          if (mounted) {
-                            final errorMessage = e.toString().replaceAll('Exception: ', '');
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(errorMessage),
-                                backgroundColor: Colors.red,
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
-                          }
-                        }
-                      }
-                    }
+                    // Trigger the controller
+                    ref.read(hostConnectionControllerProvider.notifier).connect(
+                      ip: ip,
+                      port: port,
+                      hostUuid: hostUuid,
+                      hostName: deviceName,
+                      requestPin: () => context.push<String>(AppRoutes.pin), // How to get the PIN
+                    );
                   },
                 );
               },
