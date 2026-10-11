@@ -34,9 +34,12 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
 
   @override
   void dispose() {
+    // We MUST use Future.microtask so Riverpod doesn't panic during widget teardown.
+    // We MUST use our cached _mdnsNotifier instead of ref.read() because the widget is dead.
     Future.microtask(() {
-      ref.read(mdnsSearcherProvider.notifier).stopScan();
+      _mdnsNotifier.stopScan();
     });
+
     super.dispose();
   }
 
@@ -114,9 +117,22 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () async {
                     if (ip == null || port == null || hostUuid.isEmpty) {
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(const SnackBar(content: Text('Still resolving device info...')));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Still resolving device info...'))
+                      );
+                      return;
+                    }
+
+                    // --- PREVENT RE-CONNECTING LOOP ---
+                    // If we already have an active WebSocket connection, stop the user from dialing again.
+                    final currentActiveConnection = ref.read(syncClientProvider);
+                    if (currentActiveConnection != null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('You are already connected to a host!'),
+                            behavior: SnackBarBehavior.floating,
+                          )
+                      );
                       return;
                     }
 
@@ -128,17 +144,35 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
 
                     if (isKnown) {
                       AppLogger.d("UUID is Known");
+                      ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Connecting to $deviceName...'))
+                      );
 
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(SnackBar(content: Text('Connecting to $deviceName...')));
+                      try {
 
-                      ref
-                          .read(syncClientProvider.notifier)
-                          .connectToHost(ip: ip, port: port, hostUuid: hostUuid, hostName: deviceName);
+                        await ref.read(syncClientProvider.notifier).connectToHost(
+                            ip: ip,
+                            port: port,
+                            hostUuid: hostUuid,
+                            hostName: deviceName
+                        );
 
-                      // Note: We don't need stopScan() here because dispose() will catch it when we pop!
-                      context.pop();
+                        if (mounted) {
+                          context.pop();
+                        }
+                      } catch (e) {
+                        // Catch Ghost IPs or _isBusy rejections
+                        if (mounted) {
+                          final errorMessage = e.toString().replaceAll('Exception: ', '');
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(errorMessage),
+                              backgroundColor: Colors.red,
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        }
+                      }
                     } else {
                       AppLogger.d("UUID is not Known");
 
@@ -149,43 +183,34 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
                       if (!mounted) return;
 
                       if (enteredPin != null) {
-                        ScaffoldMessenger.of(
-                          context,
-                        ).showSnackBar(SnackBar(content: Text('Verifying PIN with $deviceName...')));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Verifying PIN with $deviceName...'))
+                        );
 
                         try {
-                          ref
-                              .read(syncClientProvider.notifier)
-                              .connectToHost(
-                                ip: ip,
-                                port: port,
-                                hostUuid: hostUuid,
-                                hostName: deviceName,
-                                pin: enteredPin,
-                              );
+                          await ref.read(syncClientProvider.notifier).connectToHost(
+                            ip: ip,
+                            port: port,
+                            hostUuid: hostUuid,
+                            hostName: deviceName,
+                            pin: enteredPin,
+                          );
 
                           if (mounted) {
                             context.pop();
                           }
                         } catch (e) {
                           if (mounted) {
-                            // e.toString() will contain your custom message: "Exception: Connection rejected..."
-
-                            // Clean up the string to remove the "Exception: " prefix
                             final errorMessage = e.toString().replaceAll('Exception: ', '');
-
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(errorMessage),
                                 backgroundColor: Colors.red,
-                                behavior: SnackBarBehavior.floating, // Makes it look a bit nicer
+                                behavior: SnackBarBehavior.floating,
                               ),
                             );
                           }
                         }
-
-                        // // Pop the search page after starting the connection!
-                        // context.pop();
                       }
                     }
                   },

@@ -59,6 +59,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
         child: Card(
+          margin: EdgeInsets.all(4),
           elevation: widget.isSelected ? 1 : (_isFocused ? 4 : 0),
           clipBehavior: Clip.antiAlias,
 

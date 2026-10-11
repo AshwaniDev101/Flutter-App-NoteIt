@@ -88,20 +88,20 @@ class DynamicNotesLayout extends ConsumerWidget {
       case NoteViewType.grid:
         return GridView.builder(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.only(bottom: 100, left: 4, right: 4),
+          padding: const EdgeInsets.only(bottom: 100, left: 0, right: 0),
 
           gridDelegate: PlatformHelper.isMobileScreen
               ? const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 3,
             childAspectRatio: 0.85,
-            crossAxisSpacing: 4,
-            mainAxisSpacing: 4,
+            crossAxisSpacing: 0,
+            mainAxisSpacing: 0,
           )
               : const SliverGridDelegateWithMaxCrossAxisExtent(
             maxCrossAxisExtent: 200,
             childAspectRatio: 0.85,
-            crossAxisSpacing: 4,
-            mainAxisSpacing: 4,
+            crossAxisSpacing: 0,
+            mainAxisSpacing: 0,
           ),
           itemCount: notes.length,
           itemBuilder: (context, index) => _buildNoteItem(context, ref, notes[index]),
@@ -110,7 +110,7 @@ class DynamicNotesLayout extends ConsumerWidget {
       case NoteViewType.largeGrid:
         return GridView.builder(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.only(bottom: 80, left: 4, right: 4),
+          padding: const EdgeInsets.only(bottom: 80, left: 0, right: 0),
           gridDelegate: PlatformHelper.isMobileScreen
               ? const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 1, // Full width on mobile
