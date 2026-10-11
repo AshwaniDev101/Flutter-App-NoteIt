@@ -8,6 +8,7 @@ import '../../../../dev_tools/dev_page.dart';
 import '../../../../local_sync/view/mdns/broadcast/host_broadcast.dart';
 import '../../../../local_sync/view/mdns/searcher/host_searcher.dart';
 import '../../../../local_sync/view/role_selector_page.dart';
+import '../../../../local_sync/view/synced_list.dart';
 import '../../../../note_editor/screens/view/desktop_edit_page.dart';
 import '../../../../settings/view/settings_page.dart';
 import '../../../../themes/view/theme_page.dart';
@@ -101,6 +102,11 @@ class DesktopRightPanel extends ConsumerWidget {
       RightPanelPageOptions.hostMode => const _PaddingWrapper(
         key: ValueKey('broadcast_view'),
         child: HostBroadcastPage(),
+      ),
+
+      RightPanelPageOptions.syncedList => const _PaddingWrapper(
+        key: ValueKey('synced_devices_list_view'),
+        child: SyncedDevicesListView(),
       ),
     };
   }

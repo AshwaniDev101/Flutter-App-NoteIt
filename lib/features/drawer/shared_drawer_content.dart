@@ -49,22 +49,22 @@ class SharedDrawerContent extends ConsumerWidget {
       mainAxisSize: MainAxisSize.min, // Hugs content dynamically
       children: [
         // --- Top Logo / App Identity ---
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-          child: Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(color: colorScheme.primaryContainer, borderRadius: BorderRadius.circular(12)),
-            alignment: Alignment.center,
-            child: Text(
-              'N', // NoteIt Logo Placeholder
-              style: theme.textTheme.headlineMedium?.copyWith(
-                color: colorScheme.onPrimaryContainer,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ),
+        // Padding(
+        //   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        //   child: Container(
+        //     width: 48,
+        //     height: 48,
+        //     decoration: BoxDecoration(color: colorScheme.primaryContainer, borderRadius: BorderRadius.circular(12)),
+        //     alignment: Alignment.center,
+        //     child: Text(
+        //       'N', // NoteIt Logo Placeholder
+        //       style: theme.textTheme.headlineMedium?.copyWith(
+        //         color: colorScheme.onPrimaryContainer,
+        //         fontWeight: FontWeight.bold,
+        //       ),
+        //     ),
+        //   ),
+        // ),
 
         // --- Scrollable Navigation ---
         Flexible(
@@ -75,11 +75,11 @@ class SharedDrawerContent extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const _SectionHeader(title: 'WORKSPACE'),
-                _CompactDrawerTile(
-                  option: RightPanelPageOptions.allNotes,
-                  isSelected: selectedOption == RightPanelPageOptions.allNotes,
-                  onTap: () => onOptionSelected(RightPanelPageOptions.allNotes),
-                ),
+                // _CompactDrawerTile(
+                //   option: RightPanelPageOptions.allNotes,
+                //   isSelected: selectedOption == RightPanelPageOptions.allNotes,
+                //   onTap: () => onOptionSelected(RightPanelPageOptions.allNotes),
+                // ),
                 _CompactDrawerTile(
                   option: RightPanelPageOptions.trash,
                   isSelected: selectedOption == RightPanelPageOptions.trash,
@@ -143,7 +143,7 @@ class SharedDrawerContent extends ConsumerWidget {
                   title: 'Sign In',
                   subtitle: 'Sync your data',
                   icon: Icons.add_circle_outline_rounded,
-                  backgroundColor: Colors.blue,
+                  backgroundColor: colorScheme.primaryContainer,
                   foregroundColor: Colors.white,
                   onTap: () async {
                     await _signInWithGoogle(ref);
@@ -171,7 +171,7 @@ class SharedDrawerContent extends ConsumerWidget {
               const SizedBox(width: 12),
               Switch(
                 value: isDarkMode,
-                activeThumbColor: Colors.blue,
+                // activeThumbColor: Colors.blue,
                 inactiveThumbColor: colorScheme.surface,
                 inactiveTrackColor: colorScheme.surfaceContainerHighest,
                 onChanged: (value) {

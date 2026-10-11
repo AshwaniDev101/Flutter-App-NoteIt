@@ -22,14 +22,14 @@ class MdnsBroadcastIndicator extends ConsumerWidget {
             shape: BoxShape.circle,
             boxShadow: [
               // Inner tight glow
-              BoxShadow(color: Colors.cyanAccent.withValues(alpha: 0.5), blurRadius: 3, spreadRadius: 0),
+              BoxShadow(color: Colors.white.withValues(alpha: 0.5), blurRadius: 3, spreadRadius: 0),
               // Outer soft glow
-              BoxShadow(color: Colors.cyanAccent.withValues(alpha: 0.3), blurRadius: 4, spreadRadius: 1),
+              BoxShadow(color: Colors.white.withValues(alpha: 0.3), blurRadius: 4, spreadRadius: 1),
             ],
           ),
           child: const Icon(
             Icons.wifi, // Or Icons.sensors
-            color: Colors.cyanAccent,
+            color: Colors.white,
             size: 16,
           ),
         ),

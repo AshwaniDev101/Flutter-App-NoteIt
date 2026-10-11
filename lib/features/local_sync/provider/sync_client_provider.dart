@@ -92,7 +92,12 @@ class SyncClientNotifier extends Notifier<WebSocketChannel?> {
       // Client role set at the moment the connection is successful!
       ref.read(sharedPreferenceProvider).setSyncRole(SyncRole.client);
 
-      await ref.read(syncedDevicesDaoProvider).upsertDeviceAsHost(uuid: hostUuid, name: hostName);
+      await ref.read(syncedDevicesDaoProvider).upsertDeviceAsHost(
+        uuid: hostUuid,
+        name: hostName,
+        lastKnownIp: ip,
+        lastKnownPort: port,
+      );
       AppLogger.d('Client: Saved Host $hostName to Drift DB.');
 
       // Save the connection to the state

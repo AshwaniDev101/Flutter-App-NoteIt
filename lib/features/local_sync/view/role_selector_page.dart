@@ -80,6 +80,10 @@ class RoleSelectorPage extends ConsumerWidget {
               ),
               const SizedBox(height: 32),
 
+              ElevatedButton(onPressed: (){
+                ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.syncedList);
+              }, child: Text("Synced List")),
+              const SizedBox(height: 16),
               // Dynamically reorder based on the device type
               if (isDesktop) ...[
                 hostTile,

@@ -34,7 +34,6 @@ class SyncServerNotifier extends Notifier<HttpServer?> {
     VoidCallback? onClientConnected,
     VoidCallback? onClientDisconnected,
   }) async {
-
     // --- POLICE CODE: ENFORCE MUTUAL EXCLUSIVITY ---
     // If we are currently connected as a Client, kill it before hosting.
     final isClientActive = ref.read(syncClientProvider) != null;
@@ -144,6 +143,8 @@ class SyncServerNotifier extends Notifier<HttpServer?> {
         } else {
           // PIN matched! Whitelist them for next time
           AppLogger.d("Host: PIN matched! Trusting $clientName...");
+
+          // It saves the UUID/Name for the whitelist, but ignores IP/Port.
           await syncedDevicesDao.upsertDeviceAsClient(uuid: clientUuid, name: clientName ?? 'Unknown Device');
         }
       } else {

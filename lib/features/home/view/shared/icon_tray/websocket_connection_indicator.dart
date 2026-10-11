@@ -9,7 +9,7 @@ import '../../../../local_sync/provider/sync_server_provider.dart';
 enum WebSocketActivity {
   disconnected( color: Colors.transparent, tooltip: null),
   hosting(
-    color: Colors.blueAccent,
+    color: Colors.greenAccent,
     tooltip: 'Host server running, waiting for client...',
   ),
 

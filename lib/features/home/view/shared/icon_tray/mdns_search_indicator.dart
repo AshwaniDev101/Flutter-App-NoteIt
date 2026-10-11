@@ -21,11 +21,11 @@ class MdnsSearchIndicator extends ConsumerWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             boxShadow: [// Inner tight glow
-              BoxShadow(color: Colors.amber.withValues(alpha: 0.5), blurRadius: 3, spreadRadius: 0),
+              BoxShadow(color: Colors.blueAccent.withValues(alpha: 0.5), blurRadius: 3, spreadRadius: 0),
               // Outer soft glow
-              BoxShadow(color: Colors.amber.withValues(alpha: 0.3), blurRadius: 4, spreadRadius: 1),],
+              BoxShadow(color: Colors.blueAccent.withValues(alpha: 0.3), blurRadius: 4, spreadRadius: 1),],
           ),
-          child: const Icon(Icons.search, color: Colors.amber, size: 16),
+          child: const Icon(Icons.search, color: Colors.blueAccent, size: 16),
         ),
       ),
     );

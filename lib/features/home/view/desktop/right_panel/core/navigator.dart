@@ -54,7 +54,9 @@ class DrawerNavigationController {
         break;
       case RightPanelPageOptions.hostMode:
         _handlePlatformRouting(context, option, AppRoutes.broadcastNearBy);
-      // Explicitly ignored here, but included so the switch is exhaustive
+        break;
+      case RightPanelPageOptions.syncedList:
+        _handlePlatformRouting(context, option, AppRoutes.syncedList);
         break;
     }
   }
@@ -85,6 +87,11 @@ enum RightPanelPageOptions {
     'Host Mode',
     'Broadcast a local connection for other devices to join and sync',
     Icons.wifi_tethering_outlined,
+  ),
+  syncedList(
+  'Sync List',
+  'Displays the list of all previously synced devices',
+  Icons.wifi_tethering_outlined,
   );
 
   final String label;

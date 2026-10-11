@@ -12,10 +12,25 @@ final syncedDevicesDaoProvider = Provider(
   (ref) => ref.watch(localDatabaseProvider).syncedDevicesDao,
 );
 
+final syncedDevicesStreamProvider = StreamProvider<List<SyncedDevice>>((ref) {
+  final dao = ref.watch(syncedDevicesDaoProvider);
+  return dao.watchAllDevices();
+});
+
 @DriftAccessor(tables: [SyncedDevices])
 class SyncedDevicesDao extends DatabaseAccessor<LocalDatabase>
     with _$SyncedDevicesDaoMixin {
   SyncedDevicesDao(super.db);
+
+  /// Watches all synced devices in real-time
+  Stream<List<SyncedDevice>> watchAllDevices() {
+    return select(syncedDevices).watch();
+  }
+
+  /// Deletes a device by its UUID
+  Future<int> deleteDevice(String uuid) {
+    return (delete(syncedDevices)..where((t) => t.deviceUuid.equals(uuid))).go();
+  }
 
   // LOCAL SYNC: DEVICE PAIRS (P2P HISTORY)
   Future<void> upsertDeviceAsHost({

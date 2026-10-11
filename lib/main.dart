@@ -56,7 +56,7 @@ class _MyApp extends ConsumerWidget {
     final activeTheme = ref.watch(themeProvider);
 
     return MaterialApp.router(
-      scaffoldMessengerKey: scaffoldMessengerKey,
+      // scaffoldMessengerKey: scaffoldMessengerKey,
       routerConfig: router,
       debugShowCheckedModeBanner: false,
       title: 'Note-It',

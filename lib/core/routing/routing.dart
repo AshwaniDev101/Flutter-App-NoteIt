@@ -13,6 +13,7 @@ import '../../features/local_sync/view/mdns/searcher/host_searcher.dart';
 import '../../features/local_sync/view/mdns/searcher/pin_entry_dialog.dart';
 import '../../features/local_sync/view/qr/qr_page.dart';
 import '../../features/local_sync/view/qr/qr_scanner/qr_scanner_page.dart';
+import '../../features/local_sync/view/synced_list.dart';
 import '../../features/note_editor/screens/view/desktop_edit_page.dart';
 import '../../features/note_editor/screens/view/mobile_edit_page.dart';
 import '../../features/settings/view/settings_page.dart';
@@ -37,6 +38,7 @@ class AppRoutes {
   static const String pin = '/pin-entry';
   static const String export = '/export';
   static const String import = '/import';
+  static const String syncedList = '/synced-list';
 }
 
 final routerProvider = Provider((ref) {
@@ -142,6 +144,7 @@ final routerProvider = Provider((ref) {
 
       GoRoute(path: AppRoutes.export, builder: (context, state) => const ExportNotesPage()),
       GoRoute(path: AppRoutes.import, builder: (context, state) => const ImportNotesPage()),
+      GoRoute(path: AppRoutes.syncedList, builder: (context, state) => const SyncedDevicesListView()),
     ],
   );
 });
