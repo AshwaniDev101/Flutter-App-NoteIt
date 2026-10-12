@@ -4,6 +4,7 @@ import '../../../../database/sync/sync_engine.dart';
 import '../../../../database/sync/sync_orchestrator.dart';
 import '../../keybinding/keybindings_provider.dart';
 import '../../lock/lock_manger/lock_manager.dart';
+import '../../lock/password_prompt_helper.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../home/view/desktop/right_panel/core/navigator.dart';
 
@@ -144,10 +145,12 @@ class SettingsPage extends ConsumerWidget {
                           icon: Icons.lock_outline,
                           iconColor: Colors.amber,
                           title: 'Master password',
-                          subtitle: 'Reset or clear master password',
+                          subtitle: lockState.hasMasterPassword
+                              ? 'Update or remove master password'
+                              : 'Set up master password',
                           onTap: () {
-                            //Todo: Add master password page
-                          }
+                            PasswordPromptHelper.showMasterPasswordManagement(context, ref);
+                          },
                         ),
                         Divider(height: 1, indent: 64, color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
                         SettingsSwitchTile(

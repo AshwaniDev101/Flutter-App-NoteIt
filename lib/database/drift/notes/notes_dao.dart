@@ -96,6 +96,17 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
         0;
   }
 
+  Future<int> unlockAllNotes() async {
+    return await (update(notes)..where((t) => t.isLocked.equals(true))).write(
+      NotesCompanion(
+        isLocked: const Value(false),
+        cloudSyncStatus: const Value(0),
+        localSyncStatus: const Value(0),
+        updatedAt: Value(DateTime.now().toUtc()),
+      ),
+    );
+  }
+
   // SYNC MANAGER HELPER METHODS
 
   /// CLOUD PUSH: Get local notes waiting for Firebase

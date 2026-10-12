@@ -12,12 +12,14 @@ class LockState {
   final bool isAuthenticating;
   final String? error;
   final bool keepUnlockedDuringSession;
+  final bool hasMasterPassword;
 
   const LockState({
     this.sessionUnlockedNoteIds = const {},
     this.isAuthenticating = false,
     this.error,
     this.keepUnlockedDuringSession = false,
+    this.hasMasterPassword = false,
   });
 
   LockState copyWith({
@@ -25,12 +27,14 @@ class LockState {
     bool? isAuthenticating,
     String? error,
     bool? keepUnlockedDuringSession,
+    bool? hasMasterPassword,
   }) {
     return LockState(
       sessionUnlockedNoteIds: sessionUnlockedNoteIds ?? this.sessionUnlockedNoteIds,
       isAuthenticating: isAuthenticating ?? this.isAuthenticating,
       error: error ?? this.error,
       keepUnlockedDuringSession: keepUnlockedDuringSession ?? this.keepUnlockedDuringSession,
+      hasMasterPassword: hasMasterPassword ?? this.hasMasterPassword,
     );
   }
 }
@@ -40,9 +44,13 @@ final lockManagerProvider = NotifierProvider<LockNotifier, LockState>(() => Lock
 class LockNotifier extends Notifier<LockState> {
   @override
   LockState build() {
-    // Initialize the state using the saved preference
+    // Initialize the state using saved preferences
     final keepUnlocked = ref.read(sharedPreferenceProvider).keepUnlockedDuringSession;
-    return LockState(keepUnlockedDuringSession: keepUnlocked);
+    final hasPass = ref.read(sharedPreferenceProvider).hasMasterPassword;
+    return LockState(
+      keepUnlockedDuringSession: keepUnlocked,
+      hasMasterPassword: hasPass,
+    );
   }
 
   bool get hasMasterPassword => ref.read(sharedPreferenceProvider).hasMasterPassword;
@@ -84,10 +92,41 @@ class LockNotifier extends Notifier<LockState> {
     state = state.copyWith(isAuthenticating: true, error: null);
     try {
       final success = await ref.read(sharedPreferenceProvider).setMasterPassword(password);
-      state = state.copyWith(isAuthenticating: false);
+      state = state.copyWith(
+        isAuthenticating: false,
+        hasMasterPassword: true,
+      );
       return success;
     } catch (e) {
       state = state.copyWith(isAuthenticating: false, error: 'Failed to save password');
+      return false;
+    }
+  }
+
+  Future<bool> removeMasterPassword() async {
+    state = state.copyWith(isAuthenticating: true, error: null);
+    try {
+      // 1. Unlock all locked notes in the local database
+      await ref.read(notesDaoProvider).unlockAllNotes();
+
+      // 2. Remove master password from preferences
+      final success = await ref.read(sharedPreferenceProvider).removeMasterPassword();
+
+      // 3. Clear session memory
+      clearAllSessions();
+
+      // 4. Update state
+      state = state.copyWith(
+        isAuthenticating: false,
+        hasMasterPassword: false,
+      );
+
+      // 5. Trigger sync so changes propagate to sync targets
+      ref.read(syncOrchestratorProvider).triggerSync();
+
+      return success;
+    } catch (e) {
+      state = state.copyWith(isAuthenticating: false, error: 'Failed to remove password');
       return false;
     }
   }

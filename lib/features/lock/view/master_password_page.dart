@@ -2,14 +2,14 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 
-class PasswordPage extends StatefulWidget {
-  const PasswordPage({super.key});
+class MasterPasswordPage extends StatefulWidget {
+  const MasterPasswordPage({super.key});
 
   @override
-  State<PasswordPage> createState() => _PasswordPageState();
+  State<MasterPasswordPage> createState() => _MasterPasswordPageState();
 }
 
-class _PasswordPageState extends State<PasswordPage> {
+class _MasterPasswordPageState extends State<MasterPasswordPage> {
   final TextEditingController _controller = TextEditingController();
 
   // State variable for password visibility

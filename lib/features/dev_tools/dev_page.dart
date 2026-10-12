@@ -60,15 +60,10 @@ class DevPage extends ConsumerWidget {
                         ),
                       ),
                       onPressed: () async {
-                        // Wipe the master password from disk
+                        // Wipe the master password and clear sessions
                         await ref
-                            .read(sharedPreferenceProvider)
-                            .removeMasterPassword();
-
-                        // Clear out any temporary session unlocks in memory
-                        ref
                             .read(lockManagerProvider.notifier)
-                            .clearAllSessions();
+                            .removeMasterPassword();
 
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(

@@ -19,7 +19,7 @@ class SyncedDevicesListView extends ConsumerWidget {
   IconData _getPlatformIcon(String? platform) {
     switch (platform?.toLowerCase()) {
       case 'android': return Icons.android;
-      case 'ios': return Icons.apple; // Note: Ensure you have cupertino_icons or use Icons.phone_iphone
+      case 'ios': return Icons.apple;
       case 'windows': return Icons.desktop_windows;
       case 'macos': return Icons.laptop_mac;
       case 'linux': return Icons.computer;
