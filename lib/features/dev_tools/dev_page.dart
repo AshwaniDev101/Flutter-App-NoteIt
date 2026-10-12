@@ -1,26 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../database/shared_preference/shared_preference_manager.dart';
-import '../home/view/shared/desktop_close_button.dart';
-import '../lock/lock_manger/lock_manager.dart';
+import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
+import 'package:noteit/features/home/view/desktop/right_panel/core/navigator.dart';
+import 'package:noteit/features/lock/lock_manger/lock_manager.dart';
+import 'package:noteit/shared/widgets/app_scaffold.dart';
 
 class DevPage extends ConsumerWidget {
   const DevPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-
-    final colorScheme = Theme.of(context).colorScheme;
-    return Scaffold(
-      backgroundColor: colorScheme.surfaceContainerLowest,
-      appBar: AppBar(
-        title: const Text('Developer Tools'),
-        backgroundColor: colorScheme.surfaceContainerLowest,
-        centerTitle: true,
-        actions: [
-          DesktopCloseButton(),
-        ],
-      ),
+    return AppScaffold.rightPanel(
+      option: RightPanelPageOptions.devTools,
       body: Center(
         child: SingleChildScrollView(
           child: Padding(

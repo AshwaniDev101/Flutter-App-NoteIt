@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../../../shared/widgets/app_scaffold.dart';
 
 class SetupPasswordPage extends StatefulWidget {
   const SetupPasswordPage({super.key});
@@ -46,7 +47,7 @@ class _SetupPasswordPageState extends State<SetupPasswordPage> {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    return Scaffold(
+    return AppScaffold(
       backgroundColor: Colors.black.withValues(alpha: 0.25),
       body: GestureDetector(
         behavior: HitTestBehavior.opaque,

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/theme/app_theme.dart';
 
-import '../../home/view/shared/desktop_close_button.dart';
+import '../../home/view/desktop/right_panel/core/navigator.dart';
+import '../../../shared/widgets/app_scaffold.dart';
 
 class ThemesPage extends ConsumerWidget {
   const ThemesPage({super.key});
@@ -11,11 +12,8 @@ class ThemesPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currentTheme = ref.watch(themeProvider);
 
-    final colorScheme = Theme.of(context).colorScheme;
-    return Scaffold(
-
-      appBar: AppBar(title: const Text('Appearance'), centerTitle: true, actions: [DesktopCloseButton()],backgroundColor: colorScheme.surfaceContainerLowest,),
-      backgroundColor: colorScheme.surfaceContainerLowest,
+    return AppScaffold.rightPanel(
+      option: RightPanelPageOptions.themes,
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1000),

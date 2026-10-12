@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart';
 
 import '../../database/drift/local_database.dart';
 import '../../database/drift/notes/notes_dao.dart';
+import '../../shared/widgets/app_scaffold.dart';
 
 class ImportNotesPage extends ConsumerStatefulWidget {
   const ImportNotesPage({super.key});
@@ -170,11 +171,8 @@ class _ImportNotesPageState extends ConsumerState<ImportNotesPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Import Notes'),
-        centerTitle: true,
-      ),
+    return AppScaffold(
+      title: const Text('Import Notes'),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 700),

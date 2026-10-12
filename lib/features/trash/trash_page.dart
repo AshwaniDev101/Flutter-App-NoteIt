@@ -7,6 +7,7 @@ import '../../database/drift/notes/notes_dao.dart';
 import '../../database/firebase/firebase_database.dart';
 import '../../database/sync/sync_orchestrator.dart';
 import '../../shared/widgets/note_card/note_card.dart';
+import '../../shared/widgets/app_scaffold.dart';
 import '../home/view/shared/desktop_close_button.dart';
 
 final trashNotesProvider = StreamProvider.autoDispose<List<Note>>((ref) {
@@ -284,10 +285,8 @@ class _TrashPageState extends ConsumerState<TrashPage> {
   @override
   Widget build(BuildContext context) {
     final trashState = ref.watch(trashNotesProvider);
-    final colorScheme = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      backgroundColor: colorScheme.surfaceContainerLowest,
+    return AppScaffold(
       appBar: _buildAppBar(trashState.value ?? []),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 3.0),

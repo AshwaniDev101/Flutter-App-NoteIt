@@ -4,6 +4,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:noteit/features/local_sync/view/qr/qr_scanner/widgets/shaded_overlay.dart';
 
 import '../../../provider/sync_client_provider.dart';
+import '../../../../../shared/widgets/app_scaffold.dart';
 
 class QrScannerPage extends ConsumerStatefulWidget {
   const QrScannerPage({super.key});
@@ -79,11 +80,9 @@ class _QrScannerPageState extends ConsumerState<QrScannerPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Scan to Sync'),
-        actions: [IconButton(icon: const Icon(Icons.cameraswitch), onPressed: () => cameraController.switchCamera())],
-      ),
+    return AppScaffold(
+      title: const Text('Scan to Sync'),
+      actions: [IconButton(icon: const Icon(Icons.cameraswitch), onPressed: () => cameraController.switchCamera())],
       body: MobileScanner(
         controller: cameraController,
         onDetect: _onDetect,

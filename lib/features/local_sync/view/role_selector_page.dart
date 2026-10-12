@@ -1,18 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../../home/view/desktop/right_panel/core/navigator.dart';
-import '../../home/view/shared/desktop_close_button.dart';
+import 'package:noteit/features/home/view/desktop/right_panel/core/navigator.dart';
+import 'package:noteit/shared/widgets/app_scaffold.dart';
 
 class RoleSelectorPage extends ConsumerWidget {
   const RoleSelectorPage({super.key});
 
   @override
   Widget build(BuildContext context, ref) {
-
-
-    final colorScheme = Theme.of(context).colorScheme;
-
     // Detect if the app is running on a desktop platform
     final platform = Theme.of(context).platform;
     final isDesktop = platform == TargetPlatform.macOS ||
@@ -42,22 +37,12 @@ class RoleSelectorPage extends ConsumerWidget {
       color: Colors.green,
       isRecommended: isDesktop, // Recommended if on Desktop
       onTap: () {
-        // context.push(AppRoutes.broadcastNearBy);
         ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.hostMode);
       },
     );
 
-    return Scaffold(
-
-      backgroundColor: colorScheme.surfaceContainerLowest,
-      appBar: AppBar(
-        title: const Text('Local Sync'),
-        centerTitle: true,
-        backgroundColor: colorScheme.surfaceContainerLowest,
-        actions: [
-          DesktopCloseButton(),
-        ],
-      ),
+    return AppScaffold.rightPanel(
+      option: RightPanelPageOptions.localSync,
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 600),

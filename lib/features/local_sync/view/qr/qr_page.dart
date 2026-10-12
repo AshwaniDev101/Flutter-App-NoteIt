@@ -5,6 +5,7 @@ import 'package:noteit/core/routing/routing.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../provider/sync_session_provider.dart';
+import '../../../../shared/widgets/app_scaffold.dart';
 
 
 
@@ -16,15 +17,8 @@ class QrCodePage extends ConsumerWidget {
     // Watch the FutureProvider
     final syncSessionAsync = ref.watch(syncSessionProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Host Local Sync'),
-        centerTitle: true,
-
-        // actions: [IconButton(onPressed: () {}, icon: const Icon(Icons.share))],
-      ),
-
-      // Use Riverbed's .when() to handle the loading, error, and success states
+    return AppScaffold(
+      title: const Text('Host Local Sync'),
       body: syncSessionAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Center(child: Text('Network Error: $error')),

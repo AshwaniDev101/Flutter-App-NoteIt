@@ -4,10 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:noteit/core/routing/routing.dart';
 import '../../../../database/sync/sync_engine.dart';
 import '../../../../database/sync/sync_orchestrator.dart';
-import '../../../core/util/platform_helper.dart';
-import '../../home/view/shared/desktop_close_button.dart';
 import '../../keybinding/keybindings_provider.dart';
 import '../../lock/lock_manger/lock_manager.dart';
+import '../../../shared/widgets/app_scaffold.dart';
+import '../../home/view/desktop/right_panel/core/navigator.dart';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
@@ -24,17 +24,8 @@ class SettingsPage extends ConsumerWidget {
     // Watch shortcut preferences
     final shortcutPrefs = ref.watch(shortcutPreferencesProvider);
 
-    return Scaffold(
-      backgroundColor: colorScheme.surfaceContainerLowest,
-      appBar: AppBar(
-        title: const Text('Settings'),
-        centerTitle: true,
-        actions: [DesktopCloseButton()],
-        elevation: 0,
-        backgroundColor: colorScheme.surfaceContainerLowest,
-        // App bar don't change color when scrolling on desktops
-        scrolledUnderElevation: PlatformHelper.isDesktopScreen? 0.0 : null,
-      ),
+    return AppScaffold.rightPanel(
+      option: RightPanelPageOptions.settings,
       body: SingleChildScrollView(
         child: Center(
           child: ConstrainedBox(

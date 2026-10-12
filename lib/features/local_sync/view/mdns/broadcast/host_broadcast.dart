@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../home/view/shared/desktop_close_button.dart';
+import '../../../../home/view/desktop/right_panel/core/navigator.dart';
+import '../../../../../shared/widgets/app_scaffold.dart';
 import '../../../provider/sync_session_provider.dart';
 
 class HostBroadcastPage extends ConsumerWidget {
@@ -12,16 +13,8 @@ class HostBroadcastPage extends ConsumerWidget {
     // Watching this provider automatically starts the server and mDNS broadcast.
     // Because it is autoDispose, leaving this page will automatically shut them down.
     final sessionAsync = ref.watch(syncSessionProvider);
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Scaffold(
-      backgroundColor: colorScheme.surfaceContainerLowest,
-      appBar: AppBar(
-        title: const Text('Host Sync'),
-        centerTitle: true,
-        backgroundColor: colorScheme.surfaceContainerLowest,
-        actions: [DesktopCloseButton()],
-      ),
+    return AppScaffold.rightPanel(
+      option: RightPanelPageOptions.hostMode,
       body: sessionAsync.when(
         loading: () => const Center(
           child: Column(

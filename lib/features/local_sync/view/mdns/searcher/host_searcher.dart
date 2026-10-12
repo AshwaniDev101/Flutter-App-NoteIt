@@ -5,7 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:noteit/core/routing/routing.dart';
 
 import '../../../../../core/config.dart';
-import '../../../../home/view/shared/desktop_close_button.dart';
+import '../../../../home/view/desktop/right_panel/core/navigator.dart';
+import '../../../../../shared/widgets/app_scaffold.dart';
 import '../../../auto_connect/mdns_searcher.dart';
 import '../../../provider/sync_client_provider.dart';
 import 'pin_dialog/host_connection_controller.dart';
@@ -63,32 +64,22 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
     final devices = searchState.devices;
     final isScanning = searchState.status == ScanStatus.scanning;
 
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Scaffold(
-      backgroundColor: colorScheme.surfaceContainerLowest,
-      appBar: AppBar(
-        title: const Text('Nearby Devices'),
-
-        centerTitle: true,
-        backgroundColor: colorScheme.surfaceContainerLowest,
-        actions: [
-          if (isScanning)
-            const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
-            )
-          else
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: () {
-                ref.read(mdnsSearcherProvider.notifier).startRadar();
-              },
-            ),
-
-          DesktopCloseButton(),
-        ],
-      ),
+    return AppScaffold.rightPanel(
+      option: RightPanelPageOptions.clientMode,
+      actions: [
+        if (isScanning)
+          const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+          )
+        else
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              ref.read(mdnsSearcherProvider.notifier).startRadar();
+            },
+          ),
+      ],
       body: searchState.status == ScanStatus.error
           ? Center(
               child: Text(

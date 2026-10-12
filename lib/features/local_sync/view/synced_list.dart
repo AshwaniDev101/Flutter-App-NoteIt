@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/util/platform_helper.dart';
 import '../../../database/drift/synced_devices/synced_devices_dao.dart';
-import '../../home/view/shared/desktop_close_button.dart';
+import '../../home/view/desktop/right_panel/core/navigator.dart';
+import '../../../../shared/widgets/app_scaffold.dart';
 
 class SyncedDevicesListView extends ConsumerWidget {
   const SyncedDevicesListView({super.key});
@@ -31,20 +31,9 @@ class SyncedDevicesListView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final devicesAsyncValue = ref.watch(syncedDevicesStreamProvider);
-    final colorScheme = Theme.of(context).colorScheme;
-    return Scaffold(
-      backgroundColor: colorScheme.surfaceContainerLowest,
-      appBar: AppBar(
-        title: const Text('Synced Devices'),
-        centerTitle: true,
-        actions: [
-          DesktopCloseButton(),
-        ],
-        backgroundColor: colorScheme.surfaceContainerLowest,
-        scrolledUnderElevation: PlatformHelper.isDesktopScreen? 0.0 : null,
 
-
-      ),
+    return AppScaffold.rightPanel(
+      option: RightPanelPageOptions.syncedList,
       body: devicesAsyncValue.when(
         data: (devices) {
           if (devices.isEmpty) {

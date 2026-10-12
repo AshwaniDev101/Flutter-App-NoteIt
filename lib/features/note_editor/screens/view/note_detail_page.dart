@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/util/platform_helper.dart';
 import '../../../home/core/providers.dart';
-import '../../../home/view/shared/desktop_close_button.dart';
+import '../../../home/view/desktop/right_panel/core/navigator.dart';
+import '../../../../shared/widgets/app_scaffold.dart';
 
 class NoteDetailsPage extends ConsumerWidget {
   const NoteDetailsPage({super.key});
@@ -11,15 +11,9 @@ class NoteDetailsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final note = ref.watch(activeNoteProvider)!;
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
 
-    return Scaffold(
-      backgroundColor: colorScheme.surfaceContainerLowest,
-      appBar: AppBar(title: const Text('Note Metadata'), centerTitle: true, actions: [DesktopCloseButton()],
-        backgroundColor: colorScheme.surfaceContainerLowest,
-        // App bar don't change color when scrolling on desktops
-        scrolledUnderElevation: PlatformHelper.isDesktopScreen? 0.0 : null,),
+    return AppScaffold.rightPanel(
+      option: RightPanelPageOptions.noteDetails,
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
