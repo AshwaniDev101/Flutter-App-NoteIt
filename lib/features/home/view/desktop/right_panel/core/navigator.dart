@@ -58,6 +58,9 @@ class DrawerNavigationController {
       case RightPanelPageOptions.syncedList:
         _handlePlatformRouting(context, option, AppRoutes.syncedList);
         break;
+      case RightPanelPageOptions.noteDetails:
+        _handlePlatformRouting(context, option, AppRoutes.noteDetails);
+        break;
     }
   }
 
@@ -76,6 +79,8 @@ class DrawerNavigationController {
 }
 
 enum RightPanelPageOptions {
+  // Im not really user the icon, title or description, but will leave them for possible future use
+  // Todo: Decide what to do here
   allNotes('All Notes', 'View, search, and manage all your saved notes', Icons.grid_view_rounded),
   trash('Trash', 'Recover deleted items or empty the recycle bin', Icons.delete_outline_rounded),
   themes('Themes', 'Personalize your colors, background, and appearance', Icons.palette_outlined),
@@ -92,8 +97,14 @@ enum RightPanelPageOptions {
   'Sync List',
   'Displays the list of all previously synced devices',
   Icons.wifi_tethering_outlined,
-  );
+  ),
 
+
+  noteDetails(
+  'Note Details',
+  'Shows al the Metadata about the note',
+  Icons.info_outline,
+  );
   final String label;
   final String description;
   final IconData icon;

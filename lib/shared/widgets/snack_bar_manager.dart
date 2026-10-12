@@ -90,7 +90,7 @@ class SnackBarManager {
           description,
           style: TextStyle(
             fontSize: 13,
-            color: foregroundColor.withOpacity(0.85), // Slightly dim for hierarchy
+            color: foregroundColor.withValues(alpha: 0.85), // Slightly dim for hierarchy
           ),
           softWrap: true,
           maxLines: 15,

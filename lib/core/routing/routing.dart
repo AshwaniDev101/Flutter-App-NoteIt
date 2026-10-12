@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/features/local_sync/view/role_selector_page.dart';
+import 'package:noteit/features/note_editor/screens/view/note_detail_page.dart';
 
 import '../../features/backup/export_page.dart';
 import '../../features/backup/import_page.dart';
@@ -39,6 +40,7 @@ class AppRoutes {
   static const String export = '/export';
   static const String import = '/import';
   static const String syncedList = '/synced-list';
+  static const String noteDetails = '/note-details';
 }
 
 final routerProvider = Provider((ref) {
@@ -49,7 +51,6 @@ final routerProvider = Provider((ref) {
       GoRoute(
         path: AppRoutes.home,
         builder: (context, state) {
-
           if (PlatformHelper.isDesktopScreen) {
             return DesktopHomePage();
           } else {
@@ -61,7 +62,6 @@ final routerProvider = Provider((ref) {
         path: AppRoutes.edit,
         builder: (context, state) {
           final note = state.extra as Note?;
-
 
           if (PlatformHelper.isDesktopScreen) {
             return DesktopEditNotePage(existingNote: note);
@@ -91,7 +91,6 @@ final routerProvider = Provider((ref) {
       //     return const MasterPasswordPage();
       //   },
       // ),
-
       GoRoute(
         path: AppRoutes.trash,
         builder: (context, state) {
@@ -145,6 +144,12 @@ final routerProvider = Provider((ref) {
       GoRoute(path: AppRoutes.export, builder: (context, state) => const ExportNotesPage()),
       GoRoute(path: AppRoutes.import, builder: (context, state) => const ImportNotesPage()),
       GoRoute(path: AppRoutes.syncedList, builder: (context, state) => const SyncedDevicesListView()),
+      GoRoute(path: AppRoutes.noteDetails, builder: (context, state) => const NoteDetailsPage()),
+
+
+
+      // Do not forget to update the navigator.dart file in
+      // lib/features/home/view/desktop/right_panel/core/navigator.dart
     ],
   );
 });

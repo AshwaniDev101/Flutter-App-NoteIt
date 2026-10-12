@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
-import '../../../core/routing/routing.dart';
 import '../../home/view/desktop/right_panel/core/navigator.dart';
 import '../../home/view/shared/desktop_close_button.dart';
 

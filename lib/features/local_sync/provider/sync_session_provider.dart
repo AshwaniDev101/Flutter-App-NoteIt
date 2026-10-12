@@ -1,8 +1,6 @@
 import 'dart:math';
 
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:network_info_plus/network_info_plus.dart';
 import 'package:noteit/features/local_sync/provider/sync_server_provider.dart';
 
 import '../../../core/config.dart'; // <-- ADDED THIS FOR AppConfig

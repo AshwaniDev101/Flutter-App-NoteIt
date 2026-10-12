@@ -7,7 +7,8 @@ enum NoteEditorOption {
   checklist('Checklist', Icons.check_box_outlined, 'Turn to Checklist'),
   archive('Archive', Icons.archive_outlined, 'Archive Note'),
   find('Find', Icons.search_outlined, 'Find in Note'),
-  reminder('Reminder', Icons.notifications_none_outlined, 'Set Reminder'); // Semicolon is still required here
+  reminder('Reminder', Icons.notifications_none_outlined, 'Set Reminder'),
+  info('Details', Icons.info_outline, 'Note Meta Data'); // Semicolon is still required here
 
   final String label;
   final IconData icon;

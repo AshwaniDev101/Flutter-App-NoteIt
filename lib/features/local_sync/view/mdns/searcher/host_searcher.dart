@@ -5,8 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:noteit/core/routing/routing.dart';
 
 import '../../../../../core/config.dart';
-import '../../../../../core/util/logger.dart';
-import '../../../../../database/drift/synced_devices/synced_devices_dao.dart';
 import '../../../../home/view/shared/desktop_close_button.dart';
 import '../../../auto_connect/mdns_searcher.dart';
 import '../../../provider/sync_client_provider.dart';

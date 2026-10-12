@@ -1,7 +1,6 @@
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:network_info_plus/network_info_plus.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 
 /// Create a FutureProvider to fetch cross-platform device info asynchronously
 final deviceInfoProvider = FutureProvider<BaseDeviceInfo>((ref) async {

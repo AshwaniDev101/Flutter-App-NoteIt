@@ -5,10 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/config.dart';
 import 'package:nsd/nsd.dart';
 
-import '../../../core/app_env.dart';
 import '../../../core/device_info.dart';
 import '../../../core/util/logger.dart';
-import '../provider/sync_session_provider.dart';
 import 'mdns_searcher.dart';
 
 // ==== Server side ===

@@ -11,6 +11,7 @@ import '../../../../local_sync/view/mdns/searcher/host_searcher.dart';
 import '../../../../local_sync/view/role_selector_page.dart';
 import '../../../../local_sync/view/synced_list.dart';
 import '../../../../note_editor/screens/view/desktop_edit_page.dart';
+import '../../../../note_editor/screens/view/note_detail_page.dart';
 import '../../../../settings/view/settings_page.dart';
 import '../../../../themes/view/theme_page.dart';
 import '../../../../trash/trash_page.dart';
@@ -116,6 +117,11 @@ class DesktopRightPanel extends ConsumerWidget {
       RightPanelPageOptions.syncedList => const _PaddingWrapper(
         key: ValueKey('synced_devices_list_view'),
         child: SyncedDevicesListView(),
+      ),
+
+      RightPanelPageOptions.noteDetails => _PaddingWrapper(
+        key: const ValueKey('note_details_view'),
+        child: NoteDetailsPage(),
       ),
     };
   }

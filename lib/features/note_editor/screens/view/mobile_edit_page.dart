@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:noteit/database/drift/local_database.dart';
 
 import '../../../../shared/widgets/snack_bar_manager.dart';
+import '../../../home/view/desktop/right_panel/core/navigator.dart';
 import '../../widgets/note_editor_options.dart';
 import '../../../lock/lock_manger/lock_manager.dart';
 import '../../../lock/view/setup_password_page.dart';
@@ -182,6 +183,9 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
                 case NoteEditorOption.find:
                   break;
                 case NoteEditorOption.reminder:
+                  break;
+                case NoteEditorOption.info:
+                  ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.noteDetails);
                   break;
               }
             },
