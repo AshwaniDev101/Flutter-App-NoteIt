@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'package:noteit/core/routing/routing.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../provider/sync_session_provider.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
+import '../../../home/view/desktop/right_panel/core/navigator.dart';
 
 
 
@@ -17,8 +16,8 @@ class QrCodePage extends ConsumerWidget {
     // Watch the FutureProvider
     final syncSessionAsync = ref.watch(syncSessionProvider);
 
-    return AppScaffold(
-      title: const Text('Host Local Sync'),
+    return AppScaffold.rightPanel(
+      option: RightPanelPageOptions.qr,
       body: syncSessionAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Center(child: Text('Network Error: $error')),
@@ -63,7 +62,7 @@ class QrCodePage extends ConsumerWidget {
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    context.push(AppRoutes.scan);
+                    ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.scan);
                   },
                   child: const Text("Scan QR"),
                 ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../../../shared/widgets/app_scaffold.dart';
+import '../../../../../home/view/desktop/right_panel/core/navigator.dart';
 
 class PinEntryDialog extends StatefulWidget {
   const PinEntryDialog({super.key});
@@ -31,8 +32,8 @@ class _PinEntryDialogState extends State<PinEntryDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AppScaffold(
-      title: const Text('Pair Device'),
+    return AppScaffold.rightPanel(
+      option: RightPanelPageOptions.pin,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24.0),

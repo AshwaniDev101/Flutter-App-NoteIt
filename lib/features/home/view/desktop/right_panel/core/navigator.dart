@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-
 import '../../../../../../core/routing/routing.dart';
 import '../../../../../../core/util/platform_helper.dart';
 import '../../../../core/providers.dart';
-
 
 final drawerNavigationProvider = Provider((ref) {
   return DrawerNavigationController(ref);
@@ -18,7 +16,7 @@ class DrawerNavigationController {
 
   void navigate(BuildContext context, RightPanelPageOptions option) {
     if (Navigator.of(context).canPop()) {
-      Navigator.of(context).pop();// Close the drawer
+      Navigator.of(context).pop(); // Close the drawer
     }
 
     // The compiler will force you to update this switch if you ever add new enums!
@@ -52,24 +50,47 @@ class DrawerNavigationController {
       case RightPanelPageOptions.clientMode:
         _handlePlatformRouting(context, option, AppRoutes.searchNearBy);
         break;
+
       case RightPanelPageOptions.hostMode:
         _handlePlatformRouting(context, option, AppRoutes.broadcastNearBy);
         break;
+
       case RightPanelPageOptions.syncedList:
         _handlePlatformRouting(context, option, AppRoutes.syncedList);
         break;
+
       case RightPanelPageOptions.noteDetails:
         _handlePlatformRouting(context, option, AppRoutes.noteDetails);
+        break;
+
+      case RightPanelPageOptions.export:
+        _handlePlatformRouting(context, option, AppRoutes.export);
+        break;
+
+      case RightPanelPageOptions.import:
+        _handlePlatformRouting(context, option, AppRoutes.import);
+        break;
+
+      case RightPanelPageOptions.qr:
+        _handlePlatformRouting(context, option, AppRoutes.qr);
+        break;
+
+      case RightPanelPageOptions.scan:
+        _handlePlatformRouting(context, option, AppRoutes.scan);
+        break;
+
+      case RightPanelPageOptions.pin:
+        _handlePlatformRouting(context, option, AppRoutes.pin);
         break;
     }
   }
 
-  // A private helper to stop writing the same if/else block 5 times!
+  // A private helper to stop writing the same if/else block
   void _handlePlatformRouting(
-      BuildContext context,
-      RightPanelPageOptions option,
-      String mobileRoute,
-      ) {
+    BuildContext context,
+    RightPanelPageOptions option,
+    String mobileRoute,
+  ) {
     if (PlatformHelper.isDesktopScreen) {
       ref.read(desktopRightPanelViewProvider.notifier).setView(option);
     } else {
@@ -79,8 +100,6 @@ class DrawerNavigationController {
 }
 
 enum RightPanelPageOptions {
-  // Im not really user the icon, title or description, but will leave them for possible future use
-  // Todo: Decide what to do here
   allNotes('All Notes', 'View, search, and manage all your saved notes', Icons.grid_view_rounded),
   trash('Trash', 'Recover deleted items or empty the recycle bin', Icons.delete_outline_rounded),
   themes('Themes', 'Personalize your colors, background, and appearance', Icons.palette_outlined),
@@ -88,27 +107,18 @@ enum RightPanelPageOptions {
   settings('Settings', 'Configure app preferences, accounts, and behavior', Icons.settings_outlined),
   devTools('Dev Tools', 'Advanced debugging and diagnostic utilities', Icons.bug_report_outlined),
   clientMode('Client Mode', 'Connect to a host device on your network to sync notes', Icons.devices_outlined),
-  hostMode(
-    'Host Mode',
-    'Broadcast a local connection for other devices to join and sync',
-    Icons.wifi_tethering_outlined,
-  ),
-  syncedList(
-  'Sync List',
-  'Displays the list of all previously synced devices',
-  Icons.wifi_tethering_outlined,
-  ),
+  hostMode('Host Mode', 'Broadcast a local connection for other devices to join and sync', Icons.wifi_tethering_outlined),
+  syncedList('Sync List', 'Displays the list of all previously synced devices', Icons.wifi_tethering_outlined),
+  noteDetails('Note Details', 'Shows all the metadata about the note', Icons.info_outline),
+  export('Export Notes', 'Download notes to a file', Icons.download_outlined),
+  import('Import Notes', 'Upload notes from a file', Icons.upload_outlined),
+  qr('Host QR Code', 'Show QR code for device pairing', Icons.qr_code_outlined),
+  scan('Scan QR Code', 'Scan a host QR code to join', Icons.qr_code_scanner_outlined),
+  pin('Pairing PIN', 'Enter PIN to pair with device', Icons.pin_outlined);
 
-
-  noteDetails(
-  'Note Details',
-  'Shows al the Metadata about the note',
-  Icons.info_outline,
-  );
   final String label;
   final String description;
   final IconData icon;
 
   const RightPanelPageOptions(this.label, this.description, this.icon);
-
 }

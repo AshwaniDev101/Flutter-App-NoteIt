@@ -28,7 +28,6 @@ class AppRoutes {
   static const String search = '/search';
   static const String themes = '/themes';
   static const String settings = '/settings';
-  static const String masterPassword = '/master-password';
   static const String trash = '/trash';
   static const String dev = '/dev';
   static const String roleSelector = '/role-selector';

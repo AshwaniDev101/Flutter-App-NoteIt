@@ -7,6 +7,7 @@ import 'package:file_picker/file_picker.dart';
 import '../../database/drift/notes/notes_dao.dart';
 import '../lock/password_prompt_helper.dart';
 import '../../shared/widgets/app_scaffold.dart';
+import '../home/view/desktop/right_panel/core/navigator.dart';
 
 enum ExportFormat { json, csv }
 
@@ -189,8 +190,8 @@ class _ExportNotesPageState extends ConsumerState<ExportNotesPage> {
 
   @override
   Widget build(BuildContext context) {
-    return AppScaffold(
-      title: const Text('Export Notes'),
+    return AppScaffold.rightPanel(
+      option: RightPanelPageOptions.export,
       body: _isExporting
           ? const Center(child: CircularProgressIndicator())
           : Center(

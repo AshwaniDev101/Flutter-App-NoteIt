@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'package:noteit/core/routing/routing.dart';
 import '../../../../database/sync/sync_engine.dart';
 import '../../../../database/sync/sync_orchestrator.dart';
 import '../../keybinding/keybindings_provider.dart';
@@ -147,7 +145,9 @@ class SettingsPage extends ConsumerWidget {
                           iconColor: Colors.amber,
                           title: 'Master password',
                           subtitle: 'Reset or clear master password',
-                          onTap: () => context.push(AppRoutes.masterPassword),
+                          onTap: () {
+                            //Todo: Add master password page
+                          }
                         ),
                         Divider(height: 1, indent: 64, color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
                         SettingsSwitchTile(
@@ -213,7 +213,7 @@ class SettingsPage extends ConsumerWidget {
                     iconColor: Colors.pinkAccent,
                     title: 'Export Notes',
                     subtitle: 'Download notes to a folder',
-                    onTap: () => context.push(AppRoutes.export),
+                    onTap: () => ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.export),
                   ),
 
                   SettingsTile(
@@ -221,7 +221,7 @@ class SettingsPage extends ConsumerWidget {
                     iconColor: Colors.redAccent,
                     title: 'Import Notes',
                     subtitle: 'Upload notes from a folder',
-                    onTap: () => context.push(AppRoutes.import),
+                    onTap: () => ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.import),
                   ),
                 ],
               ),

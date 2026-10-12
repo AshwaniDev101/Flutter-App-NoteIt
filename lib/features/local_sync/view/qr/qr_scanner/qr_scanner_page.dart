@@ -5,6 +5,7 @@ import 'package:noteit/features/local_sync/view/qr/qr_scanner/widgets/shaded_ove
 
 import '../../../provider/sync_client_provider.dart';
 import '../../../../../shared/widgets/app_scaffold.dart';
+import '../../../../home/view/desktop/right_panel/core/navigator.dart';
 
 class QrScannerPage extends ConsumerStatefulWidget {
   const QrScannerPage({super.key});
@@ -80,8 +81,8 @@ class _QrScannerPageState extends ConsumerState<QrScannerPage> {
 
   @override
   Widget build(BuildContext context) {
-    return AppScaffold(
-      title: const Text('Scan to Sync'),
+    return AppScaffold.rightPanel(
+      option: RightPanelPageOptions.scan,
       actions: [IconButton(icon: const Icon(Icons.cameraswitch), onPressed: () => cameraController.switchCamera())],
       body: MobileScanner(
         controller: cameraController,

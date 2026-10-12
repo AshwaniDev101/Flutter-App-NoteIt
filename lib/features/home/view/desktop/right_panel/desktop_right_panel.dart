@@ -5,9 +5,14 @@ import 'package:noteit/features/home/view/shared/icon_tray/icon_tray.dart';
 import 'package:window_manager/window_manager.dart';
 import '../../../../../core/app_env.dart';
 import '../../../../../core/util/platform_helper.dart';
+import '../../../../backup/export_page.dart';
+import '../../../../backup/import_page.dart';
 import '../../../../dev_tools/dev_page.dart';
 import '../../../../local_sync/view/mdns/broadcast/host_broadcast.dart';
 import '../../../../local_sync/view/mdns/searcher/host_searcher.dart';
+import '../../../../local_sync/view/mdns/searcher/pin_dialog/pin_entry_dialog.dart';
+import '../../../../local_sync/view/qr/qr_page.dart';
+import '../../../../local_sync/view/qr/qr_scanner/qr_scanner_page.dart';
 import '../../../../local_sync/view/role_selector_page.dart';
 import '../../../../local_sync/view/synced_list.dart';
 import '../../../../note_editor/screens/view/desktop_edit_page.dart';
@@ -25,7 +30,6 @@ class DesktopRightPanel extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-
     final currentView = ref.watch(desktopRightPanelViewProvider);
     final colorScheme = Theme.of(context).colorScheme;
     final versionString = "v${AppEnv.version}-${AppEnv.buildNumber}";
@@ -36,23 +40,15 @@ class DesktopRightPanel extends ConsumerWidget {
         child: DragToMoveArea(
           child: AppBar(
             elevation: 0,
-
             leading: Padding(
               padding: const EdgeInsets.all(8.0),
-              child: Text(versionString,style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant)),
+              child: Text(versionString, style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant)),
             ),
             leadingWidth: 200,
-            // Automatically show the current page title
-            // title: currentView != DrawerOption.allNotes
-            //     ? Text(currentView.title)
-            //     : null,
             scrolledUnderElevation: PlatformHelper.isDesktopScreen ? 0.0 : null,
-
             actions: [
-              // WebSocketConnectionIndicator(isConnected: isConnected),
               IconTray(),
               const SizedBox(width: 8),
-              // Re-add standard window controls manually for desktop frame logic
               IconButton(icon: const Icon(Icons.minimize, size: 16), onPressed: () => windowManager.minimize()),
               IconButton(
                 icon: const Icon(Icons.crop_square, size: 16),
@@ -70,25 +66,18 @@ class DesktopRightPanel extends ConsumerWidget {
           ),
         ),
       ),
-
-      // Inject the Editor widget if a note is selected, otherwise show a placeholder graphic.
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 200),
         reverseDuration: const Duration(milliseconds: 150),
         switchInCurve: Curves.easeOutCubic,
-        // Decelerates smoothly into place
         switchOutCurve: Curves.easeIn,
-
         transitionBuilder: (Widget child, Animation<double> animation) {
-          // Scale from 96% to 100% while fading in
           final scaleAnimation = Tween<double>(begin: 0.96, end: 1.0).animate(animation);
-
           return FadeTransition(
             opacity: animation,
             child: ScaleTransition(scale: scaleAnimation, child: child),
           );
         },
-
         child: _buildRightPanelContent(currentView),
       ),
     );
@@ -101,8 +90,7 @@ class DesktopRightPanel extends ConsumerWidget {
             ? DesktopEditNotePage(key: ValueKey(activeNote!.uuid), existingNote: activeNote)
             : const _HomepagePlaceholder(
                 key: ValueKey('editor_fallback'),
-              ), // The ValueKey is important here. It tells the AnimatedSwitcher when to trigger!
-
+              ),
       RightPanelPageOptions.trash => const _PaddingWrapper(key: ValueKey('trash_view'), child: TrashPage()),
       RightPanelPageOptions.settings => const _PaddingWrapper(key: ValueKey('settings_view'), child: SettingsPage()),
       RightPanelPageOptions.localSync => const _PaddingWrapper(key: ValueKey('sync_view'), child: RoleSelectorPage()),
@@ -113,15 +101,33 @@ class DesktopRightPanel extends ConsumerWidget {
         key: ValueKey('broadcast_view'),
         child: HostBroadcastPage(),
       ),
-
       RightPanelPageOptions.syncedList => const _PaddingWrapper(
         key: ValueKey('synced_devices_list_view'),
         child: SyncedDevicesListView(),
       ),
-
       RightPanelPageOptions.noteDetails => _PaddingWrapper(
         key: const ValueKey('note_details_view'),
         child: NoteDetailsPage(),
+      ),
+      RightPanelPageOptions.export => const _PaddingWrapper(
+        key: ValueKey('export_view'),
+        child: ExportNotesPage(),
+      ),
+      RightPanelPageOptions.import => const _PaddingWrapper(
+        key: ValueKey('import_view'),
+        child: ImportNotesPage(),
+      ),
+      RightPanelPageOptions.qr => const _PaddingWrapper(
+        key: ValueKey('qr_view'),
+        child: QrCodePage(),
+      ),
+      RightPanelPageOptions.scan => const _PaddingWrapper(
+        key: ValueKey('scan_view'),
+        child: QrScannerPage(),
+      ),
+      RightPanelPageOptions.pin => const _PaddingWrapper(
+        key: ValueKey('pin_view'),
+        child: PinEntryDialog(),
       ),
     };
   }
