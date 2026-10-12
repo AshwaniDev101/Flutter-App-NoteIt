@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../../../core/util/logger.dart';
 import '../../../../../../database/drift/synced_devices/synced_devices_dao.dart';
 import '../../../../provider/sync_client_provider.dart';
 
@@ -38,14 +39,17 @@ class HostConnectionController extends Notifier<ConnectionState> {
   }) async {
     // Set to connecting
     state = const ConnectionState(status: ConnectionStatus.connecting);
+    AppLogger.d('HostConnectionController: Connecting to $hostName ($ip:$port)...');
 
     try {
       final isKnown = await ref.read(syncedDevicesDaoProvider).isDeviceKnown(hostUuid);
       String? pin;
 
       if (!isKnown) {
+        AppLogger.d('HostConnectionController: Unknown host. Requesting PIN...');
         pin = await requestPin();
         if (pin == null) {
+          AppLogger.d('HostConnectionController: PIN entry canceled by user');
           // User canceled PIN entry, quietly reset
           state = const ConnectionState(status: ConnectionStatus.initial);
           return;
@@ -65,11 +69,13 @@ class HostConnectionController extends Notifier<ConnectionState> {
       );
 
       // Success!
+      AppLogger.d('HostConnectionController: Successfully connected to $hostName');
       state = const ConnectionState(status: ConnectionStatus.success);
 
-    } catch (e) {
+    } catch (e, st) {
       // Clean up the error message and set error state
       final errorMessage = e.toString().replaceAll('Exception: ', '');
+      AppLogger.e('HostConnectionController: Connection error', error: e, stack: st);
       state = ConnectionState(
         status: ConnectionStatus.error,
         errorMessage: errorMessage,

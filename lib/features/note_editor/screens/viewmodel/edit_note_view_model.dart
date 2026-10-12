@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/core/util/logger.dart';
 import 'package:noteit/core/util/platform_helper.dart';
 import 'package:noteit/database/drift/notes/notes_dao.dart';
 
@@ -32,7 +33,7 @@ class EditNoteViewModel extends Notifier<EditNoteState> {
 
     try {
 
-      await ref
+      final newUuid = await ref
           .read(notesDaoProvider)
           .addNote(
             title: title,
@@ -41,11 +42,14 @@ class EditNoteViewModel extends Notifier<EditNoteState> {
             creationDevice: deviceInfo.extractName,
           );
 
+      AppLogger.d('EditNoteViewModel: Saved new note ($newUuid)');
+
       // Fire background sync via Orchestrator
       ref.read(syncOrchestratorProvider).triggerSync();
 
       state = state.copyWith(isLoading: false);
-    } catch (e) {
+    } catch (e, st) {
+      AppLogger.e('EditNoteViewModel: Error saving new note', error: e, stack: st);
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
@@ -55,11 +59,13 @@ class EditNoteViewModel extends Notifier<EditNoteState> {
 
     try {
       await ref.read(notesDaoProvider).updateNote(uuid, title, content);
+      AppLogger.d('EditNoteViewModel: Updated note ($uuid)');
 
       ref.read(syncOrchestratorProvider).triggerSync();
 
       state = state.copyWith(isLoading: false);
-    } catch (e) {
+    } catch (e, st) {
+      AppLogger.e('EditNoteViewModel: Error updating note $uuid', error: e, stack: st);
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
@@ -69,11 +75,13 @@ class EditNoteViewModel extends Notifier<EditNoteState> {
 
     try {
       await ref.read(notesDaoProvider).lockNote(uuid, isLocked: isLocked);
+      AppLogger.d('EditNoteViewModel: Locked note $uuid (isLocked: $isLocked)');
 
       ref.read(syncOrchestratorProvider).triggerSync();
 
       state = state.copyWith(isLoading: false);
-    } catch (e) {
+    } catch (e, st) {
+      AppLogger.e('EditNoteViewModel: Error locking note $uuid', error: e, stack: st);
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
@@ -86,10 +94,13 @@ class EditNoteViewModel extends Notifier<EditNoteState> {
         uuid,
       ], platform: PlatformHelper.name);
 
+      AppLogger.d('EditNoteViewModel: Soft deleted note ($uuid)');
+
       ref.read(syncOrchestratorProvider).triggerSync();
 
       state = state.copyWith(isLoading: false);
-    } catch (e) {
+    } catch (e, st) {
+      AppLogger.e('EditNoteViewModel: Error deleting note $uuid', error: e, stack: st);
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }

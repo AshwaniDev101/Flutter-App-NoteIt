@@ -29,7 +29,7 @@ final syncSessionProvider = FutureProvider.autoDispose<({String ip, String qrUrl
 
   // When the user closes the QR screen, erase the PIN from the server.
   ref.onDispose(() {
-    AppLogger.d('QR Screen closed. Erasing PIN to lock down server.');
+    AppLogger.d('SyncSessionProvider: QR Screen closed. Erasing PIN to lock down server.');
     serverNotifier.updatePin(null);
   });
 
@@ -78,11 +78,11 @@ final serverHostingProvider = FutureProvider<({String ip, int port, String devic
       .startHosting(
     ip: ip,
     onClientConnected: () {
-      AppLogger.d('Engine: Client connected! Shutting down mDNS broadcast.');
+      AppLogger.d('SyncSessionProvider: Client connected! Shutting down mDNS broadcast.');
       mdnsNotifier.stopBroadcasting();
     },
     onClientDisconnected: () {
-      AppLogger.d('Engine: Client disconnected! Restarting mDNS broadcast.');
+      AppLogger.d('SyncSessionProvider: Client disconnected! Restarting mDNS broadcast.');
       if (assignedPort != null) {
         mdnsNotifier.startBroadcasting(port: assignedPort, uuid: uuid, deviceName: deviceName);
       }

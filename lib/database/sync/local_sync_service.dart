@@ -34,7 +34,7 @@ class LocalSyncNotifier extends Notifier<SyncConnectionState> {
   }
 
   void stop() {
-    AppLogger.d("LocalWorker: Shutting down Local Wi-Fi Sync.");
+    AppLogger.d("LocalSyncService: Shutting down Local Wi-Fi Sync.");
     _streamSubscription?.cancel(); // Cancel the listener
     _activeChannel?.sink.close();
     _activeChannel = null;
@@ -49,18 +49,18 @@ class LocalSyncNotifier extends Notifier<SyncConnectionState> {
     // Update the UI instantly so it can show a green "Connected" icon
     state = SyncConnectionState.connected;
 
-    AppLogger.d("LocalWorker: Active connection established!");
+    AppLogger.d("LocalSyncService: Active connection established!");
 
     // Start listening for incoming notes from the other device
     // Save the subscription to the variable
     _streamSubscription = _activeChannel!.stream.listen(
       (message) => _handleIncomingSyncPayload(message),
       onDone: () {
-        AppLogger.d("LocalWorker: Disconnected from peer.");
+        AppLogger.d("LocalSyncService: Disconnected from peer.");
         stop(); // Resets state and cleans up
       },
       onError: (e) {
-        AppLogger.d("LocalWorker: WebSocket Error -> $e");
+        AppLogger.e("LocalSyncService: WebSocket Error", error: e);
         stop(); // Resets state and cleans up
       },
     );
@@ -77,13 +77,13 @@ class LocalSyncNotifier extends Notifier<SyncConnectionState> {
   Future<void> broadcastLocalChanges() async {
     if (_activeChannel == null) {
       AppLogger.d(
-        "LocalWorker: Note saved, but no active Wi-Fi connection. Waiting.",
+        "LocalSyncService: Note saved, but no active Wi-Fi connection. Waiting.",
       );
       return;
     }
 
     // Syncing icon animation: starts
-    ref.read(isSyncingProvider.notifier).state = true;
+    ref.read(isSyncingProvider.notifier).setSyncing(true);
 
     try {
       final notesDao = ref.read(notesDaoProvider);
@@ -98,24 +98,17 @@ class LocalSyncNotifier extends Notifier<SyncConnectionState> {
         'type': 'note_batch',
         'data': pendingNotes.map((n) => n.toJson()).toList(),
       });
-      // for (final note in pendingNotes) {
-      //   final payload = jsonEncode({
-      //     'type': 'note_update',
-      //     'data': note.toJson(),
-      //   });
-      //
-      //   _activeChannel!.sink.add(payload);
-      // }
+
       _activeChannel!.sink.add(payload);
       AppLogger.d(
-        "LocalWorker: Broadcasted batch of ${pendingNotes.length} notes over Wi-Fi.",
+        "LocalSyncService: Broadcasted batch of ${pendingNotes.length} notes over Wi-Fi.",
       );
       // Note: We do NOT markAsLocalSynced here. We wait for the ACK!
-    } catch (e) {
-      AppLogger.d("LocalWorker: Broadcast Failed -> $e");
+    } catch (e, st) {
+      AppLogger.e("LocalSyncService: Broadcast Failed", error: e, stack: st);
     } finally {
       // Syncing icon animation: stops
-      ref.read(isSyncingProvider.notifier).state = false;
+      ref.read(isSyncingProvider.notifier).setSyncing(false);
     }
   }
 
@@ -124,7 +117,7 @@ class LocalSyncNotifier extends Notifier<SyncConnectionState> {
   // and then sends a tiny ack (acknowledgment) receipt back.
   Future<void> _handleIncomingSyncPayload(dynamic message) async {
     // Syncing icon animation: starts
-    ref.read(isSyncingProvider.notifier).state = true;
+    ref.read(isSyncingProvider.notifier).setSyncing(true);
 
     try {
       final decoded = jsonDecode(message as String);
@@ -142,12 +135,9 @@ class LocalSyncNotifier extends Notifier<SyncConnectionState> {
           await notesDao.upsertNoteFromLocal(noteData);
           uuidsToAck.add(noteData['uuid'] as String);
         }
-        // Merge the note into our local database
-        // await notesDao.upsertNoteFromLocal(incomingList);
-        // AppLogger.d("LocalWorker: Successfully merged incoming note $incomingUuid from Wi-Fi.");
 
         AppLogger.d(
-          "LocalWorker: Successfully merged ${uuidsToAck.length} notes from Wi-Fi.",
+          "LocalSyncService: Successfully merged ${uuidsToAck.length} notes from Wi-Fi.",
         );
         // Tell the other device we successfully saved it!
         final ackPayload = jsonEncode({
@@ -166,14 +156,14 @@ class LocalSyncNotifier extends Notifier<SyncConnectionState> {
         await notesDao.markAsLocalSynced(ackUuids);
 
         AppLogger.d(
-          "LocalWorker: Peer acknowledged ${ackUuids.length} notes. Marked as synced.",
+          "LocalSyncService: Peer acknowledged ${ackUuids.length} notes. Marked as synced.",
         );
       }
-    } catch (e) {
-      AppLogger.d('LocalWorker: Failed to parse incoming payload -> $e');
+    } catch (e, st) {
+      AppLogger.e('LocalSyncService: Failed to parse incoming payload', error: e, stack: st);
     } finally {
       // Syncing icon animation: stops
-      ref.read(isSyncingProvider.notifier).state = false;
+      ref.read(isSyncingProvider.notifier).setSyncing(false);
     }
   }
 }

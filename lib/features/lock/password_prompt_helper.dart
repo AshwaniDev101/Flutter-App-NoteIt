@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/database/drift/local_database.dart';
+import 'package:noteit/shared/widgets/snack_bar_manager.dart';
 
 import 'lock_manger/lock_manager.dart';
 import 'view/master_password_page.dart';
@@ -33,8 +34,9 @@ class PasswordPromptHelper {
 
       if (!lockManager.hasMasterPassword) {
         await lockManager.setupMasterPassword(enteredPassword);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('New Master Password Set!')),
+        SnackBarManager.show(
+          msg: 'New Master Password Set!',
+          type: SnackBarMessageType.acknowledgment,
         );
       }
 
@@ -44,9 +46,10 @@ class PasswordPromptHelper {
       );
 
       if (!success && context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Incorrect Password')));
+        SnackBarManager.show(
+          msg: 'Incorrect Password',
+          type: SnackBarMessageType.error,
+        );
       }
 
       return success;
@@ -80,8 +83,9 @@ class PasswordPromptHelper {
 
       if (!lockManager.hasMasterPassword) {
         await lockManager.setupMasterPassword(enteredPassword);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('New Master Password Set!')),
+        SnackBarManager.show(
+          msg: 'New Master Password Set!',
+          type: SnackBarMessageType.acknowledgment,
         );
       }
 
@@ -93,9 +97,10 @@ class PasswordPromptHelper {
       );
 
       if (!success && context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Incorrect Password')));
+        SnackBarManager.show(
+          msg: 'Incorrect Password',
+          type: SnackBarMessageType.error,
+        );
       }
 
       return success;
@@ -140,8 +145,9 @@ class PasswordPromptHelper {
 
       if (newPassword != null && newPassword.isNotEmpty && context.mounted) {
         await lockNotifier.setupMasterPassword(newPassword);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Master Password Created!')),
+        SnackBarManager.show(
+          msg: 'Master Password Created!',
+          type: SnackBarMessageType.acknowledgment,
         );
       }
     }

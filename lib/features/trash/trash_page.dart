@@ -8,6 +8,7 @@ import '../../database/firebase/firebase_database.dart';
 import '../../database/sync/sync_orchestrator.dart';
 import '../../shared/widgets/note_card/note_card.dart';
 import '../../shared/widgets/app_scaffold.dart';
+import '../../shared/widgets/snack_bar_manager.dart';
 import '../home/view/shared/desktop_close_button.dart';
 
 final trashNotesProvider = StreamProvider.autoDispose<List<Note>>((ref) {
@@ -66,9 +67,10 @@ class _TrashPageState extends ConsumerState<TrashPage> {
       final firebaseDb = ref.read(noteFirebaseDatabaseProvider);
 
       try {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Emptying trash...')));
+        SnackBarManager.show(
+          msg: 'Emptying trash...',
+          type: SnackBarMessageType.info,
+        );
 
         // Delete locally and get the UUIDs
         final cloudIdsToDelete = await notesDao.emptyLocalTrash();
@@ -79,15 +81,18 @@ class _TrashPageState extends ConsumerState<TrashPage> {
         }
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Trash emptied successfully.')),
+          SnackBarManager.show(
+            msg: 'Trash emptied successfully.',
+            type: SnackBarMessageType.acknowledgment,
           );
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Error emptying trash: $e')));
+          SnackBarManager.show(
+            msg: 'Error emptying trash',
+            description: '$e',
+            type: SnackBarMessageType.error,
+          );
         }
       }
     }
@@ -102,9 +107,10 @@ class _TrashPageState extends ConsumerState<TrashPage> {
     ref.read(syncOrchestratorProvider).triggerSync();
 
     if (mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Note restored.')));
+      SnackBarManager.show(
+        msg: 'Note restored.',
+        type: SnackBarMessageType.acknowledgment,
+      );
     }
   }
 
@@ -154,15 +160,18 @@ class _TrashPageState extends ConsumerState<TrashPage> {
         });
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Selected notes deleted.')),
+          SnackBarManager.show(
+            msg: 'Selected notes deleted.',
+            type: SnackBarMessageType.acknowledgment,
           );
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Error: $e')));
+          SnackBarManager.show(
+            msg: 'Error deleting notes',
+            description: '$e',
+            type: SnackBarMessageType.error,
+          );
         }
       }
     }
@@ -232,8 +241,9 @@ class _TrashPageState extends ConsumerState<TrashPage> {
                 noteIds.clear();
               });
               if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Notes restored.')),
+                SnackBarManager.show(
+                  msg: 'Notes restored.',
+                  type: SnackBarMessageType.acknowledgment,
                 );
               }
             },

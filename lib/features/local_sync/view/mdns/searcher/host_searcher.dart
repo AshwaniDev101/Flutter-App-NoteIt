@@ -7,6 +7,7 @@ import 'package:noteit/core/routing/routing.dart';
 import '../../../../../core/config.dart';
 import '../../../../home/view/desktop/right_panel/core/navigator.dart';
 import '../../../../../shared/widgets/app_scaffold.dart';
+import '../../../../../shared/widgets/snack_bar_manager.dart';
 import '../../../auto_connect/mdns_searcher.dart';
 import '../../../provider/sync_client_provider.dart';
 import 'pin_dialog/host_connection_controller.dart';
@@ -47,12 +48,9 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
   Widget build(BuildContext context) {
     ref.listen(hostConnectionControllerProvider, (previous, next) {
       if (next.status == ConnectionStatus.error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.errorMessage ?? 'Connection failed'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
+        SnackBarManager.show(
+          msg: next.errorMessage ?? 'Connection failed',
+          type: SnackBarMessageType.error,
         );
       } else if (next.status == ConnectionStatus.success) {
         context.pop(); // Safely close the screen
@@ -134,20 +132,18 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () {
                     if (ip == null || port == null || hostUuid.isEmpty) {
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(const SnackBar(content: Text('Still resolving device info...')));
+                      SnackBarManager.show(
+                        msg: 'Still resolving device info...',
+                        type: SnackBarMessageType.info,
+                      );
                       return;
                     }
 
                     // --- PROTOCOL SAFETY CHECK IN UI ---
                     if (protocolVersion != AppConfig.syncProtocolVersion) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Version mismatch! Please update NoteIt.'),
-                          backgroundColor: Colors.orange,
-                          behavior: SnackBarBehavior.floating,
-                        ),
+                      SnackBarManager.show(
+                        msg: 'Version mismatch! Please update NoteIt.',
+                        type: SnackBarMessageType.suggestion,
                       );
                       return; // Block the connection entirely!
                     }
@@ -155,13 +151,17 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
 
                     // Prevent double connections
                     if (ref.read(syncClientProvider) != null) {
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(const SnackBar(content: Text('You are already connected to a host!')));
+                      SnackBarManager.show(
+                        msg: 'You are already connected to a host!',
+                        type: SnackBarMessageType.info,
+                      );
                       return;
                     }
 
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Connecting to $deviceName...')));
+                    SnackBarManager.show(
+                      msg: 'Connecting to $deviceName...',
+                      type: SnackBarMessageType.info,
+                    );
 
                     // Trigger the controller
                     ref

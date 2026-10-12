@@ -59,7 +59,7 @@ class MdnsSearcherNotifier extends Notifier<MdnsState> {
   Future<void> startRadar() async {
 
     // --- POLICE CODE ---
-    AppLogger.d('mDNS Police: Stopping any active broadcasts before scanning.');
+    AppLogger.d('MdnsSearcherNotifier: Stopping any active broadcasts before scanning.');
     ref.read(mdnsBroadcastProvider.notifier).stopBroadcasting();
     // -------------------
 
@@ -92,8 +92,8 @@ class MdnsSearcherNotifier extends Notifier<MdnsState> {
         // Update the state with the live list of all found devices
         state = (status: ScanStatus.scanning, devices: _getValidServices(_discovery!.services, myUuid));
       });
-    } catch (e) {
-      AppLogger.d('mDNS Radar Error: $e');
+    } catch (e, st) {
+      AppLogger.e('MdnsSearcherNotifier: Radar Error', error: e, stack: st);
       state = (status: ScanStatus.error, devices: []);
     }
   }
@@ -104,7 +104,7 @@ class MdnsSearcherNotifier extends Notifier<MdnsState> {
   Future<({String ip, int port, String deviceType, int protocolVersion})?> findServer(String targetUuid) async {
 
     // --- POLICE CODE ---
-    AppLogger.d('mDNS Police: Stopping any active broadcasts before targeted scan.');
+    AppLogger.d('MdnsSearcherNotifier: Stopping any active broadcasts before targeted scan.');
     ref.read(mdnsBroadcastProvider.notifier).stopBroadcasting();
     // -------------------
 
@@ -139,11 +139,10 @@ class MdnsSearcherNotifier extends Notifier<MdnsState> {
               ip = service.addresses!.first.address;
             }
 
-            // final ip = service.host ?? service.addresses?.firstOrNull?.address;
             final port = service.port;
 
             if (ip != null && port != null && !completer.isCompleted) {
-              AppLogger.d('mDNS: Found exact paired server at $ip:$port!');
+              AppLogger.d('MdnsSearcherNotifier: Found exact paired server at $ip:$port!');
               state = (status: ScanStatus.found, devices: []);
 
               // Extract new metadata for auto-connect handshake
@@ -167,14 +166,14 @@ class MdnsSearcherNotifier extends Notifier<MdnsState> {
 
       Future.delayed(const Duration(seconds: 3), () {
         if (!completer.isCompleted) {
-          AppLogger.d('mDNS: Scan timed out.');
+          AppLogger.d('MdnsSearcherNotifier: Scan timed out.');
           state = (status: ScanStatus.error, devices: []);
           stopScan();
           completer.complete(null);
         }
       });
-    } catch (e) {
-      AppLogger.d('mDNS Targeted Scan Error: $e');
+    } catch (e, st) {
+      AppLogger.e('MdnsSearcherNotifier: Targeted Scan Error', error: e, stack: st);
       state = (status: ScanStatus.error, devices: []);
       completer.complete(null);
     }

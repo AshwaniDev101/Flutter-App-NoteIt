@@ -2,20 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../database/drift/synced_devices/synced_devices_dao.dart';
+import '../../../shared/widgets/snack_bar_manager.dart';
 import '../../home/view/desktop/right_panel/core/navigator.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
 
 class SyncedDevicesListView extends ConsumerWidget {
   const SyncedDevicesListView({super.key});
 
-  // Helper method to format dates cleanly
   String _formatDate(DateTime? date) {
     if (date == null) return 'Never';
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')} '
         '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
   }
 
-  // --- Helper to pick the correct icon based on the platform string ---
   IconData _getPlatformIcon(String? platform) {
     switch (platform?.toLowerCase()) {
       case 'android': return Icons.android;
@@ -26,6 +25,19 @@ class SyncedDevicesListView extends ConsumerWidget {
       case 'web': return Icons.language;
       default: return Icons.devices_other;
     }
+  }
+
+  String _getLastRole(DateTime? hostDate, DateTime? clientDate) {
+    if (hostDate == null && clientDate == null) return 'Unknown';
+    if (hostDate == null) return 'Client';
+    if (clientDate == null) return 'Host';
+    return hostDate.isAfter(clientDate) ? 'Host' : 'Client';
+  }
+
+  DateTime? _getLastSeenDate(DateTime? hostDate, DateTime? clientDate) {
+    if (hostDate == null) return clientDate;
+    if (clientDate == null) return hostDate;
+    return hostDate.isAfter(clientDate) ? hostDate : clientDate;
   }
 
   @override
@@ -40,106 +52,100 @@ class SyncedDevicesListView extends ConsumerWidget {
             return const Center(child: Text('No devices found.'));
           }
 
-          // Use Center and ConstrainedBox to limit width on desktop
           return Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: 600, // Maximum width the list will take on large screens
-              ),
+              constraints: const BoxConstraints(maxWidth: 600),
               child: ListView.builder(
-                padding: const EdgeInsets.all(8.0),
+                padding: const EdgeInsets.all(12.0),
                 itemCount: devices.length,
                 itemBuilder: (context, index) {
                   final device = devices[index];
+                  final lastRole = _getLastRole(device.lastSeenAsHostAt, device.lastSeenAsClientAt);
+                  final lastSeenDate = _getLastSeenDate(device.lastSeenAsHostAt, device.lastSeenAsClientAt);
 
                   return Card(
-                    elevation: 3,
-                    margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
+                    elevation: 1,
+                    margin: const EdgeInsets.only(bottom: 12.0),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha:0.2)),
+                    ),
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Header Row: Device Name and Delete Button
+                          // Header Row
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              // --- Show the platform icon next to the name ---
-                              Icon(_getPlatformIcon(device.deviceType), color: Theme.of(context).colorScheme.primary),
+                              Icon(
+                                _getPlatformIcon(device.deviceType),
+                                color: Theme.of(context).colorScheme.primary,
+                                size: 24,
+                              ),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Text(
                                   device.deviceName,
                                   style: const TextStyle(
-                                    fontSize: 18,
+                                    fontSize: 16,
                                     fontWeight: FontWeight.bold,
                                   ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
+                              _RoleBadge(role: lastRole),
+                              const SizedBox(width: 8),
                               IconButton(
-                                icon: const Icon(Icons.delete_outline),
+                                icon: const Icon(Icons.delete_outline, size: 20),
+                                splashRadius: 20,
+                                constraints: const BoxConstraints(),
+                                padding: EdgeInsets.zero,
                                 onPressed: () async {
                                   final dao = ref.read(syncedDevicesDaoProvider);
                                   await dao.deleteDevice(device.deviceUuid);
 
                                   if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('${device.deviceName} deleted')),
+                                    SnackBarManager.show(
+                                      msg: '${device.deviceName} deleted',
+                                      type: SnackBarMessageType.acknowledgment,
                                     );
                                   }
                                 },
                               ),
                             ],
                           ),
-                          const Divider(),
+                          const SizedBox(height: 12),
 
-                          // Device Details
-                          _DetailRow(
-                            icon: Icons.fingerprint,
-                            label: 'UUID',
-                            value: device.deviceUuid,
-                          ),
-
-                          // --- Display the Protocol Version and Platform ---
-                          _DetailRow(
-                            icon: Icons.developer_board,
-                            label: 'Platform',
-                            value: device.deviceType ?? 'Unknown',
-                          ),
-                          _DetailRow(
-                            icon: Icons.verified,
-                            label: 'Protocol Version',
-                            value: 'v${device.protocolVersion ?? 0}',
-                          ),
-                          // ----------------------------------------------------
-
-                          _DetailRow(
-                            icon: Icons.network_check,
-                            label: 'IP Address',
-                            value: device.lastKnownIp ?? 'Unknown',
-                          ),
-                          _DetailRow(
-                            icon: Icons.settings_ethernet,
-                            label: 'Port',
-                            value: device.lastKnownPort?.toString() ?? 'Unknown',
-                          ),
-                          const SizedBox(height: 8),
-
-                          // Timestamps
-                          _DetailRow(
-                            icon: Icons.login,
-                            label: 'Last Seen (Host)',
-                            value: _formatDate(device.lastSeenAsHostAt),
-                          ),
-                          _DetailRow(
-                            icon: Icons.logout,
-                            label: 'Last Seen (Client)',
-                            value: _formatDate(device.lastSeenAsClientAt),
-                          ),
-                          _DetailRow(
-                            icon: Icons.calendar_today,
-                            label: 'First Paired',
-                            value: _formatDate(device.firstPairedAt),
+                          // Wrap layout with clear labels
+                          Wrap(
+                            spacing: 24, // Horizontal space between items
+                            runSpacing: 10, // Vertical space when wrapping to a new line
+                            children: [
+                              _CompactDetail(
+                                icon: Icons.fingerprint,
+                                label: 'UUID',
+                                value: device.deviceUuid,
+                              ),
+                              // Conditional rendering for IP/Port
+                              if (device.lastKnownIp != null || device.lastKnownPort != null)
+                                _CompactDetail(
+                                  icon: Icons.network_check,
+                                  label: 'IP/Port',
+                                  value: '${device.lastKnownIp ?? 'Unknown'}:${device.lastKnownPort ?? 'Unknown'}',
+                                ),
+                              _CompactDetail(
+                                icon: Icons.verified,
+                                label: 'Platform',
+                                value: '${device.deviceType ?? 'Unknown'} (v${device.protocolVersion ?? 0})',
+                              ),
+                              _CompactDetail(
+                                icon: Icons.access_time,
+                                label: 'Last Seen',
+                                value: _formatDate(lastSeenDate),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -159,13 +165,12 @@ class SyncedDevicesListView extends ConsumerWidget {
   }
 }
 
-// A reusable widget for displaying icon + label + value neatly
-class _DetailRow extends StatelessWidget {
+class _CompactDetail extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
 
-  const _DetailRow({
+  const _CompactDetail({
     required this.icon,
     required this.label,
     required this.value,
@@ -173,27 +178,69 @@ class _DetailRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 18, color: Colors.grey[500]),
-          const SizedBox(width: 8),
-          Text(
-            '$label: ',
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[500],
-            ),
+    final textColor = Theme.of(context).textTheme.bodyMedium?.color;
+    final iconColor = Theme.of(context).textTheme.bodySmall?.color;
+
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 250),
+      child: RichText(
+        overflow: TextOverflow.ellipsis,
+        text: TextSpan(
+          style: TextStyle(
+            fontSize: 13,
+            color: textColor,
           ),
-          Expanded(
-            child: Text(
-              value,
-              style: TextStyle(color: Colors.grey[400]),
+          children: [
+            WidgetSpan(
+              alignment: PlaceholderAlignment.middle,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 6.0),
+                child: Icon(icon, size: 14, color: iconColor),
+              ),
             ),
-          ),
-        ],
+            TextSpan(
+              text: '$label: ',
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            TextSpan(
+              text: value,
+              style: TextStyle(color: iconColor),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RoleBadge extends StatelessWidget {
+  final String role;
+
+  const _RoleBadge({required this.role});
+
+  @override
+  Widget build(BuildContext context) {
+    final isHost = role == 'Host';
+    final isUnknown = role == 'Unknown';
+
+    final color = isUnknown
+        ? Colors.grey
+        : (isHost ? Colors.deepPurple : Colors.teal);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha:0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha:0.5)),
+      ),
+      child: Text(
+        role,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
       ),
     );
   }

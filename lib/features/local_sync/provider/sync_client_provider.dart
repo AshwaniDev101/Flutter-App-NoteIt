@@ -44,7 +44,7 @@ class SyncClientNotifier extends Notifier<WebSocketChannel?> {
     // If we are currently running a Host server, shut it down.
     final isHostActive = ref.read(syncServerProvider) != null;
     if (isHostActive) {
-      AppLogger.d('Police: Device is hosting. Shutting down server before connecting as Client...');
+      AppLogger.d('SyncClientNotifier: Device is hosting. Shutting down server before connecting as Client...');
       ref.read(syncServerProvider.notifier).stopHosting();
 
       // Also ensure we stop shouting our presence on the network
@@ -56,7 +56,7 @@ class SyncClientNotifier extends Notifier<WebSocketChannel?> {
     // Close any existing connection first
     disconnect();
 
-    AppLogger.d('Client: Attempting to connect to Host at $ip:$port');
+    AppLogger.d('SyncClientNotifier: Attempting to connect to Host at $ip:$port');
 
     try {
       final String myUuid = ref.read(sharedPreferenceProvider).hostUuid;
@@ -92,7 +92,7 @@ class SyncClientNotifier extends Notifier<WebSocketChannel?> {
         },
       );
 
-      AppLogger.d('Client: Connection Confirmed!');
+      AppLogger.d('SyncClientNotifier: Connection Confirmed!');
 
       // Client role set at the moment the connection is successful!
       ref.read(sharedPreferenceProvider).setSyncRole(SyncRole.client);
@@ -105,7 +105,7 @@ class SyncClientNotifier extends Notifier<WebSocketChannel?> {
         deviceType: devicePlatform,
         protocolVersion: protocolVersion,
       );
-      AppLogger.d('Client: Saved Host $hostName to Drift DB.');
+      AppLogger.d('SyncClientNotifier: Saved Host $hostName to Drift DB.');
 
       // Save the connection to the state
       state = channel;
@@ -115,19 +115,19 @@ class SyncClientNotifier extends Notifier<WebSocketChannel?> {
 
     } on TimeoutException catch (e) {
       // Caught the Ghost IP timeout specifically
-      AppLogger.d('Hit a Ghost IP or router blocked connection: $e');
+      AppLogger.w('SyncClientNotifier: Hit a Ghost IP or router blocked connection: $e');
       state = null;
       throw Exception('Host not found. Please try scanning the QR code.');
 
     } on WebSocketChannelException catch (e) {
       // Caught a rejection (like a wrong PIN)
-      AppLogger.d('Connection rejected by host. Wrong PIN? Error: $e');
+      AppLogger.w('SyncClientNotifier: Connection rejected by host. Wrong PIN? Error: $e');
       state = null;
       throw Exception('Connection rejected. Please check the PIN and try again.');
 
-    } catch (e) {
+    } catch (e, st) {
       // Caught any other random error
-      AppLogger.d('Failed to connect to host: $e');
+      AppLogger.e('SyncClientNotifier: Failed to connect to host', error: e, stack: st);
       state = null;
       throw Exception('Failed to connect to device.');
     }
@@ -135,7 +135,7 @@ class SyncClientNotifier extends Notifier<WebSocketChannel?> {
 
   void disconnect() {
     if (state != null) {
-      AppLogger.d("Client: Disconnecting from host...");
+      AppLogger.d("SyncClientNotifier: Disconnecting from host...");
       // Make sure the central traffic controller also knows we are stopping
       ref.read(localSyncServiceProvider.notifier).stop();
 

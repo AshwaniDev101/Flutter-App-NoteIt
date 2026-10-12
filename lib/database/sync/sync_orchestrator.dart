@@ -70,7 +70,7 @@ class SyncOrchestrator with WidgetsBindingObserver {
     // Only fire Firebase delta syncs on resume if Cloud is actively selected
     if (state == AppLifecycleState.resumed) {
       if (ref.read(syncEngineProvider) == SyncEngine.cloud) {
-        AppLogger.d("Orchestrator: App resumed. Triggering Cloud Delta Sync...");
+        AppLogger.d("SyncOrchestrator: App resumed. Triggering Cloud Delta Sync...");
         ref.read(cloudSyncServiceProvider).executeFullSync();
       }
     }
@@ -81,13 +81,13 @@ class SyncOrchestrator with WidgetsBindingObserver {
     final engine = ref.read(syncEngineProvider);
 
     if (engine == SyncEngine.cloud) {
-      AppLogger.d("Orchestrator: UI triggered sync. Routing to Cloud Engine.");
+      AppLogger.d("SyncOrchestrator: UI triggered sync. Routing to Cloud Engine.");
       ref.read(cloudSyncServiceProvider).executeFullSync();
     } else if (engine == SyncEngine.local) {
-      AppLogger.d("Orchestrator: UI triggered sync. Routing to Local Wi-Fi Engine.");
+      AppLogger.d("SyncOrchestrator: UI triggered sync. Routing to Local Wi-Fi Engine.");
       ref.read(localSyncServiceProvider.notifier).broadcastLocalChanges();
     } else {
-      AppLogger.d("Orchestrator: UI triggered sync, but app is Offline. Ignored.");
+      AppLogger.d("SyncOrchestrator: UI triggered sync, but app is Offline. Ignored.");
     }
   }
 

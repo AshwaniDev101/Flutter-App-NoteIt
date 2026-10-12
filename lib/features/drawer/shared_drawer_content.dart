@@ -34,8 +34,8 @@ class SharedDrawerContent extends ConsumerWidget {
       );
 
       await FirebaseAuth.instance.signInWithCredential(credential);
-    } catch (e) {
-      AppLogger.d('Google Sign-In failed: $e');
+    } catch (e, st) {
+      AppLogger.e('SharedDrawerContent: Google Sign-In failed', error: e, stack: st);
     }
   }
 

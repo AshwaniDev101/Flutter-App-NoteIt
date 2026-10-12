@@ -181,7 +181,7 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
         )..where((t) => t.uuid.equals(incomingUuid))).write(noteCompanion);
       } else {
         AppLogger.d(
-          "Drift: Ignored older incoming data for note $incomingUuid. Local is newer.",
+          "NotesDao: Ignored older incoming data for note $incomingUuid. Local is newer.",
         );
       }
     } else {
@@ -304,7 +304,7 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
     final deletedCount = await (delete(
       notes,
     )..where((t) => t.deletedAt.isNotNull())).go();
-    AppLogger.d("Drift: Emptied $deletedCount notes from local trash.");
+    AppLogger.d("NotesDao: Emptied $deletedCount notes from local trash.");
 
     return uuidsToDelete;
   }

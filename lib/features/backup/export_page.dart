@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 
+import '../../core/util/logger.dart';
 import '../../database/drift/notes/notes_dao.dart';
 import '../lock/password_prompt_helper.dart';
 import '../../shared/widgets/app_scaffold.dart';
+import '../../shared/widgets/snack_bar_manager.dart';
 import '../home/view/desktop/right_panel/core/navigator.dart';
 
 enum ExportFormat { json, csv }
@@ -94,8 +96,9 @@ class _ExportNotesPageState extends ConsumerState<ExportNotesPage> {
 
       if (notesToExport.isEmpty) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('No notes available to export.')),
+          SnackBarManager.show(
+            msg: 'No notes available to export.',
+            type: SnackBarMessageType.info,
           );
         }
         return;
@@ -136,21 +139,25 @@ class _ExportNotesPageState extends ConsumerState<ExportNotesPage> {
       );
 
       if (outputFile == null) {
+        AppLogger.d('ExportNotesPage: Export canceled by user');
         return;
       }
 
+      AppLogger.d('ExportNotesPage: Exported ${notesToExport.length} notes to $outputFile');
+
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Exported ${notesToExport.length} notes successfully!'),
-            backgroundColor: Colors.green,
-          ),
+        SnackBarManager.show(
+          msg: 'Exported ${notesToExport.length} notes successfully!',
+          type: SnackBarMessageType.acknowledgment,
         );
       }
-    } catch (e) {
+    } catch (e, st) {
+      AppLogger.e('ExportNotesPage: Failed to export notes', error: e, stack: st);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to export: $e'), backgroundColor: Colors.red),
+        SnackBarManager.show(
+          msg: 'Failed to export',
+          description: '$e',
+          type: SnackBarMessageType.error,
         );
       }
     } finally {

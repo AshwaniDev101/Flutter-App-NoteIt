@@ -5,6 +5,7 @@ import 'package:noteit/core/util/platform_helper.dart';
 import 'package:noteit/database/drift/local_database.dart';
 import 'package:window_manager/window_manager.dart';
 
+import '../../../../core/app_env.dart';
 import '../../../../database/drift/keybindings/keybindings_dao.dart';
 import '../../../drawer/desktop_drawer_button.dart';
 import '../../../keybinding/smart_action_widget.dart';
@@ -47,6 +48,8 @@ class DesktopLeftPanel extends ConsumerWidget {
     final homeState = ref.watch(homeViewModelProvider);
     final viewModel = ref.read(homeViewModelProvider.notifier);
     final colorScheme = Theme.of(context).colorScheme;
+
+    final versionString = "v${AppEnv.version}-${AppEnv.buildNumber}";
 
     return Scaffold(
       // for closing the drawer on right panel click
@@ -116,7 +119,13 @@ class DesktopLeftPanel extends ConsumerWidget {
                   ),
                   elevation: 0,
                   scrolledUnderElevation: PlatformHelper.isDesktopScreen ? 0.0 : null,
-                  actions: const [],
+                  actions: [
+                    Text(
+                      versionString,
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(color: colorScheme.onSurfaceVariant),
+                    ),
+                    SizedBox(width: 16,),
+                  ],
                   // maker the left hamburger icon primary color
                   iconTheme: IconThemeData(color: Theme.of(context).colorScheme.primary),
                 ),

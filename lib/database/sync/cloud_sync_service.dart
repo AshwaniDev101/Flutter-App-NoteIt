@@ -19,13 +19,13 @@ class CloudSyncService {
 
   void start() {
     if (_remoteSubscription != null) return; // Already running
-    AppLogger.d("CloudWorker: Starting Firebase sync engine...");
+    AppLogger.d("CloudSyncService: Starting Firebase sync engine...");
     _startActiveSessionListener();
     executeFullSync();
   }
 
   void stop() {
-    AppLogger.d("CloudWorker: Stopping Firebase sync engine...");
+    AppLogger.d("CloudSyncService: Stopping Firebase sync engine...");
     _remoteSubscription?.cancel();
     _remoteSubscription = null;
   }
@@ -44,7 +44,7 @@ class CloudSyncService {
         .listen((newDocs) async {
           if (newDocs.isEmpty) return;
 
-          AppLogger.d("CloudWorker: Real-time remote changes detected!");
+          AppLogger.d("CloudSyncService: Real-time remote changes detected!");
           for (final doc in newDocs) {
             // upsertNoteFromCloud now only needs the data map, since UUID is inside it!
             await notesDao.upsertNoteFromCloud(doc.data()!);
@@ -66,7 +66,7 @@ class CloudSyncService {
 
     _isSyncing = true;
 
-    ref.read(isSyncingProvider.notifier).state = true;
+    ref.read(isSyncingProvider.notifier).setSyncing(true);
 
     try {
       final int lastSyncTime = prefs.lastSyncTime;
@@ -84,19 +84,19 @@ class CloudSyncService {
         await firebaseDb.pushBatch(pendingNotes);
 
         await notesDao.markAsCloudSynced(pendingNotes.map((n) => n.uuid));
-        AppLogger.d("CloudWorker: Pushed ${pendingNotes.length} notes.");
+        AppLogger.d("CloudSyncService: Pushed ${pendingNotes.length} notes.");
       }
 
       // --- BOOKMARK ---
       await prefs.setLastSyncTime(newSyncTime);
-      AppLogger.d("CloudWorker: Sync Complete. Bookmark: $newSyncTime");
-    } catch (e) {
-      AppLogger.d("CloudWorker: Sync Failed -> $e");
+      AppLogger.d("CloudSyncService: Sync Complete. Bookmark: $newSyncTime");
+    } catch (e, st) {
+      AppLogger.e("CloudSyncService: Sync Failed", error: e, stack: st);
     } finally {
       _isSyncing = false;
 
       // Tell the UI spinner to stop spinning!
-      ref.read(isSyncingProvider.notifier).state = false;
+      ref.read(isSyncingProvider.notifier).setSyncing(false);
     }
   }
 }

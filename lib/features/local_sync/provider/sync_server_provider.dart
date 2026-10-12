@@ -39,78 +39,53 @@ class SyncServerNotifier extends Notifier<HttpServer?> {
     // If we are currently connected as a Client, kill it before hosting.
     final isClientActive = ref.read(syncClientProvider) != null;
     if (isClientActive) {
-      AppLogger.d('Police: Device is acting as Client. Disconnecting before starting Host...');
+      AppLogger.d('SyncServerNotifier: Device is acting as Client. Disconnecting before starting Host...');
       ref.read(syncClientProvider.notifier).disconnect();
     }
     // -----------------------------------------------
 
     if (state != null) {
-      // Server is already running, just hand back its existing port
-      // Dart's state!.address.host might format differently, so we check both
-      // IP-change check : If the app goes to the background, the user walks into a new network, and the app resumes,
-      // it will currently hit if (state != null) { return state!.port; } and completely ignore the new Wi-Fi IP.
       if (state!.address.host != ip && state!.address.address != ip) {
-        AppLogger.d('Wi-Fi IP changed! Restarting server...');
+        AppLogger.d('SyncServerNotifier: Wi-Fi IP changed! Restarting server...');
         stopHosting(); // Shut down the old server automatic will start a new one below
       } else {
-        AppLogger.d('Server already running on $ip');
+        AppLogger.d('SyncServerNotifier: Server already running on $ip');
         return state!.port;
       }
     }
 
-    AppLogger.d('--- Starting Host Server ---');
+    AppLogger.d('SyncServerNotifier: Starting Host Server...');
 
-    // 'webSocketHandler' acts as a bouncer that intercepts the client's connection.
-    // When a client sends an HTTP "Upgrade" request, this bouncer decides whether
-    // to upgrade them from a temporary HTTP connection to a permanent WebSocket connection.
-
-    // The callback inside webSocketHandler() triggers at the exact moment a client
-    // successfully connects and the WebSocket handshake is complete.
-
-    // Parameter 1 (webSocketChannel): The live, permanent "pipe" to the client device.
-    // This is the two-way radio we use to stream sync data back and forth.
-
-    // Parameter 2 (_): The requested "sub-protocol" string (e.g., 'graphql' or 'chat-v1').
-    // We use '_' to ignore it because we are just sending standard text/bytes and
-    // don't need to negotiate a specific data format protocol.
     var wsHandler = webSocketHandler((webSocketChannel, _) {
-      AppLogger.d('A Client has connected to the Host!');
+      AppLogger.d('SyncServerNotifier: A Client has connected to the Host!');
       _isBusy = true; // LOCK THE DOOR: Host is now occupied
 
-      // second a client connects, the receptionist grabs the live, open data pipeline (webSocketChannel) and hands it over to our localSyncServiceProvider
       ref.read(localSyncServiceProvider.notifier).setActiveConnection(webSocketChannel);
 
-      // Trigger the connect callback!
       onClientConnected?.call();
 
-      // Listen for disconnection via the stream or sink done future
       webSocketChannel.sink.done
           .then((_) {
-            AppLogger.d('Client disconnected');
+            AppLogger.d('SyncServerNotifier: Client disconnected');
             ref.read(localSyncServiceProvider.notifier).stop();
-            onClientDisconnected?.call(); // Trigger disconnect callback!
-            _isBusy = false; // UNLOCK THE DOOR: Host is free again
+            onClientDisconnected?.call();
+            _isBusy = false;
           })
-          .catchError((_) {
+          .catchError((e) {
+            AppLogger.w('SyncServerNotifier: Client connection error: $e');
             ref.read(localSyncServiceProvider.notifier).stop();
-            onClientDisconnected?.call(); // Trigger disconnect callback!
-            _isBusy = false; // UNLOCK THE DOOR: Host is free again
+            onClientDisconnected?.call();
+            _isBusy = false;
           });
     });
 
-    // We wrap the wsHandler inside our authHandler (The Front Door Bouncer).
-    // Every incoming connection must pass through _createAuthHandler FIRST.
-    // If the PIN/UUID is valid, the authHandler passes the request to the wsHandler.
-    // If invalid, the authHandler rejects the request and the wsHandler is never triggered.
     final authHandler = _createAuthHandler(wsHandler);
 
-    // 8080 is common for web servers testing, 0 to let the OS pick a port
     final HttpServer server = await shelf_io.serve(authHandler, ip, 0);
-    AppLogger.d('Sync server hosting at ws://${server.address.host}:${server.port}');
+    AppLogger.d('SyncServerNotifier: Sync server hosting at ws://${server.address.host}:${server.port}');
 
     state = server;
 
-    // Host role set at the moment the server successfully starts!
     ref.read(sharedPreferenceProvider).setSyncRole(SyncRole.host);
     return state!.port;
   }
@@ -119,7 +94,7 @@ class SyncServerNotifier extends Notifier<HttpServer?> {
   Handler _createAuthHandler(Handler wsHandler) {
     return (Request request) async {
       if (_isBusy) {
-        AppLogger.d("Host: Connection rejected. Host is currently busy syncing.");
+        AppLogger.d("SyncServerNotifier: Connection rejected. Host is currently busy syncing.");
         return Response.forbidden('Host is currently busy syncing with another device.');
       }
 
@@ -131,7 +106,6 @@ class SyncServerNotifier extends Notifier<HttpServer?> {
 
       final String clientPlatform = queryParams['client_platform'] ?? 'unknown';
 
-      // If the client doesn't send a version, or if it fails to parse, default to 0
       final String? clientVersionStr = queryParams['v'];
       final int clientVersion = clientVersionStr != null ? (int.tryParse(clientVersionStr) ?? 0) : 0;
 
@@ -141,7 +115,7 @@ class SyncServerNotifier extends Notifier<HttpServer?> {
 
       // --- PROTOCOL SAFETY CHECK ---
       if (clientVersion != AppConfig.syncProtocolVersion) {
-        AppLogger.d("Host: Connection rejected. Client is v$clientVersion, Host is v${AppConfig.syncProtocolVersion}.");
+        AppLogger.d("SyncServerNotifier: Connection rejected. Client is v$clientVersion, Host is v${AppConfig.syncProtocolVersion}.");
         return Response.forbidden('Version mismatch. Please update NoteIt.');
       }
       // -----------------------------
@@ -150,16 +124,14 @@ class SyncServerNotifier extends Notifier<HttpServer?> {
       final isKnown = await syncedDevicesDao.isDeviceKnown(clientUuid);
 
       if (!isKnown) {
-        // if client is known don't check the pin
         // Verify PIN
         if (_currentPin == null || clientPin != _currentPin) {
-          AppLogger.d("Host: Connection rejected. Invalid PIN or QR screen is closed. $clientName");
+          AppLogger.d("SyncServerNotifier: Connection rejected. Invalid PIN or QR screen is closed. $clientName");
           return Response.forbidden('Invalid PIN');
         } else {
           // PIN matched! Whitelist them for next time
-          AppLogger.d("Host: PIN matched! Trusting $clientName...");
+          AppLogger.d("SyncServerNotifier: PIN matched! Trusting $clientName...");
 
-          // It saves the UUID/Name for the whitelist, but ignores IP/Port.
           await syncedDevicesDao.upsertDeviceAsClient(
             uuid: clientUuid,
             name: clientName ?? 'Unknown Device',
@@ -168,10 +140,9 @@ class SyncServerNotifier extends Notifier<HttpServer?> {
           );
         }
       } else {
-        AppLogger.d("Host: Known device connecting ($clientName)");
+        AppLogger.d("SyncServerNotifier: Known device connecting ($clientName)");
       }
 
-      // Authorization passed, hand off to the WebSocket handler
       return wsHandler(request);
     };
   }

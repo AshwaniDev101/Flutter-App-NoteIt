@@ -131,7 +131,7 @@ class NoteFirestoreDatabase {
       }
 
       await batch.commit();
-      AppLogger.d("Firestore: Hard deleted a batch of ${chunk.length} notes.");
+      AppLogger.d("NoteFirestoreDatabase: Hard deleted a batch of ${chunk.length} notes.");
     }
   }
 }

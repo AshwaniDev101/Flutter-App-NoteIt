@@ -31,8 +31,6 @@ class DesktopRightPanel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentView = ref.watch(desktopRightPanelViewProvider);
-    final colorScheme = Theme.of(context).colorScheme;
-    final versionString = "v${AppEnv.version}-${AppEnv.buildNumber}";
 
     return Scaffold(
       appBar: PreferredSize(
@@ -40,11 +38,6 @@ class DesktopRightPanel extends ConsumerWidget {
         child: DragToMoveArea(
           child: AppBar(
             elevation: 0,
-            leading: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Text(versionString, style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant)),
-            ),
-            leadingWidth: 200,
             scrolledUnderElevation: PlatformHelper.isDesktopScreen ? 0.0 : null,
             actions: [
               IconTray(),

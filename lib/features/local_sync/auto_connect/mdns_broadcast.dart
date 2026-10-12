@@ -31,9 +31,9 @@ class MdnsBroadcastNotifier extends Notifier<Registration?> {
       // This completely bypasses Riverpod's strict teardown locks.
       if (_activeRegistration != null) {
         unregister(_activeRegistration!).then((_) {
-          AppLogger.d('mDNS: Stopped broadcasting (auto-disposed)');
+          AppLogger.d('MdnsBroadcastNotifier: Stopped broadcasting (auto-disposed)');
         }).catchError((e) {
-          AppLogger.d('mDNS cleanup error: $e');
+          AppLogger.e('MdnsBroadcastNotifier: Cleanup error', error: e);
         });
       }
     });
@@ -47,7 +47,7 @@ class MdnsBroadcastNotifier extends Notifier<Registration?> {
   }) async {
 
     // --- POLICE CODE ---
-    AppLogger.d('mDNS Police: Stopping any active scans before broadcasting.');
+    AppLogger.d('MdnsBroadcastNotifier: Stopping any active scans before broadcasting.');
     ref.read(mdnsSearcherProvider.notifier).stopScan();
     // -------------------
     if (_activeRegistration != null) return; // If server is already broadcasting, do nothing
@@ -73,13 +73,13 @@ class MdnsBroadcastNotifier extends Notifier<Registration?> {
 
       // Registers the service
       final registration = await register(service);
-      AppLogger.d('mDNS: Broadcasting as ${registration.service.name} on port $port');
+      AppLogger.d('MdnsBroadcastNotifier: Broadcasting as ${registration.service.name} on port $port');
 
       // Save the registration object to state so we can cancel it later
       _activeRegistration = registration;
       state = registration;
-    } catch (e) {
-      AppLogger.d('mDNS Host Error: $e');
+    } catch (e, st) {
+      AppLogger.e('MdnsBroadcastNotifier: Host Error', error: e, stack: st);
     }
   }
 
@@ -94,7 +94,7 @@ class MdnsBroadcastNotifier extends Notifier<Registration?> {
       state = null;
 
       await unregister(regToCancel);
-      AppLogger.d('mDNS: Stopped broadcasting manually');
+      AppLogger.d('MdnsBroadcastNotifier: Stopped broadcasting manually');
     }
   }
 }

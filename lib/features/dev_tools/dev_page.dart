@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
 import 'package:noteit/features/home/view/desktop/right_panel/core/navigator.dart';
 import 'package:noteit/features/lock/lock_manger/lock_manager.dart';
 import 'package:noteit/shared/widgets/app_scaffold.dart';
+import 'package:noteit/shared/widgets/snack_bar_manager.dart';
 
 class DevPage extends ConsumerWidget {
   const DevPage({super.key});
@@ -66,13 +66,9 @@ class DevPage extends ConsumerWidget {
                             .removeMasterPassword();
 
                         if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Master password and sessions completely wiped.',
-                              ),
-                              behavior: SnackBarBehavior.floating,
-                            ),
+                          SnackBarManager.show(
+                            msg: 'Master password and sessions completely wiped.',
+                            type: SnackBarMessageType.acknowledgment,
                           );
                         }
                       },

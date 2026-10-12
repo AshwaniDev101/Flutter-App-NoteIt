@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 
+import '../../core/util/logger.dart';
 import '../../database/drift/local_database.dart';
 import '../../database/drift/notes/notes_dao.dart';
 import '../../shared/widgets/app_scaffold.dart';
+import '../../shared/widgets/snack_bar_manager.dart';
 import '../home/view/desktop/right_panel/core/navigator.dart';
 
 class ImportNotesPage extends ConsumerStatefulWidget {
@@ -100,7 +102,7 @@ class _ImportNotesPageState extends ConsumerState<ImportNotesPage> {
 
           parsedNotes.add(Note.fromJson(map));
         } catch (e) {
-          debugPrint("Failed to parse a note: $e");
+          AppLogger.w("ImportNotesPage: Failed to parse a note: $e");
           failedCount++; // Keep track of failures instead of crashing the whole process
         }
       }
@@ -112,13 +114,22 @@ class _ImportNotesPageState extends ConsumerState<ImportNotesPage> {
       // Insert/Update into database
       await notesDao.importNotes(parsedNotes);
 
+      final successMsg = failedCount > 0
+          ? 'Imported ${parsedNotes.length} notes, but $failedCount failed.'
+          : 'Successfully imported ${parsedNotes.length} notes!';
+
       setState(() {
         _isImporting = false;
         _isError = failedCount > 0;
-        _statusMessage = failedCount > 0
-            ? 'Imported ${parsedNotes.length} notes, but $failedCount failed.'
-            : 'Successfully imported ${parsedNotes.length} notes!';
+        _statusMessage = successMsg;
       });
+
+      SnackBarManager.show(
+        msg: successMsg,
+        type: failedCount > 0
+            ? SnackBarMessageType.suggestion
+            : SnackBarMessageType.acknowledgment,
+      );
 
     } catch (e) {
       setState(() {
@@ -126,6 +137,12 @@ class _ImportNotesPageState extends ConsumerState<ImportNotesPage> {
         _isError = true;
         _statusMessage = 'Import failed: $e';
       });
+
+      SnackBarManager.show(
+        msg: 'Import failed',
+        description: '$e',
+        type: SnackBarMessageType.error,
+      );
     }
   }
 

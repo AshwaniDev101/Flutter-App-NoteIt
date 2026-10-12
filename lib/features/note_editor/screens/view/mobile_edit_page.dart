@@ -115,8 +115,9 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
     }
 
     if (isManualSave && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Saved!'), behavior: SnackBarBehavior.floating, duration: Duration(seconds: 1)),
+      SnackBarManager.show(
+        msg: 'Saved!',
+        type: SnackBarMessageType.acknowledgment,
       );
     }
 

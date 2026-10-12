@@ -35,73 +35,114 @@ class _NoteCardState extends ConsumerState<NoteCard> {
   // Track if the keyboard spotlight is on this card
   bool _isFocused = false;
 
+
   @override
   Widget build(BuildContext context) {
-    // Watch the global view type! Any time it changes, this card redraws itself.
     final viewType = ref.watch(noteViewTypeProvider);
 
     return FocusableActionDetector(
-      // Fires when arrow keys move onto or off of this widget
       onShowFocusHighlight: (hasFocus) {
         setState(() => _isFocused = hasFocus);
       },
-
-      // THE ACTION: Pressing Enter or Space triggers the onTap
       actions: {
         ActivateIntent: CallbackAction<ActivateIntent>(
           onInvoke: (intent) {
             if (widget.onTap != null) widget.onTap!();
-            return null; // Required return type
+            return null;
           },
         ),
       },
-
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
-        child: Card(
-          margin: EdgeInsets.all(4),
-          elevation: widget.isSelected ? 1 : (_isFocused ? 4 : 0),
-          clipBehavior: Clip.antiAlias,
-
-          color: widget.isSelected ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.5) : null,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-            side: BorderSide(
-              color: _isFocused
-                  ? Theme.of(context).colorScheme.primary
-                  : Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.3), // very dim card boarder
-              width: _isFocused ? 2 : 1,
-            ),
-          ),
-          child: InkWell(
-            onTap: widget.onTap,
-            onLongPress: widget.onLongPress,
-            canRequestFocus: false,
-            child: Stack(children: [_buildInternalLayout(viewType)]),
-          ),
-        ),
+        // Delegate to the router
+        child: _buildLayoutRouter(viewType),
       ),
     );
   }
 
   // ==== LAYOUT ROUTER ====
-  Widget _buildInternalLayout(NoteViewType viewType) {
+  Widget _buildLayoutRouter(NoteViewType viewType) {
     switch (viewType) {
       case NoteViewType.list:
-        return _buildCompactList();
+      // Plain list gets the flat wrapper
+        return _buildFlatListWrapper(child: _buildCompactList());
+
       case NoteViewType.detailedList:
-        return _buildDetailedList();
+      // Detailed list, Grids get the Card wrapper
+        return _buildCardWrapper(child: _buildDetailedList());
+
       case NoteViewType.grid:
-        return _buildGrid();
+        return _buildCardWrapper(child: _buildGrid());
+
       case NoteViewType.largeGrid:
-        return _buildLargeGrid();
+        return _buildCardWrapper(child: _buildLargeGrid());
     }
   }
+
+  // ==== WRAPPERS ====
+
+  /// Used for Grids and Detailed Lists
+  Widget _buildCardWrapper({required Widget child}) {
+    return Card(
+      margin: const EdgeInsets.all(4.0),
+      elevation: widget.isSelected ? 1 : (_isFocused ? 4 : 0),
+      clipBehavior: Clip.antiAlias,
+      color: widget.isSelected ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.5) : null,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(
+          color: _isFocused
+              ? Theme.of(context).colorScheme.primary
+              : Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.3),
+          width: _isFocused ? 2 : 1,
+        ),
+      ),
+      child: InkWell(
+        onTap: widget.onTap,
+        onLongPress: widget.onLongPress,
+        canRequestFocus: false,
+        child: child,
+      ),
+    );
+  }
+
+  /// Used ONLY for the compact plain list
+  Widget _buildFlatListWrapper({required Widget child}) {
+    // Determine the correct background color
+    Color backgroundColor;
+    if (widget.isSelected) {
+      backgroundColor = Theme.of(context).colorScheme.primary.withValues(alpha: 0.3);
+    } else if (_isFocused) {
+      // Show a slight highlight when hovered/focused
+      backgroundColor = Theme.of(context).colorScheme.surfaceContainerHighest;
+    } else {
+      // Solid surface color instead of transparent so it pops from the background
+      backgroundColor = Theme.of(context).colorScheme.surface;
+    }
+
+    return Material(
+      color: backgroundColor,
+      // Add a subtle divider at the bottom of each list item
+      shape: Border(
+        bottom: BorderSide(
+          color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
+      child: InkWell(
+        onTap: widget.onTap,
+        onLongPress: widget.onLongPress,
+        canRequestFocus: false,
+        child: child,
+      ),
+    );
+  }
+
 
   // ==== COMPACT LIST LAYOUT ====
   Widget _buildCompactList() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       child: Row(
         children: [
           Expanded(
@@ -111,10 +152,10 @@ class _NoteCardState extends ConsumerState<NoteCard> {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               // normalStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-              normalStyle: Theme.of(context).textTheme.titleMedium,
-              highlightStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
+              normalStyle: Theme.of(context).textTheme.bodyMedium,
+              highlightStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.bold,
-                fontSize: 15,
+                fontSize: 16,
                 backgroundColor: Theme.of(context).colorScheme.primaryContainer,
                 color: Theme.of(context).colorScheme.onPrimaryContainer,
               ),
@@ -185,18 +226,18 @@ class _NoteCardState extends ConsumerState<NoteCard> {
               color: Theme.of(context).colorScheme.onPrimaryContainer,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 4),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 TimeHelper.formatTimeAgo(widget.note.updatedAt),
-                style: Theme.of(context).textTheme.labelMedium,
+                style: Theme.of(context).textTheme.labelSmall,
               ),
               if (platform != null)
                 Tooltip(
                   message: widget.note.deletedPlatform != null ? 'Deleted on $platform' : 'Created on $platform',
-                  child: _getPlatformIcon(platform),
+                  child: _getPlatformIcon(platform,),
                 ),
             ],
           ),
@@ -269,26 +310,6 @@ class _NoteCardState extends ConsumerState<NoteCard> {
               ],
             ),
           ),
-
-          // Looks better in Android this way
-          if (PlatformHelper.isDesktopScreen)...[
-            const SizedBox(height: 4),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  TimeHelper.formatTimeAgo(widget.note.updatedAt),
-
-                  style: Theme.of(context).textTheme.labelMedium,
-                ),
-                if (platform != null)
-                  Tooltip(
-                    message: widget.note.deletedPlatform != null ? 'Deleted on $platform' : 'Created on $platform',
-                    child: _getPlatformIcon(platform),
-                  ),
-              ],
-            ),
-          ]
 
 
 
@@ -396,15 +417,16 @@ class _NoteCardState extends ConsumerState<NoteCard> {
   Widget _getPlatformIcon(String platform) {
     // Icons naturally inherit default colors too, but retaining the grey here
     // keeps them subtle as meta-information.
+    final colorScheme = Theme.of(context).colorScheme;
     switch (platform.toLowerCase()) {
       case 'android':
-        return const Icon(Icons.phone_android_rounded, size: 14, color: Colors.grey);
+        return Icon(Icons.phone_android_rounded, size: 14, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5));
       case 'ios':
-        return const Icon(Icons.phone_iphone_rounded, size: 14, color: Colors.grey);
+        return Icon(Icons.phone_iphone_rounded, size: 14, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5));
       case 'windows':
-        return const Icon(Icons.desktop_windows_sharp, size: 14, color: Colors.grey);
+        return Icon(Icons.desktop_windows_sharp, size: 14, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5));
       default:
-        return const Icon(Icons.computer, size: 14, color: Colors.grey);
+        return Icon(Icons.computer, size: 14, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5));
     }
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../../../shared/widgets/app_scaffold.dart';
+import '../../../../../../shared/widgets/snack_bar_manager.dart';
 import '../../../../../home/view/desktop/right_panel/core/navigator.dart';
 
 class PinEntryDialog extends StatefulWidget {
@@ -24,8 +25,9 @@ class _PinEntryDialogState extends State<PinEntryDialog> {
     if (pin.length == 4) {
       context.pop(pin);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter all 4 digits.')),
+      SnackBarManager.show(
+        msg: 'Please enter all 4 digits.',
+        type: SnackBarMessageType.suggestion,
       );
     }
   }

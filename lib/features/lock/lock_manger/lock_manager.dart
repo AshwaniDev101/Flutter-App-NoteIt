@@ -1,6 +1,7 @@
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/core/util/logger.dart';
 import 'package:noteit/database/drift/notes/notes_dao.dart';
 
 import '../../../database/shared_preference/shared_preference_manager.dart';
@@ -92,12 +93,14 @@ class LockNotifier extends Notifier<LockState> {
     state = state.copyWith(isAuthenticating: true, error: null);
     try {
       final success = await ref.read(sharedPreferenceProvider).setMasterPassword(password);
+      AppLogger.d('LockNotifier: Master password created successfully');
       state = state.copyWith(
         isAuthenticating: false,
         hasMasterPassword: true,
       );
       return success;
-    } catch (e) {
+    } catch (e, st) {
+      AppLogger.e('LockNotifier: Failed to setup master password', error: e, stack: st);
       state = state.copyWith(isAuthenticating: false, error: 'Failed to save password');
       return false;
     }
@@ -115,6 +118,8 @@ class LockNotifier extends Notifier<LockState> {
       // 3. Clear session memory
       clearAllSessions();
 
+      AppLogger.d('LockNotifier: Master password removed and all notes unlocked');
+
       // 4. Update state
       state = state.copyWith(
         isAuthenticating: false,
@@ -125,13 +130,15 @@ class LockNotifier extends Notifier<LockState> {
       ref.read(syncOrchestratorProvider).triggerSync();
 
       return success;
-    } catch (e) {
+    } catch (e, st) {
+      AppLogger.e('LockNotifier: Failed to remove master password', error: e, stack: st);
       state = state.copyWith(isAuthenticating: false, error: 'Failed to remove password');
       return false;
     }
   }
 
   void clearAllSessions() {
+    AppLogger.d('LockNotifier: Cleared all session unlocked note IDs');
     state = state.copyWith(sessionUnlockedNoteIds: const {});
   }
 
@@ -149,6 +156,7 @@ class LockNotifier extends Notifier<LockState> {
     // Only verify the password if we are UNLOCKING, AND we aren't explicitly ignoring the password check
     if (!shouldLock && !ignorePassword) {
       if (!verifyPassword(password)) {
+        AppLogger.w('LockNotifier: Incorrect password during note lock toggle for $uuid');
         state = state.copyWith(error: 'Incorrect Password');
         return false;
       }
@@ -163,10 +171,13 @@ class LockNotifier extends Notifier<LockState> {
 
       state = state.copyWith(sessionUnlockedNoteIds: updatedSet);
 
+      AppLogger.d('LockNotifier: Toggled persistent lock for note $uuid (isLocked: $shouldLock)');
+
       // Tell the Orchestrator to broadcast the lock state change
       ref.read(syncOrchestratorProvider).triggerSync();
       return true;
-    } catch (e) {
+    } catch (e, st) {
+      AppLogger.e('LockNotifier: Failed to toggle note lock', error: e, stack: st);
       state = state.copyWith(error: e.toString());
       return false;
     }

@@ -32,7 +32,7 @@ final sortedNotesStreamProvider = StreamProvider<List<Note>>((ref) {
   final sortOption = ref.watch(noteSortPreferenceProvider); // Watches the UI choice
 
   return notesDao.watchAllNotes().map((notes) {
-    AppLogger.d("### Stream received ${notes.length} total notes from Drift");
+    AppLogger.d("DbSortingFiltering: Stream received ${notes.length} total notes from Drift");
 
     // FILTER OUT DELETED NOTES FIRST
     // It's much faster to remove trashed notes before you run expensive sorting logic.

@@ -5,6 +5,7 @@ import 'package:noteit/features/local_sync/view/qr/qr_scanner/widgets/shaded_ove
 
 import '../../../provider/sync_client_provider.dart';
 import '../../../../../shared/widgets/app_scaffold.dart';
+import '../../../../../shared/widgets/snack_bar_manager.dart';
 import '../../../../home/view/desktop/right_panel/core/navigator.dart';
 
 class QrScannerPage extends ConsumerStatefulWidget {
@@ -59,8 +60,9 @@ class _QrScannerPageState extends ConsumerState<QrScannerPage> {
             protocolVersion: protocolVersion,
           );
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Connecting to $hostName...')),
+          SnackBarManager.show(
+            msg: 'Connecting to $hostName...',
+            type: SnackBarMessageType.info,
           );
         }
 
