@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/features/home/view/shared/icon_tray/icon_tray.dart';
 import 'package:window_manager/window_manager.dart';
+import '../../../../../core/app_env.dart';
 import '../../../../../core/util/platform_helper.dart';
 import '../../../../dev_tools/dev_page.dart';
 import '../../../../local_sync/view/mdns/broadcast/host_broadcast.dart';
@@ -23,7 +24,10 @@ class DesktopRightPanel extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+
     final currentView = ref.watch(desktopRightPanelViewProvider);
+    final colorScheme = Theme.of(context).colorScheme;
+    final versionString = "v${AppEnv.version}-${AppEnv.buildNumber}";
 
     return Scaffold(
       appBar: PreferredSize(
@@ -32,6 +36,11 @@ class DesktopRightPanel extends ConsumerWidget {
           child: AppBar(
             elevation: 0,
 
+            leading: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(versionString,style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant)),
+            ),
+            leadingWidth: 200,
             // Automatically show the current page title
             // title: currentView != DrawerOption.allNotes
             //     ? Text(currentView.title)

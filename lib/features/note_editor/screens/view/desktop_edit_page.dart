@@ -183,9 +183,11 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
       setState(() => _isSaved = true);
 
       if (isManualSave) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Saved!'), behavior: SnackBarBehavior.floating, duration: Duration(seconds: 1)),
-        );
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   const SnackBar(content: Text('Saved!'), behavior: SnackBarBehavior.floating, duration: Duration(seconds: 1)),
+        //
+        // );
+        SnackBarManager.show(msg: 'Saved!',type: SnackBarMessageType.acknowledgment);
       }
     }
   }

@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nsd/nsd.dart';
 
+import '../../../core/config.dart';
 import '../../../core/util/logger.dart';
 import '../../../database/shared_preference/shared_preference_manager.dart';
 import 'mdns_broadcast.dart';
@@ -26,6 +28,33 @@ class MdnsSearcherNotifier extends Notifier<MdnsState> {
     return (status: ScanStatus.idle, devices: []);
   }
 
+  /// Helper to safely extract and decode UTF-8 strings from mDNS TXT records
+  String? _decodeTxt(Map<String, Uint8List?>? txt, String key) {
+    if (txt == null || !txt.containsKey(key) || txt[key] == null) return null;
+    try {
+      // List<int>.from safely converts the Uint8List so utf8.decode doesn't crash
+      return utf8.decode(List<int>.from(txt[key]!));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Helper to filter out invalid services and our own ghost broadcasts
+  List<Service> _getValidServices(List<Service> rawServices, String myUuid) {
+    return rawServices.where((s) {
+      if (s.port == null) return false;
+
+      // Extract UUID from the discovered service
+      final discoveredUuid = _decodeTxt(s.txt, 'uuid');
+
+      // IGNORE OUR OWN GHOST BROADCASTS
+      // MUST FILTER HERE TOO!
+      if (discoveredUuid == null || discoveredUuid == myUuid) return false;
+
+      return true;
+    }).toList();
+  }
+
   /// RADAR MODE: Finds ALL NoteIt devices for the SearchNearBy UI (No UUID needed)
   Future<void> startRadar() async {
 
@@ -43,30 +72,16 @@ class MdnsSearcherNotifier extends Notifier<MdnsState> {
       enableLogging(LogTopic.errors);
       disableServiceTypeValidation(true);
 
-      _discovery = await startDiscovery('_noteitsync._tcp', ipLookupType: IpLookupType.any);
+      _discovery = await startDiscovery(AppConfig.mdnsServiceType, ipLookupType: IpLookupType.any);
 
-// We don't want to crash if _discovery drops instantly
+      // We don't want to crash if _discovery drops instantly
       if (_discovery == null) return;
-
-      // IMMEDIATELY populate the state in case it found devices instantly
-      // Filter out invalid services before they hit the state
 
       final myUuid = ref.read(sharedPreferenceProvider).hostUuid;
 
-      final validServices = _discovery!.services.where((s) {
-        if (s.port == null) return false;
-
-        // Extract UUID from the discovered service
-        final rawUuidBytes = s.txt?['uuid'];
-        if (rawUuidBytes != null) {
-          final discoveredUuid = utf8.decode(rawUuidBytes);
-          // IGNORE OUR OWN GHOST BROADCASTS
-          if (discoveredUuid == myUuid) return false;
-        }
-        return true;
-      }).toList();
-      state = (status: ScanStatus.scanning, devices: validServices);
-
+      // IMMEDIATELY populate the state in case it found devices instantly
+      // Filter out invalid services before they hit the state
+      state = (status: ScanStatus.scanning, devices: _getValidServices(_discovery!.services, myUuid));
 
       _discovery!.addListener(() {
 
@@ -74,19 +89,8 @@ class MdnsSearcherNotifier extends Notifier<MdnsState> {
         // If _discovery is suddenly null here, abort.
         if (_discovery == null) return;
 
-        final currentValidServices = _discovery!.services.where((s) {
-          if (s.port == null) return false;
-
-          final rawUuidBytes = s.txt?['uuid'];
-          if (rawUuidBytes != null) {
-            final discoveredUuid = utf8.decode(rawUuidBytes);
-            // MUST FILTER HERE TOO!
-            if (discoveredUuid == myUuid) return false;
-          }
-          return true;
-        }).toList();
         // Update the state with the live list of all found devices
-        state = (status: ScanStatus.scanning, devices: currentValidServices);
+        state = (status: ScanStatus.scanning, devices: _getValidServices(_discovery!.services, myUuid));
       });
     } catch (e) {
       AppLogger.d('mDNS Radar Error: $e');
@@ -95,9 +99,9 @@ class MdnsSearcherNotifier extends Notifier<MdnsState> {
   }
 
   /// Starts scanning the network for the specific UUID.
-  /// Returns a Record (ip, port) if found, or null if it fails/times out.
+  /// Returns a Record (ip, port, deviceType, protocolVersion) if found, or null if it fails/times out.
   /// TARGETED MODE: Background auto-connect searching for a specific UUID
-  Future<({String ip, int port})?> findServer(String targetUuid) async {
+  Future<({String ip, int port, String deviceType, int protocolVersion})?> findServer(String targetUuid) async {
 
     // --- POLICE CODE ---
     AppLogger.d('mDNS Police: Stopping any active broadcasts before targeted scan.');
@@ -107,10 +111,10 @@ class MdnsSearcherNotifier extends Notifier<MdnsState> {
     if (state.status == ScanStatus.scanning) return null;
 
     state = (status: ScanStatus.scanning, devices: []);
-    final completer = Completer<({String ip, int port})?>();
+    final completer = Completer<({String ip, int port, String deviceType, int protocolVersion})?>();
 
     try {
-      _discovery = await startDiscovery('_noteitsync._tcp', ipLookupType: IpLookupType.any);
+      _discovery = await startDiscovery(AppConfig.mdnsServiceType, ipLookupType: IpLookupType.any);
 
       if (_discovery == null) {
         state = (status: ScanStatus.error, devices: []);
@@ -122,33 +126,40 @@ class MdnsSearcherNotifier extends Notifier<MdnsState> {
         if (_discovery == null) return; // Prevent _TypeError if discovery is stopped
 
         for (var service in _discovery!.services) {
-          final rawUuidBytes = service.txt?['uuid'];
+          final discoveredUuid = _decodeTxt(service.txt, 'uuid');
 
-          if (rawUuidBytes != null) {
-            final discoveredUuid = utf8.decode(rawUuidBytes);
+          if (discoveredUuid == targetUuid) {
 
-            if (discoveredUuid == targetUuid) {
+            // 1. Try service.host first (Sometimes a String on Android)
+            // 2. Try the first item in service.addresses (Usually works on Windows/iOS)
+            String? ip;
+            if (service.host != null && service.host!.isNotEmpty) {
+              ip = service.host;
+            } else if (service.addresses != null && service.addresses!.isNotEmpty) {
+              ip = service.addresses!.first.address;
+            }
 
-              // 1. Try service.host first (Sometimes a String on Android)
-              // 2. Try the first item in service.addresses (Usually works on Windows/iOS)
-              String? ip;
-              if (service.host != null && service.host!.isNotEmpty) {
-                ip = service.host;
-              } else if (service.addresses != null && service.addresses!.isNotEmpty) {
-                ip = service.addresses!.first.address;
-              }
+            // final ip = service.host ?? service.addresses?.firstOrNull?.address;
+            final port = service.port;
 
-              // final ip = service.host ?? service.addresses?.firstOrNull?.address;
-              final port = service.port;
+            if (ip != null && port != null && !completer.isCompleted) {
+              AppLogger.d('mDNS: Found exact paired server at $ip:$port!');
+              state = (status: ScanStatus.found, devices: []);
 
-              if (ip != null && port != null && !completer.isCompleted) {
-                AppLogger.d('mDNS: Found exact paired server at $ip:$port!');
-                state = (status: ScanStatus.found, devices: []);
+              // Extract new metadata for auto-connect handshake
+              final deviceType = _decodeTxt(service.txt, 'type') ?? 'unknown';
 
-                stopScan();
-                completer.complete((ip: ip, port: port));
-                return;
-              }
+              final vStr = _decodeTxt(service.txt, 'v');
+              final protocolVersion = vStr != null ? (int.tryParse(vStr) ?? 0) : 0;
+
+              stopScan();
+              completer.complete((
+              ip: ip,
+              port: port,
+              deviceType: deviceType,
+              protocolVersion: protocolVersion
+              ));
+              return;
             }
           }
         }

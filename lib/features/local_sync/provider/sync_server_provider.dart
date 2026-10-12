@@ -6,6 +6,7 @@ import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_web_socket/shelf_web_socket.dart';
 
+import '../../../core/config.dart';
 import '../../../core/util/logger.dart';
 import '../../../database/drift/synced_devices/synced_devices_dao.dart';
 import '../../../database/shared_preference/shared_preference_manager.dart';
@@ -123,13 +124,27 @@ class SyncServerNotifier extends Notifier<HttpServer?> {
       }
 
       final queryParams = request.requestedUri.queryParameters;
+
       final clientUuid = queryParams['client_uuid'];
       final clientName = queryParams['client_name'];
       final clientPin = queryParams['pin'];
 
+      final String clientPlatform = queryParams['client_platform'] ?? 'unknown';
+
+      // If the client doesn't send a version, or if it fails to parse, default to 0
+      final String? clientVersionStr = queryParams['v'];
+      final int clientVersion = clientVersionStr != null ? (int.tryParse(clientVersionStr) ?? 0) : 0;
+
       if (clientUuid == null) {
         return Response.badRequest(body: 'Missing client_uuid');
       }
+
+      // --- PROTOCOL SAFETY CHECK ---
+      if (clientVersion != AppConfig.syncProtocolVersion) {
+        AppLogger.d("Host: Connection rejected. Client is v$clientVersion, Host is v${AppConfig.syncProtocolVersion}.");
+        return Response.forbidden('Version mismatch. Please update NoteIt.');
+      }
+      // -----------------------------
 
       final syncedDevicesDao = ref.read(syncedDevicesDaoProvider);
       final isKnown = await syncedDevicesDao.isDeviceKnown(clientUuid);
@@ -145,7 +160,12 @@ class SyncServerNotifier extends Notifier<HttpServer?> {
           AppLogger.d("Host: PIN matched! Trusting $clientName...");
 
           // It saves the UUID/Name for the whitelist, but ignores IP/Port.
-          await syncedDevicesDao.upsertDeviceAsClient(uuid: clientUuid, name: clientName ?? 'Unknown Device');
+          await syncedDevicesDao.upsertDeviceAsClient(
+            uuid: clientUuid,
+            name: clientName ?? 'Unknown Device',
+            deviceType: clientPlatform,
+            protocolVersion: clientVersion,
+          );
         }
       } else {
         AppLogger.d("Host: Known device connecting ($clientName)");

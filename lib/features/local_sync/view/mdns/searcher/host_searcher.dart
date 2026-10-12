@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:noteit/core/routing/routing.dart';
 
+import '../../../../../core/config.dart';
 import '../../../../../core/util/logger.dart';
 import '../../../../../database/drift/synced_devices/synced_devices_dao.dart';
 import '../../../../home/view/shared/desktop_close_button.dart';
@@ -45,9 +46,6 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
 
   @override
   Widget build(BuildContext context) {
-
-
-
     ref.listen(hostConnectionControllerProvider, (previous, next) {
       if (next.status == ConnectionStatus.error) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -62,7 +60,6 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
       }
     });
     // -----------------------------------------
-
 
     final searchState = ref.watch(mdnsSearcherProvider);
     final devices = searchState.devices;
@@ -118,13 +115,25 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
 
                 final deviceName = service.name ?? 'Unknown Host';
 
-                String hostUuid = '';
-                if (service.txt != null && service.txt!.containsKey('uuid')) {
-                  final rawUuid = service.txt!['uuid'];
-                  if (rawUuid != null) {
-                    hostUuid = utf8.decode(rawUuid);
+                // --- Safe extraction helper for the UI ---
+                String? decodeTxt(String key) {
+                  if (service.txt == null || !service.txt!.containsKey(key)) return null;
+                  final bytes = service.txt![key];
+                  if (bytes == null) return null;
+                  try {
+                    // Safe List<int>.from cast prevents the Uint8List UI crash!
+                    return utf8.decode(List<int>.from(bytes));
+                  } catch (_) {
+                    return null;
                   }
                 }
+
+                // Extract all our strict data safely
+                final hostUuid = decodeTxt('uuid') ?? '';
+                final devicePlatform = decodeTxt('type') ?? 'unknown';
+                final vStr = decodeTxt('v');
+                final protocolVersion = vStr != null ? (int.tryParse(vStr) ?? 0) : 0;
+                // ----------------------------------------------
 
                 final ip = service.host ?? service.addresses?.firstOrNull?.address;
                 final port = service.port;
@@ -136,32 +145,49 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () {
                     if (ip == null || port == null || hostUuid.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Still resolving device info...'))
-                      );
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(const SnackBar(content: Text('Still resolving device info...')));
                       return;
                     }
+
+                    // --- PROTOCOL SAFETY CHECK IN UI ---
+                    if (protocolVersion != AppConfig.syncProtocolVersion) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Version mismatch! Please update NoteIt.'),
+                          backgroundColor: Colors.orange,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                      return; // Block the connection entirely!
+                    }
+                    // ----------------------------------------
 
                     // Prevent double connections
                     if (ref.read(syncClientProvider) != null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('You are already connected to a host!'))
-                      );
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(const SnackBar(content: Text('You are already connected to a host!')));
                       return;
                     }
 
-                    ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Connecting to $deviceName...'))
-                    );
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Connecting to $deviceName...')));
 
                     // Trigger the controller
-                    ref.read(hostConnectionControllerProvider.notifier).connect(
-                      ip: ip,
-                      port: port,
-                      hostUuid: hostUuid,
-                      hostName: deviceName,
-                      requestPin: () => context.push<String>(AppRoutes.pin), // How to get the PIN
-                    );
+                    ref
+                        .read(hostConnectionControllerProvider.notifier)
+                        .connect(
+                          ip: ip,
+                          port: port,
+                          hostUuid: hostUuid,
+                          hostName: deviceName,
+                          devicePlatform: devicePlatform,
+                          // <-- PASS NEW DATA
+                          protocolVersion: protocolVersion,
+                          // <-- PASS NEW DATA
+                          requestPin: () => context.push<String>(AppRoutes.pin), // How to get the PIN
+                        );
                   },
                 );
               },

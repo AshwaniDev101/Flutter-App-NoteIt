@@ -1576,6 +1576,17 @@ class $SyncedDevicesTable extends SyncedDevices
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _customAliasMeta = const VerificationMeta(
+    'customAlias',
+  );
+  @override
+  late final GeneratedColumn<String> customAlias = GeneratedColumn<String>(
+    'custom_alias',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _lastKnownIpMeta = const VerificationMeta(
     'lastKnownIp',
   );
@@ -1634,15 +1645,92 @@ class $SyncedDevicesTable extends SyncedDevices
         requiredDuringInsert: false,
         defaultValue: currentDateAndTime,
       );
+  static const VerificationMeta _isTrustedMeta = const VerificationMeta(
+    'isTrusted',
+  );
+  @override
+  late final GeneratedColumn<bool> isTrusted = GeneratedColumn<bool>(
+    'is_trusted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_trusted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _publicKeyMeta = const VerificationMeta(
+    'publicKey',
+  );
+  @override
+  late final GeneratedColumn<String> publicKey = GeneratedColumn<String>(
+    'public_key',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _authKeyMeta = const VerificationMeta(
+    'authKey',
+  );
+  @override
+  late final GeneratedColumn<String> authKey = GeneratedColumn<String>(
+    'auth_key',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _deviceTypeMeta = const VerificationMeta(
+    'deviceType',
+  );
+  @override
+  late final GeneratedColumn<String> deviceType = GeneratedColumn<String>(
+    'device_type',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _protocolVersionMeta = const VerificationMeta(
+    'protocolVersion',
+  );
+  @override
+  late final GeneratedColumn<int> protocolVersion = GeneratedColumn<int>(
+    'protocol_version',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lastSuccessfulSyncAtMeta =
+      const VerificationMeta('lastSuccessfulSyncAt');
+  @override
+  late final GeneratedColumn<DateTime> lastSuccessfulSyncAt =
+      GeneratedColumn<DateTime>(
+        'last_successful_sync_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     deviceUuid,
     deviceName,
+    customAlias,
     lastKnownIp,
     lastKnownPort,
     lastSeenAsHostAt,
     lastSeenAsClientAt,
     firstPairedAt,
+    isTrusted,
+    publicKey,
+    authKey,
+    deviceType,
+    protocolVersion,
+    lastSuccessfulSyncAt,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1671,6 +1759,15 @@ class $SyncedDevicesTable extends SyncedDevices
       );
     } else if (isInserting) {
       context.missing(_deviceNameMeta);
+    }
+    if (data.containsKey('custom_alias')) {
+      context.handle(
+        _customAliasMeta,
+        customAlias.isAcceptableOrUnknown(
+          data['custom_alias']!,
+          _customAliasMeta,
+        ),
+      );
     }
     if (data.containsKey('last_known_ip')) {
       context.handle(
@@ -1717,6 +1814,48 @@ class $SyncedDevicesTable extends SyncedDevices
         ),
       );
     }
+    if (data.containsKey('is_trusted')) {
+      context.handle(
+        _isTrustedMeta,
+        isTrusted.isAcceptableOrUnknown(data['is_trusted']!, _isTrustedMeta),
+      );
+    }
+    if (data.containsKey('public_key')) {
+      context.handle(
+        _publicKeyMeta,
+        publicKey.isAcceptableOrUnknown(data['public_key']!, _publicKeyMeta),
+      );
+    }
+    if (data.containsKey('auth_key')) {
+      context.handle(
+        _authKeyMeta,
+        authKey.isAcceptableOrUnknown(data['auth_key']!, _authKeyMeta),
+      );
+    }
+    if (data.containsKey('device_type')) {
+      context.handle(
+        _deviceTypeMeta,
+        deviceType.isAcceptableOrUnknown(data['device_type']!, _deviceTypeMeta),
+      );
+    }
+    if (data.containsKey('protocol_version')) {
+      context.handle(
+        _protocolVersionMeta,
+        protocolVersion.isAcceptableOrUnknown(
+          data['protocol_version']!,
+          _protocolVersionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_successful_sync_at')) {
+      context.handle(
+        _lastSuccessfulSyncAtMeta,
+        lastSuccessfulSyncAt.isAcceptableOrUnknown(
+          data['last_successful_sync_at']!,
+          _lastSuccessfulSyncAtMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1734,6 +1873,10 @@ class $SyncedDevicesTable extends SyncedDevices
         DriftSqlType.string,
         data['${effectivePrefix}device_name'],
       )!,
+      customAlias: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}custom_alias'],
+      ),
       lastKnownIp: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}last_known_ip'],
@@ -1754,6 +1897,30 @@ class $SyncedDevicesTable extends SyncedDevices
         DriftSqlType.dateTime,
         data['${effectivePrefix}first_paired_at'],
       )!,
+      isTrusted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_trusted'],
+      )!,
+      publicKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}public_key'],
+      ),
+      authKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}auth_key'],
+      ),
+      deviceType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}device_type'],
+      ),
+      protocolVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}protocol_version'],
+      ),
+      lastSuccessfulSyncAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_successful_sync_at'],
+      ),
     );
   }
 
@@ -1766,25 +1933,42 @@ class $SyncedDevicesTable extends SyncedDevices
 class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
   final String deviceUuid;
   final String deviceName;
+  final String? customAlias;
   final String? lastKnownIp;
   final int? lastKnownPort;
   final DateTime? lastSeenAsHostAt;
   final DateTime? lastSeenAsClientAt;
   final DateTime firstPairedAt;
+  final bool isTrusted;
+  final String? publicKey;
+  final String? authKey;
+  final String? deviceType;
+  final int? protocolVersion;
+  final DateTime? lastSuccessfulSyncAt;
   const SyncedDevice({
     required this.deviceUuid,
     required this.deviceName,
+    this.customAlias,
     this.lastKnownIp,
     this.lastKnownPort,
     this.lastSeenAsHostAt,
     this.lastSeenAsClientAt,
     required this.firstPairedAt,
+    required this.isTrusted,
+    this.publicKey,
+    this.authKey,
+    this.deviceType,
+    this.protocolVersion,
+    this.lastSuccessfulSyncAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['device_uuid'] = Variable<String>(deviceUuid);
     map['device_name'] = Variable<String>(deviceName);
+    if (!nullToAbsent || customAlias != null) {
+      map['custom_alias'] = Variable<String>(customAlias);
+    }
     if (!nullToAbsent || lastKnownIp != null) {
       map['last_known_ip'] = Variable<String>(lastKnownIp);
     }
@@ -1798,6 +1982,22 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
       map['last_seen_as_client_at'] = Variable<DateTime>(lastSeenAsClientAt);
     }
     map['first_paired_at'] = Variable<DateTime>(firstPairedAt);
+    map['is_trusted'] = Variable<bool>(isTrusted);
+    if (!nullToAbsent || publicKey != null) {
+      map['public_key'] = Variable<String>(publicKey);
+    }
+    if (!nullToAbsent || authKey != null) {
+      map['auth_key'] = Variable<String>(authKey);
+    }
+    if (!nullToAbsent || deviceType != null) {
+      map['device_type'] = Variable<String>(deviceType);
+    }
+    if (!nullToAbsent || protocolVersion != null) {
+      map['protocol_version'] = Variable<int>(protocolVersion);
+    }
+    if (!nullToAbsent || lastSuccessfulSyncAt != null) {
+      map['last_successful_sync_at'] = Variable<DateTime>(lastSuccessfulSyncAt);
+    }
     return map;
   }
 
@@ -1805,6 +2005,9 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
     return SyncedDevicesCompanion(
       deviceUuid: Value(deviceUuid),
       deviceName: Value(deviceName),
+      customAlias: customAlias == null && nullToAbsent
+          ? const Value.absent()
+          : Value(customAlias),
       lastKnownIp: lastKnownIp == null && nullToAbsent
           ? const Value.absent()
           : Value(lastKnownIp),
@@ -1818,6 +2021,22 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
           ? const Value.absent()
           : Value(lastSeenAsClientAt),
       firstPairedAt: Value(firstPairedAt),
+      isTrusted: Value(isTrusted),
+      publicKey: publicKey == null && nullToAbsent
+          ? const Value.absent()
+          : Value(publicKey),
+      authKey: authKey == null && nullToAbsent
+          ? const Value.absent()
+          : Value(authKey),
+      deviceType: deviceType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deviceType),
+      protocolVersion: protocolVersion == null && nullToAbsent
+          ? const Value.absent()
+          : Value(protocolVersion),
+      lastSuccessfulSyncAt: lastSuccessfulSyncAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastSuccessfulSyncAt),
     );
   }
 
@@ -1829,6 +2048,7 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
     return SyncedDevice(
       deviceUuid: serializer.fromJson<String>(json['deviceUuid']),
       deviceName: serializer.fromJson<String>(json['deviceName']),
+      customAlias: serializer.fromJson<String?>(json['customAlias']),
       lastKnownIp: serializer.fromJson<String?>(json['lastKnownIp']),
       lastKnownPort: serializer.fromJson<int?>(json['lastKnownPort']),
       lastSeenAsHostAt: serializer.fromJson<DateTime?>(
@@ -1838,6 +2058,14 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
         json['lastSeenAsClientAt'],
       ),
       firstPairedAt: serializer.fromJson<DateTime>(json['firstPairedAt']),
+      isTrusted: serializer.fromJson<bool>(json['isTrusted']),
+      publicKey: serializer.fromJson<String?>(json['publicKey']),
+      authKey: serializer.fromJson<String?>(json['authKey']),
+      deviceType: serializer.fromJson<String?>(json['deviceType']),
+      protocolVersion: serializer.fromJson<int?>(json['protocolVersion']),
+      lastSuccessfulSyncAt: serializer.fromJson<DateTime?>(
+        json['lastSuccessfulSyncAt'],
+      ),
     );
   }
   @override
@@ -1846,25 +2074,42 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
     return <String, dynamic>{
       'deviceUuid': serializer.toJson<String>(deviceUuid),
       'deviceName': serializer.toJson<String>(deviceName),
+      'customAlias': serializer.toJson<String?>(customAlias),
       'lastKnownIp': serializer.toJson<String?>(lastKnownIp),
       'lastKnownPort': serializer.toJson<int?>(lastKnownPort),
       'lastSeenAsHostAt': serializer.toJson<DateTime?>(lastSeenAsHostAt),
       'lastSeenAsClientAt': serializer.toJson<DateTime?>(lastSeenAsClientAt),
       'firstPairedAt': serializer.toJson<DateTime>(firstPairedAt),
+      'isTrusted': serializer.toJson<bool>(isTrusted),
+      'publicKey': serializer.toJson<String?>(publicKey),
+      'authKey': serializer.toJson<String?>(authKey),
+      'deviceType': serializer.toJson<String?>(deviceType),
+      'protocolVersion': serializer.toJson<int?>(protocolVersion),
+      'lastSuccessfulSyncAt': serializer.toJson<DateTime?>(
+        lastSuccessfulSyncAt,
+      ),
     };
   }
 
   SyncedDevice copyWith({
     String? deviceUuid,
     String? deviceName,
+    Value<String?> customAlias = const Value.absent(),
     Value<String?> lastKnownIp = const Value.absent(),
     Value<int?> lastKnownPort = const Value.absent(),
     Value<DateTime?> lastSeenAsHostAt = const Value.absent(),
     Value<DateTime?> lastSeenAsClientAt = const Value.absent(),
     DateTime? firstPairedAt,
+    bool? isTrusted,
+    Value<String?> publicKey = const Value.absent(),
+    Value<String?> authKey = const Value.absent(),
+    Value<String?> deviceType = const Value.absent(),
+    Value<int?> protocolVersion = const Value.absent(),
+    Value<DateTime?> lastSuccessfulSyncAt = const Value.absent(),
   }) => SyncedDevice(
     deviceUuid: deviceUuid ?? this.deviceUuid,
     deviceName: deviceName ?? this.deviceName,
+    customAlias: customAlias.present ? customAlias.value : this.customAlias,
     lastKnownIp: lastKnownIp.present ? lastKnownIp.value : this.lastKnownIp,
     lastKnownPort: lastKnownPort.present
         ? lastKnownPort.value
@@ -1876,6 +2121,16 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
         ? lastSeenAsClientAt.value
         : this.lastSeenAsClientAt,
     firstPairedAt: firstPairedAt ?? this.firstPairedAt,
+    isTrusted: isTrusted ?? this.isTrusted,
+    publicKey: publicKey.present ? publicKey.value : this.publicKey,
+    authKey: authKey.present ? authKey.value : this.authKey,
+    deviceType: deviceType.present ? deviceType.value : this.deviceType,
+    protocolVersion: protocolVersion.present
+        ? protocolVersion.value
+        : this.protocolVersion,
+    lastSuccessfulSyncAt: lastSuccessfulSyncAt.present
+        ? lastSuccessfulSyncAt.value
+        : this.lastSuccessfulSyncAt,
   );
   SyncedDevice copyWithCompanion(SyncedDevicesCompanion data) {
     return SyncedDevice(
@@ -1885,6 +2140,9 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
       deviceName: data.deviceName.present
           ? data.deviceName.value
           : this.deviceName,
+      customAlias: data.customAlias.present
+          ? data.customAlias.value
+          : this.customAlias,
       lastKnownIp: data.lastKnownIp.present
           ? data.lastKnownIp.value
           : this.lastKnownIp,
@@ -1900,6 +2158,18 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
       firstPairedAt: data.firstPairedAt.present
           ? data.firstPairedAt.value
           : this.firstPairedAt,
+      isTrusted: data.isTrusted.present ? data.isTrusted.value : this.isTrusted,
+      publicKey: data.publicKey.present ? data.publicKey.value : this.publicKey,
+      authKey: data.authKey.present ? data.authKey.value : this.authKey,
+      deviceType: data.deviceType.present
+          ? data.deviceType.value
+          : this.deviceType,
+      protocolVersion: data.protocolVersion.present
+          ? data.protocolVersion.value
+          : this.protocolVersion,
+      lastSuccessfulSyncAt: data.lastSuccessfulSyncAt.present
+          ? data.lastSuccessfulSyncAt.value
+          : this.lastSuccessfulSyncAt,
     );
   }
 
@@ -1908,11 +2178,18 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
     return (StringBuffer('SyncedDevice(')
           ..write('deviceUuid: $deviceUuid, ')
           ..write('deviceName: $deviceName, ')
+          ..write('customAlias: $customAlias, ')
           ..write('lastKnownIp: $lastKnownIp, ')
           ..write('lastKnownPort: $lastKnownPort, ')
           ..write('lastSeenAsHostAt: $lastSeenAsHostAt, ')
           ..write('lastSeenAsClientAt: $lastSeenAsClientAt, ')
-          ..write('firstPairedAt: $firstPairedAt')
+          ..write('firstPairedAt: $firstPairedAt, ')
+          ..write('isTrusted: $isTrusted, ')
+          ..write('publicKey: $publicKey, ')
+          ..write('authKey: $authKey, ')
+          ..write('deviceType: $deviceType, ')
+          ..write('protocolVersion: $protocolVersion, ')
+          ..write('lastSuccessfulSyncAt: $lastSuccessfulSyncAt')
           ..write(')'))
         .toString();
   }
@@ -1921,11 +2198,18 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
   int get hashCode => Object.hash(
     deviceUuid,
     deviceName,
+    customAlias,
     lastKnownIp,
     lastKnownPort,
     lastSeenAsHostAt,
     lastSeenAsClientAt,
     firstPairedAt,
+    isTrusted,
+    publicKey,
+    authKey,
+    deviceType,
+    protocolVersion,
+    lastSuccessfulSyncAt,
   );
   @override
   bool operator ==(Object other) =>
@@ -1933,62 +2217,105 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
       (other is SyncedDevice &&
           other.deviceUuid == this.deviceUuid &&
           other.deviceName == this.deviceName &&
+          other.customAlias == this.customAlias &&
           other.lastKnownIp == this.lastKnownIp &&
           other.lastKnownPort == this.lastKnownPort &&
           other.lastSeenAsHostAt == this.lastSeenAsHostAt &&
           other.lastSeenAsClientAt == this.lastSeenAsClientAt &&
-          other.firstPairedAt == this.firstPairedAt);
+          other.firstPairedAt == this.firstPairedAt &&
+          other.isTrusted == this.isTrusted &&
+          other.publicKey == this.publicKey &&
+          other.authKey == this.authKey &&
+          other.deviceType == this.deviceType &&
+          other.protocolVersion == this.protocolVersion &&
+          other.lastSuccessfulSyncAt == this.lastSuccessfulSyncAt);
 }
 
 class SyncedDevicesCompanion extends UpdateCompanion<SyncedDevice> {
   final Value<String> deviceUuid;
   final Value<String> deviceName;
+  final Value<String?> customAlias;
   final Value<String?> lastKnownIp;
   final Value<int?> lastKnownPort;
   final Value<DateTime?> lastSeenAsHostAt;
   final Value<DateTime?> lastSeenAsClientAt;
   final Value<DateTime> firstPairedAt;
+  final Value<bool> isTrusted;
+  final Value<String?> publicKey;
+  final Value<String?> authKey;
+  final Value<String?> deviceType;
+  final Value<int?> protocolVersion;
+  final Value<DateTime?> lastSuccessfulSyncAt;
   final Value<int> rowid;
   const SyncedDevicesCompanion({
     this.deviceUuid = const Value.absent(),
     this.deviceName = const Value.absent(),
+    this.customAlias = const Value.absent(),
     this.lastKnownIp = const Value.absent(),
     this.lastKnownPort = const Value.absent(),
     this.lastSeenAsHostAt = const Value.absent(),
     this.lastSeenAsClientAt = const Value.absent(),
     this.firstPairedAt = const Value.absent(),
+    this.isTrusted = const Value.absent(),
+    this.publicKey = const Value.absent(),
+    this.authKey = const Value.absent(),
+    this.deviceType = const Value.absent(),
+    this.protocolVersion = const Value.absent(),
+    this.lastSuccessfulSyncAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   SyncedDevicesCompanion.insert({
     required String deviceUuid,
     required String deviceName,
+    this.customAlias = const Value.absent(),
     this.lastKnownIp = const Value.absent(),
     this.lastKnownPort = const Value.absent(),
     this.lastSeenAsHostAt = const Value.absent(),
     this.lastSeenAsClientAt = const Value.absent(),
     this.firstPairedAt = const Value.absent(),
+    this.isTrusted = const Value.absent(),
+    this.publicKey = const Value.absent(),
+    this.authKey = const Value.absent(),
+    this.deviceType = const Value.absent(),
+    this.protocolVersion = const Value.absent(),
+    this.lastSuccessfulSyncAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : deviceUuid = Value(deviceUuid),
        deviceName = Value(deviceName);
   static Insertable<SyncedDevice> custom({
     Expression<String>? deviceUuid,
     Expression<String>? deviceName,
+    Expression<String>? customAlias,
     Expression<String>? lastKnownIp,
     Expression<int>? lastKnownPort,
     Expression<DateTime>? lastSeenAsHostAt,
     Expression<DateTime>? lastSeenAsClientAt,
     Expression<DateTime>? firstPairedAt,
+    Expression<bool>? isTrusted,
+    Expression<String>? publicKey,
+    Expression<String>? authKey,
+    Expression<String>? deviceType,
+    Expression<int>? protocolVersion,
+    Expression<DateTime>? lastSuccessfulSyncAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (deviceUuid != null) 'device_uuid': deviceUuid,
       if (deviceName != null) 'device_name': deviceName,
+      if (customAlias != null) 'custom_alias': customAlias,
       if (lastKnownIp != null) 'last_known_ip': lastKnownIp,
       if (lastKnownPort != null) 'last_known_port': lastKnownPort,
       if (lastSeenAsHostAt != null) 'last_seen_as_host_at': lastSeenAsHostAt,
       if (lastSeenAsClientAt != null)
         'last_seen_as_client_at': lastSeenAsClientAt,
       if (firstPairedAt != null) 'first_paired_at': firstPairedAt,
+      if (isTrusted != null) 'is_trusted': isTrusted,
+      if (publicKey != null) 'public_key': publicKey,
+      if (authKey != null) 'auth_key': authKey,
+      if (deviceType != null) 'device_type': deviceType,
+      if (protocolVersion != null) 'protocol_version': protocolVersion,
+      if (lastSuccessfulSyncAt != null)
+        'last_successful_sync_at': lastSuccessfulSyncAt,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1996,21 +2323,35 @@ class SyncedDevicesCompanion extends UpdateCompanion<SyncedDevice> {
   SyncedDevicesCompanion copyWith({
     Value<String>? deviceUuid,
     Value<String>? deviceName,
+    Value<String?>? customAlias,
     Value<String?>? lastKnownIp,
     Value<int?>? lastKnownPort,
     Value<DateTime?>? lastSeenAsHostAt,
     Value<DateTime?>? lastSeenAsClientAt,
     Value<DateTime>? firstPairedAt,
+    Value<bool>? isTrusted,
+    Value<String?>? publicKey,
+    Value<String?>? authKey,
+    Value<String?>? deviceType,
+    Value<int?>? protocolVersion,
+    Value<DateTime?>? lastSuccessfulSyncAt,
     Value<int>? rowid,
   }) {
     return SyncedDevicesCompanion(
       deviceUuid: deviceUuid ?? this.deviceUuid,
       deviceName: deviceName ?? this.deviceName,
+      customAlias: customAlias ?? this.customAlias,
       lastKnownIp: lastKnownIp ?? this.lastKnownIp,
       lastKnownPort: lastKnownPort ?? this.lastKnownPort,
       lastSeenAsHostAt: lastSeenAsHostAt ?? this.lastSeenAsHostAt,
       lastSeenAsClientAt: lastSeenAsClientAt ?? this.lastSeenAsClientAt,
       firstPairedAt: firstPairedAt ?? this.firstPairedAt,
+      isTrusted: isTrusted ?? this.isTrusted,
+      publicKey: publicKey ?? this.publicKey,
+      authKey: authKey ?? this.authKey,
+      deviceType: deviceType ?? this.deviceType,
+      protocolVersion: protocolVersion ?? this.protocolVersion,
+      lastSuccessfulSyncAt: lastSuccessfulSyncAt ?? this.lastSuccessfulSyncAt,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2023,6 +2364,9 @@ class SyncedDevicesCompanion extends UpdateCompanion<SyncedDevice> {
     }
     if (deviceName.present) {
       map['device_name'] = Variable<String>(deviceName.value);
+    }
+    if (customAlias.present) {
+      map['custom_alias'] = Variable<String>(customAlias.value);
     }
     if (lastKnownIp.present) {
       map['last_known_ip'] = Variable<String>(lastKnownIp.value);
@@ -2041,6 +2385,26 @@ class SyncedDevicesCompanion extends UpdateCompanion<SyncedDevice> {
     if (firstPairedAt.present) {
       map['first_paired_at'] = Variable<DateTime>(firstPairedAt.value);
     }
+    if (isTrusted.present) {
+      map['is_trusted'] = Variable<bool>(isTrusted.value);
+    }
+    if (publicKey.present) {
+      map['public_key'] = Variable<String>(publicKey.value);
+    }
+    if (authKey.present) {
+      map['auth_key'] = Variable<String>(authKey.value);
+    }
+    if (deviceType.present) {
+      map['device_type'] = Variable<String>(deviceType.value);
+    }
+    if (protocolVersion.present) {
+      map['protocol_version'] = Variable<int>(protocolVersion.value);
+    }
+    if (lastSuccessfulSyncAt.present) {
+      map['last_successful_sync_at'] = Variable<DateTime>(
+        lastSuccessfulSyncAt.value,
+      );
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -2052,11 +2416,18 @@ class SyncedDevicesCompanion extends UpdateCompanion<SyncedDevice> {
     return (StringBuffer('SyncedDevicesCompanion(')
           ..write('deviceUuid: $deviceUuid, ')
           ..write('deviceName: $deviceName, ')
+          ..write('customAlias: $customAlias, ')
           ..write('lastKnownIp: $lastKnownIp, ')
           ..write('lastKnownPort: $lastKnownPort, ')
           ..write('lastSeenAsHostAt: $lastSeenAsHostAt, ')
           ..write('lastSeenAsClientAt: $lastSeenAsClientAt, ')
           ..write('firstPairedAt: $firstPairedAt, ')
+          ..write('isTrusted: $isTrusted, ')
+          ..write('publicKey: $publicKey, ')
+          ..write('authKey: $authKey, ')
+          ..write('deviceType: $deviceType, ')
+          ..write('protocolVersion: $protocolVersion, ')
+          ..write('lastSuccessfulSyncAt: $lastSuccessfulSyncAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -3316,22 +3687,36 @@ typedef $$SyncedDevicesTableCreateCompanionBuilder =
     SyncedDevicesCompanion Function({
       required String deviceUuid,
       required String deviceName,
+      Value<String?> customAlias,
       Value<String?> lastKnownIp,
       Value<int?> lastKnownPort,
       Value<DateTime?> lastSeenAsHostAt,
       Value<DateTime?> lastSeenAsClientAt,
       Value<DateTime> firstPairedAt,
+      Value<bool> isTrusted,
+      Value<String?> publicKey,
+      Value<String?> authKey,
+      Value<String?> deviceType,
+      Value<int?> protocolVersion,
+      Value<DateTime?> lastSuccessfulSyncAt,
       Value<int> rowid,
     });
 typedef $$SyncedDevicesTableUpdateCompanionBuilder =
     SyncedDevicesCompanion Function({
       Value<String> deviceUuid,
       Value<String> deviceName,
+      Value<String?> customAlias,
       Value<String?> lastKnownIp,
       Value<int?> lastKnownPort,
       Value<DateTime?> lastSeenAsHostAt,
       Value<DateTime?> lastSeenAsClientAt,
       Value<DateTime> firstPairedAt,
+      Value<bool> isTrusted,
+      Value<String?> publicKey,
+      Value<String?> authKey,
+      Value<String?> deviceType,
+      Value<int?> protocolVersion,
+      Value<DateTime?> lastSuccessfulSyncAt,
       Value<int> rowid,
     });
 
@@ -3351,6 +3736,11 @@ class $$SyncedDevicesTableFilterComposer
 
   ColumnFilters<String> get deviceName => $composableBuilder(
     column: $table.deviceName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get customAlias => $composableBuilder(
+    column: $table.customAlias,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3378,6 +3768,36 @@ class $$SyncedDevicesTableFilterComposer
     column: $table.firstPairedAt,
     builder: (column) => ColumnFilters(column),
   );
+
+  ColumnFilters<bool> get isTrusted => $composableBuilder(
+    column: $table.isTrusted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get publicKey => $composableBuilder(
+    column: $table.publicKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get authKey => $composableBuilder(
+    column: $table.authKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deviceType => $composableBuilder(
+    column: $table.deviceType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get protocolVersion => $composableBuilder(
+    column: $table.protocolVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastSuccessfulSyncAt => $composableBuilder(
+    column: $table.lastSuccessfulSyncAt,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
 class $$SyncedDevicesTableOrderingComposer
@@ -3396,6 +3816,11 @@ class $$SyncedDevicesTableOrderingComposer
 
   ColumnOrderings<String> get deviceName => $composableBuilder(
     column: $table.deviceName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get customAlias => $composableBuilder(
+    column: $table.customAlias,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -3423,6 +3848,36 @@ class $$SyncedDevicesTableOrderingComposer
     column: $table.firstPairedAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get isTrusted => $composableBuilder(
+    column: $table.isTrusted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get publicKey => $composableBuilder(
+    column: $table.publicKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get authKey => $composableBuilder(
+    column: $table.authKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deviceType => $composableBuilder(
+    column: $table.deviceType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get protocolVersion => $composableBuilder(
+    column: $table.protocolVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastSuccessfulSyncAt => $composableBuilder(
+    column: $table.lastSuccessfulSyncAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$SyncedDevicesTableAnnotationComposer
@@ -3441,6 +3896,11 @@ class $$SyncedDevicesTableAnnotationComposer
 
   GeneratedColumn<String> get deviceName => $composableBuilder(
     column: $table.deviceName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get customAlias => $composableBuilder(
+    column: $table.customAlias,
     builder: (column) => column,
   );
 
@@ -3466,6 +3926,30 @@ class $$SyncedDevicesTableAnnotationComposer
 
   GeneratedColumn<DateTime> get firstPairedAt => $composableBuilder(
     column: $table.firstPairedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isTrusted =>
+      $composableBuilder(column: $table.isTrusted, builder: (column) => column);
+
+  GeneratedColumn<String> get publicKey =>
+      $composableBuilder(column: $table.publicKey, builder: (column) => column);
+
+  GeneratedColumn<String> get authKey =>
+      $composableBuilder(column: $table.authKey, builder: (column) => column);
+
+  GeneratedColumn<String> get deviceType => $composableBuilder(
+    column: $table.deviceType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get protocolVersion => $composableBuilder(
+    column: $table.protocolVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get lastSuccessfulSyncAt => $composableBuilder(
+    column: $table.lastSuccessfulSyncAt,
     builder: (column) => column,
   );
 }
@@ -3505,40 +3989,68 @@ class $$SyncedDevicesTableTableManager
               ({
                 Value<String> deviceUuid = const Value.absent(),
                 Value<String> deviceName = const Value.absent(),
+                Value<String?> customAlias = const Value.absent(),
                 Value<String?> lastKnownIp = const Value.absent(),
                 Value<int?> lastKnownPort = const Value.absent(),
                 Value<DateTime?> lastSeenAsHostAt = const Value.absent(),
                 Value<DateTime?> lastSeenAsClientAt = const Value.absent(),
                 Value<DateTime> firstPairedAt = const Value.absent(),
+                Value<bool> isTrusted = const Value.absent(),
+                Value<String?> publicKey = const Value.absent(),
+                Value<String?> authKey = const Value.absent(),
+                Value<String?> deviceType = const Value.absent(),
+                Value<int?> protocolVersion = const Value.absent(),
+                Value<DateTime?> lastSuccessfulSyncAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SyncedDevicesCompanion(
                 deviceUuid: deviceUuid,
                 deviceName: deviceName,
+                customAlias: customAlias,
                 lastKnownIp: lastKnownIp,
                 lastKnownPort: lastKnownPort,
                 lastSeenAsHostAt: lastSeenAsHostAt,
                 lastSeenAsClientAt: lastSeenAsClientAt,
                 firstPairedAt: firstPairedAt,
+                isTrusted: isTrusted,
+                publicKey: publicKey,
+                authKey: authKey,
+                deviceType: deviceType,
+                protocolVersion: protocolVersion,
+                lastSuccessfulSyncAt: lastSuccessfulSyncAt,
                 rowid: rowid,
               ),
           createCompanionCallback:
               ({
                 required String deviceUuid,
                 required String deviceName,
+                Value<String?> customAlias = const Value.absent(),
                 Value<String?> lastKnownIp = const Value.absent(),
                 Value<int?> lastKnownPort = const Value.absent(),
                 Value<DateTime?> lastSeenAsHostAt = const Value.absent(),
                 Value<DateTime?> lastSeenAsClientAt = const Value.absent(),
                 Value<DateTime> firstPairedAt = const Value.absent(),
+                Value<bool> isTrusted = const Value.absent(),
+                Value<String?> publicKey = const Value.absent(),
+                Value<String?> authKey = const Value.absent(),
+                Value<String?> deviceType = const Value.absent(),
+                Value<int?> protocolVersion = const Value.absent(),
+                Value<DateTime?> lastSuccessfulSyncAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SyncedDevicesCompanion.insert(
                 deviceUuid: deviceUuid,
                 deviceName: deviceName,
+                customAlias: customAlias,
                 lastKnownIp: lastKnownIp,
                 lastKnownPort: lastKnownPort,
                 lastSeenAsHostAt: lastSeenAsHostAt,
                 lastSeenAsClientAt: lastSeenAsClientAt,
                 firstPairedAt: firstPairedAt,
+                isTrusted: isTrusted,
+                publicKey: publicKey,
+                authKey: authKey,
+                deviceType: deviceType,
+                protocolVersion: protocolVersion,
+                lastSuccessfulSyncAt: lastSuccessfulSyncAt,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

@@ -7,8 +7,6 @@ import 'package:window_manager/window_manager.dart';
 
 import '../../../../database/drift/keybindings/keybindings_dao.dart';
 import '../../../drawer/desktop_drawer_button.dart';
-import '../../../drawer/drawer_page.dart';
-import '../../../drawer/app_drawer.dart';
 import '../../../keybinding/smart_action_widget.dart';
 import '../../viewmodel/viewmodel.dart';
 import '../../core/providers.dart';

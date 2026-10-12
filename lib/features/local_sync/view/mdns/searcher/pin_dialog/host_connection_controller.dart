@@ -32,6 +32,8 @@ class HostConnectionController extends Notifier<ConnectionState> {
     required int port,
     required String hostUuid,
     required String hostName,
+    required String devicePlatform,
+    required int protocolVersion,
     required Future<String?> Function() requestPin,
   }) async {
     // Set to connecting
@@ -57,6 +59,9 @@ class HostConnectionController extends Notifier<ConnectionState> {
         hostUuid: hostUuid,
         hostName: hostName,
         pin: pin,
+        // --- PASS TO THE DIALER ---
+        devicePlatform: devicePlatform,
+        protocolVersion: protocolVersion,
       );
 
       // Success!

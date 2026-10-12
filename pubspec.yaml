@@ -53,6 +53,7 @@ dependencies:
   file_picker: ^13.1.0
   hugeicons: ^1.2.0
   toastification: ^3.2.0
+  package_info_plus: ^10.2.2
 
 
 

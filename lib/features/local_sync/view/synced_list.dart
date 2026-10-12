@@ -14,6 +14,19 @@ class SyncedDevicesListView extends ConsumerWidget {
         '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
   }
 
+  // --- Helper to pick the correct icon based on the platform string ---
+  IconData _getPlatformIcon(String? platform) {
+    switch (platform?.toLowerCase()) {
+      case 'android': return Icons.android;
+      case 'ios': return Icons.apple; // Note: Ensure you have cupertino_icons or use Icons.phone_iphone
+      case 'windows': return Icons.desktop_windows;
+      case 'macos': return Icons.laptop_mac;
+      case 'linux': return Icons.computer;
+      case 'web': return Icons.language;
+      default: return Icons.devices_other;
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final devicesAsyncValue = ref.watch(syncedDevicesStreamProvider);
@@ -56,6 +69,9 @@ class SyncedDevicesListView extends ConsumerWidget {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
+                              // --- Show the platform icon next to the name ---
+                              Icon(_getPlatformIcon(device.deviceType), color: Theme.of(context).colorScheme.primary),
+                              const SizedBox(width: 12),
                               Expanded(
                                 child: Text(
                                   device.deviceName,
@@ -88,6 +104,20 @@ class SyncedDevicesListView extends ConsumerWidget {
                             label: 'UUID',
                             value: device.deviceUuid,
                           ),
+
+                          // --- Display the Protocol Version and Platform ---
+                          _DetailRow(
+                            icon: Icons.developer_board,
+                            label: 'Platform',
+                            value: device.deviceType ?? 'Unknown',
+                          ),
+                          _DetailRow(
+                            icon: Icons.verified,
+                            label: 'Protocol Version',
+                            value: 'v${device.protocolVersion ?? 0}',
+                          ),
+                          // ----------------------------------------------------
+
                           _DetailRow(
                             icon: Icons.network_check,
                             label: 'IP Address',

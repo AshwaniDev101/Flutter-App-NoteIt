@@ -31,7 +31,7 @@ class _QrScannerPageState extends ConsumerState<QrScannerPage> {
         // Stop the camera immediately to save resources
         cameraController.stop();
 
-        // Parse the device name out of URL (e.g., ?name=Varsha's Desktop)
+        // Parse the device name out of URL
         final uri = Uri.parse(rawValue);
 
         final ip = uri.host;
@@ -39,14 +39,26 @@ class _QrScannerPageState extends ConsumerState<QrScannerPage> {
         final hostName = uri.queryParameters['host_name'] ?? 'Unknown Host';
         final hostUuid = uri.queryParameters['host_uuid'] ?? '';
 
+        // --- Extract strict platform and version from the QR URL ---
+        final devicePlatform = uri.queryParameters['host_platform'] ?? 'unknown';
+        final vStr = uri.queryParameters['v'];
+        final protocolVersion = vStr != null ? (int.tryParse(vStr) ?? 0) : 0;
+        // ----------------------------------------------------------------
+
         if (ip.isNotEmpty && port > 0 && hostUuid.isNotEmpty) {
-          // Trigger the Riverpod provider with the raw ingredients
-          ref
-              .read(syncClientProvider.notifier)
-              .connectToHost(ip: ip, port: port, hostUuid: hostUuid, hostName: hostName);
+
+          // Trigger the Riverpod provider with the raw ingredients AND new metadata
+          ref.read(syncClientProvider.notifier).connectToHost(
+            ip: ip,
+            port: port,
+            hostUuid: hostUuid,
+            hostName: hostName,
+            devicePlatform: devicePlatform,
+            protocolVersion: protocolVersion,
+          );
 
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Connecting to $hostName...')), // Connecting since it's not confirmed yet!
+            SnackBar(content: Text('Connecting to $hostName...')),
           );
         }
 

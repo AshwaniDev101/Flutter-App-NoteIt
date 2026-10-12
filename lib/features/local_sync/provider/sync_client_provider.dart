@@ -6,6 +6,8 @@ import 'package:noteit/features/local_sync/provider/sync_server_provider.dart';
 import 'package:noteit/features/local_sync/provider/sync_session_provider.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+import '../../../core/config.dart';
+import '../../../core/device_info.dart';
 import '../../../core/util/logger.dart';
 import '../../../database/drift/synced_devices/synced_devices_dao.dart';
 import '../../../database/shared_preference/shared_preference_manager.dart';
@@ -33,7 +35,9 @@ class SyncClientNotifier extends Notifier<WebSocketChannel?> {
     required int port,
     required String hostUuid,
     required String hostName,
-    String? pin,
+    String? pin, // PIN stays nullable because fast auto-reconnects don't need a PIN
+    required String devicePlatform,
+    required int protocolVersion,
   }) async {
 
 
@@ -60,14 +64,16 @@ class SyncClientNotifier extends Notifier<WebSocketChannel?> {
 
       final BaseDeviceInfo info = await ref.read(deviceInfoProvider.future);
       final myDeviceName = info.extractName;
+      final myPlatform = info.extractPlatform;
 
       final Map<String, dynamic> queryParams = {
         'host_uuid': hostUuid,
         'host_name': hostName,
         'client_uuid': myUuid,
         'client_name': myDeviceName,
+        'client_platform': myPlatform,
+        'v': AppConfig.syncProtocolVersion.toString(),
       };
-
       if (pin != null) {
         queryParams['pin'] = pin;
       }
@@ -97,6 +103,8 @@ class SyncClientNotifier extends Notifier<WebSocketChannel?> {
         name: hostName,
         lastKnownIp: ip,
         lastKnownPort: port,
+        deviceType: devicePlatform,
+        protocolVersion: protocolVersion,
       );
       AppLogger.d('Client: Saved Host $hostName to Drift DB.');
 

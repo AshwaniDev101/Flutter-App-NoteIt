@@ -3,7 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/database/drift/synced_devices/synced_devices_dao.dart';
 import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
 import 'package:noteit/features/local_sync/provider/sync_session_provider.dart';
+import 'package:noteit/shared/widgets/snack_bar_manager.dart';
 
+import 'core/config.dart';
+import 'core/device_info.dart';
 import 'core/util/logger.dart';
 import 'database/drift/local_database.dart';
 import 'features/local_sync/auto_connect/mdns_broadcast.dart';
@@ -63,7 +66,7 @@ class StartupInitializer extends Notifier<void> {
         final clientNotifier = ref.read(syncClientProvider.notifier);
         bool connected = false;
 
-        // Fast Reconnect (Try DB IP first)
+// Fast Reconnect (Try DB IP first)
         if (host.lastKnownIp != null && host.lastKnownPort != null) {
           AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Attempting Fast Reconnect to ${host.lastKnownIp}:${host.lastKnownPort}...');
           try {
@@ -72,7 +75,9 @@ class StartupInitializer extends Notifier<void> {
               port: host.lastKnownPort!,
               hostUuid: host.deviceUuid,
               hostName: host.deviceName,
-              pin: null, // Silent background connection
+              pin: null,
+              devicePlatform: host.deviceType ?? 'unknown',
+              protocolVersion: host.protocolVersion ?? 0,
             );
             connected = true;
           } catch (e) {
@@ -87,6 +92,15 @@ class StartupInitializer extends Notifier<void> {
 
           if (mdnsResult != null) {
             AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Host found via mDNS at ${mdnsResult.ip}:${mdnsResult.port}.');
+
+            // --- PROTOCOL SAFETY CHECK (Removed the != null check) ---
+            if (mdnsResult.protocolVersion != AppConfig.syncProtocolVersion) {
+              AppLogger.d('StartupInitializer: AutoSync [CLIENT]: BLOCKING CONNECTION - Version mismatch! Host is v${mdnsResult.protocolVersion}, we are v${AppConfig.syncProtocolVersion}.');
+              SnackBarManager.show(msg: "Please update NoteIt on your Device");
+              return;
+            }
+            // -----------------------------------
+
             try {
               await clientNotifier.connectToHost(
                 ip: mdnsResult.ip,
@@ -94,8 +108,10 @@ class StartupInitializer extends Notifier<void> {
                 hostUuid: host.deviceUuid,
                 hostName: host.deviceName,
                 pin: null,
+                devicePlatform: mdnsResult.deviceType,
+                protocolVersion: mdnsResult.protocolVersion,
               );
-              // Connection successful! (Make sure your connectToHost method saves the new IP/Port to DB)
+              // Connection successful!
             } catch (e) {
               AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Failed to connect after mDNS discovery: $e');
             }
@@ -154,180 +170,3 @@ class StartupInitializer extends Notifier<void> {
     }
   }
 }
-
-// import 'dart:convert';
-// import 'package:flutter/material.dart';
-// import 'package:flutter_riverpod/flutter_riverpod.dart';
-// import '../../../database/drift/synced_devices/synced_devices_dao.dart';
-// import '../../../database/shared_preference/shared_preference_manager.dart';
-// import 'features/local_sync/auto_connect/mdns_searcher.dart';
-// import 'features/local_sync/provider/sync_client_provider.dart';
-// import 'features/local_sync/provider/sync_server_provider.dart';
-// import 'features/local_sync/provider/sync_session_provider.dart';
-
-// final autoSyncManagerProvider = NotifierProvider<AutoSyncManager, void>(() {
-//   return AutoSyncManager();
-// });
-
-// class AutoSyncManager extends Notifier<void> with WidgetsBindingObserver {
-//   // Cache for Fast Reconnects (Client Mode)
-//   String? _lastIp;
-//   int? _lastPort;
-//   String? _lastUuid;
-//   String? _lastName;
-//
-//   // Subscription to keep the Host server alive dynamically
-//   ProviderSubscription? _hostSubscription;
-//
-//   @override
-//   void build() {
-//     WidgetsBinding.instance.addObserver(this);
-//
-//     ref.onDispose(() {
-//       WidgetsBinding.instance.removeObserver(this);
-//       _hostSubscription?.close(); // Clean up if manager dies
-//     });
-//
-//     // Listen to the mDNS Radar (Only used in Client Mode)
-//     ref.listen(mdnsSearcherProvider, _onRadarUpdated);
-//
-//     // Run startup logic
-//     _onAppResumed();
-//   }
-//
-//   @override
-//   void didChangeAppLifecycleState(AppLifecycleState state) {
-//     if (state == AppLifecycleState.resumed) {
-//       _onAppResumed();
-//     } else if (state == AppLifecycleState.paused) {
-//       _onAppPaused();
-//     }
-//   }
-//
-//   void _onAppPaused() {
-//     // 1. Stop scanning to save battery
-//     ref.read(mdnsSearcherProvider.notifier).stopScan();
-//
-//     // 2. We DO NOT disconnect the WebSockets.
-//     // Let the OS decide if it wants to kill them while the user is away.
-//     AppLogger.d('StartupInitializer: AutoSync: App paused. WebSockets left alive.');
-//   }
-//
-//   Future<void> _onAppResumed() async {
-//     // Determine the role from SharedPreferences
-//     // ⚠️ Make sure `isSyncHost` exists in your shared preferences manager!
-//     final isHost = ref.read(sharedPreferenceProvider).isSyncHost ?? false;
-//
-//     if (isHost) {
-//       _startHostMode();
-//     } else {
-//       _startClientMode();
-//     }
-//   }
-//
-//   // ==========================================
-//   // HOST MODE LOGIC
-//   // ==========================================
-//   void _startHostMode() {
-//     AppLogger.d('StartupInitializer: AutoSync [HOST]: Ensuring server is running...');
-//
-//     // Disconnect client if we were previously in client mode
-//     ref.read(syncClientProvider.notifier).disconnect();
-//
-//     // Use listenManual to dynamically keep the autoDispose syncSessionProvider alive.
-//     // Because it references your existing code, this will automatically:
-//     // 1. Fetch IP 2. Generate PIN 3. Start Server 4. Start mDNS Broadcast
-//     _hostSubscription ??= ref.listenManual(syncSessionProvider, (previous, next) {
-//       if (next.hasError) {
-//         AppLogger.d('StartupInitializer: AutoSync [HOST]: Failed to start silently - ${next.error}');
-//       } else if (next.hasValue) {
-//         AppLogger.d('StartupInitializer: AutoSync [HOST]: Server is silently running in the background!');
-//       }
-//     });
-//   }
-//
-//   // ==========================================
-//   // CLIENT MODE LOGIC
-//   // ==========================================
-//   Future<void> _startClientMode() async {
-//     // 1. Shut down host server if we were previously in host mode
-//     if (_hostSubscription != null) {
-//       _hostSubscription?.close();
-//       _hostSubscription = null;
-//
-//       // We MUST explicitly stop the server because your syncServerProvider is not autoDispose
-//       ref.read(syncServerProvider.notifier).stopHosting();
-//       AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Shut down host server.');
-//     }
-//
-//     // 2. If the socket survived the pause, we don't need to do anything!
-//     if (ref.read(syncClientProvider) != null) {
-//       AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Socket survived the pause!');
-//       return;
-//     }
-//
-//     // 3. FAST DIRECT RECONNECT: Try the last known IP first before starting the radar
-//     if (_lastIp != null && _lastPort != null && _lastUuid != null) {
-//       AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Attempting fast reconnect to $_lastName...');
-//       try {
-//         await ref.read(syncClientProvider.notifier).connectToHost(
-//           ip: _lastIp!, port: _lastPort!, hostUuid: _lastUuid!, hostName: _lastName ?? 'Host',
-//         );
-//         return; // Success! No need to scan.
-//       } catch (e) {
-//         AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Fast reconnect failed. Starting Radar...');
-//       }
-//     }
-//
-//     // 4. SLOW RECONNECT: Start the radar
-//     ref.read(mdnsSearcherProvider.notifier).startRadar();
-//   }
-//
-//   // ==========================================
-//   // INVISIBLE RADAR (Auto-Connect)
-//   // ==========================================
-//   Future<void> _onRadarUpdated(MdnsState? previous, MdnsState next) async {
-//     // If we are already connected OR we are currently the Host, ignore radar updates
-//     final isHost = ref.read(sharedPreferenceProvider).isSyncHost ?? false;
-//     if (isHost || ref.read(syncClientProvider) != null) return;
-//
-//     for (var service in next.devices) {
-//       if (service.txt != null && service.txt!.containsKey('uuid')) {
-//         final hostUuid = utf8.decode(service.txt!['uuid']!);
-//
-//         // Use your existing drift DAO
-//         final isKnown = await ref.read(devicePairsDaoProvider).isDeviceKnown(hostUuid);
-//
-//         if (isKnown) {
-//           final ip = service.host ?? service.addresses?.firstOrNull?.address;
-//           final port = service.port;
-//           final hostName = service.name ?? 'Known Device';
-//
-//           if (ip != null && port != null) {
-//             AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Found known device ($hostName) via Radar! Connecting...');
-//
-//             // Stop scanning so we don't drain the battery
-//             ref.read(mdnsSearcherProvider.notifier).stopScan();
-//
-//             try {
-//               // Use your existing client provider
-//               await ref.read(syncClientProvider.notifier).connectToHost(
-//                 ip: ip, port: port, hostUuid: hostUuid, hostName: hostName,
-//               );
-//
-//               // Cache details for fast reconnect next time
-//               _lastIp = ip;
-//               _lastPort = port;
-//               _lastUuid = hostUuid;
-//               _lastName = hostName;
-//
-//             } catch (e) {
-//               AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Auto-connect failed: $e');
-//             }
-//             break;
-//           }
-//         }
-//       }
-//     }
-//   }
-// }

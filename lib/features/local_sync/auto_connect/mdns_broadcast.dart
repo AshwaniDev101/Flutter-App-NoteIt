@@ -1,9 +1,14 @@
 import 'dart:convert';
 
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/core/config.dart';
 import 'package:nsd/nsd.dart';
 
+import '../../../core/app_env.dart';
+import '../../../core/device_info.dart';
 import '../../../core/util/logger.dart';
+import '../provider/sync_session_provider.dart';
 import 'mdns_searcher.dart';
 
 // ==== Server side ===
@@ -51,11 +56,21 @@ class MdnsBroadcastNotifier extends Notifier<Registration?> {
 
     // Creates the service
     try {
+      // Fetch your local device type
+      final BaseDeviceInfo info = await ref.read(deviceInfoProvider.future);
+      final myDeviceType = info.extractPlatform; //  'windows', 'android'
+
+
+      //Inject them into the TXT record
       final service = Service(
         name: deviceName,
-        type: '_noteitsync._tcp',
+        type: AppConfig.mdnsServiceType,
         port: port,
-        txt: {'uuid': utf8.encode(uuid)},
+        txt: {
+          'uuid': utf8.encode(uuid),
+          'type': utf8.encode(myDeviceType),
+          'v': utf8.encode(AppConfig.syncProtocolVersion.toString()),
+        },
       );
 
       // Registers the service

@@ -2,11 +2,14 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/core/app_env.dart';
 import 'package:noteit/core/routing/routing.dart';
 import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
 import 'package:noteit/firebase_options.dart';
 import 'package:noteit/shared/widgets/snack_bar_manager.dart';
 import 'package:noteit/startup_initializer.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:toastification/toastification.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'core/util/platform_helper.dart';
@@ -19,7 +22,7 @@ import 'core/theme/app_theme.dart';
 // Build drift db : dart run build_runner build -d
 // Drift database location Windows : appdata\app-name\my_notes_db.sqlite
 
-// TODO:
+
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,6 +43,10 @@ Future<void> main() async {
 
   await SharedPreferenceManager.init();
 
+  // Allow us to print app version in UI
+  final packageInfo = await PackageInfo.fromPlatform();
+  AppEnv.init(packageInfo);
+
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   runApp(const ProviderScope(child: _MyApp()));
@@ -55,14 +62,16 @@ class _MyApp extends ConsumerWidget {
     //  Watch the active theme state from your provider
     final activeTheme = ref.watch(themeProvider);
 
-    return MaterialApp.router(
-      // scaffoldMessengerKey: scaffoldMessengerKey,
-      routerConfig: router,
-      debugShowCheckedModeBanner: false,
-      title: 'Note-It',
-
-      // Resolve the ThemeData dynamically using your unified Themes class
-      theme: Themes.getThemeData(activeTheme),
+    return ToastificationWrapper(
+      child: MaterialApp.router(
+        scaffoldMessengerKey: scaffoldMessengerKey,
+        routerConfig: router,
+        debugShowCheckedModeBanner: false,
+        title: 'Note-It',
+      
+        // Resolve the ThemeData dynamically using your unified Themes class
+        theme: Themes.getThemeData(activeTheme),
+      ),
     );
   }
 }

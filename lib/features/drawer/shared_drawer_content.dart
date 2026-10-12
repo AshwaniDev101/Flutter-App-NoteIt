@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in_all_platforms/google_sign_in_all_platforms.dart';
 
+import '../../core/app_env.dart';
 import '../../core/provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/util/logger.dart';
@@ -43,6 +44,7 @@ class SharedDrawerContent extends ConsumerWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDarkMode = theme.brightness == Brightness.dark;
+
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -109,6 +111,13 @@ class SharedDrawerContent extends ConsumerWidget {
                   isSelected: selectedOption == RightPanelPageOptions.devTools,
                   onTap: () => onOptionSelected(RightPanelPageOptions.devTools),
                 ),
+
+                SizedBox(height: 8,),
+                Text("version: ${AppEnv.version}", style: Theme.of(context).textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),),
+                SizedBox(height: 4,),
+                Text("build number: ${AppEnv.buildNumber}", style: Theme.of(context).textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),),
+                SizedBox(height:8,),
+
               ],
             ),
           ),
