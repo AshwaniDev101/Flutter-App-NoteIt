@@ -6,6 +6,9 @@ import '../../../../../../core/routing/routing.dart';
 import '../../../../../../core/util/platform_helper.dart';
 import '../../../../core/providers.dart';
 
+// To Navigate to Any page use
+// ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.allNotes);
+
 final drawerNavigationProvider = Provider((ref) {
   return DrawerNavigationController(ref);
 });

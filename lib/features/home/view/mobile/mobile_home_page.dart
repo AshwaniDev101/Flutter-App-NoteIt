@@ -11,7 +11,7 @@ import '../../../../database/sync/local_sync_service.dart';
 import '../../../drawer/mobile_app_drawer.dart';
 import '../../viewmodel/viewmodel.dart';
 import '../../core/providers.dart';
-import '../shared/dynamic_notes_layout.dart';
+import '../../../../shared/widgets/note_card/dynamic_notes_layout.dart';
 import '../../../lock/password_prompt_helper.dart';
 import '../shared/tag_sort_view_menu.dart';
 

@@ -158,6 +158,8 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
       localSyncStatus: 0,
       versionCounter: 1,
     );
+    // Navigate to the editor panel
+    ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.allNotes);
     ref.read(activeNoteProvider.notifier).setNote(emptyNote);
   }
 

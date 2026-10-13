@@ -8,7 +8,26 @@ import '../../../database/drift/local_database.dart';
 import '../../../features/home/core/providers.dart';
 import '../../../features/home/view/shared/tag_sort_view_menu.dart';
 import '../../../features/lock/lock_manger/lock_manager.dart';
-import 'highlighted_text.dart';
+import '../highlighted_text.dart';
+
+
+enum NoteContextMenuOption {
+  select('Select', Icons.check_circle_outline),
+  pin('Pin', Icons.push_pin_outlined),
+  lock('Lock', Icons.lock_outline),
+  reminder('Remind me', Icons.notifications_none_outlined),
+  moveTo('Move to...', Icons.drive_file_move_outlined),
+  duplicate('Duplicate', Icons.copy_outlined),
+  openNewWindow('Open in new window', Icons.open_in_new_outlined),
+  archive('Archive', Icons.archive_outlined),
+  delete('Delete', Icons.delete_outline, isDestructive: true);
+
+  final String label;
+  final IconData icon;
+  final bool isDestructive;
+
+  const NoteContextMenuOption(this.label, this.icon, {this.isDestructive = false});
+}
 
 class NoteCard extends ConsumerStatefulWidget {
   final Note note;
@@ -18,6 +37,8 @@ class NoteCard extends ConsumerStatefulWidget {
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
 
+  final void Function(NoteContextMenuOption)? onContextMenuAction;
+
   const NoteCard({
     super.key,
     required this.note,
@@ -25,6 +46,7 @@ class NoteCard extends ConsumerStatefulWidget {
     this.searchQuery = '',
     this.onTap,
     this.onLongPress,
+    this.onContextMenuAction,
   });
 
   @override
@@ -35,27 +57,62 @@ class _NoteCardState extends ConsumerState<NoteCard> {
   // Track if the keyboard spotlight is on this card
   bool _isFocused = false;
 
+  final MenuController _menuController = MenuController();
+
 
   @override
   Widget build(BuildContext context) {
     final viewType = ref.watch(noteViewTypeProvider);
 
-    return FocusableActionDetector(
-      onShowFocusHighlight: (hasFocus) {
-        setState(() => _isFocused = hasFocus);
-      },
-      actions: {
-        ActivateIntent: CallbackAction<ActivateIntent>(
-          onInvoke: (intent) {
-            if (widget.onTap != null) widget.onTap!();
-            return null;
+    return MenuAnchor(
+      controller: _menuController,
+      consumeOutsideTap: true,
+      menuChildren: NoteContextMenuOption.values
+            // Hide 'Select' if this specific card is already selected
+          .where((option) => !(option == NoteContextMenuOption.select && widget.isSelected))
+          .map((option) {
+        return MenuItemButton(
+          leadingIcon: Icon(
+            option.icon,
+            // Paint destructive actions red
+            color: option.isDestructive ? Theme.of(context).colorScheme.error : null,
+          ),
+          onPressed: () {
+            if (widget.onContextMenuAction != null) {
+              widget.onContextMenuAction!(option);
+            }
           },
+          child: Text(
+            option.label,
+            style: TextStyle(
+              color: option.isDestructive ? Theme.of(context).colorScheme.error : null,
+            ),
+          ),
+        );
+      }).toList(),
+
+      child: GestureDetector(
+        //Capture right-click (secondary tap) and open menu at exact pointer location
+        onSecondaryTapDown: (details) {
+          _menuController.open(position: details.localPosition);
+        },
+        child: FocusableActionDetector(
+          onShowFocusHighlight: (hasFocus) {
+            setState(() => _isFocused = hasFocus);
+          },
+          actions: {
+            ActivateIntent: CallbackAction<ActivateIntent>(
+              onInvoke: (intent) {
+                if (widget.onTap != null) widget.onTap!();
+                return null;
+              },
+            ),
+          },
+          child: MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: _buildLayoutRouter(viewType),
+          ),
         ),
-      },
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        // Delegate to the router
-        child: _buildLayoutRouter(viewType),
       ),
     );
   }

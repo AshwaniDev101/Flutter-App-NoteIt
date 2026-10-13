@@ -12,7 +12,7 @@ import '../../../keybinding/smart_action_widget.dart';
 import '../../viewmodel/viewmodel.dart';
 import '../../core/providers.dart';
 import '../shared/tag_sort_view_menu.dart';
-import '../shared/dynamic_notes_layout.dart';
+import '../../../../shared/widgets/note_card/dynamic_notes_layout.dart';
 import '../shared/select_mode_app_bars.dart';
 
 class DesktopLeftPanel extends ConsumerWidget {
