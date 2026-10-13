@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/features/local_sync/view/role_selector_page.dart';
 import 'package:noteit/features/note_editor/screens/view/details/detail_page.dart';
+import 'package:noteit/features/others/archive_page.dart';
 
 import '../../features/backup/export_page.dart';
 import '../../features/backup/import_page.dart';
@@ -19,7 +20,7 @@ import '../../features/note_editor/screens/view/desktop_edit_page.dart';
 import '../../features/note_editor/screens/view/mobile_edit_page.dart';
 import '../../features/settings/view/settings_page.dart';
 import '../../features/themes/view/theme_page.dart';
-import '../../features/trash/trash_page.dart';
+import '../../features/others/trash_page.dart';
 import '../util/platform_helper.dart';
 
 class AppRoutes {
@@ -40,6 +41,7 @@ class AppRoutes {
   static const String import = '/import';
   static const String syncedList = '/synced-list';
   static const String noteDetails = '/note-details';
+  static const String archive = '/archive';
 }
 
 final routerProvider = Provider((ref) {
@@ -144,6 +146,8 @@ final routerProvider = Provider((ref) {
       GoRoute(path: AppRoutes.import, builder: (context, state) => const ImportNotesPage()),
       GoRoute(path: AppRoutes.syncedList, builder: (context, state) => const SyncedDevicesListView()),
       GoRoute(path: AppRoutes.noteDetails, builder: (context, state) => const NoteDetailsPage()),
+
+      GoRoute(path: AppRoutes.archive, builder: (context, state) => const ArchivePage()),
 
 
 

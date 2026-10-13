@@ -112,6 +112,12 @@ class SharedDrawerContent extends ConsumerWidget {
                   onTap: () => onOptionSelected(RightPanelPageOptions.devTools),
                 ),
 
+                _CompactDrawerTile(
+                  option: RightPanelPageOptions.archivePage,
+                  isSelected: selectedOption == RightPanelPageOptions.archivePage,
+                  onTap: () => onOptionSelected(RightPanelPageOptions.archivePage),
+                ),
+
                 SizedBox(height: 8,),
                 SelectableText("version: ${AppEnv.version}", style: Theme.of(context).textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),),
                 SizedBox(height: 4,),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/features/home/view/shared/icon_tray/icon_tray.dart';
+import 'package:noteit/features/others/archive_page.dart';
 import 'package:window_manager/window_manager.dart';
 import '../../../../../core/util/platform_helper.dart';
 import '../../../../backup/export_page.dart';
@@ -18,7 +19,7 @@ import '../../../../note_editor/screens/view/desktop_edit_page.dart';
 import '../../../../note_editor/screens/view/details/detail_page.dart';
 import '../../../../settings/view/settings_page.dart';
 import '../../../../themes/view/theme_page.dart';
-import '../../../../trash/trash_page.dart';
+import '../../../../others/trash_page.dart';
 import '../../../core/providers.dart';
 import 'core/navigator.dart';
 
@@ -124,6 +125,12 @@ class DesktopRightPanel extends ConsumerWidget {
         key: ValueKey('pin_view'),
         child: PinEntryDialog(),
       ),
+
+      RightPanelPageOptions.archivePage => const _PaddingWrapper(
+        key: ValueKey('archive_view'),
+        child: ArchivePage(),
+      ),
+
     };
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/core/device_info.dart';
 
 import '../../../core/util/platform_helper.dart';
 import '../../../../database/drift/local_database.dart';
@@ -139,40 +140,66 @@ class DynamicNotesLayout extends ConsumerWidget {
   }
 
 
-  void _handleBatchAction(WidgetRef ref, NoteContextMenuOption option, List<String> targetUuids) {
-    // Read our new action controller
+  void _handleBatchAction(WidgetRef ref, NoteContextMenuOption option, List<String> targetUuids) async {
+    // Immediately clear the UI selection for a snappy, instant user experience
+    ref.read(homeViewModelProvider.notifier).clearSelection();
+
+    // Read the action controller
     final actionsController = ref.read(noteActionsControllerProvider);
 
+    // Fetch device info for sync metadata
+    final deviceInfo = await ref.read(deviceInfoProvider.future);
+    // Note: If extractPlatform is a method and not a getter, change this to extractPlatform()
+    final String platform = deviceInfo.extractPlatform;
+
+    // Route to the correct database action
     switch (option) {
-
       case NoteContextMenuOption.select:
-      // Unreachable: Handled upstream
-      throw AssertionError();
+      // Unreachable: Handled upstream in the itemBuilder
+        throw AssertionError('Select action should be intercepted before reaching here.');
+
       case NoteContextMenuOption.delete:
-        actionsController.deleteNotes(targetUuids);
-        break;
-      case NoteContextMenuOption.pin:
-        actionsController.togglePinNotes(targetUuids);
-        break;
-      case NoteContextMenuOption.archive:
-        actionsController.archiveNotes(targetUuids);
-        break;
-      case NoteContextMenuOption.lock:
-        actionsController.lockNotes(targetUuids);
-        break;
-      case NoteContextMenuOption.duplicate:
-        actionsController.duplicateNotes(targetUuids);
-        break;
-      case NoteContextMenuOption.moveTo:
-      // E.g. Open a dialog to select a folder, then call actionsController.moveNotes(targetUuids, newFolderId)
-        break;
-      case NoteContextMenuOption.reminder:
-      // E.g. Open a date/time picker
-        break;
-      case NoteContextMenuOption.openNewWindow:
-      // E.g. Send to window_manager API
+        await actionsController.deleteNotes(targetUuids, platform);
         break;
 
+      case NoteContextMenuOption.pin:
+        await actionsController.togglePinNotes(targetUuids);
+        break;
+
+      case NoteContextMenuOption.archive:
+        await actionsController.archiveNotes(targetUuids);
+        break;
+
+      case NoteContextMenuOption.lock:
+        await actionsController.lockNotes(targetUuids);
+        break;
+
+      case NoteContextMenuOption.duplicate:
+        await actionsController.duplicateNotes(targetUuids, platform);
+        break;
+
+      case NoteContextMenuOption.moveTo:
+      // Todo: Open a dialog to select a folder, then call actionsController.moveNotes(targetUuids, newFolderId)
+        break;
+
+      case NoteContextMenuOption.reminder:
+      // Todo: Open a date/time picker
+        break;
+
+      case NoteContextMenuOption.openNewWindow:
+      // Todo: Send to window_manager API
+        break;
+      case NoteContextMenuOption.unarchive:
+        await actionsController.unarchiveNotes(targetUuids);
+        break;
+
+      case NoteContextMenuOption.restore:
+        await actionsController.restoreNotes(targetUuids);
+        break;
+
+      case NoteContextMenuOption.deleteForever:
+        await actionsController.deleteForever(targetUuids);
+        break;
     }
   }
 

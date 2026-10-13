@@ -34,10 +34,9 @@ final sortedNotesStreamProvider = StreamProvider<List<Note>>((ref) {
   return notesDao.watchAllNotes().map((notes) {
     AppLogger.d("DbSortingFiltering: Stream received ${notes.length} total notes from Drift");
 
-    // FILTER OUT DELETED NOTES FIRST
-    // It's much faster to remove trashed notes before you run expensive sorting logic.
-    final activeNotes = notes.where((note) => note.deletedAt == null).toList();
-
+    // FILTER OUT DELETED AND ARCHIVED NOTES FIRST
+    // It's much faster to remove trashed/archived notes before we run expensive sorting logic.
+    final activeNotes = notes.where((note) => note.deletedAt == null && !note.isArchived).toList();
     // APPLY THE SORTING MATH
     switch (sortOption) {
       case NoteSortPreference.name:

@@ -4,11 +4,11 @@ enum NoteEditorOption {
   delete('Delete', Icons.delete_outline, 'Delete Note'),
   pin('Pin', Icons.push_pin_outlined, 'Pin Note'),
   lock('Lock', Icons.lock_outline, 'Lock Note'),
-  checklist('Checklist', Icons.check_box_outlined, 'Turn to Checklist'),
   archive('Archive', Icons.archive_outlined, 'Archive Note'),
+  info('Details', Icons.info_outline, 'Note Meta Data'),
+  checklist('Checklist', Icons.check_box_outlined, 'Turn to Checklist'),
   find('Find', Icons.search_outlined, 'Find in Note'),
-  reminder('Reminder', Icons.notifications_none_outlined, 'Set Reminder'),
-  info('Details', Icons.info_outline, 'Note Meta Data'); // Semicolon is still required here
+  reminder('Reminder', Icons.notifications_none_outlined, 'Set Reminder');
 
   final String label;
   final IconData icon;
@@ -31,10 +31,8 @@ class NoteEditorOptionButton extends StatefulWidget {
 class _NoteEditorOptionButtonState extends State<NoteEditorOptionButton> {
   final MenuController _menuController = MenuController();
 
-
   @override
   Widget build(BuildContext context) {
-
     final colorSchema = Theme.of(context).colorScheme;
     return MenuAnchor(
       controller: _menuController,
@@ -54,7 +52,7 @@ class _NoteEditorOptionButtonState extends State<NoteEditorOptionButton> {
             }
           },
           // icon: const Icon(Icons.tab),
-          icon: Icon(Icons.segment, color: colorSchema.primary,),
+          icon: Icon(Icons.segment, color: colorSchema.primary),
           // icon: const Icon(Icons.keyboard_double_arrow_down),
         );
       },
@@ -159,4 +157,6 @@ class NoteEditorOptionMenu extends StatelessWidget {
       ),
     );
   }
+
+
 }

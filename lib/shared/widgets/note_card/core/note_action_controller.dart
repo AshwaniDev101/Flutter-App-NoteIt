@@ -1,59 +1,79 @@
-import 'dart:ui';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
+import 'package:drift/drift.dart';
+
 import '../../../../../database/drift/local_database.dart';
-import '../../../../features/home/viewmodel/viewmodel.dart';
 
 
 final noteActionsControllerProvider = Provider<NoteActionsController>((ref) {
-  final db = ref.read(localDatabaseProvider);
-  return NoteActionsController(
-    db: db,
-    onClearSelection: () => ref.read(homeViewModelProvider.notifier).clearSelection(),
-  );
+  return NoteActionsController(db: ref.read(localDatabaseProvider));
 });
-
 
 class NoteActionsController {
   final LocalDatabase db;
-  final VoidCallback onClearSelection;
+  final _uuidGen = const Uuid();
 
+  NoteActionsController({required this.db});
 
-  NoteActionsController({required this.db, required this.onClearSelection});
-
-  // --- Helper to clean up the UI after a batch action ---
-  void _clearSelectionAfterAction() => onClearSelection();
-
-  Future<void> deleteNotes(List<String> uuids) async {
-    // TODO: Call your Drift DAO to delete/soft-delete these notes
-    // Example: await _db.notesDao.deleteNotesByUuids(uuids);
-
-    _clearSelectionAfterAction();
+  Future<void> deleteNotes(List<String> uuids, String platform) async {
+    await db.notesDao.softDeleteNotes(uuids, platform: platform);
   }
 
   Future<void> togglePinNotes(List<String> uuids) async {
-    // TODO: Call your Drift DAO to flip the 'isPinned' status
-    // Example: await _db.notesDao.togglePinStatus(uuids);
-
-    _clearSelectionAfterAction();
+    // Assuming you kept the togglePinStatus method in your DAO
+    await db.notesDao.togglePinStatus(uuids);
   }
 
   Future<void> archiveNotes(List<String> uuids) async {
-    // TODO: Call your Drift DAO to archive
-
-    _clearSelectionAfterAction();
+    await db.notesDao.archiveNotes(uuids);
   }
 
   Future<void> lockNotes(List<String> uuids) async {
-    // TODO: Integrate with your lockManagerProvider and DB
-    _clearSelectionAfterAction();
+    // You'll need a batch lock method in your DAO if you don't have one!
+    // Example: await db.notesDao.lockMultipleNotes(uuids, isLocked: true);
+    for (final uuid in uuids) {
+      await db.notesDao.lockNote(uuid, isLocked: true);
+    }
   }
 
-  Future<void> duplicateNotes(List<String> uuids) async {
-    // TODO: Fetch the notes, change their UUIDs, append " (Copy)" to the title, and insert
-    _clearSelectionAfterAction();
+  Future<void> duplicateNotes(List<String> uuids, String platform) async {
+    final notesToDuplicate = await db.notesDao.getNotesByUuids(uuids);
+
+    final newNotes = notesToDuplicate.map((note) {
+      return NotesCompanion.insert(
+        uuid: Value(_uuidGen.v4()),
+        title: note.title.isEmpty ? 'Untitled (Copy)' : '${note.title} (Copy)',
+        content: note.content,
+        color: Value(note.color),
+        tags: Value(note.tags),
+        isPinned: const Value(false),
+        isArchived: const Value(false),
+        isLocked: Value(note.isLocked),
+        createdAt: Value(DateTime.now().toUtc()),
+        updatedAt: Value(DateTime.now().toUtc()),
+        cloudSyncStatus: const Value(0),
+        localSyncStatus: const Value(0),
+        creationPlatform: Value(platform),
+      );
+    }).toList();
+
+    if (newNotes.isNotEmpty) {
+      await db.notesDao.insertMultipleNotes(newNotes);
+    }
+  }
+
+  Future<void> unarchiveNotes(List<String> uuids) async {
+    await db.notesDao.unarchiveNotes(uuids);
   }
 
 
+  Future<void> restoreNotes(List<String> uuids) async {
+    await db.notesDao.restoreNotesBatch(uuids);
+  }
+
+  Future<void> deleteForever(List<String> uuids) async {
+    await db.notesDao.hardDeleteNotesBatch(uuids);
+  }
 
 }
+

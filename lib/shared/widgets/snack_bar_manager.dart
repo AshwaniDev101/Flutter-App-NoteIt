@@ -9,7 +9,10 @@ enum SnackBarMessageType {
   info,           // For general information
   acknowledgment, // For success/saves (e.g., "Note saved")
   suggestion,     // For tips, recommendations, or warnings
+
+  //SnackBarMessageType.warning Todo add warning type
 }
+
 
 class SnackBarManager {
   static void show({

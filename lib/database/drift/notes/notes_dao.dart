@@ -317,4 +317,103 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
       batch.insertAllOnConflictUpdate(notes, importedNotes);
     });
   }
+
+
+  // --- BATCH ACTIONS (PIN, ARCHIVE, FETCH, DUPLICATE) ---
+  /// Sets the pin status for multiple notes
+  Future<void> setNotesPinStatus(Iterable<String> uuids, {required bool isPinned}) async {
+    await (update(notes)..where((t) => t.uuid.isIn(uuids))).write(
+      NotesCompanion(
+        isPinned: Value(isPinned),
+        // CRITICAL: Trigger sync workers
+        cloudSyncStatus: const Value(0),
+        localSyncStatus: const Value(0),
+        updatedAt: Value(DateTime.now().toUtc()),
+      ),
+    );
+  }
+
+  /// Archives multiple notes
+  Future<void> archiveNotes(Iterable<String> uuids) async {
+    await (update(notes)..where((t) => t.uuid.isIn(uuids))).write(
+      NotesCompanion(
+        isArchived: const Value(true),
+        // CRITICAL: Trigger sync workers
+        cloudSyncStatus: const Value(0),
+        localSyncStatus: const Value(0),
+        updatedAt: Value(DateTime.now().toUtc()),
+      ),
+    );
+  }
+
+  /// Fetches specific notes (Used for duplication)
+  Future<List<Note>> getNotesByUuids(Iterable<String> uuids) {
+    return (select(notes)..where((t) => t.uuid.isIn(uuids))).get();
+  }
+
+  /// Inserts multiple notes at once (Used for duplication)
+  Future<void> insertMultipleNotes(List<NotesCompanion> newNotes) async {
+    await batch((batch) {
+      batch.insertAll(notes, newNotes);
+    });
+  }
+
+  // Todo: Toggle pin should use timestamp instead of boolean to preservice the pining order
+  /// Toggles the pin status for multiple notes (flips true to false, and false to true)
+  Future<void> togglePinStatus(Iterable<String> uuids) async {
+    // When using SQL expressions like .not(), we must use NotesCompanion.custom() and Variable()
+    await (update(notes)..where((t) => t.uuid.isIn(uuids))).write(
+      NotesCompanion.custom(
+        isPinned: notes.isPinned.not(), // This safely flips the boolean!
+
+        // CRITICAL: Trigger sync workers
+        cloudSyncStatus: const Variable(0),
+        localSyncStatus: const Variable(0),
+        updatedAt: Variable(DateTime.now().toUtc()),
+      ),
+    );
+  }
+
+  /// RESTORE BATCH: Restores multiple notes from the trash
+  Future<void> restoreNotesBatch(Iterable<String> uuids) async {
+    await (update(notes)..where((t) => t.uuid.isIn(uuids))).write(
+      NotesCompanion(
+        deletedAt: const Value(null),
+        cloudSyncStatus: const Value(0),
+        localSyncStatus: const Value(0),
+        updatedAt: Value(DateTime.now().toUtc()),
+      ),
+    );
+  }
+
+  /// HARD DELETE BATCH: Permanently deletes specific notes (Returns UUIDs for Firebase sync)
+  Future<List<String>> hardDeleteNotesBatch(Iterable<String> uuids) async {
+    await (delete(notes)..where((t) => t.uuid.isIn(uuids))).go();
+    return uuids.toList();
+  }
+
+
+  /// VIEW ARCHIVE: Watch only notes that are archived and not in the trash
+  Stream<List<Note>> watchArchivedNotes() {
+    return (select(notes)
+      ..where((t) => t.isArchived.equals(true))
+      ..where((t) => t.deletedAt.isNull())
+      ..orderBy([
+            (t) => OrderingTerm(expression: t.updatedAt, mode: OrderingMode.desc),
+      ]))
+        .watch();
+  }
+
+  /// UNARCHIVE: Helper to restore notes back to the main home screen
+  Future<void> unarchiveNotes(Iterable<String> uuids) async {
+    await (update(notes)..where((t) => t.uuid.isIn(uuids))).write(
+      NotesCompanion(
+        isArchived: const Value(false),
+        cloudSyncStatus: const Value(0),
+        localSyncStatus: const Value(0),
+        updatedAt: Value(DateTime.now().toUtc()),
+      ),
+    );
+  }
+
 }

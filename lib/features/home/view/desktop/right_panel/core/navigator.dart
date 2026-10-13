@@ -85,6 +85,9 @@ class DrawerNavigationController {
       case RightPanelPageOptions.pin:
         _handlePlatformRouting(context, option, AppRoutes.pin);
         break;
+      case RightPanelPageOptions.archivePage:
+        _handlePlatformRouting(context, option, AppRoutes.pin);
+        break;
     }
   }
 
@@ -117,7 +120,8 @@ enum RightPanelPageOptions {
   import('Import Notes', 'Upload notes from a file', Icons.upload_outlined),
   qr('Host QR Code', 'Show QR code for device pairing', Icons.qr_code_outlined),
   scan('Scan QR Code', 'Scan a host QR code to join', Icons.qr_code_scanner_outlined),
-  pin('Pairing PIN', 'Enter PIN to pair with device', Icons.pin_outlined);
+  pin('Pairing PIN', 'Enter PIN to pair with device', Icons.pin_outlined),
+  archivePage('Archive', 'Archive Notes to reduce clutter', Icons.archive_outlined);
 
   final String label;
   final String description;

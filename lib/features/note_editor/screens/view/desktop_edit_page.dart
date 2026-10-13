@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:noteit/core/device_info.dart';
 import 'package:noteit/database/drift/local_database.dart';
 
 import '../../../../shared/widgets/app_scaffold.dart';
+import '../../../../shared/widgets/note_card/core/note_action_controller.dart';
 import '../../../../shared/widgets/snack_bar_manager.dart';
 import '../../../home/core/providers.dart';
 import '../../../home/view/desktop/right_panel/core/navigator.dart';
@@ -205,6 +207,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
   Widget build(BuildContext context) {
     final panelColor = Theme.of(context).colorScheme.surfaceContainerLow;
 
+
     return LayoutBuilder(
       builder: (context, constraints) {
         // Calculate exactly 50% of this specific panel's available width
@@ -221,28 +224,57 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
             NoteEditorOptionButton(
               isLocked: _isLocked,
               isPinned: widget.existingNote?.isPinned ?? false,
-              onPressed: (NoteEditorOption option) {
+              onPressed: (NoteEditorOption option) async {
+
+                // If it's a new, unsaved note, we can't do DB actions on it yet!
+                if (_isNewNote && option != NoteEditorOption.info) {
+                  // Todo: update it to warning from error
+                  SnackBarManager.show(msg: 'Please save the note first', type: SnackBarMessageType.error);
+                  return;
+                }
+
+                final targetUuid = widget.existingNote!.uuid;
+                final actionsController = ref.read(noteActionsControllerProvider);
+                final deviceInfo = await ref.read(deviceInfoProvider.future);
+
+
                 switch (option) {
                   case NoteEditorOption.delete:
-                    _handleDeleteNote();
+
+                    _isDeleted = true; // Stops the auto-saver from running!
+                    await actionsController.deleteNotes([targetUuid],deviceInfo.extractPlatform);
+                    _handleCloseNote(); // UI side-effect: Close the editor
+                    // _handleDeleteNote();
                     break;
                   case NoteEditorOption.pin:
+
+                    await actionsController.togglePinNotes([targetUuid]);
+                    if (mounted) setState(() {}); // Refresh the editor UI
                     break;
                   case NoteEditorOption.lock:
+                  // lock logic handles the master password check perfectly.
                     _handleLockToggle();
                     break;
-                  case NoteEditorOption.checklist:
-                    break;
                   case NoteEditorOption.archive:
+                    await actionsController.archiveNotes([targetUuid]);
+                    _handleCloseNote(); // Usually, archiving a note closes it
                     break;
-                  case NoteEditorOption.find:
-                    break;
-                  case NoteEditorOption.reminder:
-                    break;
-
                   case NoteEditorOption.info:
+                    if (!context.mounted) return;
                     ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.noteDetails);
                     break;
+
+                  case NoteEditorOption.checklist:
+                  // TODO: UI Action - Convert text to checklist format
+                    break;
+                  case NoteEditorOption.find:
+                  // TODO: UI Action - Open search bar inside editor
+                    break;
+                  case NoteEditorOption.reminder:
+                  // TODO: UI Action - Open DatePicker
+                    break;
+
+
                 }
               },
             ),
@@ -537,12 +569,12 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
     if (context.canPop()) context.pop();
   }
 
-  void _handleDeleteNote() {
-    if (!_isNewNote && widget.existingNote != null) {
-      _isDeleted = true;
-      // _hasTriggeredFinalSave = true;
-      ref.read(editNoteViewModelProvider.notifier).deleteNote(widget.existingNote!.uuid);
-    }
-    _handleCloseNote();
-  }
+  // void _handleDeleteNote() {
+  //   if (!_isNewNote && widget.existingNote != null) {
+  //     _isDeleted = true;
+  //     // _hasTriggeredFinalSave = true;
+  //     ref.read(editNoteViewModelProvider.notifier).deleteNote(widget.existingNote!.uuid);
+  //   }
+  //   _handleCloseNote();
+  // }
 }

@@ -12,6 +12,7 @@ import '../highlighted_text.dart';
 
 
 enum NoteContextMenuOption {
+  // Common
   select('Select', Icons.check_circle_outline),
   pin('Pin', Icons.push_pin_outlined),
   lock('Lock', Icons.lock_outline),
@@ -19,8 +20,15 @@ enum NoteContextMenuOption {
   moveTo('Move to...', Icons.drive_file_move_outlined),
   duplicate('Duplicate', Icons.copy_outlined),
   openNewWindow('Open in new window', Icons.open_in_new_outlined),
+
+  // Filing
   archive('Archive', Icons.archive_outlined),
-  delete('Delete', Icons.delete_outline, isDestructive: true);
+  unarchive('Unarchive', Icons.unarchive_outlined),
+
+  // Destructive
+  restore('Restore', Icons.restore),
+  delete('Delete', Icons.delete_outline, isDestructive: true),
+  deleteForever('Delete Forever', Icons.delete_forever, isDestructive: true);
 
   final String label;
   final IconData icon;
@@ -39,6 +47,8 @@ class NoteCard extends ConsumerStatefulWidget {
 
   final void Function(NoteContextMenuOption)? onContextMenuAction;
 
+  final List<NoteContextMenuOption> contextMenuOptions;
+
   const NoteCard({
     super.key,
     required this.note,
@@ -47,6 +57,18 @@ class NoteCard extends ConsumerStatefulWidget {
     this.onTap,
     this.onLongPress,
     this.onContextMenuAction,
+    // Provide the Home Screen defaults here
+    this.contextMenuOptions = const [
+      NoteContextMenuOption.select,
+      NoteContextMenuOption.pin,
+      NoteContextMenuOption.lock,
+      NoteContextMenuOption.reminder,
+      NoteContextMenuOption.moveTo,
+      NoteContextMenuOption.duplicate,
+      NoteContextMenuOption.openNewWindow,
+      NoteContextMenuOption.archive,
+      NoteContextMenuOption.delete,
+    ],
   });
 
   @override
@@ -67,7 +89,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
     return MenuAnchor(
       controller: _menuController,
       consumeOutsideTap: true,
-      menuChildren: NoteContextMenuOption.values
+      menuChildren: widget.contextMenuOptions
             // Hide 'Select' if this specific card is already selected
           .where((option) => !(option == NoteContextMenuOption.select && widget.isSelected))
           .map((option) {
