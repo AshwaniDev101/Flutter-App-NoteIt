@@ -312,9 +312,9 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
             const Icon(Icons.lock_outline, size: 16),
             const SizedBox(width: 8),
           ],
-          Text(
+          SelectableText(
               _getFormattedDate(),
-              style: Theme.of(context).textTheme.bodySmall
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)
           ),
         ],
       ),

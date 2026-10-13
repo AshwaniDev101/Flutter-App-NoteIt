@@ -51,22 +51,22 @@ class SharedDrawerContent extends ConsumerWidget {
       mainAxisSize: MainAxisSize.min, // Hugs content dynamically
       children: [
         // --- Top Logo / App Identity ---
-        // Padding(
-        //   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-        //   child: Container(
-        //     width: 48,
-        //     height: 48,
-        //     decoration: BoxDecoration(color: colorScheme.primaryContainer, borderRadius: BorderRadius.circular(12)),
-        //     alignment: Alignment.center,
-        //     child: Text(
-        //       'N', // NoteIt Logo Placeholder
-        //       style: theme.textTheme.headlineMedium?.copyWith(
-        //         color: colorScheme.onPrimaryContainer,
-        //         fontWeight: FontWeight.bold,
-        //       ),
-        //     ),
-        //   ),
-        // ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+          child: Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(color: colorScheme.primaryContainer, borderRadius: BorderRadius.circular(12)),
+            alignment: Alignment.center,
+            child: Text(
+              'N', // NoteIt Logo Placeholder
+              style: theme.textTheme.headlineMedium?.copyWith(
+                color: colorScheme.onPrimaryContainer,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
 
         // --- Scrollable Navigation ---
         Flexible(
@@ -113,9 +113,9 @@ class SharedDrawerContent extends ConsumerWidget {
                 ),
 
                 SizedBox(height: 8,),
-                Text("version: ${AppEnv.version}", style: Theme.of(context).textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),),
+                SelectableText("version: ${AppEnv.version}", style: Theme.of(context).textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),),
                 SizedBox(height: 4,),
-                Text("build number: ${AppEnv.buildNumber}", style: Theme.of(context).textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),),
+                SelectableText("build number: ${AppEnv.buildNumber}", style: Theme.of(context).textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),),
                 SizedBox(height:8,),
 
               ],

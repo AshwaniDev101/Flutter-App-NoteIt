@@ -174,6 +174,8 @@ class _NoteCardState extends ConsumerState<NoteCard> {
   Widget _buildDetailedList() {
     final platform = widget.note.deletedPlatform ?? widget.note.creationPlatform;
 
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Padding(
       padding: const EdgeInsets.all(12.0),
       child: Column(
@@ -226,13 +228,15 @@ class _NoteCardState extends ConsumerState<NoteCard> {
               color: Theme.of(context).colorScheme.onPrimaryContainer,
             ),
           ),
+
+          // Timestamp
           const SizedBox(height: 4),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 TimeHelper.formatTimeAgo(widget.note.updatedAt),
-                style: Theme.of(context).textTheme.labelSmall,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
               ),
               if (platform != null)
                 Tooltip(
@@ -248,7 +252,6 @@ class _NoteCardState extends ConsumerState<NoteCard> {
 
   // ==== GRID LAYOUT ====
   Widget _buildGrid() {
-    final platform = widget.note.deletedPlatform ?? widget.note.creationPlatform;
 
     final isSessionUnlocked = ref.watch(lockManagerProvider).sessionUnlockedNoteIds.contains(widget.note.uuid);
 
@@ -392,7 +395,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
                 Text(
                   TimeHelper.formatTimeAgo(widget.note.updatedAt),
 
-                  style: Theme.of(context).textTheme.labelMedium,
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                 ),
                 if (platform != null)
                   Tooltip(

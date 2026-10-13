@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/features/home/view/shared/icon_tray/icon_tray.dart';
 import 'package:window_manager/window_manager.dart';
-import '../../../../../core/app_env.dart';
 import '../../../../../core/util/platform_helper.dart';
 import '../../../../backup/export_page.dart';
 import '../../../../backup/import_page.dart';
@@ -16,7 +15,7 @@ import '../../../../local_sync/view/qr/qr_scanner/qr_scanner_page.dart';
 import '../../../../local_sync/view/role_selector_page.dart';
 import '../../../../local_sync/view/synced_list.dart';
 import '../../../../note_editor/screens/view/desktop_edit_page.dart';
-import '../../../../note_editor/screens/view/note_detail_page.dart';
+import '../../../../note_editor/screens/view/details/detail_page.dart';
 import '../../../../settings/view/settings_page.dart';
 import '../../../../themes/view/theme_page.dart';
 import '../../../../trash/trash_page.dart';
@@ -80,7 +79,10 @@ class DesktopRightPanel extends ConsumerWidget {
     return switch (view) {
       RightPanelPageOptions.allNotes =>
         activeNote != null
-            ? DesktopEditNotePage(key: ValueKey(activeNote!.uuid), existingNote: activeNote)
+            ? _PaddingWrapper(
+                key: ValueKey('editor_view_${activeNote!.uuid}'),
+                child: DesktopEditNotePage(key: ValueKey(activeNote!.uuid), existingNote: activeNote),
+              )
             : const _HomepagePlaceholder(
                 key: ValueKey('editor_fallback'),
               ),

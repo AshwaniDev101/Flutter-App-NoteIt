@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:noteit/database/drift/local_database.dart';
 
+import '../../../../shared/widgets/app_scaffold.dart';
 import '../../../../shared/widgets/snack_bar_manager.dart';
 import '../../../home/core/providers.dart';
 import '../../../home/view/desktop/right_panel/core/navigator.dart';
@@ -188,7 +189,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
         //   const SnackBar(content: Text('Saved!'), behavior: SnackBarBehavior.floating, duration: Duration(seconds: 1)),
         //
         // );
-        SnackBarManager.show(msg: 'Saved!',type: SnackBarMessageType.acknowledgment);
+        SnackBarManager.show(msg: 'Saved!', type: SnackBarMessageType.acknowledgment);
       }
     }
   }
@@ -209,65 +210,48 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
         // Calculate exactly 50% of this specific panel's available width
         final dynamicMaxWidth = constraints.maxWidth * 0.50;
 
-        return Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: ClipRRect(
-            borderRadius: const BorderRadius.all(Radius.circular(16.0)),
-            child: Scaffold(
-              backgroundColor: panelColor,
-              appBar: AppBar(
-                backgroundColor: panelColor,
-                automaticallyImplyLeading: false,
-                titleSpacing: 8,
-                // titleSpacing: 24,
-                title: _buildTitleField(maxWidth: dynamicMaxWidth),
-                actions: [
-                  _buildUndoRedoButtons(),
-                  const SizedBox(width: 8),
-                  // _buildDesktopOptionButtons()
-                  NoteEditorOptionButton(
+        return AppScaffold(
+          backgroundColor: panelColor,
+          title: _buildTitleField(maxWidth: dynamicMaxWidth),
+          centerTitle: false,
+          onClose: _handleCloseNote,
+          actions: [
+            _buildUndoRedoButtons(),
+            const SizedBox(width: 8),
+            NoteEditorOptionButton(
+              isLocked: _isLocked,
+              isPinned: widget.existingNote?.isPinned ?? false,
+              onPressed: (NoteEditorOption option) {
+                switch (option) {
+                  case NoteEditorOption.delete:
+                    _handleDeleteNote();
+                    break;
+                  case NoteEditorOption.pin:
+                    break;
+                  case NoteEditorOption.lock:
+                    _handleLockToggle();
+                    break;
+                  case NoteEditorOption.checklist:
+                    break;
+                  case NoteEditorOption.archive:
+                    break;
+                  case NoteEditorOption.find:
+                    break;
+                  case NoteEditorOption.reminder:
+                    break;
 
-                    isLocked: _isLocked,
-                    isPinned: widget.existingNote?.isPinned ?? false,
-                    onPressed: (NoteEditorOption option) {
-                      switch (option) {
-                        case NoteEditorOption.delete:
-                          _handleDeleteNote();
-                         break;
-                        case NoteEditorOption.pin:
-                          break;
-                        case NoteEditorOption.lock:
-                          _handleLockToggle();
-                          break;
-                        case NoteEditorOption.checklist:
-                          break;
-                        case NoteEditorOption.archive:
-                          break;
-                        case NoteEditorOption.find:
-                          break;
-                        case NoteEditorOption.reminder:
-                          break;
-
-                        case NoteEditorOption.info:
-                          ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.noteDetails);
-                          break;
-                      }
-                    },
-                  ),
-                  IconButton(
-                    tooltip: 'Close Note',
-                    icon: const Icon(Icons.close_outlined),
-                    onPressed: _handleCloseNote,
-                  ),
-                ],
-              ),
-              body: Column(
-                children: [
-                  _buildMetaDataRow(padding: 24.0),
-                  Expanded(child: _buildContentField(padding: 24.0)),
-                ],
-              ),
+                  case NoteEditorOption.info:
+                    ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.noteDetails);
+                    break;
+                }
+              },
             ),
+          ],
+          body: Column(
+            children: [
+              _buildMetaDataRow(padding: 24.0),
+              Expanded(child: _buildContentField(padding: 24.0)),
+            ],
           ),
         );
       },
@@ -326,7 +310,12 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
             ),
           ),
           const Spacer(),
-          Text(_getFormattedDate(), style: Theme.of(context).textTheme.bodySmall),
+          SelectableText(
+            _getFormattedDate(),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+          ),
         ],
       ),
     );
@@ -365,7 +354,6 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
       ],
     );
   }
-
 
   Widget _buildTitleField({required double maxWidth}) {
     return Row(
@@ -428,78 +416,68 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
         ),
 
         // Auto save indicator
-// Animated Save/Saved Button
+        // Animated Save/Saved Button
         AnimatedSwitcher(
           duration: const Duration(milliseconds: 300),
           // Creates a clean vertical swipe transition
           transitionBuilder: (Widget child, Animation<double> animation) {
             return SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0.0, 0.5),
-                end: Offset.zero,
-              ).animate(animation),
-              child: FadeTransition(
-                opacity: animation,
-                child: child,
-              ),
+              position: Tween<Offset>(begin: const Offset(0.0, 0.5), end: Offset.zero).animate(animation),
+              child: FadeTransition(opacity: animation, child: child),
             );
           },
           child: _isSaved
               ? // ---- SAVED STATE (Passive) ----
-          Padding(
-            key: const ValueKey('saved_state'),
-            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.done_all,
-                  size: 16,
-                  color: Theme.of(context).colorScheme.outline,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  "Saved",
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.outline,
-                    fontStyle: FontStyle.italic,
+                Padding(
+                  key: const ValueKey('saved_state'),
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.done_all, size: 16, color: Theme.of(context).colorScheme.outline),
+                      const SizedBox(width: 4),
+                      Text(
+                        "Saved",
+                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.outline,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            ),
-          )
+                )
               : // ---- SAVE STATE (Clickable) ----
-          Material(
-            key: const ValueKey('save_state'),
-            color: Colors.transparent, // Keeps the label look without a button background
-            child: InkWell(
-              borderRadius: BorderRadius.circular(4),
-              onTap: () {
-                _executeSave(isManualSave: true);
-              },
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.done,
-                      size: 16,
-                      color: Theme.of(context).colorScheme.primary, // Highlights it as an action
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      "Save",
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.bold, // Makes the call-to-action stand out slightly
+                Material(
+                  key: const ValueKey('save_state'),
+                  color: Colors.transparent, // Keeps the label look without a button background
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(4),
+                    onTap: () {
+                      _executeSave(isManualSave: true);
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.done,
+                            size: 16,
+                            color: Theme.of(context).colorScheme.primary, // Highlights it as an action
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            "Save",
+                            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.primary,
+                              fontWeight: FontWeight.bold, // Makes the call-to-action stand out slightly
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
-          ),
         ),
       ],
     );

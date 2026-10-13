@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/features/local_sync/view/role_selector_page.dart';
-import 'package:noteit/features/note_editor/screens/view/note_detail_page.dart';
+import 'package:noteit/features/note_editor/screens/view/details/detail_page.dart';
 
 import '../../features/backup/export_page.dart';
 import '../../features/backup/import_page.dart';

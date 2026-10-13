@@ -31,8 +31,11 @@ class NoteEditorOptionButton extends StatefulWidget {
 class _NoteEditorOptionButtonState extends State<NoteEditorOptionButton> {
   final MenuController _menuController = MenuController();
 
+
   @override
   Widget build(BuildContext context) {
+
+    final colorSchema = Theme.of(context).colorScheme;
     return MenuAnchor(
       controller: _menuController,
       // Removes default menu background/padding so your Card looks native
@@ -51,7 +54,7 @@ class _NoteEditorOptionButtonState extends State<NoteEditorOptionButton> {
             }
           },
           // icon: const Icon(Icons.tab),
-          icon: const Icon(Icons.segment),
+          icon: Icon(Icons.segment, color: colorSchema.primary,),
           // icon: const Icon(Icons.keyboard_double_arrow_down),
         );
       },

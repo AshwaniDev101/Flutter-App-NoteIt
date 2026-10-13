@@ -120,7 +120,7 @@ class DesktopLeftPanel extends ConsumerWidget {
                   elevation: 0,
                   scrolledUnderElevation: PlatformHelper.isDesktopScreen ? 0.0 : null,
                   actions: [
-                    Text(
+                    SelectableText(
                       versionString,
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(color: colorScheme.onSurfaceVariant),
                     ),

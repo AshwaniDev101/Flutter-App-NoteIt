@@ -7,24 +7,27 @@ import '../desktop/right_panel/core/navigator.dart';
 
 /// Only visible when you're on the desktop right panel
 class DesktopCloseButton extends ConsumerWidget {
-  const DesktopCloseButton({super.key});
+  final VoidCallback? onPressed;
+
+  const DesktopCloseButton({super.key, this.onPressed});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // If it is NOT a desktop screen, return an empty box
     if (!PlatformHelper.isDesktopScreen) {
       return const SizedBox.shrink();
     }
 
-    // Otherwise, show the close button
+    final colorSchema = Theme.of(context).colorScheme;
+
     return Padding(
       padding: const EdgeInsets.only(right: 16.0),
       child: IconButton(
-        icon: const Icon(Icons.close),
+        icon: Icon(Icons.close, color: colorSchema.primary),
         tooltip: 'Close',
-        onPressed: () {
-          ref.read(desktopRightPanelViewProvider.notifier).setView(RightPanelPageOptions.allNotes);
-        },
+        onPressed: onPressed ??
+            () {
+              ref.read(desktopRightPanelViewProvider.notifier).setView(RightPanelPageOptions.allNotes);
+            },
       ),
     );
   }

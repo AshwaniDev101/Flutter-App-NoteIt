@@ -13,6 +13,7 @@ class AppScaffold extends StatelessWidget {
   final Widget? floatingActionButton;
   final Widget? bottomNavigationBar;
   final bool showDesktopCloseButton;
+  final VoidCallback? onClose;
   final Color? backgroundColor;
   final bool centerTitle;
 
@@ -25,6 +26,7 @@ class AppScaffold extends StatelessWidget {
     this.floatingActionButton,
     this.bottomNavigationBar,
     this.showDesktopCloseButton = true,
+    this.onClose,
     this.backgroundColor,
     this.centerTitle = true,
   });
@@ -38,6 +40,7 @@ class AppScaffold extends StatelessWidget {
     Widget? floatingActionButton,
     Widget? bottomNavigationBar,
     bool showDesktopCloseButton = true,
+    VoidCallback? onClose,
     Color? backgroundColor,
     bool centerTitle = true,
   }) {
@@ -49,6 +52,7 @@ class AppScaffold extends StatelessWidget {
       floatingActionButton: floatingActionButton,
       bottomNavigationBar: bottomNavigationBar,
       showDesktopCloseButton: showDesktopCloseButton,
+      onClose: onClose,
       backgroundColor: backgroundColor,
       centerTitle: centerTitle,
     );
@@ -69,7 +73,7 @@ class AppScaffold extends StatelessWidget {
         scrolledUnderElevation: PlatformHelper.isDesktopScreen ? 0.0 : null,
         actions: [
           ...?actions,
-          if (showDesktopCloseButton) const DesktopCloseButton(),
+          if (showDesktopCloseButton) DesktopCloseButton(onPressed: onClose),
         ],
       );
     }
