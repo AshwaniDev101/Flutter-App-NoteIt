@@ -116,30 +116,39 @@ class _TrashPageState extends ConsumerState<TrashPage> {
     }
   }
 
-  // Handle restoring a single note
-  Future<void> _restoreNote(String uuid) async {
+  // Handle restoring notes
+  Future<void> _restoreNotes(List<String> uuids) async {
     final notesDao = ref.read(notesDaoProvider);
-    await notesDao.restoreNote(uuid);
+    for (final uuid in uuids) {
+      await notesDao.restoreNote(uuid);
+    }
 
     // Trigger the Orchestrator to broadcast the restoration
     ref.read(syncOrchestratorProvider).triggerSync();
 
+    setState(() {
+      noteIds.removeAll(uuids);
+      if (noteIds.isEmpty) {
+        isSelectMode = false;
+      }
+    });
+
     if (mounted) {
       SnackBarManager.show(
-        msg: 'Note restored.',
+        msg: uuids.length == 1 ? 'Note restored.' : 'Notes restored.',
         type: SnackBarMessageType.acknowledgment,
       );
     }
   }
 
-  // Handle deleting ONLY the selected notes permanently
-  Future<void> _handleDeleteSelected(List<Note> allTrashNotes) async {
+  // Handle deleting notes permanently
+  Future<void> _handleDeleteUuids(List<String> uuidsToDelete) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Permanently?'),
         content: Text(
-          'This will permanently delete the ${noteIds.length} selected items. This action cannot be undone.',
+          'This will permanently delete ${uuidsToDelete.length == 1 ? 'this item' : 'the ${uuidsToDelete.length} selected items'}. This action cannot be undone.',
         ),
         actions: [
           TextButton(
@@ -160,8 +169,6 @@ class _TrashPageState extends ConsumerState<TrashPage> {
       final firebaseDb = ref.read(noteFirebaseDatabaseProvider);
 
       try {
-        final uuidsToDelete = noteIds.toList();
-
         // Loop and delete locally
         for (final uuid in uuidsToDelete) {
           await notesDao.deleteNote(uuid);
@@ -173,13 +180,17 @@ class _TrashPageState extends ConsumerState<TrashPage> {
         }
 
         setState(() {
-          isSelectMode = false;
-          noteIds.clear();
+          noteIds.removeAll(uuidsToDelete);
+          if (noteIds.isEmpty) {
+            isSelectMode = false;
+          }
         });
 
         if (mounted) {
           SnackBarManager.show(
-            msg: 'Selected notes deleted.',
+            msg: uuidsToDelete.length == 1
+                ? 'Note deleted permanently.'
+                : 'Selected notes deleted permanently.',
             type: SnackBarMessageType.acknowledgment,
           );
         }
@@ -248,34 +259,16 @@ class _TrashPageState extends ConsumerState<TrashPage> {
           IconButton(
             icon: const Icon(Icons.restore),
             tooltip: 'Restore Selected',
-            onPressed: () async {
-              final notesDao = ref.read(notesDaoProvider);
-              for (final uuid in noteIds) {
-                await notesDao.restoreNote(uuid);
-              }
-              ref.read(syncOrchestratorProvider).triggerSync();
-              setState(() {
-                isSelectMode = false;
-                noteIds.clear();
-              });
-              if (mounted) {
-                SnackBarManager.show(
-                  msg: 'Notes restored.',
-                  type: SnackBarMessageType.acknowledgment,
-                );
-              }
-            },
+            onPressed: () => _restoreNotes(noteIds.toList()),
           ),
           IconButton(
             icon: const Icon(Icons.delete_forever),
             tooltip: 'Delete Selected',
-            onPressed: () => _handleDeleteSelected(currentNotes),
+            onPressed: () => _handleDeleteUuids(noteIds.toList()),
           ),
         ],
       );
     }
-
-    final showLabel = PlatformHelper.isDesktopScreen;
 
     // Default App Bar
     return AppBar(
@@ -298,24 +291,24 @@ class _TrashPageState extends ConsumerState<TrashPage> {
             },
           ),
 
-        if (currentNotes.isNotEmpty)
-          showLabel
-              ? OutlinedButton.icon(
-                  onPressed: _handleEmptyTrash,
-                  icon: const Icon(Icons.delete_sweep_outlined),
-                  label: const Text('Empty Trash'),
-                  style: OutlinedButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                    side: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1),
-                  ),
-                )
-              : IconButton(
-                  onPressed: _handleEmptyTrash,
-                  icon: const Icon(Icons.delete_sweep_outlined),
-                  tooltip: 'Empty Trash',
-                ),
+        // if (currentNotes.isNotEmpty)
+        //   showLabel
+        //       ? OutlinedButton.icon(
+        //           onPressed: _handleEmptyTrash,
+        //           icon: const Icon(Icons.delete_sweep_outlined),
+        //           label: const Text('Empty Trash'),
+        //           style: OutlinedButton.styleFrom(
+        //             shape: RoundedRectangleBorder(
+        //               borderRadius: BorderRadius.circular(8.0),
+        //             ),
+        //             side: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1),
+        //           ),
+        //         )
+        //       : IconButton(
+        //           onPressed: _handleEmptyTrash,
+        //           icon: const Icon(Icons.delete_sweep_outlined),
+        //           tooltip: 'Empty Trash',
+        //         ),
 
         const SizedBox(width: 8), DesktopCloseButton(),
 
@@ -417,17 +410,20 @@ class _TrashPageState extends ConsumerState<TrashPage> {
                   }
 
                   return GridView.builder(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.only(bottom: 80, top: 8),
-                    gridDelegate: PlatformHelper.isDesktopScreen
+                    padding: const EdgeInsets.all(8.0),
+                    gridDelegate: PlatformHelper.isMobileScreen
                         ? const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
-                            childAspectRatio: 0.85,
-                          )
+                      crossAxisCount: 3,
+                      childAspectRatio: 0.85,
+                      crossAxisSpacing: 4,
+                      mainAxisSpacing: 4,
+                    )
                         : const SliverGridDelegateWithMaxCrossAxisExtent(
-                            maxCrossAxisExtent: 220,
-                            childAspectRatio: 0.85,
-                          ),
+                      maxCrossAxisExtent: 200,
+                      childAspectRatio: 0.85,
+                      crossAxisSpacing: 4,
+                      mainAxisSpacing: 4,
+                    ),
                     itemCount: filteredNotes.length,
                     itemBuilder: (context, index) {
                       final note = filteredNotes[index];
@@ -439,6 +435,7 @@ class _TrashPageState extends ConsumerState<TrashPage> {
                         searchQuery: searchQuery,
                         isSelected: isSelected,
                         contextMenuOptions: const [
+                          NoteContextMenuOption.select,
                           NoteContextMenuOption.restore,
                           NoteContextMenuOption.deleteForever,
                         ],
@@ -453,6 +450,29 @@ class _TrashPageState extends ConsumerState<TrashPage> {
                           if (!isSelectMode) {
                             setState(() => isSelectMode = true);
                             _toggleSelection(note.uuid);
+                          }
+                        },
+                        onContextMenuAction: (option) {
+                          if (option == NoteContextMenuOption.select) {
+                            if (!isSelectMode) {
+                              setState(() => isSelectMode = true);
+                            }
+                            if (!isSelected) {
+                              _toggleSelection(note.uuid);
+                            }
+                            return;
+                          }
+
+                          if (option == NoteContextMenuOption.restore) {
+                            final targetUuids = isSelected ? noteIds.toList() : [note.uuid];
+                            _restoreNotes(targetUuids);
+                            return;
+                          }
+
+                          if (option == NoteContextMenuOption.deleteForever) {
+                            final targetUuids = isSelected ? noteIds.toList() : [note.uuid];
+                            _handleDeleteUuids(targetUuids);
+                            return;
                           }
                         },
                       );

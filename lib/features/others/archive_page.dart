@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/features/home/core/note_tap_handler.dart';
-import 'package:noteit/features/home/view/desktop/right_panel/core/navigator.dart';
 import 'package:noteit/shared/widgets/app_scaffold.dart';
 
+import '../../core/device_info.dart';
 import '../../core/util/platform_helper.dart';
 import '../../database/drift/local_database.dart';
 import '../../database/drift/notes/notes_dao.dart';
+import '../../database/sync/sync_orchestrator.dart';
+import '../../shared/widgets/note_card/core/note_action_controller.dart';
 import '../../shared/widgets/note_card/note_card.dart';
+import '../../shared/widgets/snack_bar_manager.dart';
+import '../home/view/shared/desktop_close_button.dart';
 
 final archivedNotesStreamProvider = StreamProvider.autoDispose<List<Note>>((ref) {
   return ref.watch(notesDaoProvider).watchArchivedNotes();
@@ -21,9 +25,13 @@ class ArchivePage extends ConsumerStatefulWidget {
 }
 
 class _ArchivePageState extends ConsumerState<ArchivePage> {
+  bool isSelectMode = false;
   bool _isSearching = false;
+
   late final TextEditingController _searchController;
   late final FocusNode _searchFocusNode;
+
+  final Set<String> noteIds = {};
 
   @override
   void initState() {
@@ -39,13 +47,124 @@ class _ArchivePageState extends ConsumerState<ArchivePage> {
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final archivedNotesState = ref.watch(archivedNotesStreamProvider);
-    final searchQuery = _searchController.text.trim();
+  void _toggleSelection(String uuid) {
+    setState(() {
+      if (noteIds.contains(uuid)) {
+        noteIds.remove(uuid);
+        if (noteIds.isEmpty) isSelectMode = false;
+      } else {
+        noteIds.add(uuid);
+      }
+    });
+  }
 
-    return AppScaffold.rightPanel(
-      option: RightPanelPageOptions.archivePage,
+  Future<void> _unarchiveNotes(List<String> uuids) async {
+    final actionsController = ref.read(noteActionsControllerProvider);
+    await actionsController.unarchiveNotes(uuids);
+    ref.read(syncOrchestratorProvider).triggerSync();
+
+    setState(() {
+      noteIds.removeAll(uuids);
+      if (noteIds.isEmpty) {
+        isSelectMode = false;
+      }
+    });
+
+    if (mounted) {
+      SnackBarManager.show(
+        msg: uuids.length == 1 ? 'Note unarchived.' : 'Notes unarchived.',
+        type: SnackBarMessageType.acknowledgment,
+      );
+    }
+  }
+
+  Future<void> _deleteNotes(List<String> uuids) async {
+    final deviceInfo = await ref.read(deviceInfoProvider.future);
+    final actionsController = ref.read(noteActionsControllerProvider);
+    await actionsController.deleteNotes(uuids, deviceInfo.extractPlatform);
+    ref.read(syncOrchestratorProvider).triggerSync();
+
+    setState(() {
+      noteIds.removeAll(uuids);
+      if (noteIds.isEmpty) {
+        isSelectMode = false;
+      }
+    });
+
+    if (mounted) {
+      SnackBarManager.show(
+        msg: uuids.length == 1 ? 'Note moved to trash.' : 'Notes moved to trash.',
+        type: SnackBarMessageType.acknowledgment,
+      );
+    }
+  }
+
+  PreferredSizeWidget _buildAppBar(List<Note> currentNotes) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    if (isSelectMode) {
+      final isAllSelected =
+          currentNotes.isNotEmpty && noteIds.length == currentNotes.length;
+
+      return AppBar(
+        foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.close),
+          onPressed: () => setState(() {
+            isSelectMode = false;
+            noteIds.clear();
+          }),
+        ),
+        title: Text(
+          '${noteIds.length} Selected',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white),
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 8.0,
+              vertical: 10.0,
+            ),
+            child: OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.white,
+                side: const BorderSide(color: Colors.white, width: 1.5),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+              ),
+              onPressed: () {
+                setState(() {
+                  if (isAllSelected) {
+                    noteIds.clear();
+                    isSelectMode = false;
+                  } else {
+                    noteIds.addAll(currentNotes.map((note) => note.uuid));
+                  }
+                });
+              },
+              child: Text(isAllSelected ? 'Deselect All' : 'Select All'),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.unarchive),
+            tooltip: 'Unarchive Selected',
+            onPressed: () => _unarchiveNotes(noteIds.toList()),
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete_outline),
+            tooltip: 'Delete Selected',
+            onPressed: () => _deleteNotes(noteIds.toList()),
+          ),
+        ],
+      );
+    }
+
+    return AppBar(
+      title: const Text('Archive'),
+      backgroundColor: colorScheme.surfaceContainerLowest,
+      centerTitle: true,
       actions: [
         if (!_isSearching)
           IconButton(
@@ -55,13 +174,24 @@ class _ArchivePageState extends ConsumerState<ArchivePage> {
               setState(() {
                 _isSearching = true;
               });
-              // Small delay to ensure the TextField is built before focusing
               Future.delayed(const Duration(milliseconds: 50), () {
                 _searchFocusNode.requestFocus();
               });
             },
           ),
+        const SizedBox(width: 8),
+        DesktopCloseButton(),
       ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final archivedNotesState = ref.watch(archivedNotesStreamProvider);
+    final searchQuery = _searchController.text.trim();
+
+    return AppScaffold(
+      appBar: _buildAppBar(archivedNotesState.value ?? []),
       body: Column(
         children: [
           if (_isSearching)
@@ -98,10 +228,7 @@ class _ArchivePageState extends ConsumerState<ArchivePage> {
                           ),
                         ),
                       ),
-                
-                
                       const SizedBox(width: 8),
-                
                       IconButton(
                         icon: const Icon(Icons.close),
                         tooltip: 'Close Search',
@@ -173,16 +300,53 @@ class _ArchivePageState extends ConsumerState<ArchivePage> {
                   itemCount: filteredNotes.length,
                   itemBuilder: (context, index) {
                     final note = filteredNotes[index];
+                    final isSelected = noteIds.contains(note.uuid);
+
                     return NoteCard(
+                      key: ValueKey(note.uuid),
                       note: note,
                       searchQuery: searchQuery,
-                      key: ValueKey(note.uuid),
+                      isSelected: isSelected,
                       contextMenuOptions: const [
+                        NoteContextMenuOption.select,
                         NoteContextMenuOption.unarchive,
                         NoteContextMenuOption.delete,
                       ],
                       onTap: () {
-                        NoteTapHandler.openNote(context, ref, note);
+                        if (isSelectMode) {
+                          _toggleSelection(note.uuid);
+                        } else {
+                          NoteTapHandler.openNote(context, ref, note);
+                        }
+                      },
+                      onLongPress: () {
+                        if (!isSelectMode) {
+                          setState(() => isSelectMode = true);
+                          _toggleSelection(note.uuid);
+                        }
+                      },
+                      onContextMenuAction: (option) {
+                        if (option == NoteContextMenuOption.select) {
+                          if (!isSelectMode) {
+                            setState(() => isSelectMode = true);
+                          }
+                          if (!isSelected) {
+                            _toggleSelection(note.uuid);
+                          }
+                          return;
+                        }
+
+                        if (option == NoteContextMenuOption.unarchive) {
+                          final targetUuids = isSelected ? noteIds.toList() : [note.uuid];
+                          _unarchiveNotes(targetUuids);
+                          return;
+                        }
+
+                        if (option == NoteContextMenuOption.delete) {
+                          final targetUuids = isSelected ? noteIds.toList() : [note.uuid];
+                          _deleteNotes(targetUuids);
+                          return;
+                        }
                       },
                     );
                   },
