@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 enum NoteEditorOption {
@@ -97,7 +98,7 @@ class NoteEditorOptionMenu extends StatelessWidget {
                 currentLabel = isLocked ? 'Unlock' : 'Lock';
                 isActive = isLocked;
               } else if (option == NoteEditorOption.pin) {
-                currentIcon = isPinned ? Icons.push_pin : Icons.push_pin_outlined;
+                currentIcon = isPinned ? CupertinoIcons.pin_slash : Icons.push_pin_outlined;
                 currentTooltip = isPinned ? 'Unpin Note' : 'Pin Note';
                 currentLabel = isPinned ? 'Unpin' : 'Pin';
                 isActive = isPinned;

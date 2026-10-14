@@ -163,7 +163,11 @@ class DynamicNotesLayout extends ConsumerWidget {
         break;
 
       case NoteContextMenuOption.pin:
-        await actionsController.togglePinNotes(targetUuids);
+        await actionsController.pinNotes(targetUuids);
+        break;
+
+      case NoteContextMenuOption.unpin:
+        await actionsController.unpinNotes(targetUuids);
         break;
 
       case NoteContextMenuOption.archive:

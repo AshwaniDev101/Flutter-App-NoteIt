@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/util/platform_helper.dart';
@@ -15,6 +16,7 @@ enum NoteContextMenuOption {
   // Common
   select('Select', Icons.check_circle_outline),
   pin('Pin', Icons.push_pin_outlined),
+  unpin('Unpin', CupertinoIcons.pin_slash),
   lock('Lock', Icons.lock_outline),
   reminder('Remind me', Icons.notifications_none_outlined),
   moveTo('Move to...', Icons.drive_file_move_outlined),
@@ -85,6 +87,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
   @override
   Widget build(BuildContext context) {
     final viewType = ref.watch(noteViewTypeProvider);
+    final isPinned = widget.note.pinnedAt != null;
 
     return MenuAnchor(
       controller: _menuController,
@@ -93,21 +96,27 @@ class _NoteCardState extends ConsumerState<NoteCard> {
             // Hide 'Select' if this specific card is already selected
           .where((option) => !(option == NoteContextMenuOption.select && widget.isSelected))
           .map((option) {
+        final effectiveOption = (isPinned && option == NoteContextMenuOption.pin)
+            ? NoteContextMenuOption.unpin
+            : (!isPinned && option == NoteContextMenuOption.unpin)
+                ? NoteContextMenuOption.pin
+                : option;
+
         return MenuItemButton(
           leadingIcon: Icon(
-            option.icon,
+            effectiveOption.icon,
             // Paint destructive actions red
-            color: option.isDestructive ? Theme.of(context).colorScheme.error : null,
+            color: effectiveOption.isDestructive ? Theme.of(context).colorScheme.error : null,
           ),
           onPressed: () {
             if (widget.onContextMenuAction != null) {
-              widget.onContextMenuAction!(option);
+              widget.onContextMenuAction!(effectiveOption);
             }
           },
           child: Text(
-            option.label,
+            effectiveOption.label,
             style: TextStyle(
-              color: option.isDestructive ? Theme.of(context).colorScheme.error : null,
+              color: effectiveOption.isDestructive ? Theme.of(context).colorScheme.error : null,
             ),
           ),
         );

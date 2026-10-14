@@ -24,6 +24,14 @@ class NoteActionsController {
     await db.notesDao.togglePinStatus(uuids);
   }
 
+  Future<void> pinNotes(List<String> uuids) async {
+    await db.notesDao.setNotesPinStatus(uuids, isPinned: true);
+  }
+
+  Future<void> unpinNotes(List<String> uuids) async {
+    await db.notesDao.setNotesPinStatus(uuids, isPinned: false);
+  }
+
   Future<void> archiveNotes(List<String> uuids) async {
     await db.notesDao.archiveNotes(uuids);
   }
