@@ -93,7 +93,7 @@ class NoteEditorOptionMenu extends StatelessWidget {
               //  Check if this specific option is currently active
               bool isActive = false;
               if (option == NoteEditorOption.lock) {
-                currentIcon = isLocked ? Icons.lock_clock : Icons.lock_outline;
+                currentIcon = isLocked ? Icons.lock_open_outlined : Icons.lock_outline;
                 currentTooltip = isLocked ? 'Remove Lock' : 'Lock Note';
                 currentLabel = isLocked ? 'Unlock' : 'Lock';
                 isActive = isLocked;

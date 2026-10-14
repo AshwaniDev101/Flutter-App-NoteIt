@@ -100,3 +100,5 @@ ThemeData get _darkThemeData => ThemeData(
     ),
   ),
 );
+
+// nice colors to considers #3c4ba2,#1d375c, #abc7d3 blue, #e2c53a yellow, #dc3e2d red

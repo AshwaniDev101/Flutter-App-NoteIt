@@ -8,8 +8,10 @@ import 'package:noteit/core/device_info.dart';
 import 'package:noteit/database/drift/local_database.dart';
 
 import 'package:noteit/database/drift/notes/notes_dao.dart';
+import '../../../../shared/find_replace.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
 import '../../../../shared/widgets/note_card/core/note_action_controller.dart';
+import '../../../../shared/widgets/note_card/highlighting_textediting_controller.dart';
 import '../../../../shared/widgets/snack_bar_manager.dart';
 import '../../../home/core/providers.dart';
 import '../../../home/view/desktop/right_panel/core/navigator.dart';
@@ -29,9 +31,11 @@ class DesktopEditNotePage extends ConsumerStatefulWidget {
 
 class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
   late final TextEditingController _titleController;
-  late final TextEditingController _contentController;
-  final UndoHistoryController _undoController = UndoHistoryController();
 
+  // Find and replace Controller
+  late final HighlightingTextEditingController _contentController;
+
+  final UndoHistoryController _undoController = UndoHistoryController();
   late final EditNoteViewModel _viewModel;
 
   bool _isAutoSyncingTitle = false;
@@ -42,6 +46,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
   Timer? _autoSaveTimer;
   bool _isDeleted = false;
   bool _isSaved = true;
+  bool _isFind = false;
 
   late final FocusNode _titleFocusNode;
   late final FocusNode _contentFocusNode;
@@ -60,7 +65,9 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
     _isLocked = widget.existingNote?.lockedAt != null;
 
     _titleController = TextEditingController(text: widget.existingNote?.title ?? '');
-    _contentController = TextEditingController(text: widget.existingNote?.content ?? '');
+
+    // Initialize the new controller
+    _contentController = HighlightingTextEditingController(text: widget.existingNote?.content ?? '');
 
     _titleFocusNode = FocusNode()..addListener(() => setState(() {}));
     _contentFocusNode = FocusNode();
@@ -149,11 +156,15 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
     _titleController.removeListener(_scheduleAutoSave);
     _contentController.removeListener(_scheduleAutoSave);
 
-    _titleFocusNode.dispose();
+
     _titleController.dispose();
     _contentController.dispose();
     _undoController.dispose();
+
+
+    _titleFocusNode.dispose();
     _contentFocusNode.dispose();
+
     super.dispose();
   }
 
@@ -272,7 +283,9 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
                   // TODO: UI Action - Convert text to checklist format
                     break;
                   case NoteEditorOption.find:
-                  // TODO: UI Action - Open search bar inside editor
+                    setState(() {
+                      _isFind = !_isFind;
+                    });
                     break;
                   case NoteEditorOption.reminder:
                   // TODO: UI Action - Open DatePicker
@@ -285,7 +298,22 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
           ],
           body: Column(
             children: [
-              _buildMetaDataRow(padding: 24.0),
+
+              if (_isFind) ...{
+                FindReplaceWidget(
+                  contentController: _contentController,
+                  contentFocusNode: _contentFocusNode,
+                  onClose: () {
+                    setState(() {
+                      _isFind = false;
+                    });
+                  },
+                  padding: 0,
+                ),
+              } else ...{
+                _buildMetaDataRow(padding: 24.0),
+              },
+
               Expanded(child: _buildContentField(padding: 24.0)),
             ],
           ),
@@ -326,6 +354,9 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
       ),
     );
   }
+
+
+
 
   Widget _buildMetaDataRow({required double padding}) {
     return Padding(
