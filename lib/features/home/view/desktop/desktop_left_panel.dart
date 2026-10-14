@@ -10,10 +10,10 @@ import '../../../../database/drift/keybindings/keybindings_dao.dart';
 import '../../../drawer/desktop_drawer_button.dart';
 import '../../../keybinding/smart_action_widget.dart';
 import '../../viewmodel/viewmodel.dart';
-import '../../core/providers.dart';
+import '../shared/select_mode_app_bars.dart';
 import '../shared/tag_sort_view_menu.dart';
 import '../../../../shared/widgets/note_card/dynamic_notes_layout.dart';
-import '../shared/select_mode_app_bars.dart';
+import '../shared/home_search_bar.dart';
 
 class DesktopLeftPanel extends ConsumerWidget {
   final TextEditingController searchController;
@@ -46,7 +46,6 @@ class DesktopLeftPanel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final homeState = ref.watch(homeViewModelProvider);
-    final viewModel = ref.read(homeViewModelProvider.notifier);
     final colorScheme = Theme.of(context).colorScheme;
 
     final versionString = "v${AppEnv.version}-${AppEnv.buildNumber}";
@@ -56,7 +55,6 @@ class DesktopLeftPanel extends ConsumerWidget {
       key: scaffoldKey,
       onDrawerChanged: onDrawerChanged,
 
-      // drawer: AppDrawer(),
       floatingActionButton: FocusTraversalOrder(
         order: const NumericFocusOrder(3),
         child: Focus(
@@ -74,11 +72,10 @@ class DesktopLeftPanel extends ConsumerWidget {
               final isFocused = Focus.of(context).hasFocus;
 
               return AnimatedContainer(
-                duration: const Duration(milliseconds: 50), // Snappy mechanical feel
+                duration: const Duration(milliseconds: 50),
                 padding: const EdgeInsets.all(3),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
-                  // Draw focus ring only if focused AND driven by keyboard
                   border: Border.all(
                     color: (isFocused && isKeyboardDriven) ? colorScheme.primary : Colors.transparent,
                     width: 2,
@@ -101,15 +98,9 @@ class DesktopLeftPanel extends ConsumerWidget {
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(kToolbarHeight),
         child: DragToMoveArea(
-          // Allows user to drag the window around by clicking the AppBar
           child: homeState.isSelectMode
               ? SelectModeAppBar(
                   noteIds: homeState.selectedNoteIds,
-                  onClearSelection: viewModel.clearSelection,
-                  onSelectAll: () {
-                    final allNoteUuids = (ref.read(filteredNotesProvider).value ?? []).map((n) => n.uuid).toList();
-                    viewModel.toggleSelectAll(allNoteUuids);
-                  },
                 )
               : AppBar(
                   leading: DrawerMenuButton(),
@@ -124,9 +115,8 @@ class DesktopLeftPanel extends ConsumerWidget {
                       versionString,
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(color: colorScheme.onSurfaceVariant),
                     ),
-                    SizedBox(width: 16,),
+                    const SizedBox(width: 16),
                   ],
-                  // maker the left hamburger icon primary color
                   iconTheme: IconThemeData(color: Theme.of(context).colorScheme.primary),
                 ),
         ),
@@ -163,75 +153,17 @@ class DesktopLeftPanel extends ConsumerWidget {
                         }
                         return KeyEventResult.ignored;
                       },
-                      child: Builder(
-                        builder: (context) {
-                          final isFocused = Focus.of(context).hasFocus;
-
-                          return AnimatedContainer(
-                            duration: const Duration(milliseconds: 100),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: (isFocused && isKeyboardDriven) ? colorScheme.primary : Colors.transparent,
-                                width: 2,
-                              ),
-                            ),
-                            child: TextField(
-                              controller: searchController,
-                              focusNode: searchFocusNode,
-                              decoration: InputDecoration(
-                                hintText: 'Search...',
-                                // fillColor: Theme.of(context).colorScheme.surfaceContainerLow,
-                                prefixIcon: const Icon(Icons.search),
-                                suffixIcon: ValueListenableBuilder<TextEditingValue>(
-                                  valueListenable: searchController,
-                                  builder: (context, value, child) {
-                                    return value.text.isNotEmpty
-                                        ? ExcludeFocus(
-                                            child: IconButton(
-                                              icon: const Icon(Icons.clear, size: 20),
-                                              onPressed: () => _clearSearch(ref),
-                                            ),
-                                          )
-                                        : const SizedBox.shrink();
-                                  },
-                                ),
-                                filled: true,
-                                // Uses default M3 variant fill color
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: BorderSide.none,
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: BorderSide.none,
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                              ),
-                              onTap: () {
-                                // Clicking tells the app a mouse was used, dropping keyboard styling! (for keyboard navigation)
-                                onKeyboardModeChanged(false);
-                                if (!homeState.isSearchMode) viewModel.enterSearchMode();
-                              },
-                              onChanged: (value) {
-                                if (value.isNotEmpty && !homeState.isSearchMode) viewModel.enterSearchMode();
-                                if (value.isEmpty) {
-                                  _clearSearch(ref);
-                                } else {
-                                  ref.read(searchQueryProvider.notifier).updateQuery(value);
-                                }
-                              },
-                            ),
-                          );
-                        },
+                      child: HomeSearchBar(
+                        controller: searchController,
+                        focusNode: searchFocusNode,
+                        hintText: 'Search...',
+                        borderRadius: BorderRadius.circular(8),
+                        isKeyboardDriven: isKeyboardDriven,
+                        onKeyboardModeChanged: onKeyboardModeChanged,
                       ),
                     ),
                   ),
                 ),
-                // const SizedBox(width: 4),
-                // const ViewSwitcherOptionMenu(),
-                // const SizedBox(width: 4),
-                // const SortFilterOptionMenu(),
                 const SizedBox(width: 4),
                 const FolderSortViewButton(),
               ],
@@ -246,8 +178,8 @@ class DesktopLeftPanel extends ConsumerWidget {
                 isSelectMode: homeState.isSelectMode,
                 noteIds: homeState.selectedNoteIds,
                 activeNoteId: activeNoteId,
-                onToggleSelection: viewModel.toggleSelection,
-                onEnableSelectMode: viewModel.enableSelectMode,
+                onToggleSelection: ref.read(homeViewModelProvider.notifier).toggleSelection,
+                onEnableSelectMode: ref.read(homeViewModelProvider.notifier).enableSelectMode,
                 onNoteTap: onNoteTap,
               ),
             ),
@@ -255,11 +187,5 @@ class DesktopLeftPanel extends ConsumerWidget {
         ],
       ),
     );
-  }
-
-  void _clearSearch(WidgetRef ref) {
-    searchController.clear();
-    ref.read(searchQueryProvider.notifier).clear();
-    ref.read(homeViewModelProvider.notifier).exitSearchMode();
   }
 }

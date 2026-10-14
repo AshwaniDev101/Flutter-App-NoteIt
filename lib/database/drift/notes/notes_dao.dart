@@ -12,6 +12,9 @@ final notesDaoProvider = Provider(
       (ref) => ref.watch(localDatabaseProvider).notesDao,
 );
 
+/// Database sorting options for active notes query
+enum NoteSortPreference { name, createdAt, updatedAt }
+
 @DriftAccessor(tables: [Notes])
 class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
   NotesDao(super.db);
@@ -46,6 +49,43 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
 
   Stream<List<Note>> watchAllNotes() {
     return select(notes).watch();
+  }
+
+  /// Watches active (non-deleted, non-archived) notes sorted directly by SQLite:
+  /// 1. Pinned notes first (pinnedAt IS NOT NULL), sorted by pinnedAt timestamp descending.
+  /// 2. Unpinned notes sorted according to [sortOption] (name, createdAt, or updatedAt).
+  Stream<List<Note>> watchSortedNotes(NoteSortPreference sortOption) {
+    return (select(notes)
+      ..where((t) => t.deletedAt.isNull() & t.archivedAt.isNull())
+      ..orderBy([
+        // Pinned notes first (pinnedAt != null), newest pinned first
+        (t) => OrderingTerm(
+          expression: t.pinnedAt,
+          mode: OrderingMode.desc,
+          nulls: NullsOrder.last,
+        ),
+        // Secondary sort choice
+        (t) {
+          switch (sortOption) {
+            case NoteSortPreference.name:
+              return OrderingTerm(
+                expression: t.title.collate(Collate.noCase),
+                mode: OrderingMode.asc,
+              );
+            case NoteSortPreference.createdAt:
+              return OrderingTerm(
+                expression: t.createdAt,
+                mode: OrderingMode.desc,
+              );
+            case NoteSortPreference.updatedAt:
+              return OrderingTerm(
+                expression: t.updatedAt,
+                mode: OrderingMode.desc,
+              );
+          }
+        },
+      ]))
+    .watch();
   }
 
   Future<Note> getNoteById(String uuid) {

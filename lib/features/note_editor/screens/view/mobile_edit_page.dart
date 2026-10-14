@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:noteit/database/drift/local_database.dart';
 
+import '../../../../shared/widgets/note_card/core/note_action_controller.dart';
 import '../../../../shared/widgets/snack_bar_manager.dart';
 import '../../../home/view/desktop/right_panel/core/navigator.dart';
 import '../../widgets/note_editor_options.dart';
@@ -31,6 +32,7 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
 
   bool _isAutoSyncingTitle = false;
   late bool _isLocked;
+  late bool _isPinned;
   bool _hasTriggeredFinalSave = false;
   bool _hasCreatedNewNote = false;
 
@@ -49,6 +51,7 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
     super.initState();
     _viewModel = ref.read(editNoteViewModelProvider.notifier);
     _isLocked = widget.existingNote?.lockedAt != null;
+    _isPinned = widget.existingNote?.pinnedAt != null;
 
     _titleController = TextEditingController(text: widget.existingNote?.title ?? '');
     _contentController = TextEditingController(text: widget.existingNote?.content ?? '');
@@ -164,15 +167,26 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
           title: _buildTitleField(),
           // actions: [if (!_isNewNote) _buildOptionMenu(), const SizedBox(width: 8)],
           actions: [ NoteEditorOptionButton(
-
             isLocked: _isLocked,
-            isPinned: widget.existingNote?.pinnedAt != null,
-            onPressed: (NoteEditorOption option) {
+            isPinned: _isPinned,
+            onPressed: (NoteEditorOption option) async {
               switch (option) {
                 case NoteEditorOption.delete:
                   _handleDeleteNote();
                   break;
                 case NoteEditorOption.pin:
+                  if (_isNewNote) {
+                    SnackBarManager.show(msg: 'Please save the note first', type: SnackBarMessageType.error);
+                    return;
+                  }
+                  final targetUuid = widget.existingNote!.uuid;
+                  final actionsController = ref.read(noteActionsControllerProvider);
+                  await actionsController.togglePinNotes([targetUuid]);
+                  if (mounted) {
+                    setState(() {
+                      _isPinned = !_isPinned;
+                    });
+                  }
                   break;
                 case NoteEditorOption.lock:
                   _handleLockToggle();
@@ -345,44 +359,7 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
     );
   }
 
-  /// Used on Mobile: Hides extra actions (Lock, Delete) in an overflow menu to save space.
-  Widget _buildOptionMenu() {
-    return PopupMenuButton<String>(
-      icon: const Icon(Icons.more_vert_rounded),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      onSelected: (String value) async {
-        if (value == 'toggle_lock') {
-          _handleLockToggle();
-        } else if (value == 'delete') {
-          _handleDeleteNote();
-        }
-      },
-      itemBuilder: (BuildContext context) {
-        return [
-          PopupMenuItem(
-            value: 'toggle_lock',
-            child: Row(
-              children: [
-                Icon(_isLocked ? Icons.lock_clock_outlined : Icons.lock_outline, size: 16),
-                const SizedBox(width: 12),
-                Text(_isLocked ? 'Remove Lock' : 'Lock Note'),
-              ],
-            ),
-          ),
-          const PopupMenuItem(
-            value: 'delete',
-            child: Row(
-              children: [
-                Icon(Icons.delete_outline, size: 16),
-                SizedBox(width: 12),
-                Text('Delete Note'),
-              ],
-            ),
-          ),
-        ];
-      },
-    );
-  }
+
 
   Future<void> _handleLockToggle() async {
     bool isCurrentlyLocked = _isLocked;

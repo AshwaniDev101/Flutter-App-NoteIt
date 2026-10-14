@@ -5,15 +5,14 @@ import 'package:noteit/core/routing/routing.dart';
 import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/features/home/view/shared/icon_tray/icon_tray.dart';
 import 'package:noteit/features/home/view/shared/select_mode_app_bars.dart';
+import 'package:noteit/features/home/view/shared/tag_sort_view_menu.dart';
+import 'package:noteit/features/home/viewmodel/viewmodel.dart';
+import 'package:noteit/shared/widgets/note_card/dynamic_notes_layout.dart';
 
-import '../../../../../database/sync/sync_orchestrator.dart';
-import '../../../../database/sync/local_sync_service.dart';
+import '../../../../database/sync/sync_orchestrator.dart';
 import '../../../drawer/mobile_app_drawer.dart';
-import '../../viewmodel/viewmodel.dart';
-import '../../core/providers.dart';
-import '../../../../shared/widgets/note_card/dynamic_notes_layout.dart';
-import '../../../lock/password_prompt_helper.dart';
-import '../shared/tag_sort_view_menu.dart';
+import '../../core/note_tap_handler.dart';
+import '../shared/home_search_bar.dart';
 
 class MobileHomePage extends ConsumerStatefulWidget {
   const MobileHomePage({super.key});
@@ -41,29 +40,14 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
     super.dispose();
   }
 
-  void _clearSearch() {
-    _searchController.clear();
-    ref.read(searchQueryProvider.notifier).clear();
-    ref.read(homeViewModelProvider.notifier).exitSearchMode();
-  }
-
-  void _handleNoteTap(Note note) async {
-    if (note.lockedAt != null) {
-      final success = await PasswordPromptHelper.promptAndVerify(context, ref, note);
-      if (success && mounted) {
-        context.push(AppRoutes.edit, extra: note);
-      }
-    } else {
-      context.push(AppRoutes.edit, extra: note);
-    }
+  void _handleNoteTap(Note note) {
+    NoteTapHandler.openNote(context, ref, note);
   }
 
   @override
   Widget build(BuildContext context) {
     final homeState = ref.watch(homeViewModelProvider);
     final viewModel = ref.read(homeViewModelProvider.notifier);
-
-    final colorScheme = Theme.of(context).colorScheme;
 
     // Watched solely to keep the sync manager alive in the widget tree.
     ref.watch(syncOrchestratorProvider);
@@ -74,16 +58,13 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
         if (!didPop && homeState.isSelectMode) viewModel.clearSelection();
       },
       child: Scaffold(
-
-        drawer: AppDrawer(),
-        appBar: _buildAppBar(homeState, viewModel),
+        drawer: const AppDrawer(),
+        appBar: _buildAppBar(homeState),
         floatingActionButton: FloatingActionButton(
-
           onPressed: () => context.push(AppRoutes.edit),
-            elevation: 3,
+          elevation: 3,
           child: const Icon(Icons.edit),
         ),
-
         body: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -92,45 +73,14 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
               child: Row(
                 children: [
                   Expanded(
-                    child: TextField(
+                    child: HomeSearchBar(
                       controller: _searchController,
-                      decoration: InputDecoration(
-                        hintText: 'Search notes...',
-                        prefixIcon: const Icon(Icons.search),
-
-                        suffixIcon: ValueListenableBuilder<TextEditingValue>(
-                          valueListenable: _searchController,
-                          builder: (context, value, child) {
-                            return value.text.isNotEmpty
-                                ? IconButton(icon: const Icon(Icons.clear, size: 20), onPressed: _clearSearch)
-                                : const SizedBox.shrink();
-                          },
-                        ),
-
-                        filled: true,
-                        fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30),
-                          borderSide: BorderSide.none,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                      ),
-                      onTap: () {
-                        if (!homeState.isSearchMode) viewModel.enterSearchMode();
-                      },
-                      onChanged: (value) {
-                        if (value.isNotEmpty && !homeState.isSearchMode) viewModel.enterSearchMode();
-                        if (value.isEmpty) {
-                          _clearSearch();
-                        } else {
-                          ref.read(searchQueryProvider.notifier).updateQuery(value);
-                        }
-                      },
+                      hintText: 'Search notes...',
                     ),
                   ),
                   const SizedBox(width: 8),
 
-                  FolderSortViewButton(),
+                  const FolderSortViewButton(),
 
                   // SortFilterOptionMenu(),
                   // _buildFilterMenu(
@@ -142,7 +92,6 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
               ),
             ),
             Expanded(
-
               child: DynamicNotesLayout(
                 isSelectMode: homeState.isSelectMode,
                 noteIds: homeState.selectedNoteIds,
@@ -168,22 +117,10 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
     );
   }
 
-  PreferredSizeWidget _buildAppBar(HomePageState state, HomeViewModel viewModel) {
-    // Just to get Connection state from local sync service
-    final SyncConnectionState syncConnectionState = ref.watch(localSyncServiceProvider);
-    final isConnected = syncConnectionState == SyncConnectionState.connected;
-    // Getting the sync state from the orchestrator
-    final isSyncing = ref.watch(isSyncingProvider);
-
+  PreferredSizeWidget _buildAppBar(HomePageState state) {
     if (state.isSelectMode) {
       return SelectModeAppBar(
         noteIds: state.selectedNoteIds,
-        onClearSelection: viewModel.clearSelection,
-        onSelectAll: () {
-          // Map to UUIDs instead of integer IDs
-          final allNoteUuids = (ref.read(filteredNotesProvider).value ?? []).map((n) => n.uuid).toList();
-          viewModel.toggleSelectAll(allNoteUuids);
-        },
       );
     }
     return AppBar(
@@ -191,9 +128,9 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
       // title: const Text('Notes'),
       elevation: 0,
       // centerTitle: true,
-      actions: [
+      actions: const [
         IconTray(),
-        const SizedBox(width: 8),
+        SizedBox(width: 8),
       ],
     );
   }

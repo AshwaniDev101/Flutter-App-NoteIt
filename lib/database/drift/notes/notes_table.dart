@@ -20,7 +20,8 @@ import 'package:uuid/uuid.dart';
 // We index our heaviest queries: opening a folder (folder_id), finding
 // notes that need to be synced (updated_at), and filtering out trash (deleted_at).
 @TableIndex(name: 'idx_notes_updated_at', columns: {#updatedAt})
-@TableIndex(name: 'idx_notes_deleted_at', columns: {#deletedAt})
+@TableIndex(name: 'idx_notes_active', columns: {#deletedAt, #archivedAt})
+@TableIndex(name: 'idx_notes_folder', columns: {#folderId})
 class Notes extends Table {
   // PRIMARY KEY
   // completely offline on multiple devices without ID collisions when they finally sync.

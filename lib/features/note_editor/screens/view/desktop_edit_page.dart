@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:noteit/core/device_info.dart';
 import 'package:noteit/database/drift/local_database.dart';
 
+import 'package:noteit/database/drift/notes/notes_dao.dart';
 import '../../../../shared/widgets/app_scaffold.dart';
 import '../../../../shared/widgets/note_card/core/note_action_controller.dart';
 import '../../../../shared/widgets/snack_bar_manager.dart';
@@ -247,8 +248,11 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
                     // _handleDeleteNote();
                     break;
                   case NoteEditorOption.pin:
-
                     await actionsController.togglePinNotes([targetUuid]);
+                    try {
+                      final updatedNote = await ref.read(notesDaoProvider).getNoteById(targetUuid);
+                      ref.read(activeNoteProvider.notifier).setNote(updatedNote);
+                    } catch (_) {}
                     if (mounted) setState(() {}); // Refresh the editor UI
                     break;
                   case NoteEditorOption.lock:

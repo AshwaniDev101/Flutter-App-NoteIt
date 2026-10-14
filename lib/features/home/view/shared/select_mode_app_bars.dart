@@ -5,25 +5,48 @@ import '../../../../core/util/platform_helper.dart';
 import '../../../../database/drift/notes/notes_dao.dart';
 import '../../core/providers.dart';
 
+import '../../viewmodel/viewmodel.dart';
+
+/// App Bar displayed when selection mode is active on Home screens.
+///
+/// Features:
+/// - Displays count of currently selected notes.
+/// - Provides "Select All" / "Deselect All" button (defaults to toggling all filtered notes).
+/// - Provides "Delete Selected" batch action button.
+/// - Optional [onClearSelection] and [onSelectAll] overrides.
 class SelectModeAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final Set<String> noteIds;
-  final VoidCallback onClearSelection;
-  final VoidCallback onSelectAll;
+  final VoidCallback? onClearSelection;
+  final VoidCallback? onSelectAll;
 
-  const SelectModeAppBar({super.key, required this.noteIds, required this.onClearSelection, required this.onSelectAll});
+  const SelectModeAppBar({
+    super.key,
+    required this.noteIds,
+    this.onClearSelection,
+    this.onSelectAll,
+  });
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final viewModel = ref.read(homeViewModelProvider.notifier);
     final currentNotes = ref.watch(filteredNotesProvider).value ?? [];
     final isAllSelected = currentNotes.isNotEmpty && noteIds.length == currentNotes.length;
+
+    // Use passed handlers or default to HomeViewModel Riverpod actions
+    final handleClearSelection = onClearSelection ?? viewModel.clearSelection;
+    final handleSelectAll = onSelectAll ??
+        () {
+          final allNoteUuids = currentNotes.map((n) => n.uuid).toList();
+          viewModel.toggleSelectAll(allNoteUuids);
+        };
 
     return AppBar(
       backgroundColor: Theme.of(context).colorScheme.primary,
       foregroundColor: Colors.white,
-      leading: IconButton(icon: const Icon(Icons.close), onPressed: onClearSelection),
+      leading: IconButton(icon: const Icon(Icons.close), onPressed: handleClearSelection),
       title: Text('${noteIds.length} Selected', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white)),
       actions: [
         Padding(
@@ -35,7 +58,7 @@ class SelectModeAppBar extends ConsumerWidget implements PreferredSizeWidget {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
               padding: const EdgeInsets.symmetric(horizontal: 16),
             ),
-            onPressed: onSelectAll,
+            onPressed: handleSelectAll,
             child: Text(isAllSelected ? 'Deselect All' : 'Select All'),
           ),
         ),
@@ -44,10 +67,11 @@ class SelectModeAppBar extends ConsumerWidget implements PreferredSizeWidget {
           onPressed: () async {
             final noteDao = ref.read(notesDaoProvider);
 
+            // Soft-delete selected notes and sync
             await noteDao.softDeleteNotes(noteIds, platform: PlatformHelper.name);
 
             ref.read(syncOrchestratorProvider).triggerSync();
-            onClearSelection();
+            handleClearSelection();
           },
         ),
       ],
@@ -55,7 +79,7 @@ class SelectModeAppBar extends ConsumerWidget implements PreferredSizeWidget {
   }
 }
 
-// SEARCH MODE APP BAR
+/// App Bar displayed when search mode is active.
 class SearchModeAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final TextEditingController searchController;
   final VoidCallback onExitSearchMode;

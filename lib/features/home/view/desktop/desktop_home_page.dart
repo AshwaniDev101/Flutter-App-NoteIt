@@ -3,15 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:noteit/database/drift/local_database.dart';
+import 'package:noteit/features/home/core/note_tap_handler.dart';
 import 'package:noteit/features/home/view/desktop/right_panel/core/navigator.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../../database/drift/keybindings/keybindings_dao.dart';
 import '../../../../database/sync/sync_orchestrator.dart';
 import '../../../keybinding/shortcut_config.dart';
-import '../../../lock/lock_manger/lock_manager.dart';
 import '../../core/providers.dart';
-import '../../../lock/password_prompt_helper.dart';
 import '../../viewmodel/viewmodel.dart';
 import 'desktop_left_panel.dart';
 import 'right_panel/desktop_right_panel.dart';
@@ -118,25 +117,8 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
     return false; // MUST return false so we don't block normal typing!
   }
 
-  void _handleNoteTap(Note note) async {
-    // come back to the note editor if not already there
-    ref.read(desktopRightPanelViewProvider.notifier).setView(RightPanelPageOptions.allNotes);
-
-    final isSessionUnlocked = ref.watch(lockManagerProvider).sessionUnlockedNoteIds.contains(note.uuid);
-
-    // UPGRADED: isLocked is now lockedAt != null
-    if (note.lockedAt != null && !isSessionUnlocked) {
-      // The Shell coordinates the security check
-      final success = await PasswordPromptHelper.promptAndVerify(context, ref, note);
-
-      // If successful, update the state. No 'mounted' check needed for Riverpod.
-      if (success) {
-        ref.read(activeNoteProvider.notifier).setNote(note);
-      }
-    } else {
-      // Unlocked notes open instantly
-      ref.read(activeNoteProvider.notifier).setNote(note);
-    }
+  void _handleNoteTap(Note note) {
+    NoteTapHandler.openNote(context, ref, note);
   }
 
   /// Injects an empty, temporary "shell" note into the editor panel.
