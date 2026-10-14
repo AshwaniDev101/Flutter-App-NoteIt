@@ -31,24 +31,23 @@ class _ExportNotesPageState extends ConsumerState<ExportNotesPage> {
     'title': true,
     'content': true,
     'color': false,
-    'isPinned': false,
-    'isArchived': false,
-    'isLocked': false,
-    'position': false,
+    'pinnedAt': false,
+    'archivedAt': false,
+    'lockedAt': false,
     'tags': true,
-    'reminderAt': false,
-    'hasAttachments': false,
-    'contentType': false,
-    'isShared': false,
     'folderId': false,
+    'reminderAt': false,
+    'localAttachmentPath': false,
+    'cloudAttachmentUrl': false,
     'ownerUid': false,
-    'ownerEmail': false,
     'createdAt': true,
     'updatedAt': true,
     'deletedAt': false,
+    'schemaVersion': false,
+    'contentVersion': false,
+    'updateCounter': false,
     'cloudSyncStatus': false,
     'localSyncStatus': false,
-    'versionCounter': false,
     'creationPlatform': false,
     'creationDevice': false,
     'lastEditedPlatform': false,
@@ -90,7 +89,10 @@ class _ExportNotesPageState extends ConsumerState<ExportNotesPage> {
 
       final notesToExport = allNotes.where((note) {
         if (note.deletedAt != null) return false;
-        if (note.isLocked && !_includeLockedNotes) return false;
+
+        // UPGRADED: isLocked is now lockedAt != null
+        if (note.lockedAt != null && !_includeLockedNotes) return false;
+
         return true;
       }).toList();
 

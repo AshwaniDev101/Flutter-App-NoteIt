@@ -35,22 +35,29 @@ class NoteDetailsPage extends ConsumerWidget {
               icon: Icons.design_services_outlined,
               children: [
                 _MetadataItem(label: 'Color (Hex)', value: '0x${note.color.toRadixString(16).toUpperCase()}'),
-                _MetadataItem(label: 'Is Pinned', value: note.isPinned.toString()),
-                _MetadataItem(label: 'Is Archived', value: note.isArchived.toString()),
-                _MetadataItem(label: 'Is Locked', value: note.isLocked.toString()),
-                _MetadataItem(label: 'Position', value: note.position.toString()),
+                _MetadataItem(label: 'Pinned At', value: note.pinnedAt?.toIso8601String() ?? 'null'),
+                _MetadataItem(label: 'Archived At', value: note.archivedAt?.toIso8601String() ?? 'null'),
+                _MetadataItem(label: 'Locked At', value: note.lockedAt?.toIso8601String() ?? 'null'),
                 _MetadataItem(label: 'Tags', value: note.tags ?? 'null'),
                 _MetadataItem(label: 'Reminder At', value: note.reminderAt?.toIso8601String() ?? 'null'),
-                _MetadataItem(label: 'Has Attachments', value: note.hasAttachments.toString()),
               ],
             ),
             _buildSection(
               context,
-              title: 'Editor & Collab',
-              icon: Icons.edit_document,
+              title: 'Attachments & Media',
+              icon: Icons.attachment_outlined,
               children: [
-                _MetadataItem(label: 'Content Type', value: note.contentType),
-                _MetadataItem(label: 'Is Shared', value: note.isShared.toString()),
+                _MetadataItem(label: 'Local Path', value: note.localAttachmentPath ?? 'null', isMultiline: true),
+                _MetadataItem(label: 'Cloud URL', value: note.cloudAttachmentUrl ?? 'null', isMultiline: true),
+              ],
+            ),
+            _buildSection(
+              context,
+              title: 'Versioning & Schema',
+              icon: Icons.schema_outlined, // If not available, use Icons.layers_outlined
+              children: [
+                _MetadataItem(label: 'Schema Version', value: note.schemaVersion.toString()),
+                _MetadataItem(label: 'Content Version', value: note.contentVersion.toString()),
               ],
             ),
             _buildSection(
@@ -60,7 +67,6 @@ class NoteDetailsPage extends ConsumerWidget {
               children: [
                 _MetadataItem(label: 'Folder ID', value: note.folderId ?? 'null (root)'),
                 _MetadataItem(label: 'Owner UID', value: note.ownerUid ?? 'null'),
-                _MetadataItem(label: 'Owner Email', value: note.ownerEmail ?? 'null'),
               ],
             ),
             _buildSection(
@@ -80,7 +86,7 @@ class NoteDetailsPage extends ConsumerWidget {
               children: [
                 _MetadataItem(label: 'Cloud Sync Status', value: note.cloudSyncStatus.toString()),
                 _MetadataItem(label: 'Local Sync Status', value: note.localSyncStatus.toString()),
-                _MetadataItem(label: 'Version Counter', value: note.versionCounter.toString()),
+                _MetadataItem(label: 'Update Counter', value: note.updateCounter.toString()),
               ],
             ),
             _buildSection(
@@ -104,11 +110,11 @@ class NoteDetailsPage extends ConsumerWidget {
   }
 
   Widget _buildSection(
-    BuildContext context, {
-    required String title,
-    required IconData icon,
-    required List<Widget> children,
-  }) {
+      BuildContext context, {
+        required String title,
+        required IconData icon,
+        required List<Widget> children,
+      }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 24.0),
       child: Column(

@@ -33,7 +33,7 @@ final filteredNotesProvider = Provider<AsyncValue<List<Note>>>((ref) {
         final matchesTitle = note.title.toLowerCase().contains(searchQuery);
 
         // Security check: Only search content if the note is unlocked or currently open in session
-        final canReadContent = !note.isLocked || lockState.sessionUnlockedNoteIds.contains(note.uuid);
+        final canReadContent = note.lockedAt == null || lockState.sessionUnlockedNoteIds.contains(note.uuid);
         final matchesContent = canReadContent && note.content.toLowerCase().contains(searchQuery);
 
         return matchesTitle || matchesContent;

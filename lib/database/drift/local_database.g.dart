@@ -52,62 +52,95 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
     requiredDuringInsert: false,
     defaultValue: const Constant(0xFFFFFFFF),
   );
-  static const VerificationMeta _isPinnedMeta = const VerificationMeta(
-    'isPinned',
+  static const VerificationMeta _schemaVersionMeta = const VerificationMeta(
+    'schemaVersion',
   );
   @override
-  late final GeneratedColumn<bool> isPinned = GeneratedColumn<bool>(
-    'is_pinned',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("is_pinned" IN (0, 1))',
-    ),
-    defaultValue: const Constant(false),
-  );
-  static const VerificationMeta _isArchivedMeta = const VerificationMeta(
-    'isArchived',
-  );
-  @override
-  late final GeneratedColumn<bool> isArchived = GeneratedColumn<bool>(
-    'is_archived',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("is_archived" IN (0, 1))',
-    ),
-    defaultValue: const Constant(false),
-  );
-  static const VerificationMeta _isLockedMeta = const VerificationMeta(
-    'isLocked',
-  );
-  @override
-  late final GeneratedColumn<bool> isLocked = GeneratedColumn<bool>(
-    'is_locked',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("is_locked" IN (0, 1))',
-    ),
-    defaultValue: const Constant(false),
-  );
-  static const VerificationMeta _positionMeta = const VerificationMeta(
-    'position',
-  );
-  @override
-  late final GeneratedColumn<int> position = GeneratedColumn<int>(
-    'position',
+  late final GeneratedColumn<int> schemaVersion = GeneratedColumn<int>(
+    'schema_version',
     aliasedName,
     false,
     type: DriftSqlType.int,
     requiredDuringInsert: false,
-    defaultValue: const Constant(0),
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _contentVersionMeta = const VerificationMeta(
+    'contentVersion',
+  );
+  @override
+  late final GeneratedColumn<int> contentVersion = GeneratedColumn<int>(
+    'content_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _pinnedAtMeta = const VerificationMeta(
+    'pinnedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> pinnedAt = GeneratedColumn<DateTime>(
+    'pinned_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _archivedAtMeta = const VerificationMeta(
+    'archivedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> archivedAt = GeneratedColumn<DateTime>(
+    'archived_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lockedAtMeta = const VerificationMeta(
+    'lockedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lockedAt = GeneratedColumn<DateTime>(
+    'locked_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _localAttachmentPathMeta =
+      const VerificationMeta('localAttachmentPath');
+  @override
+  late final GeneratedColumn<String> localAttachmentPath =
+      GeneratedColumn<String>(
+        'local_attachment_path',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _cloudAttachmentUrlMeta =
+      const VerificationMeta('cloudAttachmentUrl');
+  @override
+  late final GeneratedColumn<String> cloudAttachmentUrl =
+      GeneratedColumn<String>(
+        'cloud_attachment_url',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _folderIdMeta = const VerificationMeta(
+    'folderId',
+  );
+  @override
+  late final GeneratedColumn<String> folderId = GeneratedColumn<String>(
+    'folder_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _tagsMeta = const VerificationMeta('tags');
   @override
@@ -129,76 +162,12 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _hasAttachmentsMeta = const VerificationMeta(
-    'hasAttachments',
-  );
-  @override
-  late final GeneratedColumn<bool> hasAttachments = GeneratedColumn<bool>(
-    'has_attachments',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("has_attachments" IN (0, 1))',
-    ),
-    defaultValue: const Constant(false),
-  );
-  static const VerificationMeta _contentTypeMeta = const VerificationMeta(
-    'contentType',
-  );
-  @override
-  late final GeneratedColumn<String> contentType = GeneratedColumn<String>(
-    'content_type',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-    defaultValue: const Constant('plain_text'),
-  );
-  static const VerificationMeta _isSharedMeta = const VerificationMeta(
-    'isShared',
-  );
-  @override
-  late final GeneratedColumn<bool> isShared = GeneratedColumn<bool>(
-    'is_shared',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("is_shared" IN (0, 1))',
-    ),
-    defaultValue: const Constant(false),
-  );
-  static const VerificationMeta _folderIdMeta = const VerificationMeta(
-    'folderId',
-  );
-  @override
-  late final GeneratedColumn<String> folderId = GeneratedColumn<String>(
-    'folder_id',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
   static const VerificationMeta _ownerUidMeta = const VerificationMeta(
     'ownerUid',
   );
   @override
   late final GeneratedColumn<String> ownerUid = GeneratedColumn<String>(
     'owner_uid',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _ownerEmailMeta = const VerificationMeta(
-    'ownerEmail',
-  );
-  @override
-  late final GeneratedColumn<String> ownerEmail = GeneratedColumn<String>(
-    'owner_email',
     aliasedName,
     true,
     type: DriftSqlType.string,
@@ -239,6 +208,18 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _updateCounterMeta = const VerificationMeta(
+    'updateCounter',
+  );
+  @override
+  late final GeneratedColumn<int> updateCounter = GeneratedColumn<int>(
+    'update_counter',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
   static const VerificationMeta _cloudSyncStatusMeta = const VerificationMeta(
     'cloudSyncStatus',
   );
@@ -262,18 +243,6 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
     type: DriftSqlType.int,
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
-  );
-  static const VerificationMeta _versionCounterMeta = const VerificationMeta(
-    'versionCounter',
-  );
-  @override
-  late final GeneratedColumn<int> versionCounter = GeneratedColumn<int>(
-    'version_counter',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultValue: const Constant(1),
   );
   static const VerificationMeta _creationPlatformMeta = const VerificationMeta(
     'creationPlatform',
@@ -347,24 +316,23 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
     title,
     content,
     color,
-    isPinned,
-    isArchived,
-    isLocked,
-    position,
+    schemaVersion,
+    contentVersion,
+    pinnedAt,
+    archivedAt,
+    lockedAt,
+    localAttachmentPath,
+    cloudAttachmentUrl,
+    folderId,
     tags,
     reminderAt,
-    hasAttachments,
-    contentType,
-    isShared,
-    folderId,
     ownerUid,
-    ownerEmail,
     createdAt,
     updatedAt,
     deletedAt,
+    updateCounter,
     cloudSyncStatus,
     localSyncStatus,
-    versionCounter,
     creationPlatform,
     creationDevice,
     lastEditedPlatform,
@@ -412,28 +380,64 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
         color.isAcceptableOrUnknown(data['color']!, _colorMeta),
       );
     }
-    if (data.containsKey('is_pinned')) {
+    if (data.containsKey('schema_version')) {
       context.handle(
-        _isPinnedMeta,
-        isPinned.isAcceptableOrUnknown(data['is_pinned']!, _isPinnedMeta),
+        _schemaVersionMeta,
+        schemaVersion.isAcceptableOrUnknown(
+          data['schema_version']!,
+          _schemaVersionMeta,
+        ),
       );
     }
-    if (data.containsKey('is_archived')) {
+    if (data.containsKey('content_version')) {
       context.handle(
-        _isArchivedMeta,
-        isArchived.isAcceptableOrUnknown(data['is_archived']!, _isArchivedMeta),
+        _contentVersionMeta,
+        contentVersion.isAcceptableOrUnknown(
+          data['content_version']!,
+          _contentVersionMeta,
+        ),
       );
     }
-    if (data.containsKey('is_locked')) {
+    if (data.containsKey('pinned_at')) {
       context.handle(
-        _isLockedMeta,
-        isLocked.isAcceptableOrUnknown(data['is_locked']!, _isLockedMeta),
+        _pinnedAtMeta,
+        pinnedAt.isAcceptableOrUnknown(data['pinned_at']!, _pinnedAtMeta),
       );
     }
-    if (data.containsKey('position')) {
+    if (data.containsKey('archived_at')) {
       context.handle(
-        _positionMeta,
-        position.isAcceptableOrUnknown(data['position']!, _positionMeta),
+        _archivedAtMeta,
+        archivedAt.isAcceptableOrUnknown(data['archived_at']!, _archivedAtMeta),
+      );
+    }
+    if (data.containsKey('locked_at')) {
+      context.handle(
+        _lockedAtMeta,
+        lockedAt.isAcceptableOrUnknown(data['locked_at']!, _lockedAtMeta),
+      );
+    }
+    if (data.containsKey('local_attachment_path')) {
+      context.handle(
+        _localAttachmentPathMeta,
+        localAttachmentPath.isAcceptableOrUnknown(
+          data['local_attachment_path']!,
+          _localAttachmentPathMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cloud_attachment_url')) {
+      context.handle(
+        _cloudAttachmentUrlMeta,
+        cloudAttachmentUrl.isAcceptableOrUnknown(
+          data['cloud_attachment_url']!,
+          _cloudAttachmentUrlMeta,
+        ),
+      );
+    }
+    if (data.containsKey('folder_id')) {
+      context.handle(
+        _folderIdMeta,
+        folderId.isAcceptableOrUnknown(data['folder_id']!, _folderIdMeta),
       );
     }
     if (data.containsKey('tags')) {
@@ -448,46 +452,10 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
         reminderAt.isAcceptableOrUnknown(data['reminder_at']!, _reminderAtMeta),
       );
     }
-    if (data.containsKey('has_attachments')) {
-      context.handle(
-        _hasAttachmentsMeta,
-        hasAttachments.isAcceptableOrUnknown(
-          data['has_attachments']!,
-          _hasAttachmentsMeta,
-        ),
-      );
-    }
-    if (data.containsKey('content_type')) {
-      context.handle(
-        _contentTypeMeta,
-        contentType.isAcceptableOrUnknown(
-          data['content_type']!,
-          _contentTypeMeta,
-        ),
-      );
-    }
-    if (data.containsKey('is_shared')) {
-      context.handle(
-        _isSharedMeta,
-        isShared.isAcceptableOrUnknown(data['is_shared']!, _isSharedMeta),
-      );
-    }
-    if (data.containsKey('folder_id')) {
-      context.handle(
-        _folderIdMeta,
-        folderId.isAcceptableOrUnknown(data['folder_id']!, _folderIdMeta),
-      );
-    }
     if (data.containsKey('owner_uid')) {
       context.handle(
         _ownerUidMeta,
         ownerUid.isAcceptableOrUnknown(data['owner_uid']!, _ownerUidMeta),
-      );
-    }
-    if (data.containsKey('owner_email')) {
-      context.handle(
-        _ownerEmailMeta,
-        ownerEmail.isAcceptableOrUnknown(data['owner_email']!, _ownerEmailMeta),
       );
     }
     if (data.containsKey('created_at')) {
@@ -508,6 +476,15 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
         deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
       );
     }
+    if (data.containsKey('update_counter')) {
+      context.handle(
+        _updateCounterMeta,
+        updateCounter.isAcceptableOrUnknown(
+          data['update_counter']!,
+          _updateCounterMeta,
+        ),
+      );
+    }
     if (data.containsKey('cloud_sync_status')) {
       context.handle(
         _cloudSyncStatusMeta,
@@ -523,15 +500,6 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
         localSyncStatus.isAcceptableOrUnknown(
           data['local_sync_status']!,
           _localSyncStatusMeta,
-        ),
-      );
-    }
-    if (data.containsKey('version_counter')) {
-      context.handle(
-        _versionCounterMeta,
-        versionCounter.isAcceptableOrUnknown(
-          data['version_counter']!,
-          _versionCounterMeta,
         ),
       );
     }
@@ -614,22 +582,38 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
         DriftSqlType.int,
         data['${effectivePrefix}color'],
       )!,
-      isPinned: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_pinned'],
-      )!,
-      isArchived: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_archived'],
-      )!,
-      isLocked: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_locked'],
-      )!,
-      position: attachedDatabase.typeMapping.read(
+      schemaVersion: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
-        data['${effectivePrefix}position'],
+        data['${effectivePrefix}schema_version'],
       )!,
+      contentVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}content_version'],
+      )!,
+      pinnedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}pinned_at'],
+      ),
+      archivedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}archived_at'],
+      ),
+      lockedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}locked_at'],
+      ),
+      localAttachmentPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}local_attachment_path'],
+      ),
+      cloudAttachmentUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cloud_attachment_url'],
+      ),
+      folderId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}folder_id'],
+      ),
       tags: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}tags'],
@@ -638,29 +622,9 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}reminder_at'],
       ),
-      hasAttachments: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}has_attachments'],
-      )!,
-      contentType: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}content_type'],
-      )!,
-      isShared: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_shared'],
-      )!,
-      folderId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}folder_id'],
-      ),
       ownerUid: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}owner_uid'],
-      ),
-      ownerEmail: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}owner_email'],
       ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
@@ -674,6 +638,10 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}deleted_at'],
       ),
+      updateCounter: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}update_counter'],
+      )!,
       cloudSyncStatus: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}cloud_sync_status'],
@@ -681,10 +649,6 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
       localSyncStatus: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}local_sync_status'],
-      )!,
-      versionCounter: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}version_counter'],
       )!,
       creationPlatform: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -724,24 +688,23 @@ class Note extends DataClass implements Insertable<Note> {
   final String title;
   final String content;
   final int color;
-  final bool isPinned;
-  final bool isArchived;
-  final bool isLocked;
-  final int position;
+  final int schemaVersion;
+  final int contentVersion;
+  final DateTime? pinnedAt;
+  final DateTime? archivedAt;
+  final DateTime? lockedAt;
+  final String? localAttachmentPath;
+  final String? cloudAttachmentUrl;
+  final String? folderId;
   final String? tags;
   final DateTime? reminderAt;
-  final bool hasAttachments;
-  final String contentType;
-  final bool isShared;
-  final String? folderId;
   final String? ownerUid;
-  final String? ownerEmail;
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? deletedAt;
+  final int updateCounter;
   final int cloudSyncStatus;
   final int localSyncStatus;
-  final int versionCounter;
   final String? creationPlatform;
   final String? creationDevice;
   final String? lastEditedPlatform;
@@ -753,24 +716,23 @@ class Note extends DataClass implements Insertable<Note> {
     required this.title,
     required this.content,
     required this.color,
-    required this.isPinned,
-    required this.isArchived,
-    required this.isLocked,
-    required this.position,
+    required this.schemaVersion,
+    required this.contentVersion,
+    this.pinnedAt,
+    this.archivedAt,
+    this.lockedAt,
+    this.localAttachmentPath,
+    this.cloudAttachmentUrl,
+    this.folderId,
     this.tags,
     this.reminderAt,
-    required this.hasAttachments,
-    required this.contentType,
-    required this.isShared,
-    this.folderId,
     this.ownerUid,
-    this.ownerEmail,
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
+    required this.updateCounter,
     required this.cloudSyncStatus,
     required this.localSyncStatus,
-    required this.versionCounter,
     this.creationPlatform,
     this.creationDevice,
     this.lastEditedPlatform,
@@ -785,36 +747,43 @@ class Note extends DataClass implements Insertable<Note> {
     map['title'] = Variable<String>(title);
     map['content'] = Variable<String>(content);
     map['color'] = Variable<int>(color);
-    map['is_pinned'] = Variable<bool>(isPinned);
-    map['is_archived'] = Variable<bool>(isArchived);
-    map['is_locked'] = Variable<bool>(isLocked);
-    map['position'] = Variable<int>(position);
+    map['schema_version'] = Variable<int>(schemaVersion);
+    map['content_version'] = Variable<int>(contentVersion);
+    if (!nullToAbsent || pinnedAt != null) {
+      map['pinned_at'] = Variable<DateTime>(pinnedAt);
+    }
+    if (!nullToAbsent || archivedAt != null) {
+      map['archived_at'] = Variable<DateTime>(archivedAt);
+    }
+    if (!nullToAbsent || lockedAt != null) {
+      map['locked_at'] = Variable<DateTime>(lockedAt);
+    }
+    if (!nullToAbsent || localAttachmentPath != null) {
+      map['local_attachment_path'] = Variable<String>(localAttachmentPath);
+    }
+    if (!nullToAbsent || cloudAttachmentUrl != null) {
+      map['cloud_attachment_url'] = Variable<String>(cloudAttachmentUrl);
+    }
+    if (!nullToAbsent || folderId != null) {
+      map['folder_id'] = Variable<String>(folderId);
+    }
     if (!nullToAbsent || tags != null) {
       map['tags'] = Variable<String>(tags);
     }
     if (!nullToAbsent || reminderAt != null) {
       map['reminder_at'] = Variable<DateTime>(reminderAt);
     }
-    map['has_attachments'] = Variable<bool>(hasAttachments);
-    map['content_type'] = Variable<String>(contentType);
-    map['is_shared'] = Variable<bool>(isShared);
-    if (!nullToAbsent || folderId != null) {
-      map['folder_id'] = Variable<String>(folderId);
-    }
     if (!nullToAbsent || ownerUid != null) {
       map['owner_uid'] = Variable<String>(ownerUid);
-    }
-    if (!nullToAbsent || ownerEmail != null) {
-      map['owner_email'] = Variable<String>(ownerEmail);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     if (!nullToAbsent || deletedAt != null) {
       map['deleted_at'] = Variable<DateTime>(deletedAt);
     }
+    map['update_counter'] = Variable<int>(updateCounter);
     map['cloud_sync_status'] = Variable<int>(cloudSyncStatus);
     map['local_sync_status'] = Variable<int>(localSyncStatus);
-    map['version_counter'] = Variable<int>(versionCounter);
     if (!nullToAbsent || creationPlatform != null) {
       map['creation_platform'] = Variable<String>(creationPlatform);
     }
@@ -842,34 +811,41 @@ class Note extends DataClass implements Insertable<Note> {
       title: Value(title),
       content: Value(content),
       color: Value(color),
-      isPinned: Value(isPinned),
-      isArchived: Value(isArchived),
-      isLocked: Value(isLocked),
-      position: Value(position),
+      schemaVersion: Value(schemaVersion),
+      contentVersion: Value(contentVersion),
+      pinnedAt: pinnedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(pinnedAt),
+      archivedAt: archivedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(archivedAt),
+      lockedAt: lockedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lockedAt),
+      localAttachmentPath: localAttachmentPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(localAttachmentPath),
+      cloudAttachmentUrl: cloudAttachmentUrl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cloudAttachmentUrl),
+      folderId: folderId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(folderId),
       tags: tags == null && nullToAbsent ? const Value.absent() : Value(tags),
       reminderAt: reminderAt == null && nullToAbsent
           ? const Value.absent()
           : Value(reminderAt),
-      hasAttachments: Value(hasAttachments),
-      contentType: Value(contentType),
-      isShared: Value(isShared),
-      folderId: folderId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(folderId),
       ownerUid: ownerUid == null && nullToAbsent
           ? const Value.absent()
           : Value(ownerUid),
-      ownerEmail: ownerEmail == null && nullToAbsent
-          ? const Value.absent()
-          : Value(ownerEmail),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
       deletedAt: deletedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(deletedAt),
+      updateCounter: Value(updateCounter),
       cloudSyncStatus: Value(cloudSyncStatus),
       localSyncStatus: Value(localSyncStatus),
-      versionCounter: Value(versionCounter),
       creationPlatform: creationPlatform == null && nullToAbsent
           ? const Value.absent()
           : Value(creationPlatform),
@@ -901,24 +877,27 @@ class Note extends DataClass implements Insertable<Note> {
       title: serializer.fromJson<String>(json['title']),
       content: serializer.fromJson<String>(json['content']),
       color: serializer.fromJson<int>(json['color']),
-      isPinned: serializer.fromJson<bool>(json['isPinned']),
-      isArchived: serializer.fromJson<bool>(json['isArchived']),
-      isLocked: serializer.fromJson<bool>(json['isLocked']),
-      position: serializer.fromJson<int>(json['position']),
+      schemaVersion: serializer.fromJson<int>(json['schemaVersion']),
+      contentVersion: serializer.fromJson<int>(json['contentVersion']),
+      pinnedAt: serializer.fromJson<DateTime?>(json['pinnedAt']),
+      archivedAt: serializer.fromJson<DateTime?>(json['archivedAt']),
+      lockedAt: serializer.fromJson<DateTime?>(json['lockedAt']),
+      localAttachmentPath: serializer.fromJson<String?>(
+        json['localAttachmentPath'],
+      ),
+      cloudAttachmentUrl: serializer.fromJson<String?>(
+        json['cloudAttachmentUrl'],
+      ),
+      folderId: serializer.fromJson<String?>(json['folderId']),
       tags: serializer.fromJson<String?>(json['tags']),
       reminderAt: serializer.fromJson<DateTime?>(json['reminderAt']),
-      hasAttachments: serializer.fromJson<bool>(json['hasAttachments']),
-      contentType: serializer.fromJson<String>(json['contentType']),
-      isShared: serializer.fromJson<bool>(json['isShared']),
-      folderId: serializer.fromJson<String?>(json['folderId']),
       ownerUid: serializer.fromJson<String?>(json['ownerUid']),
-      ownerEmail: serializer.fromJson<String?>(json['ownerEmail']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      updateCounter: serializer.fromJson<int>(json['updateCounter']),
       cloudSyncStatus: serializer.fromJson<int>(json['cloudSyncStatus']),
       localSyncStatus: serializer.fromJson<int>(json['localSyncStatus']),
-      versionCounter: serializer.fromJson<int>(json['versionCounter']),
       creationPlatform: serializer.fromJson<String?>(json['creationPlatform']),
       creationDevice: serializer.fromJson<String?>(json['creationDevice']),
       lastEditedPlatform: serializer.fromJson<String?>(
@@ -937,24 +916,23 @@ class Note extends DataClass implements Insertable<Note> {
       'title': serializer.toJson<String>(title),
       'content': serializer.toJson<String>(content),
       'color': serializer.toJson<int>(color),
-      'isPinned': serializer.toJson<bool>(isPinned),
-      'isArchived': serializer.toJson<bool>(isArchived),
-      'isLocked': serializer.toJson<bool>(isLocked),
-      'position': serializer.toJson<int>(position),
+      'schemaVersion': serializer.toJson<int>(schemaVersion),
+      'contentVersion': serializer.toJson<int>(contentVersion),
+      'pinnedAt': serializer.toJson<DateTime?>(pinnedAt),
+      'archivedAt': serializer.toJson<DateTime?>(archivedAt),
+      'lockedAt': serializer.toJson<DateTime?>(lockedAt),
+      'localAttachmentPath': serializer.toJson<String?>(localAttachmentPath),
+      'cloudAttachmentUrl': serializer.toJson<String?>(cloudAttachmentUrl),
+      'folderId': serializer.toJson<String?>(folderId),
       'tags': serializer.toJson<String?>(tags),
       'reminderAt': serializer.toJson<DateTime?>(reminderAt),
-      'hasAttachments': serializer.toJson<bool>(hasAttachments),
-      'contentType': serializer.toJson<String>(contentType),
-      'isShared': serializer.toJson<bool>(isShared),
-      'folderId': serializer.toJson<String?>(folderId),
       'ownerUid': serializer.toJson<String?>(ownerUid),
-      'ownerEmail': serializer.toJson<String?>(ownerEmail),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'updateCounter': serializer.toJson<int>(updateCounter),
       'cloudSyncStatus': serializer.toJson<int>(cloudSyncStatus),
       'localSyncStatus': serializer.toJson<int>(localSyncStatus),
-      'versionCounter': serializer.toJson<int>(versionCounter),
       'creationPlatform': serializer.toJson<String?>(creationPlatform),
       'creationDevice': serializer.toJson<String?>(creationDevice),
       'lastEditedPlatform': serializer.toJson<String?>(lastEditedPlatform),
@@ -969,24 +947,23 @@ class Note extends DataClass implements Insertable<Note> {
     String? title,
     String? content,
     int? color,
-    bool? isPinned,
-    bool? isArchived,
-    bool? isLocked,
-    int? position,
+    int? schemaVersion,
+    int? contentVersion,
+    Value<DateTime?> pinnedAt = const Value.absent(),
+    Value<DateTime?> archivedAt = const Value.absent(),
+    Value<DateTime?> lockedAt = const Value.absent(),
+    Value<String?> localAttachmentPath = const Value.absent(),
+    Value<String?> cloudAttachmentUrl = const Value.absent(),
+    Value<String?> folderId = const Value.absent(),
     Value<String?> tags = const Value.absent(),
     Value<DateTime?> reminderAt = const Value.absent(),
-    bool? hasAttachments,
-    String? contentType,
-    bool? isShared,
-    Value<String?> folderId = const Value.absent(),
     Value<String?> ownerUid = const Value.absent(),
-    Value<String?> ownerEmail = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
     Value<DateTime?> deletedAt = const Value.absent(),
+    int? updateCounter,
     int? cloudSyncStatus,
     int? localSyncStatus,
-    int? versionCounter,
     Value<String?> creationPlatform = const Value.absent(),
     Value<String?> creationDevice = const Value.absent(),
     Value<String?> lastEditedPlatform = const Value.absent(),
@@ -998,24 +975,27 @@ class Note extends DataClass implements Insertable<Note> {
     title: title ?? this.title,
     content: content ?? this.content,
     color: color ?? this.color,
-    isPinned: isPinned ?? this.isPinned,
-    isArchived: isArchived ?? this.isArchived,
-    isLocked: isLocked ?? this.isLocked,
-    position: position ?? this.position,
+    schemaVersion: schemaVersion ?? this.schemaVersion,
+    contentVersion: contentVersion ?? this.contentVersion,
+    pinnedAt: pinnedAt.present ? pinnedAt.value : this.pinnedAt,
+    archivedAt: archivedAt.present ? archivedAt.value : this.archivedAt,
+    lockedAt: lockedAt.present ? lockedAt.value : this.lockedAt,
+    localAttachmentPath: localAttachmentPath.present
+        ? localAttachmentPath.value
+        : this.localAttachmentPath,
+    cloudAttachmentUrl: cloudAttachmentUrl.present
+        ? cloudAttachmentUrl.value
+        : this.cloudAttachmentUrl,
+    folderId: folderId.present ? folderId.value : this.folderId,
     tags: tags.present ? tags.value : this.tags,
     reminderAt: reminderAt.present ? reminderAt.value : this.reminderAt,
-    hasAttachments: hasAttachments ?? this.hasAttachments,
-    contentType: contentType ?? this.contentType,
-    isShared: isShared ?? this.isShared,
-    folderId: folderId.present ? folderId.value : this.folderId,
     ownerUid: ownerUid.present ? ownerUid.value : this.ownerUid,
-    ownerEmail: ownerEmail.present ? ownerEmail.value : this.ownerEmail,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    updateCounter: updateCounter ?? this.updateCounter,
     cloudSyncStatus: cloudSyncStatus ?? this.cloudSyncStatus,
     localSyncStatus: localSyncStatus ?? this.localSyncStatus,
-    versionCounter: versionCounter ?? this.versionCounter,
     creationPlatform: creationPlatform.present
         ? creationPlatform.value
         : this.creationPlatform,
@@ -1041,40 +1021,41 @@ class Note extends DataClass implements Insertable<Note> {
       title: data.title.present ? data.title.value : this.title,
       content: data.content.present ? data.content.value : this.content,
       color: data.color.present ? data.color.value : this.color,
-      isPinned: data.isPinned.present ? data.isPinned.value : this.isPinned,
-      isArchived: data.isArchived.present
-          ? data.isArchived.value
-          : this.isArchived,
-      isLocked: data.isLocked.present ? data.isLocked.value : this.isLocked,
-      position: data.position.present ? data.position.value : this.position,
+      schemaVersion: data.schemaVersion.present
+          ? data.schemaVersion.value
+          : this.schemaVersion,
+      contentVersion: data.contentVersion.present
+          ? data.contentVersion.value
+          : this.contentVersion,
+      pinnedAt: data.pinnedAt.present ? data.pinnedAt.value : this.pinnedAt,
+      archivedAt: data.archivedAt.present
+          ? data.archivedAt.value
+          : this.archivedAt,
+      lockedAt: data.lockedAt.present ? data.lockedAt.value : this.lockedAt,
+      localAttachmentPath: data.localAttachmentPath.present
+          ? data.localAttachmentPath.value
+          : this.localAttachmentPath,
+      cloudAttachmentUrl: data.cloudAttachmentUrl.present
+          ? data.cloudAttachmentUrl.value
+          : this.cloudAttachmentUrl,
+      folderId: data.folderId.present ? data.folderId.value : this.folderId,
       tags: data.tags.present ? data.tags.value : this.tags,
       reminderAt: data.reminderAt.present
           ? data.reminderAt.value
           : this.reminderAt,
-      hasAttachments: data.hasAttachments.present
-          ? data.hasAttachments.value
-          : this.hasAttachments,
-      contentType: data.contentType.present
-          ? data.contentType.value
-          : this.contentType,
-      isShared: data.isShared.present ? data.isShared.value : this.isShared,
-      folderId: data.folderId.present ? data.folderId.value : this.folderId,
       ownerUid: data.ownerUid.present ? data.ownerUid.value : this.ownerUid,
-      ownerEmail: data.ownerEmail.present
-          ? data.ownerEmail.value
-          : this.ownerEmail,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      updateCounter: data.updateCounter.present
+          ? data.updateCounter.value
+          : this.updateCounter,
       cloudSyncStatus: data.cloudSyncStatus.present
           ? data.cloudSyncStatus.value
           : this.cloudSyncStatus,
       localSyncStatus: data.localSyncStatus.present
           ? data.localSyncStatus.value
           : this.localSyncStatus,
-      versionCounter: data.versionCounter.present
-          ? data.versionCounter.value
-          : this.versionCounter,
       creationPlatform: data.creationPlatform.present
           ? data.creationPlatform.value
           : this.creationPlatform,
@@ -1103,24 +1084,23 @@ class Note extends DataClass implements Insertable<Note> {
           ..write('title: $title, ')
           ..write('content: $content, ')
           ..write('color: $color, ')
-          ..write('isPinned: $isPinned, ')
-          ..write('isArchived: $isArchived, ')
-          ..write('isLocked: $isLocked, ')
-          ..write('position: $position, ')
+          ..write('schemaVersion: $schemaVersion, ')
+          ..write('contentVersion: $contentVersion, ')
+          ..write('pinnedAt: $pinnedAt, ')
+          ..write('archivedAt: $archivedAt, ')
+          ..write('lockedAt: $lockedAt, ')
+          ..write('localAttachmentPath: $localAttachmentPath, ')
+          ..write('cloudAttachmentUrl: $cloudAttachmentUrl, ')
+          ..write('folderId: $folderId, ')
           ..write('tags: $tags, ')
           ..write('reminderAt: $reminderAt, ')
-          ..write('hasAttachments: $hasAttachments, ')
-          ..write('contentType: $contentType, ')
-          ..write('isShared: $isShared, ')
-          ..write('folderId: $folderId, ')
           ..write('ownerUid: $ownerUid, ')
-          ..write('ownerEmail: $ownerEmail, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
+          ..write('updateCounter: $updateCounter, ')
           ..write('cloudSyncStatus: $cloudSyncStatus, ')
           ..write('localSyncStatus: $localSyncStatus, ')
-          ..write('versionCounter: $versionCounter, ')
           ..write('creationPlatform: $creationPlatform, ')
           ..write('creationDevice: $creationDevice, ')
           ..write('lastEditedPlatform: $lastEditedPlatform, ')
@@ -1137,24 +1117,23 @@ class Note extends DataClass implements Insertable<Note> {
     title,
     content,
     color,
-    isPinned,
-    isArchived,
-    isLocked,
-    position,
+    schemaVersion,
+    contentVersion,
+    pinnedAt,
+    archivedAt,
+    lockedAt,
+    localAttachmentPath,
+    cloudAttachmentUrl,
+    folderId,
     tags,
     reminderAt,
-    hasAttachments,
-    contentType,
-    isShared,
-    folderId,
     ownerUid,
-    ownerEmail,
     createdAt,
     updatedAt,
     deletedAt,
+    updateCounter,
     cloudSyncStatus,
     localSyncStatus,
-    versionCounter,
     creationPlatform,
     creationDevice,
     lastEditedPlatform,
@@ -1170,24 +1149,23 @@ class Note extends DataClass implements Insertable<Note> {
           other.title == this.title &&
           other.content == this.content &&
           other.color == this.color &&
-          other.isPinned == this.isPinned &&
-          other.isArchived == this.isArchived &&
-          other.isLocked == this.isLocked &&
-          other.position == this.position &&
+          other.schemaVersion == this.schemaVersion &&
+          other.contentVersion == this.contentVersion &&
+          other.pinnedAt == this.pinnedAt &&
+          other.archivedAt == this.archivedAt &&
+          other.lockedAt == this.lockedAt &&
+          other.localAttachmentPath == this.localAttachmentPath &&
+          other.cloudAttachmentUrl == this.cloudAttachmentUrl &&
+          other.folderId == this.folderId &&
           other.tags == this.tags &&
           other.reminderAt == this.reminderAt &&
-          other.hasAttachments == this.hasAttachments &&
-          other.contentType == this.contentType &&
-          other.isShared == this.isShared &&
-          other.folderId == this.folderId &&
           other.ownerUid == this.ownerUid &&
-          other.ownerEmail == this.ownerEmail &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.deletedAt == this.deletedAt &&
+          other.updateCounter == this.updateCounter &&
           other.cloudSyncStatus == this.cloudSyncStatus &&
           other.localSyncStatus == this.localSyncStatus &&
-          other.versionCounter == this.versionCounter &&
           other.creationPlatform == this.creationPlatform &&
           other.creationDevice == this.creationDevice &&
           other.lastEditedPlatform == this.lastEditedPlatform &&
@@ -1201,24 +1179,23 @@ class NotesCompanion extends UpdateCompanion<Note> {
   final Value<String> title;
   final Value<String> content;
   final Value<int> color;
-  final Value<bool> isPinned;
-  final Value<bool> isArchived;
-  final Value<bool> isLocked;
-  final Value<int> position;
+  final Value<int> schemaVersion;
+  final Value<int> contentVersion;
+  final Value<DateTime?> pinnedAt;
+  final Value<DateTime?> archivedAt;
+  final Value<DateTime?> lockedAt;
+  final Value<String?> localAttachmentPath;
+  final Value<String?> cloudAttachmentUrl;
+  final Value<String?> folderId;
   final Value<String?> tags;
   final Value<DateTime?> reminderAt;
-  final Value<bool> hasAttachments;
-  final Value<String> contentType;
-  final Value<bool> isShared;
-  final Value<String?> folderId;
   final Value<String?> ownerUid;
-  final Value<String?> ownerEmail;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<DateTime?> deletedAt;
+  final Value<int> updateCounter;
   final Value<int> cloudSyncStatus;
   final Value<int> localSyncStatus;
-  final Value<int> versionCounter;
   final Value<String?> creationPlatform;
   final Value<String?> creationDevice;
   final Value<String?> lastEditedPlatform;
@@ -1231,24 +1208,23 @@ class NotesCompanion extends UpdateCompanion<Note> {
     this.title = const Value.absent(),
     this.content = const Value.absent(),
     this.color = const Value.absent(),
-    this.isPinned = const Value.absent(),
-    this.isArchived = const Value.absent(),
-    this.isLocked = const Value.absent(),
-    this.position = const Value.absent(),
+    this.schemaVersion = const Value.absent(),
+    this.contentVersion = const Value.absent(),
+    this.pinnedAt = const Value.absent(),
+    this.archivedAt = const Value.absent(),
+    this.lockedAt = const Value.absent(),
+    this.localAttachmentPath = const Value.absent(),
+    this.cloudAttachmentUrl = const Value.absent(),
+    this.folderId = const Value.absent(),
     this.tags = const Value.absent(),
     this.reminderAt = const Value.absent(),
-    this.hasAttachments = const Value.absent(),
-    this.contentType = const Value.absent(),
-    this.isShared = const Value.absent(),
-    this.folderId = const Value.absent(),
     this.ownerUid = const Value.absent(),
-    this.ownerEmail = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
+    this.updateCounter = const Value.absent(),
     this.cloudSyncStatus = const Value.absent(),
     this.localSyncStatus = const Value.absent(),
-    this.versionCounter = const Value.absent(),
     this.creationPlatform = const Value.absent(),
     this.creationDevice = const Value.absent(),
     this.lastEditedPlatform = const Value.absent(),
@@ -1262,24 +1238,23 @@ class NotesCompanion extends UpdateCompanion<Note> {
     required String title,
     required String content,
     this.color = const Value.absent(),
-    this.isPinned = const Value.absent(),
-    this.isArchived = const Value.absent(),
-    this.isLocked = const Value.absent(),
-    this.position = const Value.absent(),
+    this.schemaVersion = const Value.absent(),
+    this.contentVersion = const Value.absent(),
+    this.pinnedAt = const Value.absent(),
+    this.archivedAt = const Value.absent(),
+    this.lockedAt = const Value.absent(),
+    this.localAttachmentPath = const Value.absent(),
+    this.cloudAttachmentUrl = const Value.absent(),
+    this.folderId = const Value.absent(),
     this.tags = const Value.absent(),
     this.reminderAt = const Value.absent(),
-    this.hasAttachments = const Value.absent(),
-    this.contentType = const Value.absent(),
-    this.isShared = const Value.absent(),
-    this.folderId = const Value.absent(),
     this.ownerUid = const Value.absent(),
-    this.ownerEmail = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
+    this.updateCounter = const Value.absent(),
     this.cloudSyncStatus = const Value.absent(),
     this.localSyncStatus = const Value.absent(),
-    this.versionCounter = const Value.absent(),
     this.creationPlatform = const Value.absent(),
     this.creationDevice = const Value.absent(),
     this.lastEditedPlatform = const Value.absent(),
@@ -1294,24 +1269,23 @@ class NotesCompanion extends UpdateCompanion<Note> {
     Expression<String>? title,
     Expression<String>? content,
     Expression<int>? color,
-    Expression<bool>? isPinned,
-    Expression<bool>? isArchived,
-    Expression<bool>? isLocked,
-    Expression<int>? position,
+    Expression<int>? schemaVersion,
+    Expression<int>? contentVersion,
+    Expression<DateTime>? pinnedAt,
+    Expression<DateTime>? archivedAt,
+    Expression<DateTime>? lockedAt,
+    Expression<String>? localAttachmentPath,
+    Expression<String>? cloudAttachmentUrl,
+    Expression<String>? folderId,
     Expression<String>? tags,
     Expression<DateTime>? reminderAt,
-    Expression<bool>? hasAttachments,
-    Expression<String>? contentType,
-    Expression<bool>? isShared,
-    Expression<String>? folderId,
     Expression<String>? ownerUid,
-    Expression<String>? ownerEmail,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<DateTime>? deletedAt,
+    Expression<int>? updateCounter,
     Expression<int>? cloudSyncStatus,
     Expression<int>? localSyncStatus,
-    Expression<int>? versionCounter,
     Expression<String>? creationPlatform,
     Expression<String>? creationDevice,
     Expression<String>? lastEditedPlatform,
@@ -1325,24 +1299,25 @@ class NotesCompanion extends UpdateCompanion<Note> {
       if (title != null) 'title': title,
       if (content != null) 'content': content,
       if (color != null) 'color': color,
-      if (isPinned != null) 'is_pinned': isPinned,
-      if (isArchived != null) 'is_archived': isArchived,
-      if (isLocked != null) 'is_locked': isLocked,
-      if (position != null) 'position': position,
+      if (schemaVersion != null) 'schema_version': schemaVersion,
+      if (contentVersion != null) 'content_version': contentVersion,
+      if (pinnedAt != null) 'pinned_at': pinnedAt,
+      if (archivedAt != null) 'archived_at': archivedAt,
+      if (lockedAt != null) 'locked_at': lockedAt,
+      if (localAttachmentPath != null)
+        'local_attachment_path': localAttachmentPath,
+      if (cloudAttachmentUrl != null)
+        'cloud_attachment_url': cloudAttachmentUrl,
+      if (folderId != null) 'folder_id': folderId,
       if (tags != null) 'tags': tags,
       if (reminderAt != null) 'reminder_at': reminderAt,
-      if (hasAttachments != null) 'has_attachments': hasAttachments,
-      if (contentType != null) 'content_type': contentType,
-      if (isShared != null) 'is_shared': isShared,
-      if (folderId != null) 'folder_id': folderId,
       if (ownerUid != null) 'owner_uid': ownerUid,
-      if (ownerEmail != null) 'owner_email': ownerEmail,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
+      if (updateCounter != null) 'update_counter': updateCounter,
       if (cloudSyncStatus != null) 'cloud_sync_status': cloudSyncStatus,
       if (localSyncStatus != null) 'local_sync_status': localSyncStatus,
-      if (versionCounter != null) 'version_counter': versionCounter,
       if (creationPlatform != null) 'creation_platform': creationPlatform,
       if (creationDevice != null) 'creation_device': creationDevice,
       if (lastEditedPlatform != null)
@@ -1359,24 +1334,23 @@ class NotesCompanion extends UpdateCompanion<Note> {
     Value<String>? title,
     Value<String>? content,
     Value<int>? color,
-    Value<bool>? isPinned,
-    Value<bool>? isArchived,
-    Value<bool>? isLocked,
-    Value<int>? position,
+    Value<int>? schemaVersion,
+    Value<int>? contentVersion,
+    Value<DateTime?>? pinnedAt,
+    Value<DateTime?>? archivedAt,
+    Value<DateTime?>? lockedAt,
+    Value<String?>? localAttachmentPath,
+    Value<String?>? cloudAttachmentUrl,
+    Value<String?>? folderId,
     Value<String?>? tags,
     Value<DateTime?>? reminderAt,
-    Value<bool>? hasAttachments,
-    Value<String>? contentType,
-    Value<bool>? isShared,
-    Value<String?>? folderId,
     Value<String?>? ownerUid,
-    Value<String?>? ownerEmail,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<DateTime?>? deletedAt,
+    Value<int>? updateCounter,
     Value<int>? cloudSyncStatus,
     Value<int>? localSyncStatus,
-    Value<int>? versionCounter,
     Value<String?>? creationPlatform,
     Value<String?>? creationDevice,
     Value<String?>? lastEditedPlatform,
@@ -1390,24 +1364,23 @@ class NotesCompanion extends UpdateCompanion<Note> {
       title: title ?? this.title,
       content: content ?? this.content,
       color: color ?? this.color,
-      isPinned: isPinned ?? this.isPinned,
-      isArchived: isArchived ?? this.isArchived,
-      isLocked: isLocked ?? this.isLocked,
-      position: position ?? this.position,
+      schemaVersion: schemaVersion ?? this.schemaVersion,
+      contentVersion: contentVersion ?? this.contentVersion,
+      pinnedAt: pinnedAt ?? this.pinnedAt,
+      archivedAt: archivedAt ?? this.archivedAt,
+      lockedAt: lockedAt ?? this.lockedAt,
+      localAttachmentPath: localAttachmentPath ?? this.localAttachmentPath,
+      cloudAttachmentUrl: cloudAttachmentUrl ?? this.cloudAttachmentUrl,
+      folderId: folderId ?? this.folderId,
       tags: tags ?? this.tags,
       reminderAt: reminderAt ?? this.reminderAt,
-      hasAttachments: hasAttachments ?? this.hasAttachments,
-      contentType: contentType ?? this.contentType,
-      isShared: isShared ?? this.isShared,
-      folderId: folderId ?? this.folderId,
       ownerUid: ownerUid ?? this.ownerUid,
-      ownerEmail: ownerEmail ?? this.ownerEmail,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
+      updateCounter: updateCounter ?? this.updateCounter,
       cloudSyncStatus: cloudSyncStatus ?? this.cloudSyncStatus,
       localSyncStatus: localSyncStatus ?? this.localSyncStatus,
-      versionCounter: versionCounter ?? this.versionCounter,
       creationPlatform: creationPlatform ?? this.creationPlatform,
       creationDevice: creationDevice ?? this.creationDevice,
       lastEditedPlatform: lastEditedPlatform ?? this.lastEditedPlatform,
@@ -1433,17 +1406,31 @@ class NotesCompanion extends UpdateCompanion<Note> {
     if (color.present) {
       map['color'] = Variable<int>(color.value);
     }
-    if (isPinned.present) {
-      map['is_pinned'] = Variable<bool>(isPinned.value);
+    if (schemaVersion.present) {
+      map['schema_version'] = Variable<int>(schemaVersion.value);
     }
-    if (isArchived.present) {
-      map['is_archived'] = Variable<bool>(isArchived.value);
+    if (contentVersion.present) {
+      map['content_version'] = Variable<int>(contentVersion.value);
     }
-    if (isLocked.present) {
-      map['is_locked'] = Variable<bool>(isLocked.value);
+    if (pinnedAt.present) {
+      map['pinned_at'] = Variable<DateTime>(pinnedAt.value);
     }
-    if (position.present) {
-      map['position'] = Variable<int>(position.value);
+    if (archivedAt.present) {
+      map['archived_at'] = Variable<DateTime>(archivedAt.value);
+    }
+    if (lockedAt.present) {
+      map['locked_at'] = Variable<DateTime>(lockedAt.value);
+    }
+    if (localAttachmentPath.present) {
+      map['local_attachment_path'] = Variable<String>(
+        localAttachmentPath.value,
+      );
+    }
+    if (cloudAttachmentUrl.present) {
+      map['cloud_attachment_url'] = Variable<String>(cloudAttachmentUrl.value);
+    }
+    if (folderId.present) {
+      map['folder_id'] = Variable<String>(folderId.value);
     }
     if (tags.present) {
       map['tags'] = Variable<String>(tags.value);
@@ -1451,23 +1438,8 @@ class NotesCompanion extends UpdateCompanion<Note> {
     if (reminderAt.present) {
       map['reminder_at'] = Variable<DateTime>(reminderAt.value);
     }
-    if (hasAttachments.present) {
-      map['has_attachments'] = Variable<bool>(hasAttachments.value);
-    }
-    if (contentType.present) {
-      map['content_type'] = Variable<String>(contentType.value);
-    }
-    if (isShared.present) {
-      map['is_shared'] = Variable<bool>(isShared.value);
-    }
-    if (folderId.present) {
-      map['folder_id'] = Variable<String>(folderId.value);
-    }
     if (ownerUid.present) {
       map['owner_uid'] = Variable<String>(ownerUid.value);
-    }
-    if (ownerEmail.present) {
-      map['owner_email'] = Variable<String>(ownerEmail.value);
     }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
@@ -1478,14 +1450,14 @@ class NotesCompanion extends UpdateCompanion<Note> {
     if (deletedAt.present) {
       map['deleted_at'] = Variable<DateTime>(deletedAt.value);
     }
+    if (updateCounter.present) {
+      map['update_counter'] = Variable<int>(updateCounter.value);
+    }
     if (cloudSyncStatus.present) {
       map['cloud_sync_status'] = Variable<int>(cloudSyncStatus.value);
     }
     if (localSyncStatus.present) {
       map['local_sync_status'] = Variable<int>(localSyncStatus.value);
-    }
-    if (versionCounter.present) {
-      map['version_counter'] = Variable<int>(versionCounter.value);
     }
     if (creationPlatform.present) {
       map['creation_platform'] = Variable<String>(creationPlatform.value);
@@ -1518,24 +1490,23 @@ class NotesCompanion extends UpdateCompanion<Note> {
           ..write('title: $title, ')
           ..write('content: $content, ')
           ..write('color: $color, ')
-          ..write('isPinned: $isPinned, ')
-          ..write('isArchived: $isArchived, ')
-          ..write('isLocked: $isLocked, ')
-          ..write('position: $position, ')
+          ..write('schemaVersion: $schemaVersion, ')
+          ..write('contentVersion: $contentVersion, ')
+          ..write('pinnedAt: $pinnedAt, ')
+          ..write('archivedAt: $archivedAt, ')
+          ..write('lockedAt: $lockedAt, ')
+          ..write('localAttachmentPath: $localAttachmentPath, ')
+          ..write('cloudAttachmentUrl: $cloudAttachmentUrl, ')
+          ..write('folderId: $folderId, ')
           ..write('tags: $tags, ')
           ..write('reminderAt: $reminderAt, ')
-          ..write('hasAttachments: $hasAttachments, ')
-          ..write('contentType: $contentType, ')
-          ..write('isShared: $isShared, ')
-          ..write('folderId: $folderId, ')
           ..write('ownerUid: $ownerUid, ')
-          ..write('ownerEmail: $ownerEmail, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
+          ..write('updateCounter: $updateCounter, ')
           ..write('cloudSyncStatus: $cloudSyncStatus, ')
           ..write('localSyncStatus: $localSyncStatus, ')
-          ..write('versionCounter: $versionCounter, ')
           ..write('creationPlatform: $creationPlatform, ')
           ..write('creationDevice: $creationDevice, ')
           ..write('lastEditedPlatform: $lastEditedPlatform, ')
@@ -1645,20 +1616,16 @@ class $SyncedDevicesTable extends SyncedDevices
         requiredDuringInsert: false,
         defaultValue: currentDateAndTime,
       );
-  static const VerificationMeta _isTrustedMeta = const VerificationMeta(
-    'isTrusted',
+  static const VerificationMeta _blockedAtMeta = const VerificationMeta(
+    'blockedAt',
   );
   @override
-  late final GeneratedColumn<bool> isTrusted = GeneratedColumn<bool>(
-    'is_trusted',
+  late final GeneratedColumn<DateTime> blockedAt = GeneratedColumn<DateTime>(
+    'blocked_at',
     aliasedName,
-    false,
-    type: DriftSqlType.bool,
+    true,
+    type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("is_trusted" IN (0, 1))',
-    ),
-    defaultValue: const Constant(true),
   );
   static const VerificationMeta _publicKeyMeta = const VerificationMeta(
     'publicKey',
@@ -1681,6 +1648,18 @@ class $SyncedDevicesTable extends SyncedDevices
     true,
     type: DriftSqlType.string,
     requiredDuringInsert: false,
+  );
+  static const VerificationMeta _schemaVersionMeta = const VerificationMeta(
+    'schemaVersion',
+  );
+  @override
+  late final GeneratedColumn<int> schemaVersion = GeneratedColumn<int>(
+    'schema_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
   );
   static const VerificationMeta _deviceTypeMeta = const VerificationMeta(
     'deviceType',
@@ -1715,6 +1694,41 @@ class $SyncedDevicesTable extends SyncedDevices
         type: DriftSqlType.dateTime,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _updateCounterMeta = const VerificationMeta(
+    'updateCounter',
+  );
+  @override
+  late final GeneratedColumn<int> updateCounter = GeneratedColumn<int>(
+    'update_counter',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     deviceUuid,
@@ -1725,12 +1739,16 @@ class $SyncedDevicesTable extends SyncedDevices
     lastSeenAsHostAt,
     lastSeenAsClientAt,
     firstPairedAt,
-    isTrusted,
+    blockedAt,
     publicKey,
     authKey,
+    schemaVersion,
     deviceType,
     protocolVersion,
     lastSuccessfulSyncAt,
+    updatedAt,
+    deletedAt,
+    updateCounter,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1814,10 +1832,10 @@ class $SyncedDevicesTable extends SyncedDevices
         ),
       );
     }
-    if (data.containsKey('is_trusted')) {
+    if (data.containsKey('blocked_at')) {
       context.handle(
-        _isTrustedMeta,
-        isTrusted.isAcceptableOrUnknown(data['is_trusted']!, _isTrustedMeta),
+        _blockedAtMeta,
+        blockedAt.isAcceptableOrUnknown(data['blocked_at']!, _blockedAtMeta),
       );
     }
     if (data.containsKey('public_key')) {
@@ -1830,6 +1848,15 @@ class $SyncedDevicesTable extends SyncedDevices
       context.handle(
         _authKeyMeta,
         authKey.isAcceptableOrUnknown(data['auth_key']!, _authKeyMeta),
+      );
+    }
+    if (data.containsKey('schema_version')) {
+      context.handle(
+        _schemaVersionMeta,
+        schemaVersion.isAcceptableOrUnknown(
+          data['schema_version']!,
+          _schemaVersionMeta,
+        ),
       );
     }
     if (data.containsKey('device_type')) {
@@ -1853,6 +1880,27 @@ class $SyncedDevicesTable extends SyncedDevices
         lastSuccessfulSyncAt.isAcceptableOrUnknown(
           data['last_successful_sync_at']!,
           _lastSuccessfulSyncAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    if (data.containsKey('update_counter')) {
+      context.handle(
+        _updateCounterMeta,
+        updateCounter.isAcceptableOrUnknown(
+          data['update_counter']!,
+          _updateCounterMeta,
         ),
       );
     }
@@ -1897,10 +1945,10 @@ class $SyncedDevicesTable extends SyncedDevices
         DriftSqlType.dateTime,
         data['${effectivePrefix}first_paired_at'],
       )!,
-      isTrusted: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_trusted'],
-      )!,
+      blockedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}blocked_at'],
+      ),
       publicKey: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}public_key'],
@@ -1909,6 +1957,10 @@ class $SyncedDevicesTable extends SyncedDevices
         DriftSqlType.string,
         data['${effectivePrefix}auth_key'],
       ),
+      schemaVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}schema_version'],
+      )!,
       deviceType: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}device_type'],
@@ -1921,6 +1973,18 @@ class $SyncedDevicesTable extends SyncedDevices
         DriftSqlType.dateTime,
         data['${effectivePrefix}last_successful_sync_at'],
       ),
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+      updateCounter: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}update_counter'],
+      )!,
     );
   }
 
@@ -1939,12 +2003,16 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
   final DateTime? lastSeenAsHostAt;
   final DateTime? lastSeenAsClientAt;
   final DateTime firstPairedAt;
-  final bool isTrusted;
+  final DateTime? blockedAt;
   final String? publicKey;
   final String? authKey;
+  final int schemaVersion;
   final String? deviceType;
   final int? protocolVersion;
   final DateTime? lastSuccessfulSyncAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  final int updateCounter;
   const SyncedDevice({
     required this.deviceUuid,
     required this.deviceName,
@@ -1954,12 +2022,16 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
     this.lastSeenAsHostAt,
     this.lastSeenAsClientAt,
     required this.firstPairedAt,
-    required this.isTrusted,
+    this.blockedAt,
     this.publicKey,
     this.authKey,
+    required this.schemaVersion,
     this.deviceType,
     this.protocolVersion,
     this.lastSuccessfulSyncAt,
+    required this.updatedAt,
+    this.deletedAt,
+    required this.updateCounter,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1982,13 +2054,16 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
       map['last_seen_as_client_at'] = Variable<DateTime>(lastSeenAsClientAt);
     }
     map['first_paired_at'] = Variable<DateTime>(firstPairedAt);
-    map['is_trusted'] = Variable<bool>(isTrusted);
+    if (!nullToAbsent || blockedAt != null) {
+      map['blocked_at'] = Variable<DateTime>(blockedAt);
+    }
     if (!nullToAbsent || publicKey != null) {
       map['public_key'] = Variable<String>(publicKey);
     }
     if (!nullToAbsent || authKey != null) {
       map['auth_key'] = Variable<String>(authKey);
     }
+    map['schema_version'] = Variable<int>(schemaVersion);
     if (!nullToAbsent || deviceType != null) {
       map['device_type'] = Variable<String>(deviceType);
     }
@@ -1998,6 +2073,11 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
     if (!nullToAbsent || lastSuccessfulSyncAt != null) {
       map['last_successful_sync_at'] = Variable<DateTime>(lastSuccessfulSyncAt);
     }
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    map['update_counter'] = Variable<int>(updateCounter);
     return map;
   }
 
@@ -2021,13 +2101,16 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
           ? const Value.absent()
           : Value(lastSeenAsClientAt),
       firstPairedAt: Value(firstPairedAt),
-      isTrusted: Value(isTrusted),
+      blockedAt: blockedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(blockedAt),
       publicKey: publicKey == null && nullToAbsent
           ? const Value.absent()
           : Value(publicKey),
       authKey: authKey == null && nullToAbsent
           ? const Value.absent()
           : Value(authKey),
+      schemaVersion: Value(schemaVersion),
       deviceType: deviceType == null && nullToAbsent
           ? const Value.absent()
           : Value(deviceType),
@@ -2037,6 +2120,11 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
       lastSuccessfulSyncAt: lastSuccessfulSyncAt == null && nullToAbsent
           ? const Value.absent()
           : Value(lastSuccessfulSyncAt),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      updateCounter: Value(updateCounter),
     );
   }
 
@@ -2058,14 +2146,18 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
         json['lastSeenAsClientAt'],
       ),
       firstPairedAt: serializer.fromJson<DateTime>(json['firstPairedAt']),
-      isTrusted: serializer.fromJson<bool>(json['isTrusted']),
+      blockedAt: serializer.fromJson<DateTime?>(json['blockedAt']),
       publicKey: serializer.fromJson<String?>(json['publicKey']),
       authKey: serializer.fromJson<String?>(json['authKey']),
+      schemaVersion: serializer.fromJson<int>(json['schemaVersion']),
       deviceType: serializer.fromJson<String?>(json['deviceType']),
       protocolVersion: serializer.fromJson<int?>(json['protocolVersion']),
       lastSuccessfulSyncAt: serializer.fromJson<DateTime?>(
         json['lastSuccessfulSyncAt'],
       ),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      updateCounter: serializer.fromJson<int>(json['updateCounter']),
     );
   }
   @override
@@ -2080,14 +2172,18 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
       'lastSeenAsHostAt': serializer.toJson<DateTime?>(lastSeenAsHostAt),
       'lastSeenAsClientAt': serializer.toJson<DateTime?>(lastSeenAsClientAt),
       'firstPairedAt': serializer.toJson<DateTime>(firstPairedAt),
-      'isTrusted': serializer.toJson<bool>(isTrusted),
+      'blockedAt': serializer.toJson<DateTime?>(blockedAt),
       'publicKey': serializer.toJson<String?>(publicKey),
       'authKey': serializer.toJson<String?>(authKey),
+      'schemaVersion': serializer.toJson<int>(schemaVersion),
       'deviceType': serializer.toJson<String?>(deviceType),
       'protocolVersion': serializer.toJson<int?>(protocolVersion),
       'lastSuccessfulSyncAt': serializer.toJson<DateTime?>(
         lastSuccessfulSyncAt,
       ),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'updateCounter': serializer.toJson<int>(updateCounter),
     };
   }
 
@@ -2100,12 +2196,16 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
     Value<DateTime?> lastSeenAsHostAt = const Value.absent(),
     Value<DateTime?> lastSeenAsClientAt = const Value.absent(),
     DateTime? firstPairedAt,
-    bool? isTrusted,
+    Value<DateTime?> blockedAt = const Value.absent(),
     Value<String?> publicKey = const Value.absent(),
     Value<String?> authKey = const Value.absent(),
+    int? schemaVersion,
     Value<String?> deviceType = const Value.absent(),
     Value<int?> protocolVersion = const Value.absent(),
     Value<DateTime?> lastSuccessfulSyncAt = const Value.absent(),
+    DateTime? updatedAt,
+    Value<DateTime?> deletedAt = const Value.absent(),
+    int? updateCounter,
   }) => SyncedDevice(
     deviceUuid: deviceUuid ?? this.deviceUuid,
     deviceName: deviceName ?? this.deviceName,
@@ -2121,9 +2221,10 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
         ? lastSeenAsClientAt.value
         : this.lastSeenAsClientAt,
     firstPairedAt: firstPairedAt ?? this.firstPairedAt,
-    isTrusted: isTrusted ?? this.isTrusted,
+    blockedAt: blockedAt.present ? blockedAt.value : this.blockedAt,
     publicKey: publicKey.present ? publicKey.value : this.publicKey,
     authKey: authKey.present ? authKey.value : this.authKey,
+    schemaVersion: schemaVersion ?? this.schemaVersion,
     deviceType: deviceType.present ? deviceType.value : this.deviceType,
     protocolVersion: protocolVersion.present
         ? protocolVersion.value
@@ -2131,6 +2232,9 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
     lastSuccessfulSyncAt: lastSuccessfulSyncAt.present
         ? lastSuccessfulSyncAt.value
         : this.lastSuccessfulSyncAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    updateCounter: updateCounter ?? this.updateCounter,
   );
   SyncedDevice copyWithCompanion(SyncedDevicesCompanion data) {
     return SyncedDevice(
@@ -2158,9 +2262,12 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
       firstPairedAt: data.firstPairedAt.present
           ? data.firstPairedAt.value
           : this.firstPairedAt,
-      isTrusted: data.isTrusted.present ? data.isTrusted.value : this.isTrusted,
+      blockedAt: data.blockedAt.present ? data.blockedAt.value : this.blockedAt,
       publicKey: data.publicKey.present ? data.publicKey.value : this.publicKey,
       authKey: data.authKey.present ? data.authKey.value : this.authKey,
+      schemaVersion: data.schemaVersion.present
+          ? data.schemaVersion.value
+          : this.schemaVersion,
       deviceType: data.deviceType.present
           ? data.deviceType.value
           : this.deviceType,
@@ -2170,6 +2277,11 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
       lastSuccessfulSyncAt: data.lastSuccessfulSyncAt.present
           ? data.lastSuccessfulSyncAt.value
           : this.lastSuccessfulSyncAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      updateCounter: data.updateCounter.present
+          ? data.updateCounter.value
+          : this.updateCounter,
     );
   }
 
@@ -2184,12 +2296,16 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
           ..write('lastSeenAsHostAt: $lastSeenAsHostAt, ')
           ..write('lastSeenAsClientAt: $lastSeenAsClientAt, ')
           ..write('firstPairedAt: $firstPairedAt, ')
-          ..write('isTrusted: $isTrusted, ')
+          ..write('blockedAt: $blockedAt, ')
           ..write('publicKey: $publicKey, ')
           ..write('authKey: $authKey, ')
+          ..write('schemaVersion: $schemaVersion, ')
           ..write('deviceType: $deviceType, ')
           ..write('protocolVersion: $protocolVersion, ')
-          ..write('lastSuccessfulSyncAt: $lastSuccessfulSyncAt')
+          ..write('lastSuccessfulSyncAt: $lastSuccessfulSyncAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('updateCounter: $updateCounter')
           ..write(')'))
         .toString();
   }
@@ -2204,12 +2320,16 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
     lastSeenAsHostAt,
     lastSeenAsClientAt,
     firstPairedAt,
-    isTrusted,
+    blockedAt,
     publicKey,
     authKey,
+    schemaVersion,
     deviceType,
     protocolVersion,
     lastSuccessfulSyncAt,
+    updatedAt,
+    deletedAt,
+    updateCounter,
   );
   @override
   bool operator ==(Object other) =>
@@ -2223,12 +2343,16 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
           other.lastSeenAsHostAt == this.lastSeenAsHostAt &&
           other.lastSeenAsClientAt == this.lastSeenAsClientAt &&
           other.firstPairedAt == this.firstPairedAt &&
-          other.isTrusted == this.isTrusted &&
+          other.blockedAt == this.blockedAt &&
           other.publicKey == this.publicKey &&
           other.authKey == this.authKey &&
+          other.schemaVersion == this.schemaVersion &&
           other.deviceType == this.deviceType &&
           other.protocolVersion == this.protocolVersion &&
-          other.lastSuccessfulSyncAt == this.lastSuccessfulSyncAt);
+          other.lastSuccessfulSyncAt == this.lastSuccessfulSyncAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.updateCounter == this.updateCounter);
 }
 
 class SyncedDevicesCompanion extends UpdateCompanion<SyncedDevice> {
@@ -2240,12 +2364,16 @@ class SyncedDevicesCompanion extends UpdateCompanion<SyncedDevice> {
   final Value<DateTime?> lastSeenAsHostAt;
   final Value<DateTime?> lastSeenAsClientAt;
   final Value<DateTime> firstPairedAt;
-  final Value<bool> isTrusted;
+  final Value<DateTime?> blockedAt;
   final Value<String?> publicKey;
   final Value<String?> authKey;
+  final Value<int> schemaVersion;
   final Value<String?> deviceType;
   final Value<int?> protocolVersion;
   final Value<DateTime?> lastSuccessfulSyncAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<int> updateCounter;
   final Value<int> rowid;
   const SyncedDevicesCompanion({
     this.deviceUuid = const Value.absent(),
@@ -2256,12 +2384,16 @@ class SyncedDevicesCompanion extends UpdateCompanion<SyncedDevice> {
     this.lastSeenAsHostAt = const Value.absent(),
     this.lastSeenAsClientAt = const Value.absent(),
     this.firstPairedAt = const Value.absent(),
-    this.isTrusted = const Value.absent(),
+    this.blockedAt = const Value.absent(),
     this.publicKey = const Value.absent(),
     this.authKey = const Value.absent(),
+    this.schemaVersion = const Value.absent(),
     this.deviceType = const Value.absent(),
     this.protocolVersion = const Value.absent(),
     this.lastSuccessfulSyncAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.updateCounter = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   SyncedDevicesCompanion.insert({
@@ -2273,12 +2405,16 @@ class SyncedDevicesCompanion extends UpdateCompanion<SyncedDevice> {
     this.lastSeenAsHostAt = const Value.absent(),
     this.lastSeenAsClientAt = const Value.absent(),
     this.firstPairedAt = const Value.absent(),
-    this.isTrusted = const Value.absent(),
+    this.blockedAt = const Value.absent(),
     this.publicKey = const Value.absent(),
     this.authKey = const Value.absent(),
+    this.schemaVersion = const Value.absent(),
     this.deviceType = const Value.absent(),
     this.protocolVersion = const Value.absent(),
     this.lastSuccessfulSyncAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.updateCounter = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : deviceUuid = Value(deviceUuid),
        deviceName = Value(deviceName);
@@ -2291,12 +2427,16 @@ class SyncedDevicesCompanion extends UpdateCompanion<SyncedDevice> {
     Expression<DateTime>? lastSeenAsHostAt,
     Expression<DateTime>? lastSeenAsClientAt,
     Expression<DateTime>? firstPairedAt,
-    Expression<bool>? isTrusted,
+    Expression<DateTime>? blockedAt,
     Expression<String>? publicKey,
     Expression<String>? authKey,
+    Expression<int>? schemaVersion,
     Expression<String>? deviceType,
     Expression<int>? protocolVersion,
     Expression<DateTime>? lastSuccessfulSyncAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<int>? updateCounter,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -2309,13 +2449,17 @@ class SyncedDevicesCompanion extends UpdateCompanion<SyncedDevice> {
       if (lastSeenAsClientAt != null)
         'last_seen_as_client_at': lastSeenAsClientAt,
       if (firstPairedAt != null) 'first_paired_at': firstPairedAt,
-      if (isTrusted != null) 'is_trusted': isTrusted,
+      if (blockedAt != null) 'blocked_at': blockedAt,
       if (publicKey != null) 'public_key': publicKey,
       if (authKey != null) 'auth_key': authKey,
+      if (schemaVersion != null) 'schema_version': schemaVersion,
       if (deviceType != null) 'device_type': deviceType,
       if (protocolVersion != null) 'protocol_version': protocolVersion,
       if (lastSuccessfulSyncAt != null)
         'last_successful_sync_at': lastSuccessfulSyncAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (updateCounter != null) 'update_counter': updateCounter,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -2329,12 +2473,16 @@ class SyncedDevicesCompanion extends UpdateCompanion<SyncedDevice> {
     Value<DateTime?>? lastSeenAsHostAt,
     Value<DateTime?>? lastSeenAsClientAt,
     Value<DateTime>? firstPairedAt,
-    Value<bool>? isTrusted,
+    Value<DateTime?>? blockedAt,
     Value<String?>? publicKey,
     Value<String?>? authKey,
+    Value<int>? schemaVersion,
     Value<String?>? deviceType,
     Value<int?>? protocolVersion,
     Value<DateTime?>? lastSuccessfulSyncAt,
+    Value<DateTime>? updatedAt,
+    Value<DateTime?>? deletedAt,
+    Value<int>? updateCounter,
     Value<int>? rowid,
   }) {
     return SyncedDevicesCompanion(
@@ -2346,12 +2494,16 @@ class SyncedDevicesCompanion extends UpdateCompanion<SyncedDevice> {
       lastSeenAsHostAt: lastSeenAsHostAt ?? this.lastSeenAsHostAt,
       lastSeenAsClientAt: lastSeenAsClientAt ?? this.lastSeenAsClientAt,
       firstPairedAt: firstPairedAt ?? this.firstPairedAt,
-      isTrusted: isTrusted ?? this.isTrusted,
+      blockedAt: blockedAt ?? this.blockedAt,
       publicKey: publicKey ?? this.publicKey,
       authKey: authKey ?? this.authKey,
+      schemaVersion: schemaVersion ?? this.schemaVersion,
       deviceType: deviceType ?? this.deviceType,
       protocolVersion: protocolVersion ?? this.protocolVersion,
       lastSuccessfulSyncAt: lastSuccessfulSyncAt ?? this.lastSuccessfulSyncAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      updateCounter: updateCounter ?? this.updateCounter,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2385,14 +2537,17 @@ class SyncedDevicesCompanion extends UpdateCompanion<SyncedDevice> {
     if (firstPairedAt.present) {
       map['first_paired_at'] = Variable<DateTime>(firstPairedAt.value);
     }
-    if (isTrusted.present) {
-      map['is_trusted'] = Variable<bool>(isTrusted.value);
+    if (blockedAt.present) {
+      map['blocked_at'] = Variable<DateTime>(blockedAt.value);
     }
     if (publicKey.present) {
       map['public_key'] = Variable<String>(publicKey.value);
     }
     if (authKey.present) {
       map['auth_key'] = Variable<String>(authKey.value);
+    }
+    if (schemaVersion.present) {
+      map['schema_version'] = Variable<int>(schemaVersion.value);
     }
     if (deviceType.present) {
       map['device_type'] = Variable<String>(deviceType.value);
@@ -2404,6 +2559,15 @@ class SyncedDevicesCompanion extends UpdateCompanion<SyncedDevice> {
       map['last_successful_sync_at'] = Variable<DateTime>(
         lastSuccessfulSyncAt.value,
       );
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (updateCounter.present) {
+      map['update_counter'] = Variable<int>(updateCounter.value);
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -2422,12 +2586,16 @@ class SyncedDevicesCompanion extends UpdateCompanion<SyncedDevice> {
           ..write('lastSeenAsHostAt: $lastSeenAsHostAt, ')
           ..write('lastSeenAsClientAt: $lastSeenAsClientAt, ')
           ..write('firstPairedAt: $firstPairedAt, ')
-          ..write('isTrusted: $isTrusted, ')
+          ..write('blockedAt: $blockedAt, ')
           ..write('publicKey: $publicKey, ')
           ..write('authKey: $authKey, ')
+          ..write('schemaVersion: $schemaVersion, ')
           ..write('deviceType: $deviceType, ')
           ..write('protocolVersion: $protocolVersion, ')
           ..write('lastSuccessfulSyncAt: $lastSuccessfulSyncAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('updateCounter: $updateCounter, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -2450,6 +2618,18 @@ class $AppKeybindingsTable extends AppKeybindings
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
+  );
+  static const VerificationMeta _targetPlatformMeta = const VerificationMeta(
+    'targetPlatform',
+  );
+  @override
+  late final GeneratedColumn<String> targetPlatform = GeneratedColumn<String>(
+    'target_platform',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('windows'),
   );
   static const VerificationMeta _keyLabelMeta = const VerificationMeta(
     'keyLabel',
@@ -2529,20 +2709,16 @@ class $AppKeybindingsTable extends AppKeybindings
     ),
     defaultValue: const Constant(false),
   );
-  static const VerificationMeta _isEnabledMeta = const VerificationMeta(
-    'isEnabled',
+  static const VerificationMeta _disabledAtMeta = const VerificationMeta(
+    'disabledAt',
   );
   @override
-  late final GeneratedColumn<bool> isEnabled = GeneratedColumn<bool>(
-    'is_enabled',
+  late final GeneratedColumn<DateTime> disabledAt = GeneratedColumn<DateTime>(
+    'disabled_at',
     aliasedName,
-    false,
-    type: DriftSqlType.bool,
+    true,
+    type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("is_enabled" IN (0, 1))',
-    ),
-    defaultValue: const Constant(true),
   );
   static const VerificationMeta _categoryMeta = const VerificationMeta(
     'category',
@@ -2556,17 +2732,69 @@ class $AppKeybindingsTable extends AppKeybindings
     requiredDuringInsert: false,
     defaultValue: const Constant('General'),
   );
+  static const VerificationMeta _schemaVersionMeta = const VerificationMeta(
+    'schemaVersion',
+  );
+  @override
+  late final GeneratedColumn<int> schemaVersion = GeneratedColumn<int>(
+    'schema_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _updateCounterMeta = const VerificationMeta(
+    'updateCounter',
+  );
+  @override
+  late final GeneratedColumn<int> updateCounter = GeneratedColumn<int>(
+    'update_counter',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     actionName,
+    targetPlatform,
     keyLabel,
     keyId,
     useCtrl,
     useAlt,
     useShift,
     useMeta,
-    isEnabled,
+    disabledAt,
     category,
+    schemaVersion,
+    updatedAt,
+    deletedAt,
+    updateCounter,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2587,6 +2815,15 @@ class $AppKeybindingsTable extends AppKeybindings
       );
     } else if (isInserting) {
       context.missing(_actionNameMeta);
+    }
+    if (data.containsKey('target_platform')) {
+      context.handle(
+        _targetPlatformMeta,
+        targetPlatform.isAcceptableOrUnknown(
+          data['target_platform']!,
+          _targetPlatformMeta,
+        ),
+      );
     }
     if (data.containsKey('key_label')) {
       context.handle(
@@ -2628,10 +2865,10 @@ class $AppKeybindingsTable extends AppKeybindings
         useMeta.isAcceptableOrUnknown(data['use_meta']!, _useMetaMeta),
       );
     }
-    if (data.containsKey('is_enabled')) {
+    if (data.containsKey('disabled_at')) {
       context.handle(
-        _isEnabledMeta,
-        isEnabled.isAcceptableOrUnknown(data['is_enabled']!, _isEnabledMeta),
+        _disabledAtMeta,
+        disabledAt.isAcceptableOrUnknown(data['disabled_at']!, _disabledAtMeta),
       );
     }
     if (data.containsKey('category')) {
@@ -2640,11 +2877,41 @@ class $AppKeybindingsTable extends AppKeybindings
         category.isAcceptableOrUnknown(data['category']!, _categoryMeta),
       );
     }
+    if (data.containsKey('schema_version')) {
+      context.handle(
+        _schemaVersionMeta,
+        schemaVersion.isAcceptableOrUnknown(
+          data['schema_version']!,
+          _schemaVersionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    if (data.containsKey('update_counter')) {
+      context.handle(
+        _updateCounterMeta,
+        updateCounter.isAcceptableOrUnknown(
+          data['update_counter']!,
+          _updateCounterMeta,
+        ),
+      );
+    }
     return context;
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {actionName};
+  Set<GeneratedColumn> get $primaryKey => {actionName, targetPlatform};
   @override
   AppKeybinding map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
@@ -2652,6 +2919,10 @@ class $AppKeybindingsTable extends AppKeybindings
       actionName: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}action_name'],
+      )!,
+      targetPlatform: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}target_platform'],
       )!,
       keyLabel: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -2677,13 +2948,29 @@ class $AppKeybindingsTable extends AppKeybindings
         DriftSqlType.bool,
         data['${effectivePrefix}use_meta'],
       )!,
-      isEnabled: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_enabled'],
-      )!,
+      disabledAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}disabled_at'],
+      ),
       category: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}category'],
+      )!,
+      schemaVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}schema_version'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+      updateCounter: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}update_counter'],
       )!,
     );
   }
@@ -2696,51 +2983,79 @@ class $AppKeybindingsTable extends AppKeybindings
 
 class AppKeybinding extends DataClass implements Insertable<AppKeybinding> {
   final String actionName;
+  final String targetPlatform;
   final String keyLabel;
   final int keyId;
   final bool useCtrl;
   final bool useAlt;
   final bool useShift;
   final bool useMeta;
-  final bool isEnabled;
+  final DateTime? disabledAt;
   final String category;
+  final int schemaVersion;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  final int updateCounter;
   const AppKeybinding({
     required this.actionName,
+    required this.targetPlatform,
     required this.keyLabel,
     required this.keyId,
     required this.useCtrl,
     required this.useAlt,
     required this.useShift,
     required this.useMeta,
-    required this.isEnabled,
+    this.disabledAt,
     required this.category,
+    required this.schemaVersion,
+    required this.updatedAt,
+    this.deletedAt,
+    required this.updateCounter,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['action_name'] = Variable<String>(actionName);
+    map['target_platform'] = Variable<String>(targetPlatform);
     map['key_label'] = Variable<String>(keyLabel);
     map['key_id'] = Variable<int>(keyId);
     map['use_ctrl'] = Variable<bool>(useCtrl);
     map['use_alt'] = Variable<bool>(useAlt);
     map['use_shift'] = Variable<bool>(useShift);
     map['use_meta'] = Variable<bool>(useMeta);
-    map['is_enabled'] = Variable<bool>(isEnabled);
+    if (!nullToAbsent || disabledAt != null) {
+      map['disabled_at'] = Variable<DateTime>(disabledAt);
+    }
     map['category'] = Variable<String>(category);
+    map['schema_version'] = Variable<int>(schemaVersion);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    map['update_counter'] = Variable<int>(updateCounter);
     return map;
   }
 
   AppKeybindingsCompanion toCompanion(bool nullToAbsent) {
     return AppKeybindingsCompanion(
       actionName: Value(actionName),
+      targetPlatform: Value(targetPlatform),
       keyLabel: Value(keyLabel),
       keyId: Value(keyId),
       useCtrl: Value(useCtrl),
       useAlt: Value(useAlt),
       useShift: Value(useShift),
       useMeta: Value(useMeta),
-      isEnabled: Value(isEnabled),
+      disabledAt: disabledAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(disabledAt),
       category: Value(category),
+      schemaVersion: Value(schemaVersion),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      updateCounter: Value(updateCounter),
     );
   }
 
@@ -2751,14 +3066,19 @@ class AppKeybinding extends DataClass implements Insertable<AppKeybinding> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return AppKeybinding(
       actionName: serializer.fromJson<String>(json['actionName']),
+      targetPlatform: serializer.fromJson<String>(json['targetPlatform']),
       keyLabel: serializer.fromJson<String>(json['keyLabel']),
       keyId: serializer.fromJson<int>(json['keyId']),
       useCtrl: serializer.fromJson<bool>(json['useCtrl']),
       useAlt: serializer.fromJson<bool>(json['useAlt']),
       useShift: serializer.fromJson<bool>(json['useShift']),
       useMeta: serializer.fromJson<bool>(json['useMeta']),
-      isEnabled: serializer.fromJson<bool>(json['isEnabled']),
+      disabledAt: serializer.fromJson<DateTime?>(json['disabledAt']),
       category: serializer.fromJson<String>(json['category']),
+      schemaVersion: serializer.fromJson<int>(json['schemaVersion']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      updateCounter: serializer.fromJson<int>(json['updateCounter']),
     );
   }
   @override
@@ -2766,51 +3086,79 @@ class AppKeybinding extends DataClass implements Insertable<AppKeybinding> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'actionName': serializer.toJson<String>(actionName),
+      'targetPlatform': serializer.toJson<String>(targetPlatform),
       'keyLabel': serializer.toJson<String>(keyLabel),
       'keyId': serializer.toJson<int>(keyId),
       'useCtrl': serializer.toJson<bool>(useCtrl),
       'useAlt': serializer.toJson<bool>(useAlt),
       'useShift': serializer.toJson<bool>(useShift),
       'useMeta': serializer.toJson<bool>(useMeta),
-      'isEnabled': serializer.toJson<bool>(isEnabled),
+      'disabledAt': serializer.toJson<DateTime?>(disabledAt),
       'category': serializer.toJson<String>(category),
+      'schemaVersion': serializer.toJson<int>(schemaVersion),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'updateCounter': serializer.toJson<int>(updateCounter),
     };
   }
 
   AppKeybinding copyWith({
     String? actionName,
+    String? targetPlatform,
     String? keyLabel,
     int? keyId,
     bool? useCtrl,
     bool? useAlt,
     bool? useShift,
     bool? useMeta,
-    bool? isEnabled,
+    Value<DateTime?> disabledAt = const Value.absent(),
     String? category,
+    int? schemaVersion,
+    DateTime? updatedAt,
+    Value<DateTime?> deletedAt = const Value.absent(),
+    int? updateCounter,
   }) => AppKeybinding(
     actionName: actionName ?? this.actionName,
+    targetPlatform: targetPlatform ?? this.targetPlatform,
     keyLabel: keyLabel ?? this.keyLabel,
     keyId: keyId ?? this.keyId,
     useCtrl: useCtrl ?? this.useCtrl,
     useAlt: useAlt ?? this.useAlt,
     useShift: useShift ?? this.useShift,
     useMeta: useMeta ?? this.useMeta,
-    isEnabled: isEnabled ?? this.isEnabled,
+    disabledAt: disabledAt.present ? disabledAt.value : this.disabledAt,
     category: category ?? this.category,
+    schemaVersion: schemaVersion ?? this.schemaVersion,
+    updatedAt: updatedAt ?? this.updatedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    updateCounter: updateCounter ?? this.updateCounter,
   );
   AppKeybinding copyWithCompanion(AppKeybindingsCompanion data) {
     return AppKeybinding(
       actionName: data.actionName.present
           ? data.actionName.value
           : this.actionName,
+      targetPlatform: data.targetPlatform.present
+          ? data.targetPlatform.value
+          : this.targetPlatform,
       keyLabel: data.keyLabel.present ? data.keyLabel.value : this.keyLabel,
       keyId: data.keyId.present ? data.keyId.value : this.keyId,
       useCtrl: data.useCtrl.present ? data.useCtrl.value : this.useCtrl,
       useAlt: data.useAlt.present ? data.useAlt.value : this.useAlt,
       useShift: data.useShift.present ? data.useShift.value : this.useShift,
       useMeta: data.useMeta.present ? data.useMeta.value : this.useMeta,
-      isEnabled: data.isEnabled.present ? data.isEnabled.value : this.isEnabled,
+      disabledAt: data.disabledAt.present
+          ? data.disabledAt.value
+          : this.disabledAt,
       category: data.category.present ? data.category.value : this.category,
+      schemaVersion: data.schemaVersion.present
+          ? data.schemaVersion.value
+          : this.schemaVersion,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      updateCounter: data.updateCounter.present
+          ? data.updateCounter.value
+          : this.updateCounter,
     );
   }
 
@@ -2818,14 +3166,19 @@ class AppKeybinding extends DataClass implements Insertable<AppKeybinding> {
   String toString() {
     return (StringBuffer('AppKeybinding(')
           ..write('actionName: $actionName, ')
+          ..write('targetPlatform: $targetPlatform, ')
           ..write('keyLabel: $keyLabel, ')
           ..write('keyId: $keyId, ')
           ..write('useCtrl: $useCtrl, ')
           ..write('useAlt: $useAlt, ')
           ..write('useShift: $useShift, ')
           ..write('useMeta: $useMeta, ')
-          ..write('isEnabled: $isEnabled, ')
-          ..write('category: $category')
+          ..write('disabledAt: $disabledAt, ')
+          ..write('category: $category, ')
+          ..write('schemaVersion: $schemaVersion, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('updateCounter: $updateCounter')
           ..write(')'))
         .toString();
   }
@@ -2833,115 +3186,160 @@ class AppKeybinding extends DataClass implements Insertable<AppKeybinding> {
   @override
   int get hashCode => Object.hash(
     actionName,
+    targetPlatform,
     keyLabel,
     keyId,
     useCtrl,
     useAlt,
     useShift,
     useMeta,
-    isEnabled,
+    disabledAt,
     category,
+    schemaVersion,
+    updatedAt,
+    deletedAt,
+    updateCounter,
   );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is AppKeybinding &&
           other.actionName == this.actionName &&
+          other.targetPlatform == this.targetPlatform &&
           other.keyLabel == this.keyLabel &&
           other.keyId == this.keyId &&
           other.useCtrl == this.useCtrl &&
           other.useAlt == this.useAlt &&
           other.useShift == this.useShift &&
           other.useMeta == this.useMeta &&
-          other.isEnabled == this.isEnabled &&
-          other.category == this.category);
+          other.disabledAt == this.disabledAt &&
+          other.category == this.category &&
+          other.schemaVersion == this.schemaVersion &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.updateCounter == this.updateCounter);
 }
 
 class AppKeybindingsCompanion extends UpdateCompanion<AppKeybinding> {
   final Value<String> actionName;
+  final Value<String> targetPlatform;
   final Value<String> keyLabel;
   final Value<int> keyId;
   final Value<bool> useCtrl;
   final Value<bool> useAlt;
   final Value<bool> useShift;
   final Value<bool> useMeta;
-  final Value<bool> isEnabled;
+  final Value<DateTime?> disabledAt;
   final Value<String> category;
+  final Value<int> schemaVersion;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<int> updateCounter;
   final Value<int> rowid;
   const AppKeybindingsCompanion({
     this.actionName = const Value.absent(),
+    this.targetPlatform = const Value.absent(),
     this.keyLabel = const Value.absent(),
     this.keyId = const Value.absent(),
     this.useCtrl = const Value.absent(),
     this.useAlt = const Value.absent(),
     this.useShift = const Value.absent(),
     this.useMeta = const Value.absent(),
-    this.isEnabled = const Value.absent(),
+    this.disabledAt = const Value.absent(),
     this.category = const Value.absent(),
+    this.schemaVersion = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.updateCounter = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   AppKeybindingsCompanion.insert({
     required String actionName,
+    this.targetPlatform = const Value.absent(),
     required String keyLabel,
     required int keyId,
     this.useCtrl = const Value.absent(),
     this.useAlt = const Value.absent(),
     this.useShift = const Value.absent(),
     this.useMeta = const Value.absent(),
-    this.isEnabled = const Value.absent(),
+    this.disabledAt = const Value.absent(),
     this.category = const Value.absent(),
+    this.schemaVersion = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.updateCounter = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : actionName = Value(actionName),
        keyLabel = Value(keyLabel),
        keyId = Value(keyId);
   static Insertable<AppKeybinding> custom({
     Expression<String>? actionName,
+    Expression<String>? targetPlatform,
     Expression<String>? keyLabel,
     Expression<int>? keyId,
     Expression<bool>? useCtrl,
     Expression<bool>? useAlt,
     Expression<bool>? useShift,
     Expression<bool>? useMeta,
-    Expression<bool>? isEnabled,
+    Expression<DateTime>? disabledAt,
     Expression<String>? category,
+    Expression<int>? schemaVersion,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<int>? updateCounter,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (actionName != null) 'action_name': actionName,
+      if (targetPlatform != null) 'target_platform': targetPlatform,
       if (keyLabel != null) 'key_label': keyLabel,
       if (keyId != null) 'key_id': keyId,
       if (useCtrl != null) 'use_ctrl': useCtrl,
       if (useAlt != null) 'use_alt': useAlt,
       if (useShift != null) 'use_shift': useShift,
       if (useMeta != null) 'use_meta': useMeta,
-      if (isEnabled != null) 'is_enabled': isEnabled,
+      if (disabledAt != null) 'disabled_at': disabledAt,
       if (category != null) 'category': category,
+      if (schemaVersion != null) 'schema_version': schemaVersion,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (updateCounter != null) 'update_counter': updateCounter,
       if (rowid != null) 'rowid': rowid,
     });
   }
 
   AppKeybindingsCompanion copyWith({
     Value<String>? actionName,
+    Value<String>? targetPlatform,
     Value<String>? keyLabel,
     Value<int>? keyId,
     Value<bool>? useCtrl,
     Value<bool>? useAlt,
     Value<bool>? useShift,
     Value<bool>? useMeta,
-    Value<bool>? isEnabled,
+    Value<DateTime?>? disabledAt,
     Value<String>? category,
+    Value<int>? schemaVersion,
+    Value<DateTime>? updatedAt,
+    Value<DateTime?>? deletedAt,
+    Value<int>? updateCounter,
     Value<int>? rowid,
   }) {
     return AppKeybindingsCompanion(
       actionName: actionName ?? this.actionName,
+      targetPlatform: targetPlatform ?? this.targetPlatform,
       keyLabel: keyLabel ?? this.keyLabel,
       keyId: keyId ?? this.keyId,
       useCtrl: useCtrl ?? this.useCtrl,
       useAlt: useAlt ?? this.useAlt,
       useShift: useShift ?? this.useShift,
       useMeta: useMeta ?? this.useMeta,
-      isEnabled: isEnabled ?? this.isEnabled,
+      disabledAt: disabledAt ?? this.disabledAt,
       category: category ?? this.category,
+      schemaVersion: schemaVersion ?? this.schemaVersion,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      updateCounter: updateCounter ?? this.updateCounter,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2951,6 +3349,9 @@ class AppKeybindingsCompanion extends UpdateCompanion<AppKeybinding> {
     final map = <String, Expression>{};
     if (actionName.present) {
       map['action_name'] = Variable<String>(actionName.value);
+    }
+    if (targetPlatform.present) {
+      map['target_platform'] = Variable<String>(targetPlatform.value);
     }
     if (keyLabel.present) {
       map['key_label'] = Variable<String>(keyLabel.value);
@@ -2970,11 +3371,23 @@ class AppKeybindingsCompanion extends UpdateCompanion<AppKeybinding> {
     if (useMeta.present) {
       map['use_meta'] = Variable<bool>(useMeta.value);
     }
-    if (isEnabled.present) {
-      map['is_enabled'] = Variable<bool>(isEnabled.value);
+    if (disabledAt.present) {
+      map['disabled_at'] = Variable<DateTime>(disabledAt.value);
     }
     if (category.present) {
       map['category'] = Variable<String>(category.value);
+    }
+    if (schemaVersion.present) {
+      map['schema_version'] = Variable<int>(schemaVersion.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (updateCounter.present) {
+      map['update_counter'] = Variable<int>(updateCounter.value);
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -2986,14 +3399,19 @@ class AppKeybindingsCompanion extends UpdateCompanion<AppKeybinding> {
   String toString() {
     return (StringBuffer('AppKeybindingsCompanion(')
           ..write('actionName: $actionName, ')
+          ..write('targetPlatform: $targetPlatform, ')
           ..write('keyLabel: $keyLabel, ')
           ..write('keyId: $keyId, ')
           ..write('useCtrl: $useCtrl, ')
           ..write('useAlt: $useAlt, ')
           ..write('useShift: $useShift, ')
           ..write('useMeta: $useMeta, ')
-          ..write('isEnabled: $isEnabled, ')
+          ..write('disabledAt: $disabledAt, ')
           ..write('category: $category, ')
+          ..write('schemaVersion: $schemaVersion, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('updateCounter: $updateCounter, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -3006,6 +3424,30 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
   late final $NotesTable notes = $NotesTable(this);
   late final $SyncedDevicesTable syncedDevices = $SyncedDevicesTable(this);
   late final $AppKeybindingsTable appKeybindings = $AppKeybindingsTable(this);
+  late final Index idxNotesUpdatedAt = Index(
+    'idx_notes_updated_at',
+    'CREATE INDEX idx_notes_updated_at ON notes (updated_at)',
+  );
+  late final Index idxNotesDeletedAt = Index(
+    'idx_notes_deleted_at',
+    'CREATE INDEX idx_notes_deleted_at ON notes (deleted_at)',
+  );
+  late final Index idxSyncedDevicesUpdatedAt = Index(
+    'idx_synced_devices_updated_at',
+    'CREATE INDEX idx_synced_devices_updated_at ON synced_devices (updated_at)',
+  );
+  late final Index idxSyncedDevicesDeletedAt = Index(
+    'idx_synced_devices_deleted_at',
+    'CREATE INDEX idx_synced_devices_deleted_at ON synced_devices (deleted_at)',
+  );
+  late final Index idxKeybindingsUpdatedAt = Index(
+    'idx_keybindings_updated_at',
+    'CREATE INDEX idx_keybindings_updated_at ON app_keybindings (updated_at)',
+  );
+  late final Index idxKeybindingsDeletedAt = Index(
+    'idx_keybindings_deleted_at',
+    'CREATE INDEX idx_keybindings_deleted_at ON app_keybindings (deleted_at)',
+  );
   late final NotesDao notesDao = NotesDao(this as LocalDatabase);
   late final SyncedDevicesDao syncedDevicesDao = SyncedDevicesDao(
     this as LocalDatabase,
@@ -3021,6 +3463,12 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
     notes,
     syncedDevices,
     appKeybindings,
+    idxNotesUpdatedAt,
+    idxNotesDeletedAt,
+    idxSyncedDevicesUpdatedAt,
+    idxSyncedDevicesDeletedAt,
+    idxKeybindingsUpdatedAt,
+    idxKeybindingsDeletedAt,
   ];
 }
 
@@ -3030,24 +3478,23 @@ typedef $$NotesTableCreateCompanionBuilder =
       required String title,
       required String content,
       Value<int> color,
-      Value<bool> isPinned,
-      Value<bool> isArchived,
-      Value<bool> isLocked,
-      Value<int> position,
+      Value<int> schemaVersion,
+      Value<int> contentVersion,
+      Value<DateTime?> pinnedAt,
+      Value<DateTime?> archivedAt,
+      Value<DateTime?> lockedAt,
+      Value<String?> localAttachmentPath,
+      Value<String?> cloudAttachmentUrl,
+      Value<String?> folderId,
       Value<String?> tags,
       Value<DateTime?> reminderAt,
-      Value<bool> hasAttachments,
-      Value<String> contentType,
-      Value<bool> isShared,
-      Value<String?> folderId,
       Value<String?> ownerUid,
-      Value<String?> ownerEmail,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<DateTime?> deletedAt,
+      Value<int> updateCounter,
       Value<int> cloudSyncStatus,
       Value<int> localSyncStatus,
-      Value<int> versionCounter,
       Value<String?> creationPlatform,
       Value<String?> creationDevice,
       Value<String?> lastEditedPlatform,
@@ -3062,24 +3509,23 @@ typedef $$NotesTableUpdateCompanionBuilder =
       Value<String> title,
       Value<String> content,
       Value<int> color,
-      Value<bool> isPinned,
-      Value<bool> isArchived,
-      Value<bool> isLocked,
-      Value<int> position,
+      Value<int> schemaVersion,
+      Value<int> contentVersion,
+      Value<DateTime?> pinnedAt,
+      Value<DateTime?> archivedAt,
+      Value<DateTime?> lockedAt,
+      Value<String?> localAttachmentPath,
+      Value<String?> cloudAttachmentUrl,
+      Value<String?> folderId,
       Value<String?> tags,
       Value<DateTime?> reminderAt,
-      Value<bool> hasAttachments,
-      Value<String> contentType,
-      Value<bool> isShared,
-      Value<String?> folderId,
       Value<String?> ownerUid,
-      Value<String?> ownerEmail,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<DateTime?> deletedAt,
+      Value<int> updateCounter,
       Value<int> cloudSyncStatus,
       Value<int> localSyncStatus,
-      Value<int> versionCounter,
       Value<String?> creationPlatform,
       Value<String?> creationDevice,
       Value<String?> lastEditedPlatform,
@@ -3118,23 +3564,43 @@ class $$NotesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<bool> get isPinned => $composableBuilder(
-    column: $table.isPinned,
+  ColumnFilters<int> get schemaVersion => $composableBuilder(
+    column: $table.schemaVersion,
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<bool> get isArchived => $composableBuilder(
-    column: $table.isArchived,
+  ColumnFilters<int> get contentVersion => $composableBuilder(
+    column: $table.contentVersion,
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<bool> get isLocked => $composableBuilder(
-    column: $table.isLocked,
+  ColumnFilters<DateTime> get pinnedAt => $composableBuilder(
+    column: $table.pinnedAt,
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<int> get position => $composableBuilder(
-    column: $table.position,
+  ColumnFilters<DateTime> get archivedAt => $composableBuilder(
+    column: $table.archivedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lockedAt => $composableBuilder(
+    column: $table.lockedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get localAttachmentPath => $composableBuilder(
+    column: $table.localAttachmentPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get cloudAttachmentUrl => $composableBuilder(
+    column: $table.cloudAttachmentUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get folderId => $composableBuilder(
+    column: $table.folderId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3148,33 +3614,8 @@ class $$NotesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<bool> get hasAttachments => $composableBuilder(
-    column: $table.hasAttachments,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get contentType => $composableBuilder(
-    column: $table.contentType,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get isShared => $composableBuilder(
-    column: $table.isShared,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get folderId => $composableBuilder(
-    column: $table.folderId,
-    builder: (column) => ColumnFilters(column),
-  );
-
   ColumnFilters<String> get ownerUid => $composableBuilder(
     column: $table.ownerUid,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get ownerEmail => $composableBuilder(
-    column: $table.ownerEmail,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3193,6 +3634,11 @@ class $$NotesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<int> get updateCounter => $composableBuilder(
+    column: $table.updateCounter,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<int> get cloudSyncStatus => $composableBuilder(
     column: $table.cloudSyncStatus,
     builder: (column) => ColumnFilters(column),
@@ -3200,11 +3646,6 @@ class $$NotesTableFilterComposer
 
   ColumnFilters<int> get localSyncStatus => $composableBuilder(
     column: $table.localSyncStatus,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get versionCounter => $composableBuilder(
-    column: $table.versionCounter,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3268,23 +3709,43 @@ class $$NotesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<bool> get isPinned => $composableBuilder(
-    column: $table.isPinned,
+  ColumnOrderings<int> get schemaVersion => $composableBuilder(
+    column: $table.schemaVersion,
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<bool> get isArchived => $composableBuilder(
-    column: $table.isArchived,
+  ColumnOrderings<int> get contentVersion => $composableBuilder(
+    column: $table.contentVersion,
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<bool> get isLocked => $composableBuilder(
-    column: $table.isLocked,
+  ColumnOrderings<DateTime> get pinnedAt => $composableBuilder(
+    column: $table.pinnedAt,
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<int> get position => $composableBuilder(
-    column: $table.position,
+  ColumnOrderings<DateTime> get archivedAt => $composableBuilder(
+    column: $table.archivedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lockedAt => $composableBuilder(
+    column: $table.lockedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get localAttachmentPath => $composableBuilder(
+    column: $table.localAttachmentPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get cloudAttachmentUrl => $composableBuilder(
+    column: $table.cloudAttachmentUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get folderId => $composableBuilder(
+    column: $table.folderId,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -3298,33 +3759,8 @@ class $$NotesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<bool> get hasAttachments => $composableBuilder(
-    column: $table.hasAttachments,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get contentType => $composableBuilder(
-    column: $table.contentType,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get isShared => $composableBuilder(
-    column: $table.isShared,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get folderId => $composableBuilder(
-    column: $table.folderId,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<String> get ownerUid => $composableBuilder(
     column: $table.ownerUid,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get ownerEmail => $composableBuilder(
-    column: $table.ownerEmail,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -3343,6 +3779,11 @@ class $$NotesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get updateCounter => $composableBuilder(
+    column: $table.updateCounter,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get cloudSyncStatus => $composableBuilder(
     column: $table.cloudSyncStatus,
     builder: (column) => ColumnOrderings(column),
@@ -3350,11 +3791,6 @@ class $$NotesTableOrderingComposer
 
   ColumnOrderings<int> get localSyncStatus => $composableBuilder(
     column: $table.localSyncStatus,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get versionCounter => $composableBuilder(
-    column: $table.versionCounter,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -3410,19 +3846,39 @@ class $$NotesTableAnnotationComposer
   GeneratedColumn<int> get color =>
       $composableBuilder(column: $table.color, builder: (column) => column);
 
-  GeneratedColumn<bool> get isPinned =>
-      $composableBuilder(column: $table.isPinned, builder: (column) => column);
-
-  GeneratedColumn<bool> get isArchived => $composableBuilder(
-    column: $table.isArchived,
+  GeneratedColumn<int> get schemaVersion => $composableBuilder(
+    column: $table.schemaVersion,
     builder: (column) => column,
   );
 
-  GeneratedColumn<bool> get isLocked =>
-      $composableBuilder(column: $table.isLocked, builder: (column) => column);
+  GeneratedColumn<int> get contentVersion => $composableBuilder(
+    column: $table.contentVersion,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<int> get position =>
-      $composableBuilder(column: $table.position, builder: (column) => column);
+  GeneratedColumn<DateTime> get pinnedAt =>
+      $composableBuilder(column: $table.pinnedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get archivedAt => $composableBuilder(
+    column: $table.archivedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get lockedAt =>
+      $composableBuilder(column: $table.lockedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get localAttachmentPath => $composableBuilder(
+    column: $table.localAttachmentPath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get cloudAttachmentUrl => $composableBuilder(
+    column: $table.cloudAttachmentUrl,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get folderId =>
+      $composableBuilder(column: $table.folderId, builder: (column) => column);
 
   GeneratedColumn<String> get tags =>
       $composableBuilder(column: $table.tags, builder: (column) => column);
@@ -3432,29 +3888,8 @@ class $$NotesTableAnnotationComposer
     builder: (column) => column,
   );
 
-  GeneratedColumn<bool> get hasAttachments => $composableBuilder(
-    column: $table.hasAttachments,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get contentType => $composableBuilder(
-    column: $table.contentType,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<bool> get isShared =>
-      $composableBuilder(column: $table.isShared, builder: (column) => column);
-
-  GeneratedColumn<String> get folderId =>
-      $composableBuilder(column: $table.folderId, builder: (column) => column);
-
   GeneratedColumn<String> get ownerUid =>
       $composableBuilder(column: $table.ownerUid, builder: (column) => column);
-
-  GeneratedColumn<String> get ownerEmail => $composableBuilder(
-    column: $table.ownerEmail,
-    builder: (column) => column,
-  );
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -3465,6 +3900,11 @@ class $$NotesTableAnnotationComposer
   GeneratedColumn<DateTime> get deletedAt =>
       $composableBuilder(column: $table.deletedAt, builder: (column) => column);
 
+  GeneratedColumn<int> get updateCounter => $composableBuilder(
+    column: $table.updateCounter,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get cloudSyncStatus => $composableBuilder(
     column: $table.cloudSyncStatus,
     builder: (column) => column,
@@ -3472,11 +3912,6 @@ class $$NotesTableAnnotationComposer
 
   GeneratedColumn<int> get localSyncStatus => $composableBuilder(
     column: $table.localSyncStatus,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<int> get versionCounter => $composableBuilder(
-    column: $table.versionCounter,
     builder: (column) => column,
   );
 
@@ -3543,24 +3978,23 @@ class $$NotesTableTableManager
                 Value<String> title = const Value.absent(),
                 Value<String> content = const Value.absent(),
                 Value<int> color = const Value.absent(),
-                Value<bool> isPinned = const Value.absent(),
-                Value<bool> isArchived = const Value.absent(),
-                Value<bool> isLocked = const Value.absent(),
-                Value<int> position = const Value.absent(),
+                Value<int> schemaVersion = const Value.absent(),
+                Value<int> contentVersion = const Value.absent(),
+                Value<DateTime?> pinnedAt = const Value.absent(),
+                Value<DateTime?> archivedAt = const Value.absent(),
+                Value<DateTime?> lockedAt = const Value.absent(),
+                Value<String?> localAttachmentPath = const Value.absent(),
+                Value<String?> cloudAttachmentUrl = const Value.absent(),
+                Value<String?> folderId = const Value.absent(),
                 Value<String?> tags = const Value.absent(),
                 Value<DateTime?> reminderAt = const Value.absent(),
-                Value<bool> hasAttachments = const Value.absent(),
-                Value<String> contentType = const Value.absent(),
-                Value<bool> isShared = const Value.absent(),
-                Value<String?> folderId = const Value.absent(),
                 Value<String?> ownerUid = const Value.absent(),
-                Value<String?> ownerEmail = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> updateCounter = const Value.absent(),
                 Value<int> cloudSyncStatus = const Value.absent(),
                 Value<int> localSyncStatus = const Value.absent(),
-                Value<int> versionCounter = const Value.absent(),
                 Value<String?> creationPlatform = const Value.absent(),
                 Value<String?> creationDevice = const Value.absent(),
                 Value<String?> lastEditedPlatform = const Value.absent(),
@@ -3573,24 +4007,23 @@ class $$NotesTableTableManager
                 title: title,
                 content: content,
                 color: color,
-                isPinned: isPinned,
-                isArchived: isArchived,
-                isLocked: isLocked,
-                position: position,
+                schemaVersion: schemaVersion,
+                contentVersion: contentVersion,
+                pinnedAt: pinnedAt,
+                archivedAt: archivedAt,
+                lockedAt: lockedAt,
+                localAttachmentPath: localAttachmentPath,
+                cloudAttachmentUrl: cloudAttachmentUrl,
+                folderId: folderId,
                 tags: tags,
                 reminderAt: reminderAt,
-                hasAttachments: hasAttachments,
-                contentType: contentType,
-                isShared: isShared,
-                folderId: folderId,
                 ownerUid: ownerUid,
-                ownerEmail: ownerEmail,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
+                updateCounter: updateCounter,
                 cloudSyncStatus: cloudSyncStatus,
                 localSyncStatus: localSyncStatus,
-                versionCounter: versionCounter,
                 creationPlatform: creationPlatform,
                 creationDevice: creationDevice,
                 lastEditedPlatform: lastEditedPlatform,
@@ -3605,24 +4038,23 @@ class $$NotesTableTableManager
                 required String title,
                 required String content,
                 Value<int> color = const Value.absent(),
-                Value<bool> isPinned = const Value.absent(),
-                Value<bool> isArchived = const Value.absent(),
-                Value<bool> isLocked = const Value.absent(),
-                Value<int> position = const Value.absent(),
+                Value<int> schemaVersion = const Value.absent(),
+                Value<int> contentVersion = const Value.absent(),
+                Value<DateTime?> pinnedAt = const Value.absent(),
+                Value<DateTime?> archivedAt = const Value.absent(),
+                Value<DateTime?> lockedAt = const Value.absent(),
+                Value<String?> localAttachmentPath = const Value.absent(),
+                Value<String?> cloudAttachmentUrl = const Value.absent(),
+                Value<String?> folderId = const Value.absent(),
                 Value<String?> tags = const Value.absent(),
                 Value<DateTime?> reminderAt = const Value.absent(),
-                Value<bool> hasAttachments = const Value.absent(),
-                Value<String> contentType = const Value.absent(),
-                Value<bool> isShared = const Value.absent(),
-                Value<String?> folderId = const Value.absent(),
                 Value<String?> ownerUid = const Value.absent(),
-                Value<String?> ownerEmail = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> updateCounter = const Value.absent(),
                 Value<int> cloudSyncStatus = const Value.absent(),
                 Value<int> localSyncStatus = const Value.absent(),
-                Value<int> versionCounter = const Value.absent(),
                 Value<String?> creationPlatform = const Value.absent(),
                 Value<String?> creationDevice = const Value.absent(),
                 Value<String?> lastEditedPlatform = const Value.absent(),
@@ -3635,24 +4067,23 @@ class $$NotesTableTableManager
                 title: title,
                 content: content,
                 color: color,
-                isPinned: isPinned,
-                isArchived: isArchived,
-                isLocked: isLocked,
-                position: position,
+                schemaVersion: schemaVersion,
+                contentVersion: contentVersion,
+                pinnedAt: pinnedAt,
+                archivedAt: archivedAt,
+                lockedAt: lockedAt,
+                localAttachmentPath: localAttachmentPath,
+                cloudAttachmentUrl: cloudAttachmentUrl,
+                folderId: folderId,
                 tags: tags,
                 reminderAt: reminderAt,
-                hasAttachments: hasAttachments,
-                contentType: contentType,
-                isShared: isShared,
-                folderId: folderId,
                 ownerUid: ownerUid,
-                ownerEmail: ownerEmail,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
+                updateCounter: updateCounter,
                 cloudSyncStatus: cloudSyncStatus,
                 localSyncStatus: localSyncStatus,
-                versionCounter: versionCounter,
                 creationPlatform: creationPlatform,
                 creationDevice: creationDevice,
                 lastEditedPlatform: lastEditedPlatform,
@@ -3693,12 +4124,16 @@ typedef $$SyncedDevicesTableCreateCompanionBuilder =
       Value<DateTime?> lastSeenAsHostAt,
       Value<DateTime?> lastSeenAsClientAt,
       Value<DateTime> firstPairedAt,
-      Value<bool> isTrusted,
+      Value<DateTime?> blockedAt,
       Value<String?> publicKey,
       Value<String?> authKey,
+      Value<int> schemaVersion,
       Value<String?> deviceType,
       Value<int?> protocolVersion,
       Value<DateTime?> lastSuccessfulSyncAt,
+      Value<DateTime> updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<int> updateCounter,
       Value<int> rowid,
     });
 typedef $$SyncedDevicesTableUpdateCompanionBuilder =
@@ -3711,12 +4146,16 @@ typedef $$SyncedDevicesTableUpdateCompanionBuilder =
       Value<DateTime?> lastSeenAsHostAt,
       Value<DateTime?> lastSeenAsClientAt,
       Value<DateTime> firstPairedAt,
-      Value<bool> isTrusted,
+      Value<DateTime?> blockedAt,
       Value<String?> publicKey,
       Value<String?> authKey,
+      Value<int> schemaVersion,
       Value<String?> deviceType,
       Value<int?> protocolVersion,
       Value<DateTime?> lastSuccessfulSyncAt,
+      Value<DateTime> updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<int> updateCounter,
       Value<int> rowid,
     });
 
@@ -3769,8 +4208,8 @@ class $$SyncedDevicesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<bool> get isTrusted => $composableBuilder(
-    column: $table.isTrusted,
+  ColumnFilters<DateTime> get blockedAt => $composableBuilder(
+    column: $table.blockedAt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3781,6 +4220,11 @@ class $$SyncedDevicesTableFilterComposer
 
   ColumnFilters<String> get authKey => $composableBuilder(
     column: $table.authKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get schemaVersion => $composableBuilder(
+    column: $table.schemaVersion,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3796,6 +4240,21 @@ class $$SyncedDevicesTableFilterComposer
 
   ColumnFilters<DateTime> get lastSuccessfulSyncAt => $composableBuilder(
     column: $table.lastSuccessfulSyncAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updateCounter => $composableBuilder(
+    column: $table.updateCounter,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -3849,8 +4308,8 @@ class $$SyncedDevicesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<bool> get isTrusted => $composableBuilder(
-    column: $table.isTrusted,
+  ColumnOrderings<DateTime> get blockedAt => $composableBuilder(
+    column: $table.blockedAt,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -3861,6 +4320,11 @@ class $$SyncedDevicesTableOrderingComposer
 
   ColumnOrderings<String> get authKey => $composableBuilder(
     column: $table.authKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get schemaVersion => $composableBuilder(
+    column: $table.schemaVersion,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -3876,6 +4340,21 @@ class $$SyncedDevicesTableOrderingComposer
 
   ColumnOrderings<DateTime> get lastSuccessfulSyncAt => $composableBuilder(
     column: $table.lastSuccessfulSyncAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updateCounter => $composableBuilder(
+    column: $table.updateCounter,
     builder: (column) => ColumnOrderings(column),
   );
 }
@@ -3929,14 +4408,19 @@ class $$SyncedDevicesTableAnnotationComposer
     builder: (column) => column,
   );
 
-  GeneratedColumn<bool> get isTrusted =>
-      $composableBuilder(column: $table.isTrusted, builder: (column) => column);
+  GeneratedColumn<DateTime> get blockedAt =>
+      $composableBuilder(column: $table.blockedAt, builder: (column) => column);
 
   GeneratedColumn<String> get publicKey =>
       $composableBuilder(column: $table.publicKey, builder: (column) => column);
 
   GeneratedColumn<String> get authKey =>
       $composableBuilder(column: $table.authKey, builder: (column) => column);
+
+  GeneratedColumn<int> get schemaVersion => $composableBuilder(
+    column: $table.schemaVersion,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get deviceType => $composableBuilder(
     column: $table.deviceType,
@@ -3950,6 +4434,17 @@ class $$SyncedDevicesTableAnnotationComposer
 
   GeneratedColumn<DateTime> get lastSuccessfulSyncAt => $composableBuilder(
     column: $table.lastSuccessfulSyncAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get updateCounter => $composableBuilder(
+    column: $table.updateCounter,
     builder: (column) => column,
   );
 }
@@ -3995,12 +4490,16 @@ class $$SyncedDevicesTableTableManager
                 Value<DateTime?> lastSeenAsHostAt = const Value.absent(),
                 Value<DateTime?> lastSeenAsClientAt = const Value.absent(),
                 Value<DateTime> firstPairedAt = const Value.absent(),
-                Value<bool> isTrusted = const Value.absent(),
+                Value<DateTime?> blockedAt = const Value.absent(),
                 Value<String?> publicKey = const Value.absent(),
                 Value<String?> authKey = const Value.absent(),
+                Value<int> schemaVersion = const Value.absent(),
                 Value<String?> deviceType = const Value.absent(),
                 Value<int?> protocolVersion = const Value.absent(),
                 Value<DateTime?> lastSuccessfulSyncAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> updateCounter = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SyncedDevicesCompanion(
                 deviceUuid: deviceUuid,
@@ -4011,12 +4510,16 @@ class $$SyncedDevicesTableTableManager
                 lastSeenAsHostAt: lastSeenAsHostAt,
                 lastSeenAsClientAt: lastSeenAsClientAt,
                 firstPairedAt: firstPairedAt,
-                isTrusted: isTrusted,
+                blockedAt: blockedAt,
                 publicKey: publicKey,
                 authKey: authKey,
+                schemaVersion: schemaVersion,
                 deviceType: deviceType,
                 protocolVersion: protocolVersion,
                 lastSuccessfulSyncAt: lastSuccessfulSyncAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                updateCounter: updateCounter,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -4029,12 +4532,16 @@ class $$SyncedDevicesTableTableManager
                 Value<DateTime?> lastSeenAsHostAt = const Value.absent(),
                 Value<DateTime?> lastSeenAsClientAt = const Value.absent(),
                 Value<DateTime> firstPairedAt = const Value.absent(),
-                Value<bool> isTrusted = const Value.absent(),
+                Value<DateTime?> blockedAt = const Value.absent(),
                 Value<String?> publicKey = const Value.absent(),
                 Value<String?> authKey = const Value.absent(),
+                Value<int> schemaVersion = const Value.absent(),
                 Value<String?> deviceType = const Value.absent(),
                 Value<int?> protocolVersion = const Value.absent(),
                 Value<DateTime?> lastSuccessfulSyncAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> updateCounter = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SyncedDevicesCompanion.insert(
                 deviceUuid: deviceUuid,
@@ -4045,12 +4552,16 @@ class $$SyncedDevicesTableTableManager
                 lastSeenAsHostAt: lastSeenAsHostAt,
                 lastSeenAsClientAt: lastSeenAsClientAt,
                 firstPairedAt: firstPairedAt,
-                isTrusted: isTrusted,
+                blockedAt: blockedAt,
                 publicKey: publicKey,
                 authKey: authKey,
+                schemaVersion: schemaVersion,
                 deviceType: deviceType,
                 protocolVersion: protocolVersion,
                 lastSuccessfulSyncAt: lastSuccessfulSyncAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                updateCounter: updateCounter,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -4081,27 +4592,37 @@ typedef $$SyncedDevicesTableProcessedTableManager =
 typedef $$AppKeybindingsTableCreateCompanionBuilder =
     AppKeybindingsCompanion Function({
       required String actionName,
+      Value<String> targetPlatform,
       required String keyLabel,
       required int keyId,
       Value<bool> useCtrl,
       Value<bool> useAlt,
       Value<bool> useShift,
       Value<bool> useMeta,
-      Value<bool> isEnabled,
+      Value<DateTime?> disabledAt,
       Value<String> category,
+      Value<int> schemaVersion,
+      Value<DateTime> updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<int> updateCounter,
       Value<int> rowid,
     });
 typedef $$AppKeybindingsTableUpdateCompanionBuilder =
     AppKeybindingsCompanion Function({
       Value<String> actionName,
+      Value<String> targetPlatform,
       Value<String> keyLabel,
       Value<int> keyId,
       Value<bool> useCtrl,
       Value<bool> useAlt,
       Value<bool> useShift,
       Value<bool> useMeta,
-      Value<bool> isEnabled,
+      Value<DateTime?> disabledAt,
       Value<String> category,
+      Value<int> schemaVersion,
+      Value<DateTime> updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<int> updateCounter,
       Value<int> rowid,
     });
 
@@ -4116,6 +4637,11 @@ class $$AppKeybindingsTableFilterComposer
   });
   ColumnFilters<String> get actionName => $composableBuilder(
     column: $table.actionName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get targetPlatform => $composableBuilder(
+    column: $table.targetPlatform,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4149,13 +4675,33 @@ class $$AppKeybindingsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<bool> get isEnabled => $composableBuilder(
-    column: $table.isEnabled,
+  ColumnFilters<DateTime> get disabledAt => $composableBuilder(
+    column: $table.disabledAt,
     builder: (column) => ColumnFilters(column),
   );
 
   ColumnFilters<String> get category => $composableBuilder(
     column: $table.category,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get schemaVersion => $composableBuilder(
+    column: $table.schemaVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updateCounter => $composableBuilder(
+    column: $table.updateCounter,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -4171,6 +4717,11 @@ class $$AppKeybindingsTableOrderingComposer
   });
   ColumnOrderings<String> get actionName => $composableBuilder(
     column: $table.actionName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get targetPlatform => $composableBuilder(
+    column: $table.targetPlatform,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -4204,13 +4755,33 @@ class $$AppKeybindingsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<bool> get isEnabled => $composableBuilder(
-    column: $table.isEnabled,
+  ColumnOrderings<DateTime> get disabledAt => $composableBuilder(
+    column: $table.disabledAt,
     builder: (column) => ColumnOrderings(column),
   );
 
   ColumnOrderings<String> get category => $composableBuilder(
     column: $table.category,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get schemaVersion => $composableBuilder(
+    column: $table.schemaVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updateCounter => $composableBuilder(
+    column: $table.updateCounter,
     builder: (column) => ColumnOrderings(column),
   );
 }
@@ -4226,6 +4797,11 @@ class $$AppKeybindingsTableAnnotationComposer
   });
   GeneratedColumn<String> get actionName => $composableBuilder(
     column: $table.actionName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get targetPlatform => $composableBuilder(
+    column: $table.targetPlatform,
     builder: (column) => column,
   );
 
@@ -4247,11 +4823,29 @@ class $$AppKeybindingsTableAnnotationComposer
   GeneratedColumn<bool> get useMeta =>
       $composableBuilder(column: $table.useMeta, builder: (column) => column);
 
-  GeneratedColumn<bool> get isEnabled =>
-      $composableBuilder(column: $table.isEnabled, builder: (column) => column);
+  GeneratedColumn<DateTime> get disabledAt => $composableBuilder(
+    column: $table.disabledAt,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get category =>
       $composableBuilder(column: $table.category, builder: (column) => column);
+
+  GeneratedColumn<int> get schemaVersion => $composableBuilder(
+    column: $table.schemaVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get updateCounter => $composableBuilder(
+    column: $table.updateCounter,
+    builder: (column) => column,
+  );
 }
 
 class $$AppKeybindingsTableTableManager
@@ -4292,49 +4886,69 @@ class $$AppKeybindingsTableTableManager
           updateCompanionCallback:
               ({
                 Value<String> actionName = const Value.absent(),
+                Value<String> targetPlatform = const Value.absent(),
                 Value<String> keyLabel = const Value.absent(),
                 Value<int> keyId = const Value.absent(),
                 Value<bool> useCtrl = const Value.absent(),
                 Value<bool> useAlt = const Value.absent(),
                 Value<bool> useShift = const Value.absent(),
                 Value<bool> useMeta = const Value.absent(),
-                Value<bool> isEnabled = const Value.absent(),
+                Value<DateTime?> disabledAt = const Value.absent(),
                 Value<String> category = const Value.absent(),
+                Value<int> schemaVersion = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> updateCounter = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => AppKeybindingsCompanion(
                 actionName: actionName,
+                targetPlatform: targetPlatform,
                 keyLabel: keyLabel,
                 keyId: keyId,
                 useCtrl: useCtrl,
                 useAlt: useAlt,
                 useShift: useShift,
                 useMeta: useMeta,
-                isEnabled: isEnabled,
+                disabledAt: disabledAt,
                 category: category,
+                schemaVersion: schemaVersion,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                updateCounter: updateCounter,
                 rowid: rowid,
               ),
           createCompanionCallback:
               ({
                 required String actionName,
+                Value<String> targetPlatform = const Value.absent(),
                 required String keyLabel,
                 required int keyId,
                 Value<bool> useCtrl = const Value.absent(),
                 Value<bool> useAlt = const Value.absent(),
                 Value<bool> useShift = const Value.absent(),
                 Value<bool> useMeta = const Value.absent(),
-                Value<bool> isEnabled = const Value.absent(),
+                Value<DateTime?> disabledAt = const Value.absent(),
                 Value<String> category = const Value.absent(),
+                Value<int> schemaVersion = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> updateCounter = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => AppKeybindingsCompanion.insert(
                 actionName: actionName,
+                targetPlatform: targetPlatform,
                 keyLabel: keyLabel,
                 keyId: keyId,
                 useCtrl: useCtrl,
                 useAlt: useAlt,
                 useShift: useShift,
                 useMeta: useMeta,
-                isEnabled: isEnabled,
+                disabledAt: disabledAt,
                 category: category,
+                schemaVersion: schemaVersion,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                updateCounter: updateCounter,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

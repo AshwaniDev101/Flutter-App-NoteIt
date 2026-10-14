@@ -119,12 +119,13 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
   }
 
   void _handleNoteTap(Note note) async {
-
     // come back to the note editor if not already there
     ref.read(desktopRightPanelViewProvider.notifier).setView(RightPanelPageOptions.allNotes);
 
     final isSessionUnlocked = ref.watch(lockManagerProvider).sessionUnlockedNoteIds.contains(note.uuid);
-    if (note.isLocked && !isSessionUnlocked) {
+
+    // UPGRADED: isLocked is now lockedAt != null
+    if (note.lockedAt != null && !isSessionUnlocked) {
       // The Shell coordinates the security check
       final success = await PasswordPromptHelper.promptAndVerify(context, ref, note);
 
@@ -144,20 +145,44 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
       uuid: const Uuid().v4(),
       title: '',
       content: '',
+      color: 0xFFFFFFFF, // Default white
+
+      // VERSIONING (New)
+      schemaVersion: 1,
+      contentVersion: 1,
+
+      // UX TIMESTAMPS (Replacing booleans, null = false)
+      pinnedAt: null,
+      archivedAt: null,
+      lockedAt: null,
+
+      // ATTACHMENTS (New)
+      localAttachmentPath: null,
+      cloudAttachmentUrl: null,
+
+      // NAVIGATION & SECURITY
+      folderId: null,
+      tags: null,
+      reminderAt: null,
+      ownerUid: null,
+
+      // METADATA
+      creationPlatform: null,
+      creationDevice: null,
+      lastEditedPlatform: null,
+      lastEditedDevice: null,
+      deletedPlatform: null,
+      deletedDevice: null,
+
+      // SYNC & TIMESTAMPS
       createdAt: DateTime.now().toUtc(),
       updatedAt: DateTime.now().toUtc(),
-      isLocked: false,
-      isPinned: false,
-      color: 0,
-      isArchived: false,
-      position: 0,
-      hasAttachments: false,
-      contentType: 'text',
-      isShared: false,
+      deletedAt: null,
+      updateCounter: 1, // Renamed from versionCounter
       cloudSyncStatus: 0,
       localSyncStatus: 0,
-      versionCounter: 1,
     );
+
     // Navigate to the editor panel
     ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.allNotes);
     ref.read(activeNoteProvider.notifier).setNote(emptyNote);

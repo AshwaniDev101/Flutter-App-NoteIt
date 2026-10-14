@@ -56,7 +56,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
   void initState() {
     super.initState();
     _viewModel = ref.read(editNoteViewModelProvider.notifier);
-    _isLocked = widget.existingNote?.isLocked ?? false;
+    _isLocked = widget.existingNote?.lockedAt != null;
 
     _titleController = TextEditingController(text: widget.existingNote?.title ?? '');
     _contentController = TextEditingController(text: widget.existingNote?.content ?? '');
@@ -223,7 +223,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
             const SizedBox(width: 8),
             NoteEditorOptionButton(
               isLocked: _isLocked,
-              isPinned: widget.existingNote?.isPinned ?? false,
+              isPinned: widget.existingNote?.pinnedAt != null,
               onPressed: (NoteEditorOption option) async {
 
                 // If it's a new, unsaved note, we can't do DB actions on it yet!

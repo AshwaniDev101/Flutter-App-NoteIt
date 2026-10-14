@@ -12,7 +12,7 @@ class LockOverlayWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // If completely unlocked, render nothing (no overlay)
-    if (!note.isLocked) return const SizedBox.shrink();
+    if (note.lockedAt == null) return const SizedBox.shrink();
 
     // Check session state
     final isSessionUnlocked = ref.watch(lockManagerProvider).sessionUnlockedNoteIds.contains(note.uuid);

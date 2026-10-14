@@ -79,29 +79,51 @@ class NoteFirestoreDatabase {
       final docRef = _notesRef.doc(note.uuid);
 
       final data = {
-        'uuid': note.uuid, // Save it inside the document too
+        // CORE
+        'uuid': note.uuid,
         'title': note.title,
         'content': note.content,
         'color': note.color,
-        'isPinned': note.isPinned,
-        'isArchived': note.isArchived,
-        'isLocked': note.isLocked,
-        'position': note.position,
+
+        // VERSIONING & CONFLICT RESOLUTION
+        'schemaVersion': note.schemaVersion,
+        'contentVersion': note.contentVersion,
+        'updateCounter': note.updateCounter, // Crucial for LWW logic in the cloud
+
+        // UX TIMESTAMPS (Upgraded from booleans)
+        'pinnedAt': note.pinnedAt?.toUtc().millisecondsSinceEpoch,
+        'archivedAt': note.archivedAt?.toUtc().millisecondsSinceEpoch,
+        'lockedAt': note.lockedAt?.toUtc().millisecondsSinceEpoch,
+
+        // ATTACHMENTS
+        'localAttachmentPath': note.localAttachmentPath,
+        'cloudAttachmentUrl': note.cloudAttachmentUrl,
+
+        // NAVIGATION & SECURITY
+        'folderId': note.folderId,
         'tags': note.tags,
+        'ownerUid': note.ownerUid,
+
+        // METADATA
         'creationPlatform': note.creationPlatform,
         'creationDevice': note.creationDevice,
+        'lastEditedPlatform': note.lastEditedPlatform,
+        'lastEditedDevice': note.lastEditedDevice,
+        'deletedPlatform': note.deletedPlatform,
+        'deletedDevice': note.deletedDevice,
 
-        // Preserve the exact local times for the UI
-        'deletedAt': note.deletedAt?.toUtc().millisecondsSinceEpoch,
+        // SYNC TIMESTAMPS
         'reminderAt': note.reminderAt?.toUtc().millisecondsSinceEpoch,
+        'deletedAt': note.deletedAt?.toUtc().millisecondsSinceEpoch,
         'createdAt': note.createdAt.toUtc().millisecondsSinceEpoch,
-
         'updatedAt': note.updatedAt.toUtc().millisecondsSinceEpoch,
 
-        // Let Firebase dictate the exact sync timeline!
+        // Let Firebase dictate the exact cloud sync timeline
         'cloudUpdatedAt': FieldValue.serverTimestamp(),
       };
 
+      // SetOptions(merge: true) ensures we don't wipe out future columns
+      // created by newer app versions if this is pushed from an older app.
       batch.set(docRef, data, SetOptions(merge: true));
     }
 

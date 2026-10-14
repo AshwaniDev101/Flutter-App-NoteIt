@@ -240,7 +240,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
               ),
             ),
           ),
-          if (widget.note.isPinned) ...[
+          if (widget.note.pinnedAt != null) ...[
             const SizedBox(width: 8),
             Icon(Icons.push_pin, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
           ],
@@ -279,14 +279,14 @@ class _NoteCardState extends ConsumerState<NoteCard> {
                   ),
                 ),
               ),
-              if (widget.note.isPinned) ...[
+              if (widget.note.pinnedAt != null) ...[
                 const SizedBox(width: 8),
                 Icon(Icons.push_pin, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
               ],
             ],
           ),
           // const SizedBox(height: 2),
-          widget.note.isLocked
+          widget.note.lockedAt != null
               ? Align(
             alignment: Alignment.centerLeft,
             child: Icon(
@@ -358,7 +358,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
                   ),
                 ),
               ),
-              if (widget.note.isPinned) ...[
+              if (widget.note.pinnedAt != null) ...[
                 const SizedBox(width: 8),
                 Icon(Icons.push_pin, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
               ],
@@ -373,7 +373,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
 
                   child: HighlightedText(
                     //  Pass empty string if locked & not verified, SECURITY: not doing so, ill allow screen reader to fetch the content
-                    text: (widget.note.isLocked && !isSessionUnlocked) ? "" : widget.note.content,
+                    text: (widget.note.lockedAt != null && !isSessionUnlocked) ? "" : widget.note.content,
                     query: widget.searchQuery,
                     // maxLines: maxLines,
                     overflow: TextOverflow.fade,
@@ -430,7 +430,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
                   ),
                 ),
               ),
-              if (widget.note.isPinned) ...[
+              if (widget.note.pinnedAt != null) ...[
                 const SizedBox(width: 8),
                 Icon(Icons.push_pin, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
               ],
@@ -445,7 +445,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
 
                   child: HighlightedText(
                     //  Pass empty string if locked & not verified, SECURITY: not doing so, ill allow screen reader to fetch the content
-                    text: (widget.note.isLocked && !isSessionUnlocked) ? "" : widget.note.content,
+                    text: (widget.note.lockedAt != null && !isSessionUnlocked) ? "" : widget.note.content,
                     query: widget.searchQuery,
                     // maxLines: maxLines,
                     overflow: TextOverflow.fade,

@@ -6,7 +6,7 @@ import '../local_database.dart';
 
 part 'synced_devices_dao.g.dart';
 
-// rebuild using 'flutter pub run build_runner build --delete-conflicting-outputs'
+// rebuild using 'dart run build_runner build --delete-conflicting-outputs'
 final syncedDevicesDaoProvider = Provider(
       (ref) => ref.watch(localDatabaseProvider).syncedDevicesDao,
 );
@@ -21,17 +21,41 @@ class SyncedDevicesDao extends DatabaseAccessor<LocalDatabase>
     with _$SyncedDevicesDaoMixin {
   SyncedDevicesDao(super.db);
 
-  /// Watches all synced devices in real-time
+  /// UPGRADED: Watches all active synced devices, hiding soft-deleted ones
   Stream<List<SyncedDevice>> watchAllDevices() {
-    return select(syncedDevices).watch();
+    return (select(syncedDevices)
+      ..where((t) => t.deletedAt.isNull())
+      ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)])
+    ).watch();
   }
 
-  /// Deletes a device by its UUID
-  Future<int> deleteDevice(String uuid) {
-    return (delete(syncedDevices)..where((t) => t.deviceUuid.equals(uuid))).go();
+  /// UPGRADED: Soft-deletes the device so the deletion can sync to other platforms
+  Future<int> deleteDevice(String uuid) async {
+    return await (update(syncedDevices)..where((t) => t.deviceUuid.equals(uuid))).write(
+      SyncedDevicesCompanion.custom(
+        deletedAt: Variable(DateTime.now().toUtc()),
+        updatedAt: Variable(DateTime.now().toUtc()),
+        updateCounter: syncedDevices.updateCounter + const Constant(1),
+      ),
+    );
   }
 
+  /// NEW: Helper to block/unblock a device using the new blockedAt timestamp
+  Future<void> setDeviceBlocked(String uuid, {required bool isBlocked}) async {
+    await (update(syncedDevices)..where((t) => t.deviceUuid.equals(uuid))).write(
+      SyncedDevicesCompanion.custom(
+        blockedAt: Variable(isBlocked ? DateTime.now().toUtc() : null),
+        updatedAt: Variable(DateTime.now().toUtc()),
+        updateCounter: syncedDevices.updateCounter + const Constant(1),
+      ),
+    );
+  }
+
+  // =========================================================================
   // LOCAL SYNC: DEVICE PAIRS (P2P HISTORY)
+  // =========================================================================
+
+  /// UPGRADED: Safely upserts without destroying the updateCounter
   Future<void> upsertDeviceAsHost({
     required String uuid,
     required String name,
@@ -40,22 +64,47 @@ class SyncedDevicesDao extends DatabaseAccessor<LocalDatabase>
     String? deviceType,
     int? protocolVersion,
   }) async {
-    await into(syncedDevices).insertOnConflictUpdate(
-      SyncedDevicesCompanion(
-        deviceUuid: Value(uuid),
-        deviceName: Value(name),
-        // SAFE UPDATE: Only overwrite IP/Port if new values are actually provided
-        lastKnownIp: lastKnownIp == null ? const Value.absent() : Value(lastKnownIp),
-        lastKnownPort: lastKnownPort == null ? const Value.absent() : Value(lastKnownPort),
-        // Save metadata if available
-        deviceType: deviceType == null ? const Value.absent() : Value(deviceType),
-        protocolVersion: protocolVersion == null ? const Value.absent() : Value(protocolVersion),
-        lastSeenAsHostAt: Value(DateTime.now()),
-      ),
-    );
+    final existing = await (select(syncedDevices)..where((t) => t.deviceUuid.equals(uuid))).getSingleOrNull();
+    final now = DateTime.now().toUtc();
+
+    if (existing != null) {
+      await (update(syncedDevices)..where((t) => t.deviceUuid.equals(uuid))).write(
+        SyncedDevicesCompanion.custom(
+          deviceName: Variable(name),
+
+          // SAFE UPDATE: If new value is null, keep the old database value
+          lastKnownIp: lastKnownIp == null ? syncedDevices.lastKnownIp : Variable(lastKnownIp),
+          lastKnownPort: lastKnownPort == null ? syncedDevices.lastKnownPort : Variable(lastKnownPort),
+          deviceType: deviceType == null ? syncedDevices.deviceType : Variable(deviceType),
+          protocolVersion: protocolVersion == null ? syncedDevices.protocolVersion : Variable(protocolVersion),
+
+          lastSeenAsHostAt: Variable(now),
+          deletedAt: const Variable(null), // Restore if it was previously soft-deleted
+
+          // SYNC ENGINE: Increment counter
+          updatedAt: Variable(now),
+          updateCounter: syncedDevices.updateCounter + const Constant(1),
+        ),
+      );
+    } else {
+      await into(syncedDevices).insert(
+        SyncedDevicesCompanion.insert(
+          deviceUuid: uuid,
+          deviceName: name,
+          lastKnownIp: lastKnownIp == null ? const Value.absent() : Value(lastKnownIp),
+          lastKnownPort: lastKnownPort == null ? const Value.absent() : Value(lastKnownPort),
+          deviceType: deviceType == null ? const Value.absent() : Value(deviceType),
+          protocolVersion: protocolVersion == null ? const Value.absent() : Value(protocolVersion),
+
+          lastSeenAsHostAt: Value(now),
+          firstPairedAt: Value(now),
+          updatedAt: Value(now),
+        ),
+      );
+    }
   }
 
-  // LOCAL SYNC: DEVICE PAIRS (P2P HISTORY)
+  /// UPGRADED: Safely upserts without destroying the updateCounter
   Future<void> upsertDeviceAsClient({
     required String uuid,
     required String name,
@@ -64,25 +113,56 @@ class SyncedDevicesDao extends DatabaseAccessor<LocalDatabase>
     String? deviceType,
     int? protocolVersion,
   }) async {
-    await into(syncedDevices).insertOnConflictUpdate(
-      SyncedDevicesCompanion(
-        deviceUuid: Value(uuid),
-        deviceName: Value(name),
-        lastKnownIp: lastKnownIp == null ? const Value.absent() : Value(lastKnownIp),
-        lastKnownPort: lastKnownPort == null ? const Value.absent() : Value(lastKnownPort),
-        deviceType: deviceType == null ? const Value.absent() : Value(deviceType),
-        protocolVersion: protocolVersion == null ? const Value.absent() : Value(protocolVersion),
-        lastSeenAsClientAt: Value(DateTime.now()),
-      ),
-    );
+    final existing = await (select(syncedDevices)..where((t) => t.deviceUuid.equals(uuid))).getSingleOrNull();
+    final now = DateTime.now().toUtc();
+
+    if (existing != null) {
+      await (update(syncedDevices)..where((t) => t.deviceUuid.equals(uuid))).write(
+        SyncedDevicesCompanion.custom(
+          deviceName: Variable(name),
+          lastKnownIp: lastKnownIp == null ? syncedDevices.lastKnownIp : Variable(lastKnownIp),
+          lastKnownPort: lastKnownPort == null ? syncedDevices.lastKnownPort : Variable(lastKnownPort),
+          deviceType: deviceType == null ? syncedDevices.deviceType : Variable(deviceType),
+          protocolVersion: protocolVersion == null ? syncedDevices.protocolVersion : Variable(protocolVersion),
+
+          lastSeenAsClientAt: Variable(now),
+          deletedAt: const Variable(null),
+
+          updatedAt: Variable(now),
+          updateCounter: syncedDevices.updateCounter + const Constant(1),
+        ),
+      );
+    } else {
+      await into(syncedDevices).insert(
+        SyncedDevicesCompanion.insert(
+          deviceUuid: uuid,
+          deviceName: name,
+          lastKnownIp: lastKnownIp == null ? const Value.absent() : Value(lastKnownIp),
+          lastKnownPort: lastKnownPort == null ? const Value.absent() : Value(lastKnownPort),
+          deviceType: deviceType == null ? const Value.absent() : Value(deviceType),
+          protocolVersion: protocolVersion == null ? const Value.absent() : Value(protocolVersion),
+
+          lastSeenAsClientAt: Value(now),
+          firstPairedAt: Value(now),
+          updatedAt: Value(now),
+        ),
+      );
+    }
   }
 
-  /// Use this query to instantly try reconnecting to past hosts
-  /// before falling back to mDNS / UDP broadcasting
+  // =========================================================================
+  // CONNECTION UTILITIES
+  // =========================================================================
+
+  /// UPGRADED: Use this query to instantly try reconnecting to past hosts.
+  /// Now safely ignores devices you deleted or blocked!
   Future<List<SyncedDevice>> getRecentHostsForFastReconnect() async {
     return (select(syncedDevices)
       ..where((t) => t.lastKnownIp.isNotNull() & t.lastKnownPort.isNotNull())
       ..where((t) => t.lastSeenAsHostAt.isNotNull())
+    // SECURITY & SYNC PROTECTIONS
+      ..where((t) => t.deletedAt.isNull())
+      ..where((t) => t.blockedAt.isNull())
       ..orderBy([(t) => OrderingTerm.desc(t.lastSeenAsHostAt)])
       ..limit(5))
         .get();
@@ -91,6 +171,8 @@ class SyncedDevicesDao extends DatabaseAccessor<LocalDatabase>
   Future<SyncedDevice?> getMostRecentHost() async {
     return (select(syncedDevices)
       ..where((t) => t.lastSeenAsHostAt.isNotNull())
+      ..where((t) => t.deletedAt.isNull())
+      ..where((t) => t.blockedAt.isNull())
       ..orderBy([(t) => OrderingTerm.desc(t.lastSeenAsHostAt)])
       ..limit(1))
         .getSingleOrNull();
@@ -101,12 +183,11 @@ class SyncedDevicesDao extends DatabaseAccessor<LocalDatabase>
     final countExp = syncedDevices.deviceUuid.count();
     final query = selectOnly(syncedDevices)
       ..addColumns([countExp])
-      ..where(syncedDevices.deviceUuid.equals(uuid));
+      ..where(syncedDevices.deviceUuid.equals(uuid))
+      ..where(syncedDevices.deletedAt.isNull()); // Ensure we don't count trashed devices
 
     final result = await query.map((row) => row.read(countExp)).getSingle();
 
-    // If result is somehow null, it defaults to 0.
-    // This avoids the '!' operator completely.
     return (result ?? 0) > 0;
   }
 }

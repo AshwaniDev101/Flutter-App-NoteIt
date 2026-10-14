@@ -87,18 +87,28 @@ class _ImportNotesPageState extends ConsumerState<ImportNotesPage> {
           map['title'] ??= 'Untitled Note';
           map['content'] ??= '';
           map['color'] ??= 4294967295; // Default white/transparent
-          map['isPinned'] ??= false;
-          map['isArchived'] ??= false;
-          map['isLocked'] ??= false;
-          map['position'] ??= 0;
-          map['hasAttachments'] ??= false;
-          map['isShared'] ??= false;
+
+          // Backward compatibility for upgraded boolean fields to DateTime timestamps
+          if (map['pinnedAt'] == null && map['isPinned'] == true) {
+            map['pinnedAt'] = DateTime.now().toUtc().toIso8601String();
+          }
+          if (map['archivedAt'] == null && map['isArchived'] == true) {
+            map['archivedAt'] = DateTime.now().toUtc().toIso8601String();
+          }
+          if (map['lockedAt'] == null && map['isLocked'] == true) {
+            map['lockedAt'] = DateTime.now().toUtc().toIso8601String();
+          }
+          if (map['updateCounter'] == null && map['versionCounter'] != null) {
+            map['updateCounter'] = map['versionCounter'];
+          }
+
+          map['updateCounter'] ??= 1;
+          map['schemaVersion'] ??= 1;
+          map['contentVersion'] ??= 1;
           map['cloudSyncStatus'] ??= 0;
           map['localSyncStatus'] ??= 0;
-          map['versionCounter'] ??= 1;
-          map['contentType'] ??= 'plain_text';
-          map['createdAt'] ??= DateTime.now().millisecondsSinceEpoch;
-          map['updatedAt'] ??= DateTime.now().millisecondsSinceEpoch;
+          map['createdAt'] ??= DateTime.now().toUtc().toIso8601String();
+          map['updatedAt'] ??= DateTime.now().toUtc().toIso8601String();
 
           parsedNotes.add(Note.fromJson(map));
         } catch (e) {

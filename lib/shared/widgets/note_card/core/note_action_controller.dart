@@ -46,14 +46,15 @@ class NoteActionsController {
         content: note.content,
         color: Value(note.color),
         tags: Value(note.tags),
-        isPinned: const Value(false),
-        isArchived: const Value(false),
-        isLocked: Value(note.isLocked),
+        // Note: We omit pinnedAt and archivedAt so they default to null (unpinned/unarchived).
+        lockedAt: Value(note.lockedAt), // Inherit the original's lock state
         createdAt: Value(DateTime.now().toUtc()),
         updatedAt: Value(DateTime.now().toUtc()),
         cloudSyncStatus: const Value(0),
         localSyncStatus: const Value(0),
         creationPlatform: Value(platform),
+
+        // updateCounter automatically defaults to 1 on insert
       );
     }).toList();
 

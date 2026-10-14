@@ -48,7 +48,7 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
   void initState() {
     super.initState();
     _viewModel = ref.read(editNoteViewModelProvider.notifier);
-    _isLocked = widget.existingNote?.isLocked ?? false;
+    _isLocked = widget.existingNote?.lockedAt != null;
 
     _titleController = TextEditingController(text: widget.existingNote?.title ?? '');
     _contentController = TextEditingController(text: widget.existingNote?.content ?? '');
@@ -166,7 +166,7 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
           actions: [ NoteEditorOptionButton(
 
             isLocked: _isLocked,
-            isPinned: widget.existingNote?.isPinned ?? false,
+            isPinned: widget.existingNote?.pinnedAt != null,
             onPressed: (NoteEditorOption option) {
               switch (option) {
                 case NoteEditorOption.delete:

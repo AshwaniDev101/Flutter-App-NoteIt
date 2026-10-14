@@ -95,7 +95,48 @@ class SyncedDevicesListView extends ConsumerWidget {
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
+                              if (device.blockedAt != null) ...[
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  margin: const EdgeInsets.only(right: 6),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(color: Colors.red.withValues(alpha: 0.5)),
+                                  ),
+                                  child: const Text(
+                                    'Blocked',
+                                    style: TextStyle(fontSize: 10, color: Colors.red, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ],
                               _RoleBadge(role: lastRole),
+                              const SizedBox(width: 8),
+                              IconButton(
+                                icon: Icon(
+                                  device.blockedAt != null ? Icons.block : Icons.shield_outlined,
+                                  size: 20,
+                                  color: device.blockedAt != null ? Colors.red : null,
+                                ),
+                                tooltip: device.blockedAt != null ? 'Unblock device' : 'Block device',
+                                splashRadius: 20,
+                                constraints: const BoxConstraints(),
+                                padding: EdgeInsets.zero,
+                                onPressed: () async {
+                                  final dao = ref.read(syncedDevicesDaoProvider);
+                                  final willBlock = device.blockedAt == null;
+                                  await dao.setDeviceBlocked(device.deviceUuid, isBlocked: willBlock);
+
+                                  if (context.mounted) {
+                                    SnackBarManager.show(
+                                      msg: willBlock
+                                          ? '${device.deviceName} blocked'
+                                          : '${device.deviceName} unblocked',
+                                      type: SnackBarMessageType.acknowledgment,
+                                    );
+                                  }
+                                },
+                              ),
                               const SizedBox(width: 8),
                               IconButton(
                                 icon: const Icon(Icons.delete_outline, size: 20),

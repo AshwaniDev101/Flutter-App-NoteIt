@@ -11,11 +11,11 @@ ThemeData get _darkThemeData => ThemeData(
     // The most prominent color, used for prominent active elements like filled buttons, active switches, and selected states.
     primary: Color(0xFFA6ACFF), // Vibrant Lavender
     // Text and icons sitting directly on top of the 'primary' color. Needs high contrast.
-    onPrimary: Color(0xFF0B105C),
+    onPrimary: Color(0xFF131853),
     // A softer, lower-emphasis version of the primary color. Used for the default Floating Action Button (FAB) background.
-    primaryContainer: Color(0xFF262E7A), // Deep, rich violet
+    primaryContainer: Color(0xFF323B7C), // Deep, rich violet
     // Text and icons sitting directly on top of 'primaryContainer'.
-    onPrimaryContainer: Color(0xFFDFE2FF),
+    onPrimaryContainer: Color(0xFFCACDF5),
 
     //  SECONDARY COLORS (The Accent)
     // An accent color for less prominent elements like filter chips, secondary buttons, and checkboxes.

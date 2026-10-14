@@ -48,7 +48,7 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
   }
 
   void _handleNoteTap(Note note) async {
-    if (note.isLocked) {
+    if (note.lockedAt != null) {
       final success = await PasswordPromptHelper.promptAndVerify(context, ref, note);
       if (success && mounted) {
         context.push(AppRoutes.edit, extra: note);

@@ -2,75 +2,112 @@ import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
 // To trigger fresh code gen use 'dart run build_runner build'
-class Notes extends Table {
-  // PRIMARY KEYS & CORE DATA
-  // The local fast-lookup ID (Only used for local UI, NEVER use this for syncing)
-  // IntColumn get id => integer().autoIncrement()();
 
-  // The Global Sync ID. This is what we use to compare notes between devices.
+// --- PERFORMANCE INDEXES ---
+// Creates hidden, alphabetized lookup tables sorted by specific columns.
+// Multiple row IDs (note indexes) can be mapped to a single value.
+//
+// This ensures that when we load a folder, we aren't scanning every single
+// row in the database one by one. Instead, SQLite jumps the cursor straight
+// to 'FolderID2' and grabs all matching notes instantly.
+//
+// Behind the scenes example:
+// FolderID1 : Row #4
+// FolderID2 : Row #12
+// FolderID2 : Row #18
+// FolderID3 : Row #21
+//
+// We index our heaviest queries: opening a folder (folder_id), finding
+// notes that need to be synced (updated_at), and filtering out trash (deleted_at).
+@TableIndex(name: 'idx_notes_updated_at', columns: {#updatedAt})
+@TableIndex(name: 'idx_notes_deleted_at', columns: {#deletedAt})
+class Notes extends Table {
+  // PRIMARY KEY
+  // completely offline on multiple devices without ID collisions when they finally sync.
   TextColumn get uuid => text().clientDefault(() => const Uuid().v4())();
 
+  // CORE DATA
   TextColumn get title => text().withLength(min: 0, max: 255)();
+
   TextColumn get content => text()();
 
-  // UI & UX FEATURES
   IntColumn get color => integer().withDefault(const Constant(0xFFFFFFFF))();
-  BoolColumn get isPinned => boolean().withDefault(const Constant(false))();
-  BoolColumn get isArchived => boolean().withDefault(const Constant(false))();
-  BoolColumn get isLocked => boolean().withDefault(const Constant(false))();
-  IntColumn get position => integer().withDefault(const Constant(0))();
-  // Note: Stored as a delimited string (e.g., "|work|urgent|") for accurate searching
-  TextColumn get tags => text().nullable()();
-  DateTimeColumn get reminderAt => dateTime().nullable()();
 
-  // Future-proofing: If we ever allow image/audio uploads, this boolean
-  // lets your UI show a paperclip icon without parsing the whole content string.
-  BoolColumn get hasAttachments =>
-      boolean().withDefault(const Constant(false))();
+  // Tracks table-level changes (e.g., 1 = Base schema, 2 = Added 'isFavorite' column).
+  // Older apps can usually still edit the text, they just ignore the new columns.
+  IntColumn get schemaVersion => integer().withDefault(const Constant(1))();
 
-  // EDITOR & COLLAB (FUTURE-PROOFING)
-  // e.g., 'plain_text', 'markdown', 'checklist', 'drawing'
-  TextColumn get contentType =>
-      text().withDefault(const Constant('plain_text'))();
-  // Prepares the UI for collaborative features
-  BoolColumn get isShared => boolean().withDefault(const Constant(false))();
+  // Tracks the format of the 'content' string (e.g., 1 = Plain text, 2 = Quill Delta JSON).
+  // If an older app sees a higher contentVersion, it MUST lock the editor to prevent
+  // overwriting and corrupting the rich-text JSON.
+  IntColumn get contentVersion => integer().withDefault(const Constant(1))();
 
-  // RELATIONAL DATA
-  // Future-proofing: Points to the firestoreId of a Folder. Null means it sits on the root screen.
+  // UX TIMESTAMPS (The "Boolean Replacements")
+  // We use DateTimes instead of Booleans (e.g., isPinned) so the sync engine knows
+  // WHICH device's action happened last (Last-Writer-Wins) if a note is modified offline.
+  // Null = False.
+  DateTimeColumn get pinnedAt => dateTime().nullable()();
+
+  DateTimeColumn get archivedAt => dateTime().nullable()();
+
+  DateTimeColumn get lockedAt => dateTime().nullable()();
+
+  // ATTACHMENTS
+  // Avoids storing heavy BLOBs in SQLite to keep the database fast.
+  // localAttachmentPath: The file path on the current Android/Windows device.
+  // cloudAttachmentUrl: The Firebase Storage URL for cross-device syncing.
+  TextColumn get localAttachmentPath => text().nullable()();
+
+  TextColumn get cloudAttachmentUrl => text().nullable()();
+
+  // NAVIGATION & TAGS
   TextColumn get folderId => text().nullable()();
 
-  // MULTI-TENANT SECURITY
-  // Future-proofing: Building the privacy wall.
-  TextColumn get ownerUid => text().nullable()();
-  TextColumn get ownerEmail => text().nullable()();
+  TextColumn get tags => text().nullable()();
 
-  // TIMESTAMPS (THE LWW ENGINE)
+  DateTimeColumn get reminderAt => dateTime().nullable()();
+
+  // SECURITY
+  // Crucial for Firebase Security Rules. Ensures only the owner can read/write this note
+  // when synced to the cloud. Also helps filter notes locally if multiple accounts share a device.
+  TextColumn get ownerUid => text().nullable()();
+
+  // SYNC TIMESTAMPS & VERSIONING
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
-  // REQUIRES a timestamp to compare. It defaults to the creation time.
+
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
-  // Essential for P2P: Soft deletes ("Tombstones"). If you hard-delete a note,
-  // the other device won't know, and will just re-sync it back to you.
+
+  // The "Tombstone" Pattern: We soft-delete notes instead of hard-deleting them.
+  // If we hard-deleted, other offline devices wouldn't know it was deleted and would
+  // just sync the note back. The cloud reads this and tells all devices to delete it.
   DateTimeColumn get deletedAt => dateTime().nullable()();
 
-  // SYNC ENGINE
-  // TextColumn get firestoreId => text().nullable()();
+  // Conflict resolution counter. Increments by 1 on EVERY local edit.
+  // If two devices edit offline, the cloud uses this to know which payload has more
+  // recent work, completely ignoring broken/inaccurate device system clocks.
+  IntColumn get updateCounter => integer().withDefault(const Constant(1))();
+
+  // SYNC STATUS
+  // Typically maps to an Enum (e.g., 0 = synced, 1 = pending, 2 = error).
+  // cloudSyncStatus tracks Firebase sync. localSyncStatus tracks P2P Wi-Fi sync.
   IntColumn get cloudSyncStatus => integer().withDefault(const Constant(0))();
+
   IntColumn get localSyncStatus => integer().withDefault(const Constant(0))();
-  // Increments on every edit. More reliable than timestamps for advanced conflict resolution.
-  IntColumn get versionCounter => integer().withDefault(const Constant(1))();
 
-  // METADATA & DEBUGGING
+  // METADATA (Debugging tools)
+  // Helps track down sync bugs in edge cases (e.g., "Why did this note delete? Ah, Windows did it.")
   TextColumn get creationPlatform => text().nullable()();
-  TextColumn get creationDevice => text().nullable()();
+  TextColumn get creationDevice => text().nullable()(); // e.g., "Pixel 7", "DESKTOP-XT49"
 
-  // Future-proofing: When a conflict happens, it helps to know which device caused it.
   TextColumn get lastEditedPlatform => text().nullable()();
   TextColumn get lastEditedDevice => text().nullable()();
 
-  // Tracks which platform initiated the soft-delete (e.g., 'android', 'windows')
   TextColumn get deletedPlatform => text().nullable()();
   TextColumn get deletedDevice => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {uuid};
+
+
+
 }
