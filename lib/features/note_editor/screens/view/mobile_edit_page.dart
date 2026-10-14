@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:noteit/database/drift/local_database.dart';
 
+import '../../../../shared/find_replace.dart';
 import '../../../../shared/widgets/note_card/core/note_action_controller.dart';
+import '../../../../shared/widgets/note_card/highlighting_textediting_controller.dart';
 import '../../../../shared/widgets/snack_bar_manager.dart';
 import '../../../home/view/desktop/right_panel/core/navigator.dart';
 import '../../widgets/note_editor_options.dart';
@@ -25,7 +27,7 @@ class MobileEditNotePage extends ConsumerStatefulWidget {
 class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
 
   late final TextEditingController _titleController;
-  late final TextEditingController _contentController;
+  late final HighlightingTextEditingController _contentController;
   final UndoHistoryController _undoController = UndoHistoryController();
 
   late final EditNoteViewModel _viewModel;
@@ -35,6 +37,7 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
   late bool _isPinned;
   bool _hasTriggeredFinalSave = false;
   bool _hasCreatedNewNote = false;
+  bool _isFind = false;
 
   late final FocusNode _titleFocusNode;
   late final FocusNode _contentFocusNode;
@@ -54,7 +57,7 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
     _isPinned = widget.existingNote?.pinnedAt != null;
 
     _titleController = TextEditingController(text: widget.existingNote?.title ?? '');
-    _contentController = TextEditingController(text: widget.existingNote?.content ?? '');
+    _contentController = HighlightingTextEditingController(text: widget.existingNote?.content ?? '');
 
     _titleFocusNode = FocusNode()..addListener(() => setState(() {}));
     _contentFocusNode = FocusNode();
@@ -89,6 +92,7 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
   void dispose() {
     _executeSave(isManualSave: false);
 
+    _contentController.searchQuery = '';
     _contentController.removeListener(_syncTitleFromContent);
     _titleController.removeListener(_onTitleChanged);
     _titleFocusNode.dispose();
@@ -196,6 +200,12 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
                 case NoteEditorOption.archive:
                   break;
                 case NoteEditorOption.find:
+                  if (_isFind) {
+                    _contentController.searchQuery = '';
+                  }
+                  setState(() {
+                    _isFind = !_isFind;
+                  });
                   break;
                 case NoteEditorOption.reminder:
                   break;
@@ -209,7 +219,21 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
         body: SafeArea(
           child: Column(
             children: [
-              _buildMetaDataRow(padding: 16.0),
+              if (_isFind) ...[
+                FindReplaceWidget(
+                  contentController: _contentController,
+                  contentFocusNode: _contentFocusNode,
+                  onClose: () {
+                    _contentController.searchQuery = '';
+                    setState(() {
+                      _isFind = false;
+                    });
+                  },
+                  padding: 16.0,
+                ),
+              ] else ...[
+                _buildMetaDataRow(padding: 16.0),
+              ],
               Expanded(child: _buildContentField(padding: 16.0)),
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8.0),

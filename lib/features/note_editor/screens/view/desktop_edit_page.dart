@@ -283,6 +283,11 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
                   // TODO: UI Action - Convert text to checklist format
                     break;
                   case NoteEditorOption.find:
+                  // If it's currently open, clear the highlights BEFORE we setState to close it
+                    if (_isFind) {
+                      _contentController.searchQuery = '';
+                    }
+
                     setState(() {
                       _isFind = !_isFind;
                     });

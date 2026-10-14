@@ -25,8 +25,26 @@ class TrashPage extends ConsumerStatefulWidget {
 
 class _TrashPageState extends ConsumerState<TrashPage> {
   bool isSelectMode = false;
+  bool _isSearching = false;
+
+  late final TextEditingController _searchController;
+  late final FocusNode _searchFocusNode;
 
   final Set<String> noteIds = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+    _searchFocusNode = FocusNode();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _searchFocusNode.dispose();
+    super.dispose();
+  }
 
   void _toggleSelection(String uuid) {
     setState(() {
@@ -265,7 +283,20 @@ class _TrashPageState extends ConsumerState<TrashPage> {
       backgroundColor: colorScheme.surfaceContainerLowest,
       centerTitle: true,
       actions: [
-
+        if (!_isSearching)
+          IconButton(
+            icon: const Icon(Icons.search),
+            tooltip: 'Search Trash',
+            onPressed: () {
+              setState(() {
+                _isSearching = true;
+              });
+              // Small delay to ensure the TextField is built before focusing
+              Future.delayed(const Duration(milliseconds: 50), () {
+                _searchFocusNode.requestFocus();
+              });
+            },
+          ),
 
         if (currentNotes.isNotEmpty)
           showLabel
@@ -295,77 +326,142 @@ class _TrashPageState extends ConsumerState<TrashPage> {
   @override
   Widget build(BuildContext context) {
     final trashState = ref.watch(trashNotesProvider);
+    final searchQuery = _searchController.text.trim();
+    final searchQueryLower = searchQuery.toLowerCase();
 
     return AppScaffold(
       appBar: _buildAppBar(trashState.value ?? []),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 3.0),
-        child: trashState.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, stack) => Center(child: Text('Error: $error')),
-          data: (notes) {
-            if (notes.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.delete_outline, size: 64, color: Colors.grey),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Trash is empty',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+        child: Column(
+          children: [
+            if (_isSearching)
+              Align(
+                alignment: Alignment.topRight,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 400),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _searchController,
+                            focusNode: _searchFocusNode,
+                            onChanged: (_) => setState(() {}),
+                            decoration: InputDecoration(
+                              hintText: 'Search trash notes...',
+                              prefixIcon: const Icon(Icons.search, size: 20),
+                              suffixIcon: _searchController.text.isNotEmpty
+                                  ? IconButton(
+                                      icon: const Icon(Icons.clear, size: 18),
+                                      onPressed: () {
+                                        _searchController.clear();
+                                        setState(() {});
+                                      },
+                                    )
+                                  : null,
+                              isDense: true,
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(width: 8),
+
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          tooltip: 'Close Search',
+                          onPressed: () {
+                            setState(() {
+                              _isSearching = false;
+                              _searchController.clear();
+                            });
+                          },
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              );
-            }
+              ),
+            Expanded(
+              child: trashState.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (error, stack) => Center(child: Text('Error: $error')),
+                data: (notes) {
+                  final filteredNotes = searchQueryLower.isEmpty
+                      ? notes
+                      : notes.where((note) {
+                          return note.title.toLowerCase().contains(searchQueryLower) ||
+                              note.content.toLowerCase().contains(searchQueryLower);
+                        }).toList();
 
-            return GridView.builder(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.only(bottom: 80, top: 8),
-              gridDelegate:
-              PlatformHelper.isDesktopScreen
-                  ? const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      childAspectRatio: 0.85,
-                    )
-                  : const SliverGridDelegateWithMaxCrossAxisExtent(
-                      maxCrossAxisExtent: 220,
-                      childAspectRatio: 0.85,
-                    ),
-              itemCount: notes.length,
-              itemBuilder: (context, index) {
-                final note = notes[index];
-                final isSelected = noteIds.contains(note.uuid);
+                  if (filteredNotes.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.delete_outline, size: 64, color: Colors.grey),
+                          const SizedBox(height: 16),
+                          Text(
+                            notes.isEmpty ? 'Trash is empty' : 'No matching trashed notes found',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                color: Theme.of(context).colorScheme.onSurfaceVariant),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
 
-                return NoteCard(
-                  key: ValueKey(note.uuid),
-                  note: note,
-                  isSelected: isSelected,
-                  contextMenuOptions: const [
-                    NoteContextMenuOption.restore,
-                    NoteContextMenuOption.deleteForever,
-                  ],
-                  onTap: () {
-                    if (isSelectMode) {
-                      _toggleSelection(note.uuid);
-                    } else {
-                      // Todo: Open a read-only view of the trashed note
-                    }
-                  },
-                  onLongPress: () {
-                    if (!isSelectMode) {
-                      setState(() => isSelectMode = true);
-                      _toggleSelection(note.uuid);
-                    }
-                  },
+                  return GridView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.only(bottom: 80, top: 8),
+                    gridDelegate: PlatformHelper.isDesktopScreen
+                        ? const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 3,
+                            childAspectRatio: 0.85,
+                          )
+                        : const SliverGridDelegateWithMaxCrossAxisExtent(
+                            maxCrossAxisExtent: 220,
+                            childAspectRatio: 0.85,
+                          ),
+                    itemCount: filteredNotes.length,
+                    itemBuilder: (context, index) {
+                      final note = filteredNotes[index];
+                      final isSelected = noteIds.contains(note.uuid);
 
-
-
-                );
-              },
-            );
-          },
+                      return NoteCard(
+                        key: ValueKey(note.uuid),
+                        note: note,
+                        searchQuery: searchQuery,
+                        isSelected: isSelected,
+                        contextMenuOptions: const [
+                          NoteContextMenuOption.restore,
+                          NoteContextMenuOption.deleteForever,
+                        ],
+                        onTap: () {
+                          if (isSelectMode) {
+                            _toggleSelection(note.uuid);
+                          } else {
+                            // Todo: Open a read-only view of the trashed note
+                          }
+                        },
+                        onLongPress: () {
+                          if (!isSelectMode) {
+                            setState(() => isSelectMode = true);
+                            _toggleSelection(note.uuid);
+                          }
+                        },
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );

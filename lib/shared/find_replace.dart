@@ -48,7 +48,7 @@ class _FindReplaceWidgetState extends State<FindReplaceWidget> {
 
   @override
   void dispose() {
-    widget.contentController.searchQuery = '';
+    // widget.contentController.searchQuery = '';
     _findController.dispose();
     _replaceController.dispose();
     _findFocusNode.dispose();
@@ -315,6 +315,9 @@ class _FindReplaceWidgetState extends State<FindReplaceWidget> {
                       padding: const EdgeInsets.all(8),
                       tooltip: 'Close',
                       onPressed: () {
+                        // lear highlights safely during the button press
+                        widget.contentController.searchQuery = '';
+                        //  Tell the parent to remove the widget
                         widget.onClose();
                       },
                     ),
