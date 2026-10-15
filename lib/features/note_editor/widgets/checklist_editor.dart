@@ -221,7 +221,7 @@ class _CheckListWidgetState extends State<CheckListWidget> {
                       style: TextStyle(
                         fontSize: 16,
                         decoration: item.isChecked ? TextDecoration.lineThrough : null,
-                        color: item.isChecked ? Colors.grey : Colors.black87,
+                        color: item.isChecked ? Colors.grey : Colors.white,
                       ),
                     ),
                   ),
@@ -261,16 +261,15 @@ class _CheckListWidgetState extends State<CheckListWidget> {
         ),
 
         DummyChecklistTile(
-          hintText: "Add item to bottom...",
+          hintText: "Add item",
           onTap: _addBottomItem,
         ),
 
         Padding(
           padding: const EdgeInsets.all(16.0),
-          child: ElevatedButton.icon(
+          child: ElevatedButton(
             onPressed: _saveList,
-            icon: const Icon(Icons.save),
-            label: const Text('Submit'),
+            child:const Text('Submit'),
           ),
         )
       ],

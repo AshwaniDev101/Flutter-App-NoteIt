@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -13,12 +14,33 @@ import '../../../../shared/widgets/app_scaffold.dart';
 import '../../../../shared/widgets/note_card/core/note_action_controller.dart';
 import '../../../../shared/widgets/note_card/highlighting_textediting_controller.dart';
 import '../../../../shared/widgets/snack_bar_manager.dart';
+import '../../widgets/checklist_editor.dart';
 import '../../../home/core/providers.dart';
 import '../../../home/view/desktop/right_panel/core/navigator.dart';
 import '../../widgets/note_editor_options.dart';
 import '../../../lock/lock_manger/lock_manager.dart';
 import '../../../lock/view/setup_password_page.dart';
 import '../viewmodel/edit_note_view_model.dart';
+
+enum ContentVersion {
+  plainText(1),
+  checklist(2);
+
+  // 1. The integer value associated with the enum
+  final int value;
+
+  // 2. The constructor that assigns the value
+  const ContentVersion(this.value);
+
+  // 3. A helper method to easily convert a database integer back into an Enum
+  static ContentVersion fromValue(int val) {
+    return ContentVersion.values.firstWhere(
+      (e) => e.value == val,
+      // Fallback to plainText if the database has an unexpected number
+      orElse: () => ContentVersion.plainText,
+    );
+  }
+}
 
 class DesktopEditNotePage extends ConsumerStatefulWidget {
   final Note? existingNote;
@@ -40,6 +62,8 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
 
   bool _isAutoSyncingTitle = false;
   late bool _isLocked;
+  ContentVersion _contentVersion = ContentVersion.plainText; // (1 = Plain text, 2 = Checklist)
+  List<CheckListItemModel> _currentChecklist = [];
 
   // bool _hasTriggeredFinalSave = false;
   bool _hasCreatedNewNote = false;
@@ -69,6 +93,19 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
     // Initialize the new controller
     _contentController = HighlightingTextEditingController(text: widget.existingNote?.content ?? '');
 
+
+      // --- Checklist init logic ---
+    if (widget.existingNote != null) {
+      final String textContent = _contentController.text.trim();
+
+      // Check if DB says it's a checklist OR if the text is clearly a JSON array
+      if (widget.existingNote!.contentVersion == ContentVersion.checklist.value) {
+
+        _contentVersion = ContentVersion.checklist;
+        _currentChecklist = _convertTextToChecklist(textContent);
+      }
+    }
+
     _titleFocusNode = FocusNode()..addListener(() => setState(() {}));
     _contentFocusNode = FocusNode();
 
@@ -84,7 +121,50 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
     // used for saving changes to the note automatically
     _titleController.addListener(_scheduleAutoSave);
     _contentController.addListener(_scheduleAutoSave);
+
+
   }
+
+// Converts JSON (or plain text) into a Checklist
+// Converts JSON (or plain text) into a Checklist
+  List<CheckListItemModel> _convertTextToChecklist(String text) {
+    if (text.trim().isEmpty) return [];
+
+    try {
+      final decoded = jsonDecode(text) as List<dynamic>;
+      return decoded.map((e) => CheckListItemModel.fromJson(e)).toList();
+    } catch (_) {
+      // Fallback: Parsing normal text
+      return text.split('\n').where((line) => line.trim().isNotEmpty).map((line) {
+        String cleanLine = line.trimLeft();
+
+        // Let's strip normal bullets just in case they typed "- cake"
+        cleanLine = cleanLine.replaceFirst(RegExp(r'^[-*]\s+'), '');
+
+        bool isChecked = false;
+
+        // If the line starts with "X " or "x ", mark it checked and remove the X!
+        if (cleanLine.toLowerCase().startsWith('x ')) {
+          isChecked = true;
+          cleanLine = cleanLine.substring(2).trimLeft(); // Removes the 'x '
+        }
+
+        return CheckListItemModel(
+            id: UniqueKey().toString(),
+            text: cleanLine,
+            isChecked: isChecked
+        );
+      }).toList();
+    }
+  }
+
+
+// Converts a Checklist back into plain text (strips check status)
+  String _convertChecklistToText(List<CheckListItemModel> items) {
+    // Just return the raw text of each item, separated by a new line!
+    return items.map((e) => e.text).join('\n');
+  }
+
 
   void _scheduleAutoSave() {
     // Hide the "Saved" text the moment they start typing
@@ -103,6 +183,8 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
   }
 
   void _syncTitleFromContent() {
+    // IGNORE IF CHECKLIST
+    if (_contentVersion == ContentVersion.checklist) return;
     if (!_isAutoSyncingTitle) return;
 
     String firstLine = _contentController.text.isNotEmpty ? _contentController.text.split('\n').first : '';
@@ -156,11 +238,9 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
     _titleController.removeListener(_scheduleAutoSave);
     _contentController.removeListener(_scheduleAutoSave);
 
-
     _titleController.dispose();
     _contentController.dispose();
     _undoController.dispose();
-
 
     _titleFocusNode.dispose();
     _contentFocusNode.dispose();
@@ -185,14 +265,19 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
 
     if (_isNewNote) {
       if (_hasCreatedNewNote) return;
-      _viewModel.saveNote(title, content);
-      // Don't update local variables if the widget is already dead
+      // Pass the version integer here!
+      _viewModel.saveNote(title, content, _contentVersion);
       if (!isDisposing) _hasCreatedNewNote = true;
     } else {
-      if (title != widget.existingNote!.title || content != widget.existingNote!.content) {
-        _viewModel.updateNote(widget.existingNote!.uuid, title, content);
+
+      if (title != widget.existingNote!.title ||
+          content != widget.existingNote!.content ||
+          widget.existingNote!.contentVersion != _contentVersion.value) {
+
+        _viewModel.updateNote(widget.existingNote!.uuid, title, content, _contentVersion);
       }
     }
+
 
     // Only touch setState if we are 100% sure the widget is alive and not disposing
     if (!isDisposing && mounted) {
@@ -219,7 +304,6 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
   Widget build(BuildContext context) {
     final panelColor = Theme.of(context).colorScheme.surfaceContainerLow;
 
-
     return LayoutBuilder(
       builder: (context, constraints) {
         // Calculate exactly 50% of this specific panel's available width
@@ -237,7 +321,6 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
               isLocked: _isLocked,
               isPinned: widget.existingNote?.pinnedAt != null,
               onPressed: (NoteEditorOption option) async {
-
                 // If it's a new, unsaved note, we can't do DB actions on it yet!
                 if (_isNewNote && option != NoteEditorOption.info) {
                   // Todo: update it to warning from error
@@ -249,12 +332,10 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
                 final actionsController = ref.read(noteActionsControllerProvider);
                 final deviceInfo = await ref.read(deviceInfoProvider.future);
 
-
                 switch (option) {
                   case NoteEditorOption.delete:
-
                     _isDeleted = true; // Stops the auto-saver from running!
-                    await actionsController.deleteNotes([targetUuid],deviceInfo.extractPlatform);
+                    await actionsController.deleteNotes([targetUuid], deviceInfo.extractPlatform);
                     _handleCloseNote(); // UI side-effect: Close the editor
                     // _handleDeleteNote();
                     break;
@@ -267,7 +348,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
                     if (mounted) setState(() {}); // Refresh the editor UI
                     break;
                   case NoteEditorOption.lock:
-                  // lock logic handles the master password check perfectly.
+                    // lock logic handles the master password check perfectly.
                     _handleLockToggle();
                     break;
                   case NoteEditorOption.archive:
@@ -280,10 +361,28 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
                     break;
 
                   case NoteEditorOption.checklist:
-                  // TODO: UI Action - Convert text to checklist format
+                    setState(() {
+                      if (_contentVersion != ContentVersion.checklist) {
+                        // Switch to checklist mode
+                        _contentVersion = ContentVersion.checklist;
+
+                        // Parse the existing plain text into checklist items
+                        _currentChecklist = _convertTextToChecklist(_contentController.text);
+
+                        // Inject the JSON back into the controller so auto-save works immediately
+                        _contentController.text = jsonEncode(_currentChecklist.map((e) => e.toJson()).toList());
+
+                      } else {
+                        // Switch back to plain text mode
+                        _contentVersion = ContentVersion.plainText;
+
+                        // Convert the checklist items back to readable markdown-style text
+                        _contentController.text = _convertChecklistToText(_currentChecklist);
+                      }
+                    });
                     break;
                   case NoteEditorOption.find:
-                  // If it's currently open, clear the highlights BEFORE we setState to close it
+                    // If it's currently open, clear the highlights BEFORE we setState to close it
                     if (_isFind) {
                       _contentController.searchQuery = '';
                     }
@@ -293,17 +392,14 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
                     });
                     break;
                   case NoteEditorOption.reminder:
-                  // TODO: UI Action - Open DatePicker
+                    // TODO: UI Action - Open DatePicker
                     break;
-
-
                 }
               },
             ),
           ],
           body: Column(
             children: [
-
               if (_isFind) ...{
                 FindReplaceWidget(
                   contentController: _contentController,
@@ -345,7 +441,19 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
             }
             return KeyEventResult.ignored;
           },
-          child: TextField(
+          // --- THE UI SWAP ---
+          child: _contentVersion == ContentVersion.checklist
+              ? CheckListWidget(
+            initialData: _currentChecklist,
+            onChange: (List<CheckListItemModel> updatedList) {
+              // Update our local memory state
+              _currentChecklist = updatedList;
+
+              // This instantly fires your existing _scheduleAutoSave() method.
+              _contentController.text = jsonEncode(updatedList.map((e) => e.toJson()).toList());
+            },
+          )
+              : TextField(
             controller: _contentController,
             undoController: _undoController,
             maxLines: null,
@@ -359,9 +467,6 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
       ),
     );
   }
-
-
-
 
   Widget _buildMetaDataRow({required double padding}) {
     return Padding(

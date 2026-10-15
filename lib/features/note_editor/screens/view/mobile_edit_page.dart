@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:noteit/database/drift/local_database.dart';
+import 'package:noteit/features/note_editor/screens/view/desktop_edit_page.dart';
 
 import '../../../../shared/find_replace.dart';
 import '../../../../shared/widgets/note_card/core/note_action_controller.dart';
@@ -113,11 +114,11 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
 
     if (_isNewNote) {
       if (_hasCreatedNewNote) return;
-      _viewModel.saveNote(title, content);
+      _viewModel.saveNote(title, content, ContentVersion.plainText); // Todo: provide full check list support
       _hasCreatedNewNote = true;
     } else {
       if (title != widget.existingNote!.title || content != widget.existingNote!.content) {
-        _viewModel.updateNote(widget.existingNote!.uuid, title, content);
+        _viewModel.updateNote(widget.existingNote!.uuid, title, content, ContentVersion.plainText); // Todo: provide full check list support
       }
     }
 

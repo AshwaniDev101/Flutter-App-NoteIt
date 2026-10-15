@@ -8,9 +8,7 @@ import 'notes_table.dart';
 
 part 'notes_dao.g.dart';
 
-final notesDaoProvider = Provider(
-      (ref) => ref.watch(localDatabaseProvider).notesDao,
-);
+final notesDaoProvider = Provider((ref) => ref.watch(localDatabaseProvider).notesDao);
 
 /// Database sorting options for active notes query
 enum NoteSortPreference { name, createdAt, updatedAt }
@@ -28,6 +26,7 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
     required String content,
     String? creationPlatform,
     String? creationDevice,
+    required int contentVersion,
   }) async {
     final newUuid = const Uuid().v4();
     await into(notes).insert(
@@ -42,9 +41,32 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
         cloudSyncStatus: const Value(0),
         localSyncStatus: const Value(0),
         // updateCounter automatically defaults to 1 on insert
+        contentVersion: Value(contentVersion),
       ),
     );
     return newUuid;
+  }
+
+  Future<bool> updateNote({
+    required String uuid,
+    required String title,
+    required String content,
+    required int contentVersion,
+  }) async {
+    return await (update(notes)..where((t) => t.uuid.equals(uuid))).write(
+          NotesCompanion.custom(
+            title: Variable(title),
+            content: Variable(content),
+            cloudSyncStatus: const Variable(0),
+            // Trigger Cloud Worker
+            localSyncStatus: const Variable(0),
+            // Trigger Local Worker
+            updatedAt: Variable(DateTime.now().toUtc()),
+            updateCounter: notes.updateCounter + const Constant(1),
+            contentVersion: Variable(contentVersion),
+          ),
+        ) >
+        0;
   }
 
   Stream<List<Note>> watchAllNotes() {
@@ -56,54 +78,27 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
   /// 2. Unpinned notes sorted according to [sortOption] (name, createdAt, or updatedAt).
   Stream<List<Note>> watchSortedNotes(NoteSortPreference sortOption) {
     return (select(notes)
-      ..where((t) => t.deletedAt.isNull() & t.archivedAt.isNull())
-      ..orderBy([
-        // Pinned notes first (pinnedAt != null), newest pinned first
-        (t) => OrderingTerm(
-          expression: t.pinnedAt,
-          mode: OrderingMode.desc,
-          nulls: NullsOrder.last,
-        ),
-        // Secondary sort choice
-        (t) {
-          switch (sortOption) {
-            case NoteSortPreference.name:
-              return OrderingTerm(
-                expression: t.title.collate(Collate.noCase),
-                mode: OrderingMode.asc,
-              );
-            case NoteSortPreference.createdAt:
-              return OrderingTerm(
-                expression: t.createdAt,
-                mode: OrderingMode.desc,
-              );
-            case NoteSortPreference.updatedAt:
-              return OrderingTerm(
-                expression: t.updatedAt,
-                mode: OrderingMode.desc,
-              );
-          }
-        },
-      ]))
-    .watch();
+          ..where((t) => t.deletedAt.isNull() & t.archivedAt.isNull())
+          ..orderBy([
+            // Pinned notes first (pinnedAt != null), newest pinned first
+            (t) => OrderingTerm(expression: t.pinnedAt, mode: OrderingMode.desc, nulls: NullsOrder.last),
+            // Secondary sort choice
+            (t) {
+              switch (sortOption) {
+                case NoteSortPreference.name:
+                  return OrderingTerm(expression: t.title.collate(Collate.noCase), mode: OrderingMode.asc);
+                case NoteSortPreference.createdAt:
+                  return OrderingTerm(expression: t.createdAt, mode: OrderingMode.desc);
+                case NoteSortPreference.updatedAt:
+                  return OrderingTerm(expression: t.updatedAt, mode: OrderingMode.desc);
+              }
+            },
+          ]))
+        .watch();
   }
 
   Future<Note> getNoteById(String uuid) {
     return (select(notes)..where((t) => t.uuid.equals(uuid))).getSingle();
-  }
-
-  Future<bool> updateNote(String uuid, String title, String content) async {
-    return await (update(notes)..where((t) => t.uuid.equals(uuid))).write(
-      NotesCompanion.custom(
-        title: Variable(title),
-        content: Variable(content),
-        cloudSyncStatus: const Variable(0), // Trigger Cloud Worker
-        localSyncStatus: const Variable(0), // Trigger Local Worker
-        updatedAt: Variable(DateTime.now().toUtc()),
-        updateCounter: notes.updateCounter + const Constant(1),
-      ),
-    ) >
-        0;
   }
 
   Future<int> deleteNote(String uuid) async {
@@ -111,10 +106,7 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
     return await (delete(notes)..where((t) => t.uuid.equals(uuid))).go();
   }
 
-  Future<void> softDeleteNotes(
-      Iterable<String> uuids, {
-        required String platform,
-      }) async {
+  Future<void> softDeleteNotes(Iterable<String> uuids, {required String platform}) async {
     await (update(notes)..where((t) => t.uuid.isIn(uuids))).write(
       NotesCompanion.custom(
         deletedAt: Variable(DateTime.now().toUtc()),
@@ -129,15 +121,15 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
 
   Future<bool> lockNote(String uuid, {required bool isLocked}) async {
     return await (update(notes)..where((t) => t.uuid.equals(uuid))).write(
-      NotesCompanion.custom(
-        // Set timestamp if locked, null if unlocked
-        lockedAt: Variable(isLocked ? DateTime.now().toUtc() : null),
-        cloudSyncStatus: const Variable(0),
-        localSyncStatus: const Variable(0),
-        updatedAt: Variable(DateTime.now().toUtc()),
-        updateCounter: notes.updateCounter + const Constant(1),
-      ),
-    ) >
+          NotesCompanion.custom(
+            // Set timestamp if locked, null if unlocked
+            lockedAt: Variable(isLocked ? DateTime.now().toUtc() : null),
+            cloudSyncStatus: const Variable(0),
+            localSyncStatus: const Variable(0),
+            updatedAt: Variable(DateTime.now().toUtc()),
+            updateCounter: notes.updateCounter + const Constant(1),
+          ),
+        ) >
         0;
   }
 
@@ -251,8 +243,7 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
   }
 
   /// Private helper to handle the actual write logic for upserts
-  Future<void> _executeUpsert(
-      String uuid, DateTime incomingUpdatedAt, NotesCompanion companion) async {
+  Future<void> _executeUpsert(String uuid, DateTime incomingUpdatedAt, NotesCompanion companion) async {
     final existingNote = await (select(notes)..where((t) => t.uuid.equals(uuid))).getSingleOrNull();
 
     if (existingNote != null) {
@@ -270,16 +261,12 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
 
   /// CONFIRM CLOUD: Mark notes as successfully pushed to Firebase
   Future<void> markAsCloudSynced(Iterable<String> uuids) async {
-    await (update(notes)..where((t) => t.uuid.isIn(uuids))).write(
-      const NotesCompanion(cloudSyncStatus: Value(1)),
-    );
+    await (update(notes)..where((t) => t.uuid.isIn(uuids))).write(const NotesCompanion(cloudSyncStatus: Value(1)));
   }
 
   /// CONFIRM LOCAL: Mark notes as successfully pushed over Wi-Fi
   Future<void> markAsLocalSynced(Iterable<String> uuids) async {
-    await (update(notes)..where((t) => t.uuid.isIn(uuids))).write(
-      const NotesCompanion(localSyncStatus: Value(1)),
-    );
+    await (update(notes)..where((t) => t.uuid.isIn(uuids))).write(const NotesCompanion(localSyncStatus: Value(1)));
   }
 
   // =========================================================================
@@ -289,23 +276,21 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
   /// VIEW TRASH: Watch only notes that have a deletedAt timestamp
   Stream<List<Note>> watchTrashNotes() {
     return (select(notes)
-      ..where((t) => t.deletedAt.isNotNull())
-      ..orderBy([
-            (t) => OrderingTerm(expression: t.deletedAt, mode: OrderingMode.desc),
-      ]))
+          ..where((t) => t.deletedAt.isNotNull())
+          ..orderBy([(t) => OrderingTerm(expression: t.deletedAt, mode: OrderingMode.desc)]))
         .watch();
   }
 
   Future<bool> restoreNote(String uuid) async {
     return await (update(notes)..where((t) => t.uuid.equals(uuid))).write(
-      NotesCompanion.custom(
-        deletedAt: const Variable(null),
-        cloudSyncStatus: const Variable(0),
-        localSyncStatus: const Variable(0),
-        updatedAt: Variable(DateTime.now().toUtc()),
-        updateCounter: notes.updateCounter + const Constant(1),
-      ),
-    ) >
+          NotesCompanion.custom(
+            deletedAt: const Variable(null),
+            cloudSyncStatus: const Variable(0),
+            localSyncStatus: const Variable(0),
+            updatedAt: Variable(DateTime.now().toUtc()),
+            updateCounter: notes.updateCounter + const Constant(1),
+          ),
+        ) >
         0;
   }
 
@@ -395,11 +380,9 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
   /// VIEW ARCHIVE: Watch only notes that are archived and not in the trash
   Stream<List<Note>> watchArchivedNotes() {
     return (select(notes)
-      ..where((t) => t.archivedAt.isNotNull()) // Replaced boolean check
-      ..where((t) => t.deletedAt.isNull())
-      ..orderBy([
-            (t) => OrderingTerm(expression: t.updatedAt, mode: OrderingMode.desc),
-      ]))
+          ..where((t) => t.archivedAt.isNotNull()) // Replaced boolean check
+          ..where((t) => t.deletedAt.isNull())
+          ..orderBy([(t) => OrderingTerm(expression: t.updatedAt, mode: OrderingMode.desc)]))
         .watch();
   }
 

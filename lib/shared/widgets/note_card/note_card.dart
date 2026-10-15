@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -305,7 +307,8 @@ class _NoteCardState extends ConsumerState<NoteCard> {
             ),
           )
               : HighlightedText(
-            text: widget.note.content,
+            // text: widget.note.content,
+            text: _getNotePreviewText(widget.note),
             query: widget.searchQuery,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -382,7 +385,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
 
                   child: HighlightedText(
                     //  Pass empty string if locked & not verified, SECURITY: not doing so, ill allow screen reader to fetch the content
-                    text: (widget.note.lockedAt != null && !isSessionUnlocked) ? "" : widget.note.content,
+                    text: (widget.note.lockedAt != null && !isSessionUnlocked) ? "" : _getNotePreviewText(widget.note),
                     query: widget.searchQuery,
                     // maxLines: maxLines,
                     overflow: TextOverflow.fade,
@@ -454,7 +457,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
 
                   child: HighlightedText(
                     //  Pass empty string if locked & not verified, SECURITY: not doing so, ill allow screen reader to fetch the content
-                    text: (widget.note.lockedAt != null && !isSessionUnlocked) ? "" : widget.note.content,
+                    text: (widget.note.lockedAt != null && !isSessionUnlocked) ? "" : _getNotePreviewText(widget.note),
                     query: widget.searchQuery,
                     // maxLines: maxLines,
                     overflow: TextOverflow.fade,
@@ -502,6 +505,24 @@ class _NoteCardState extends ConsumerState<NoteCard> {
   }
 
 
+  // ==== PREVIEW HELPER ====
+  String _getNotePreviewText(Note note) {
+    // If it's a checklist (version 2), format the JSON into text boxes
+    if (note.contentVersion == 2) {
+      try {
+        final List<dynamic> decoded = jsonDecode(note.content);
+        return decoded.map((item) {
+          bool isChecked = item['isChecked'] == true;
+          String text = item['text'] ?? '';
+          return '${isChecked ? "☑" : "☐"} $text';
+        }).join('\n');
+      } catch (_) {
+        return note.content;
+      }
+    }
+    // Otherwise, just return the plain text
+    return note.content;
+  }
 
 
   // ==== SHARED ICONS ====

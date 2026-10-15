@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/util/logger.dart';
 import 'package:noteit/core/util/platform_helper.dart';
 import 'package:noteit/database/drift/notes/notes_dao.dart';
+import 'package:noteit/features/note_editor/screens/view/desktop_edit_page.dart';
 
 import '../../../../core/device_info.dart';
 import '../../../../database/sync/sync_orchestrator.dart';
@@ -26,7 +27,7 @@ class EditNoteViewModel extends Notifier<EditNoteState> {
     return const EditNoteState(isLoading: false, error: null);
   }
 
-  Future<void> saveNote(String title, String content) async {
+  Future<void> saveNote(String title, String content, ContentVersion contentVersion) async {
     state = state.copyWith(isLoading: true, error: null);
 
     final deviceInfo = await ref.read(deviceInfoProvider.future);
@@ -40,6 +41,7 @@ class EditNoteViewModel extends Notifier<EditNoteState> {
             content: content,
             creationPlatform: deviceInfo.extractPlatform,
             creationDevice: deviceInfo.extractName,
+           contentVersion: contentVersion.value,
           );
 
       AppLogger.d('EditNoteViewModel: Saved new note ($newUuid)');
@@ -54,11 +56,11 @@ class EditNoteViewModel extends Notifier<EditNoteState> {
     }
   }
 
-  Future<void> updateNote(String uuid, String title, String content) async {
+  Future<void> updateNote(String uuid, String title, String content, ContentVersion contentVersion) async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      await ref.read(notesDaoProvider).updateNote(uuid, title, content);
+      await ref.read(notesDaoProvider).updateNote(uuid: uuid, title: title, content: content,contentVersion:  contentVersion.value,);
       AppLogger.d('EditNoteViewModel: Updated note ($uuid)');
 
       ref.read(syncOrchestratorProvider).triggerSync();

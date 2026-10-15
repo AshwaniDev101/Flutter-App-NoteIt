@@ -38,7 +38,7 @@ class Notes extends Table {
   // Older apps can usually still edit the text, they just ignore the new columns.
   IntColumn get schemaVersion => integer().withDefault(const Constant(1))();
 
-  // Tracks the format of the 'content' string (e.g., 1 = Plain text, 2 = Quill Delta JSON).
+  // Tracks the format of the 'content' string (e.g., 1 = Plain text, 2 = Checklist).
   // If an older app sees a higher contentVersion, it MUST lock the editor to prevent
   // overwriting and corrupting the rich-text JSON.
   IntColumn get contentVersion => integer().withDefault(const Constant(1))();
