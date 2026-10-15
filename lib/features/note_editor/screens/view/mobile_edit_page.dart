@@ -1,8 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:noteit/database/drift/local_database.dart';
+
 import 'package:noteit/features/note_editor/screens/view/desktop_edit_page.dart';
 
 import '../../../../shared/find_replace.dart';
@@ -10,6 +13,7 @@ import '../../../../shared/widgets/note_card/core/note_action_controller.dart';
 import '../../../../shared/widgets/note_card/highlighting_textediting_controller.dart';
 import '../../../../shared/widgets/snack_bar_manager.dart';
 import '../../../home/view/desktop/right_panel/core/navigator.dart';
+import '../../widgets/checklist_editor.dart';
 import '../../widgets/note_editor_options.dart';
 import '../../../lock/lock_manger/lock_manager.dart';
 import '../../../lock/view/setup_password_page.dart';
@@ -40,6 +44,10 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
   bool _hasCreatedNewNote = false;
   bool _isFind = false;
 
+  // --- Checklist State ---
+  ContentVersion _contentVersion = ContentVersion.plainText;
+  List<CheckListItemModel> _currentChecklist = [];
+
   late final FocusNode _titleFocusNode;
   late final FocusNode _contentFocusNode;
 
@@ -60,6 +68,16 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
     _titleController = TextEditingController(text: widget.existingNote?.title ?? '');
     _contentController = HighlightingTextEditingController(text: widget.existingNote?.content ?? '');
 
+    // --- Checklist Init ---
+    if (widget.existingNote != null) {
+      final String textContent = _contentController.text.trim();
+      if (widget.existingNote!.contentVersion == ContentVersion.checklist.value ||
+          (textContent.startsWith('[') && textContent.endsWith(']'))) {
+        _contentVersion = ContentVersion.checklist;
+        _currentChecklist = _convertTextToChecklist(textContent);
+      }
+    }
+
     _titleFocusNode = FocusNode()..addListener(() => setState(() {}));
     _contentFocusNode = FocusNode();
 
@@ -69,10 +87,42 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
     _titleController.addListener(_onTitleChanged);
   }
 
+  // --- Checklist Conversion Helpers ---
+  List<CheckListItemModel> _convertTextToChecklist(String text) {
+    if (text.trim().isEmpty) return [];
+    try {
+      final decoded = jsonDecode(text) as List<dynamic>;
+      return decoded.map((e) => CheckListItemModel.fromJson(e)).toList();
+    } catch (_) {
+      return text.split('\n').where((line) => line.trim().isNotEmpty).map((line) {
+        String cleanLine = line.trimLeft().replaceFirst(RegExp(r'^[-*]\s+'), '');
+        bool isChecked = false;
+        if (cleanLine.toLowerCase().startsWith('x ')) {
+          isChecked = true;
+          cleanLine = cleanLine.substring(2).trimLeft();
+        }
+        return CheckListItemModel(id: UniqueKey().toString(), text: cleanLine, isChecked: isChecked);
+      }).toList();
+    }
+  }
+
+  String _convertChecklistToText(List<CheckListItemModel> items) {
+    return items.map((e) => e.text).join('\n');
+  }
+
+  String _extractFirstLineForTitle() {
+    if (_contentVersion == ContentVersion.checklist) {
+      return _currentChecklist.isNotEmpty ? _currentChecklist.first.text : '';
+    }
+    return _contentController.text.isNotEmpty ? _contentController.text.split('\n').first : '';
+  }
+  // -------------------------------
+
   void _syncTitleFromContent() {
+    if (_contentVersion == ContentVersion.checklist) return; // Prevent JSON syncing
     if (!_isAutoSyncingTitle) return;
 
-    final firstLine = _contentController.text.isNotEmpty ? _contentController.text.split('\n').first : '';
+    final firstLine = _extractFirstLineForTitle();
     if (_titleController.text != firstLine) {
       _titleController.value = _titleController.value.copyWith(
         text: firstLine,
@@ -82,10 +132,12 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
   }
 
   void _onTitleChanged() {
+    if (_contentVersion == ContentVersion.checklist) return; // Prevent JSON syncing
+
     if (_titleController.text.isEmpty) {
       _isAutoSyncingTitle = true;
     } else {
-      if (_titleController.text != _contentController.text.split('\n').first) _isAutoSyncingTitle = false;
+      if (_titleController.text != _extractFirstLineForTitle()) _isAutoSyncingTitle = false;
     }
   }
 
@@ -114,11 +166,16 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
 
     if (_isNewNote) {
       if (_hasCreatedNewNote) return;
-      _viewModel.saveNote(title, content, ContentVersion.plainText); // Todo: provide full check list support
+
+      _viewModel.saveNote(title, content, _contentVersion);
       _hasCreatedNewNote = true;
     } else {
-      if (title != widget.existingNote!.title || content != widget.existingNote!.content) {
-        _viewModel.updateNote(widget.existingNote!.uuid, title, content, ContentVersion.plainText); // Todo: provide full check list support
+      // Check for version changes and pass _contentVersion
+      if (title != widget.existingNote!.title ||
+          content != widget.existingNote!.content ||
+          widget.existingNote!.contentVersion != _contentVersion.value) {
+
+        _viewModel.updateNote(widget.existingNote!.uuid, title, content, _contentVersion);
       }
     }
 
@@ -132,7 +189,6 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
     if (!isManualSave) _hasTriggeredFinalSave = true;
   }
 
-  /// Standardized deletion logic for mobile popup menus.
   void _handleDeleteNote() {
     if (!_isNewNote && widget.existingNote != null) {
       _hasTriggeredFinalSave = true;
@@ -141,7 +197,6 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
     }
   }
 
-  /// Centralized logic for mobile back navigation to ensure focus drops and note saves before popping.
   void _handleMobileBack() {
     FocusManager.instance.primaryFocus?.unfocus();
     _executeSave(isManualSave: false);
@@ -157,7 +212,6 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
 
   @override
   Widget build(BuildContext context) {
-    // PopScope ensures that system back gestures (Android) trigger our custom save logic
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
@@ -170,52 +224,65 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
           leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: _handleMobileBack),
           titleSpacing: 0,
           title: _buildTitleField(),
-          // actions: [if (!_isNewNote) _buildOptionMenu(), const SizedBox(width: 8)],
-          actions: [ NoteEditorOptionButton(
-            isLocked: _isLocked,
-            isPinned: _isPinned,
-            onPressed: (NoteEditorOption option) async {
-              switch (option) {
-                case NoteEditorOption.delete:
-                  _handleDeleteNote();
-                  break;
-                case NoteEditorOption.pin:
-                  if (_isNewNote) {
-                    SnackBarManager.show(msg: 'Please save the note first', type: SnackBarMessageType.error);
-                    return;
-                  }
-                  final targetUuid = widget.existingNote!.uuid;
-                  final actionsController = ref.read(noteActionsControllerProvider);
-                  await actionsController.togglePinNotes([targetUuid]);
-                  if (mounted) {
+          actions: [
+            NoteEditorOptionButton(
+              isLocked: _isLocked,
+              isPinned: _isPinned,
+              onPressed: (NoteEditorOption option) async {
+                switch (option) {
+                  case NoteEditorOption.delete:
+                    _handleDeleteNote();
+                    break;
+                  case NoteEditorOption.pin:
+                    if (_isNewNote) {
+                      SnackBarManager.show(msg: 'Please save the note first', type: SnackBarMessageType.error);
+                      return;
+                    }
+                    final targetUuid = widget.existingNote!.uuid;
+                    final actionsController = ref.read(noteActionsControllerProvider);
+                    await actionsController.togglePinNotes([targetUuid]);
+                    if (mounted) {
+                      setState(() {
+                        _isPinned = !_isPinned;
+                      });
+                    }
+                    break;
+                  case NoteEditorOption.lock:
+                    _handleLockToggle();
+                    break;
+                // --- Toggle Logic ---
+                  case NoteEditorOption.checklist:
                     setState(() {
-                      _isPinned = !_isPinned;
+                      if (_contentVersion != ContentVersion.checklist) {
+                        _contentVersion = ContentVersion.checklist;
+                        _currentChecklist = _convertTextToChecklist(_contentController.text);
+                        _contentController.text = jsonEncode(_currentChecklist.map((e) => e.toJson()).toList());
+                      } else {
+                        _contentVersion = ContentVersion.plainText;
+                        _contentController.text = _convertChecklistToText(_currentChecklist);
+                      }
                     });
-                  }
-                  break;
-                case NoteEditorOption.lock:
-                  _handleLockToggle();
-                  break;
-                case NoteEditorOption.checklist:
-                  break;
-                case NoteEditorOption.archive:
-                  break;
-                case NoteEditorOption.find:
-                  if (_isFind) {
-                    _contentController.searchQuery = '';
-                  }
-                  setState(() {
-                    _isFind = !_isFind;
-                  });
-                  break;
-                case NoteEditorOption.reminder:
-                  break;
-                case NoteEditorOption.info:
-                  ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.noteDetails);
-                  break;
-              }
-            },
-          ),],
+                    break;
+
+                  case NoteEditorOption.archive:
+                    break;
+                  case NoteEditorOption.find:
+                    if (_isFind) {
+                      _contentController.searchQuery = '';
+                    }
+                    setState(() {
+                      _isFind = !_isFind;
+                    });
+                    break;
+                  case NoteEditorOption.reminder:
+                    break;
+                  case NoteEditorOption.info:
+                    ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.noteDetails);
+                    break;
+                }
+              },
+            ),
+          ],
         ),
         body: SafeArea(
           child: Column(
@@ -312,7 +379,16 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
           }
           return KeyEventResult.ignored;
         },
-        child: TextField(
+        // --- UI Swap Logic ---
+        child: _contentVersion == ContentVersion.checklist
+            ? CheckListWidget(
+          initialData: _currentChecklist,
+          onChange: (List<CheckListItemModel> updatedList) {
+            _currentChecklist = updatedList;
+            _contentController.text = jsonEncode(updatedList.map((e) => e.toJson()).toList());
+          },
+        )
+            : TextField(
           controller: _contentController,
           undoController: _undoController,
           maxLines: null,
@@ -383,8 +459,6 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
       ],
     );
   }
-
-
 
   Future<void> _handleLockToggle() async {
     bool isCurrentlyLocked = _isLocked;
