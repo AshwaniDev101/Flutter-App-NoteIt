@@ -5,6 +5,7 @@ import 'package:noteit/features/home/view/shared/icon_tray/icon_tray.dart';
 import 'package:noteit/features/others/archive_page.dart';
 import 'package:window_manager/window_manager.dart';
 import '../../../../../core/util/platform_helper.dart';
+import '../../../../../folders/folders.dart';
 import '../../../../backup/export_page.dart';
 import '../../../../backup/import_page.dart';
 import '../../../../dev_tools/dev_page.dart';
@@ -35,28 +36,40 @@ class DesktopRightPanel extends ConsumerWidget {
     return Scaffold(
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(kToolbarHeight),
-        child: DragToMoveArea(
-          child: AppBar(
-            elevation: 0,
-            scrolledUnderElevation: PlatformHelper.isDesktopScreen ? 0.0 : null,
-            actions: [
-              IconTray(),
-              const SizedBox(width: 8),
-              IconButton(icon: const Icon(Icons.minimize, size: 16), onPressed: () => windowManager.minimize()),
-              IconButton(
-                icon: const Icon(Icons.crop_square, size: 16),
-                onPressed: () async {
-                  if (await windowManager.isMaximized()) {
-                    windowManager.unmaximize();
-                  } else {
-                    windowManager.maximize();
-                  }
-                },
-              ),
-              IconButton(icon: const Icon(Icons.close, size: 16), onPressed: () => windowManager.close()),
-              const SizedBox(width: 8),
-            ],
+        child: AppBar(
+          // Move DragToMoveArea to the background layer
+          flexibleSpace: DragToMoveArea(
+            child: Container(
+              // The container must have a color (even transparent) to register mouse hits
+              color: Colors.transparent,
+            ),
           ),
+          // backgroundColor: Colors.red,
+
+          leadingWidth: 130,
+          leading: Padding(
+            padding: EdgeInsets.only(left: 16),
+            child: const FolderMenuButton(),
+          ),
+          elevation: 0,
+          scrolledUnderElevation: PlatformHelper.isDesktopScreen ? 0.0 : null,
+          actions: [
+            IconTray(),
+            const SizedBox(width: 8),
+            IconButton(icon: const Icon(Icons.minimize, size: 16), onPressed: () => windowManager.minimize()),
+            IconButton(
+              icon: const Icon(Icons.crop_square, size: 16),
+              onPressed: () async {
+                if (await windowManager.isMaximized()) {
+                  windowManager.unmaximize();
+                } else {
+                  windowManager.maximize();
+                }
+              },
+            ),
+            IconButton(icon: const Icon(Icons.close, size: 16), onPressed: () => windowManager.close()),
+            const SizedBox(width: 8),
+          ],
         ),
       ),
       body: AnimatedSwitcher(

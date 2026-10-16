@@ -1,4 +1,3 @@
-
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
@@ -12,64 +11,56 @@ import '../../../../database/sync/sync_orchestrator.dart';
 import '../../../keybinding/shortcut_config.dart';
 import '../../core/providers.dart';
 import '../../viewmodel/viewmodel.dart';
-import 'desktop_left_panel.dart';
-import 'right_panel/desktop_right_panel.dart';
+import 'left_panel.dart';
+import 'middle_panel.dart';
+import 'right_panel/right_panel.dart';
 
-class DesktopHomePage extends ConsumerStatefulWidget {
-  const DesktopHomePage({super.key});
+class DesktopHomePanel extends ConsumerStatefulWidget {
+  const DesktopHomePanel({super.key});
 
   @override
-  ConsumerState<DesktopHomePage> createState() => _DesktopHomePageState();
+  ConsumerState<DesktopHomePanel> createState() => _DesktopHomePageState();
 }
 
-class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
+class _DesktopHomePageState extends ConsumerState<DesktopHomePanel> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
 
-  /// Tracks the current width of the left panel (the note list). Modified by the draggable divider.
-  double _leftPanelWidth = 340.0;
+  /// Tracks the current width of the middle panel. Modified by the draggable divider.
+  double _middlePanelWidth = 340.0;
 
+  // ==== LEFT PANEL STATE ====
+  bool _isLeftPanelExpanded = true;
+  double get _currentLeftWidth => _isLeftPanelExpanded ? 240.0 : 64.0;
 
   // For helping close the drawer when user click on the invisible barrier on top of the right panel
   final GlobalKey<ScaffoldState> _leftScaffoldKey = GlobalKey<ScaffoldState>();
   bool _isDrawerOpen = false;
 
   // ==== ACCESSIBILITY & UX ====
-  /// Tracks if the user is currently navigating via keyboard (Tab/Arrows) vs Mouse.
-  /// Used to selectively show/hide focus rings so mouse users don't see ugly boxes.
   bool _isKeyboardDriven = FocusManager.instance.highlightMode == FocusHighlightMode.traditional;
 
   @override
   void initState() {
     super.initState();
-
-    // Prevent the search node from eating the 'Tab' key normally
     _searchFocusNode.skipTraversal = true;
-
-    // Handle specific keyboard actions when the search bar is focused
     _searchFocusNode.onKeyEvent = (FocusNode node, KeyEvent event) {
       if (event is KeyDownEvent) {
         if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-          node.nextFocus(); // Drop focus down into the note list
+          node.nextFocus();
           return KeyEventResult.handled;
         }
         if (event.logicalKey == LogicalKeyboardKey.escape) {
-          node.unfocus(); // Drop focus completely to return to normal app state
+          node.unfocus();
           return KeyEventResult.handled;
         }
       }
       return KeyEventResult.ignored;
     };
-
-    // Listen to Flutter's engine to detect mouse vs keyboard usage
     FocusManager.instance.addHighlightModeListener(_handleHighlightModeChange);
-
-    // Trigger an initial background sync as soon as the desktop app opens
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(syncOrchestratorProvider).triggerSync();
     });
-
-    // Global raw keyboard listener to track modifier keys (Ctrl/Alt/Shift)
     HardwareKeyboard.instance.addHandler(_handleKeyEvent);
   }
 
@@ -82,24 +73,14 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
     super.dispose();
   }
 
-  // ==== EVENT HANDLERS ====
-
-  /// Handles the hover mechanics for the slide-out drawer.
-  /// Uses a 150ms debounce timer to prevent the drawer from violently flickering
-  /// open and closed if the mouse accidentally slips off the edge for a split second.
-
   void _handleHighlightModeChange(FocusHighlightMode mode) {
     if (mounted) {
-      setState(() {
-        _isKeyboardDriven = mode == FocusHighlightMode.traditional;
-      });
+      setState(() => _isKeyboardDriven = mode == FocusHighlightMode.traditional);
     }
   }
 
-  /// Intercepts raw hardware key events before they hit text fields.
   bool _handleKeyEvent(KeyEvent event) {
     if (event is KeyDownEvent) {
-      // If the user uses a navigation key, force the app into keyboard-driven mode
       if (event.logicalKey == LogicalKeyboardKey.tab ||
           event.logicalKey == LogicalKeyboardKey.arrowDown ||
           event.logicalKey == LogicalKeyboardKey.arrowUp ||
@@ -110,62 +91,45 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
         }
       }
     }
-
     final isModifierPressed = HardwareKeyboard.instance.isControlPressed || HardwareKeyboard.instance.isMetaPressed;
     ref.read(modifierHeldProvider.notifier).updateState(isModifierPressed);
-
-    return false; // MUST return false so we don't block normal typing!
+    return false;
   }
 
   void _handleNoteTap(Note note) {
     NoteTapHandler.openNote(context, ref, note);
   }
 
-  /// Injects an empty, temporary "shell" note into the editor panel.
   void _addNote() {
     final emptyNote = Note(
       uuid: const Uuid().v4(),
       title: '',
       content: '',
-      color: 0xFFFFFFFF, // Default white
-
-      // VERSIONING (New)
+      color: 0xFFFFFFFF,
       schemaVersion: 1,
       contentVersion: 1,
-
-      // UX TIMESTAMPS (Replacing booleans, null = false)
       pinnedAt: null,
       archivedAt: null,
       lockedAt: null,
-
-      // ATTACHMENTS (New)
       localAttachmentPath: null,
       cloudAttachmentUrl: null,
-
-      // NAVIGATION & SECURITY
       folderId: null,
       tags: null,
       reminderAt: null,
       ownerUid: null,
-
-      // METADATA
       creationPlatform: null,
       creationDevice: null,
       lastEditedPlatform: null,
       lastEditedDevice: null,
       deletedPlatform: null,
       deletedDevice: null,
-
-      // SYNC & TIMESTAMPS
       createdAt: DateTime.now().toUtc(),
       updatedAt: DateTime.now().toUtc(),
       deletedAt: null,
-      updateCounter: 1, // Renamed from versionCounter
+      updateCounter: 1,
       cloudSyncStatus: 0,
       localSyncStatus: 0,
     );
-
-    // Navigate to the editor panel
     ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.allNotes);
     ref.read(activeNoteProvider.notifier).setNote(emptyNote);
   }
@@ -181,7 +145,7 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
 
     return shortcutsAsync.when(
       loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (err, stack) => Scaffold(body: Center(child: Text('Error loading shortcuts: $err'))),
+      error: (err, stack) => Scaffold(body: Center(child: Text('Error: $err'))),
       data: (Map<String, ShortcutConfig> shortcuts) {
         final activeBindings = <ShortcutActivator, VoidCallback>{
           if (shortcuts[AppActions.search] != null)
@@ -190,7 +154,6 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
               _searchFocusNode.requestFocus();
             },
           if (shortcuts[AppActions.newNote] != null) shortcuts[AppActions.newNote]!.activator: _addNote,
-
         };
 
         return CallbackShortcuts(
@@ -209,19 +172,18 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
                     policy: OrderedTraversalPolicy(),
                     child: Stack(
                       children: [
-                        // The Split Layout Background
                         Row(
                           children: [
-                            SizedBox(
-                              width: _leftPanelWidth,
+                            //  Static/Animated Left Panel (Snaps between 240px and 64px)
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              curve: Curves.easeInOut,
+                              width: _currentLeftWidth,
                               child: DesktopLeftPanel(
-
-                                // Pass the key and a callback down to the left panel
+                                isExpanded: _isLeftPanelExpanded,
+                                onToggle: () => setState(() => _isLeftPanelExpanded = !_isLeftPanelExpanded),
                                 scaffoldKey: _leftScaffoldKey,
-                                onDrawerChanged: (isOpen) {
-                                  setState(() => _isDrawerOpen = isOpen);
-                                },
-
+                                onDrawerChanged: (isOpen) => setState(() => _isDrawerOpen = isOpen),
                                 searchController: _searchController,
                                 searchFocusNode: _searchFocusNode,
                                 activeNoteId: activeNote?.uuid,
@@ -231,14 +193,33 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
                                 onKeyboardModeChanged: (mode) => setState(() => _isKeyboardDriven = mode),
                               ),
                             ),
-                            const VerticalDivider(width: 1, thickness: 1), // Only 1px wide visually
+                            const VerticalDivider(width: 1, thickness: 1),
+
+                            // Middle Panel
+                            SizedBox(
+                              width: _middlePanelWidth,
+                              child: DesktopMiddlePanel(
+                                scaffoldKey: _leftScaffoldKey,
+                                onDrawerChanged: (isOpen) => setState(() => _isDrawerOpen = isOpen),
+                                searchController: _searchController,
+                                searchFocusNode: _searchFocusNode,
+                                activeNoteId: activeNote?.uuid,
+                                isKeyboardDriven: _isKeyboardDriven,
+                                onAddNote: _addNote,
+                                onNoteTap: _handleNoteTap,
+                                onKeyboardModeChanged: (mode) => setState(() => _isKeyboardDriven = mode),
+                              ),
+                            ),
+                            const VerticalDivider(width: 1, thickness: 1),
+
+                            // Right Panel
                             Expanded(child: DesktopRightPanel(activeNote: activeNote)),
                           ],
                         ),
 
-                        // The Invisible Draggable Resizer
+                        // Middle Panel Divider
                         Positioned(
-                          left: _leftPanelWidth - 6,
+                          left: _currentLeftWidth + _middlePanelWidth - 6,
                           width: 13,
                           top: 0,
                           bottom: 0,
@@ -248,9 +229,9 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
                               behavior: HitTestBehavior.opaque,
                               onPanUpdate: (details) {
                                 setState(() {
-                                  _leftPanelWidth += details.delta.dx;
-                                  if (_leftPanelWidth < 250) _leftPanelWidth = 250;
-                                  if (_leftPanelWidth > 600) _leftPanelWidth = 600;
+                                  _middlePanelWidth += details.delta.dx;
+                                  if (_middlePanelWidth < 250) _middlePanelWidth = 250;
+                                  if (_middlePanelWidth > 600) _middlePanelWidth = 600;
                                 });
                               },
                               child: Container(color: Colors.transparent),
@@ -258,28 +239,22 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePage> {
                           ),
                         ),
 
-
-                        // Invisible barrier over the Right Panel to close drawer on click
+                        // Invisible barrier over Right Panel
                         if (_isDrawerOpen)
                           Positioned(
-                            left: _leftPanelWidth + 1, // Starts right after the divider
+                            left: _currentLeftWidth + _middlePanelWidth + 1,
                             top: 0,
                             bottom: 0,
                             right: 0,
                             child: GestureDetector(
-                              // behavior: HitTestBehavior.opaque is critical for transparent containers to catch taps!
                               behavior: HitTestBehavior.opaque,
-                              onTap: () {
-                                _leftScaffoldKey.currentState?.closeDrawer();
-                              },
+                              onTap: () => _leftScaffoldKey.currentState?.closeDrawer(),
                               child: MouseRegion(
-                                // Resets cursor so it doesn't look like you can click things on the right pane
                                 cursor: SystemMouseCursors.basic,
                                 child: Container(color: Colors.transparent),
                               ),
                             ),
                           ),
-
                       ],
                     ),
                   ),

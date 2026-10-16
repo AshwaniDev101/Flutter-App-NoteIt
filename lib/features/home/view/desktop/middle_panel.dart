@@ -7,15 +7,16 @@ import 'package:window_manager/window_manager.dart';
 
 import '../../../../core/app_env.dart';
 import '../../../../database/drift/keybindings/keybindings_dao.dart';
+import '../../../../folders/folders.dart';
 import '../../../drawer/desktop_drawer_button.dart';
 import '../../../keybinding/smart_action_widget.dart';
 import '../../viewmodel/viewmodel.dart';
 import '../shared/select_mode_app_bars.dart';
 import '../shared/tag_sort_view_menu.dart';
-import '../../../../shared/widgets/note_card/dynamic_notes_layout.dart';
+import '../../../../shared/note_card/dynamic_notes_layout.dart';
 import '../shared/home_search_bar.dart';
 
-class DesktopLeftPanel extends ConsumerWidget {
+class DesktopMiddlePanel extends ConsumerWidget {
   final TextEditingController searchController;
   final FocusNode searchFocusNode;
   final String? activeNoteId;
@@ -28,7 +29,7 @@ class DesktopLeftPanel extends ConsumerWidget {
   final GlobalKey<ScaffoldState> scaffoldKey;
   final ValueChanged<bool> onDrawerChanged;
 
-  const DesktopLeftPanel({
+  const DesktopMiddlePanel({
     super.key,
     required this.searchController,
     required this.searchFocusNode,
@@ -97,29 +98,28 @@ class DesktopLeftPanel extends ConsumerWidget {
       // Top App Bar for the left panel
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(kToolbarHeight),
-        child: DragToMoveArea(
-          child: homeState.isSelectMode
-              ? SelectModeAppBar(
-                  noteIds: homeState.selectedNoteIds,
-                )
-              : AppBar(
-                  leading: DrawerMenuButton(),
-                  title: Text(
-                    'Note-It',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  elevation: 0,
-                  scrolledUnderElevation: PlatformHelper.isDesktopScreen ? 0.0 : null,
-                  actions: [
-                    SelectableText(
-                      versionString,
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(color: colorScheme.onSurfaceVariant),
-                    ),
-                    const SizedBox(width: 16),
-                  ],
-                  iconTheme: IconThemeData(color: Theme.of(context).colorScheme.primary),
+        child: homeState.isSelectMode
+            ? DragToMoveArea(child: SelectModeAppBar(noteIds: homeState.selectedNoteIds))
+            : AppBar(
+                flexibleSpace: DragToMoveArea(child: Container(color: Colors.transparent)),
+                backgroundColor: Colors.transparent,
+                // Ensures clicks pass through to the drag area
+                leading: const DrawerMenuButton(),
+                title: Text(
+                  'Note-It',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
-        ),
+                elevation: 0,
+                scrolledUnderElevation: PlatformHelper.isDesktopScreen ? 0.0 : null,
+                actions: [
+                  SelectableText(
+                    versionString,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(color: colorScheme.onSurfaceVariant),
+                  ),
+                  const SizedBox(width: 16),
+                ],
+                iconTheme: IconThemeData(color: Theme.of(context).colorScheme.primary),
+              ),
       ),
 
       // Body holding the search bar and the actual note list
@@ -128,7 +128,7 @@ class DesktopLeftPanel extends ConsumerWidget {
         children: [
           // Search & Filter Row
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 12, 8, 8),
+            padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
             child: Row(
               children: [
                 Expanded(
@@ -164,11 +164,49 @@ class DesktopLeftPanel extends ConsumerWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: 4),
-                const FolderSortViewButton(),
+
+                const SortViewButton(),
               ],
             ),
           ),
+
+          // Folder Row
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: FocusTraversalOrder(
+                    order: const NumericFocusOrder(1),
+                    child: Focus(
+                      canRequestFocus: true,
+                      onKeyEvent: (node, event) {
+                        if (event is KeyDownEvent) {
+                          if (event.logicalKey == LogicalKeyboardKey.enter) {
+                            searchFocusNode.requestFocus();
+                            return KeyEventResult.handled;
+                          }
+                          if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                            node.nextFocus();
+                            return KeyEventResult.handled;
+                          }
+                          if (event.logicalKey == LogicalKeyboardKey.escape) {
+                            node.requestFocus();
+                            return KeyEventResult.handled;
+                          }
+                        }
+                        return KeyEventResult.ignored;
+                      },
+                      child: FolderMenuButton(),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                IconButton(onPressed: (){}, icon: const Icon(Icons.add)),
+              ],
+            ),
+          ),
+          SizedBox(height: 8,),
 
           // The Note List Layout
           Expanded(
