@@ -4,8 +4,8 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:noteit/features/local_sync/view/qr/qr_scanner/widgets/shaded_overlay.dart';
 
 import '../../../provider/sync_client_provider.dart';
-import '../../../../../shared/widgets/app_scaffold.dart';
-import '../../../../../shared/widgets/snack_bar_manager.dart';
+import '../../../../../shared/app_scaffold.dart';
+import '../../../../../shared/snack_bar_manager.dart';
 import '../../../../home/view/desktop/right_panel/core/navigator.dart';
 
 class QrScannerPage extends ConsumerStatefulWidget {

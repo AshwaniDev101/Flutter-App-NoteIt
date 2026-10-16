@@ -1,6 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import '../../../shared/widgets/app_scaffold.dart';
+import '../../../shared/app_scaffold.dart';
 
 class MasterPasswordPage extends StatefulWidget {
   const MasterPasswordPage({super.key});

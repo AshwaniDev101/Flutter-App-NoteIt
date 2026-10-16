@@ -6,8 +6,8 @@ import 'package:noteit/core/routing/routing.dart';
 
 import '../../../../../core/config.dart';
 import '../../../../home/view/desktop/right_panel/core/navigator.dart';
-import '../../../../../shared/widgets/app_scaffold.dart';
-import '../../../../../shared/widgets/snack_bar_manager.dart';
+import '../../../../../shared/app_scaffold.dart';
+import '../../../../../shared/snack_bar_manager.dart';
 import '../../../auto_connect/mdns_searcher.dart';
 import '../../../provider/sync_client_provider.dart';
 import 'pin_dialog/host_connection_controller.dart';

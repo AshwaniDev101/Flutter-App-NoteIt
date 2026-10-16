@@ -1,8 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../shared/widgets/app_scaffold.dart';
-import '../../../shared/widgets/snack_bar_manager.dart';
+import '../../../shared/app_scaffold.dart';
+import '../../../shared/snack_bar_manager.dart';
 import '../lock_manger/lock_manager.dart';
 
 class UpdatePasswordPage extends ConsumerStatefulWidget {

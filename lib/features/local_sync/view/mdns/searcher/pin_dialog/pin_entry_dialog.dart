@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../../../shared/widgets/app_scaffold.dart';
-import '../../../../../../shared/widgets/snack_bar_manager.dart';
+import '../../../../../../shared/app_scaffold.dart';
+import '../../../../../../shared/snack_bar_manager.dart';
 import '../../../../../home/view/desktop/right_panel/core/navigator.dart';
 
 class PinEntryDialog extends StatefulWidget {

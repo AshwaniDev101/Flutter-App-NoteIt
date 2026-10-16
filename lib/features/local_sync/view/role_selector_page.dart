@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/features/home/view/desktop/right_panel/core/navigator.dart';
-import 'package:noteit/shared/widgets/app_scaffold.dart';
+import 'package:noteit/shared/app_scaffold.dart';
 
 class RoleSelectorPage extends ConsumerWidget {
   const RoleSelectorPage({super.key});

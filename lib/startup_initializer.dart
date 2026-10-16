@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/database/drift/synced_devices/synced_devices_dao.dart';
 import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
 import 'package:noteit/features/local_sync/provider/sync_session_provider.dart';
-import 'package:noteit/shared/widgets/snack_bar_manager.dart';
+import 'package:noteit/shared/snack_bar_manager.dart';
 
 import 'core/config.dart';
 import 'core/device_info.dart';

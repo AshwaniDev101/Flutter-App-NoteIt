@@ -7,7 +7,7 @@ import 'package:noteit/features/home/view/shared/icon_tray/icon_tray.dart';
 import 'package:noteit/features/home/view/shared/select_mode_app_bars.dart';
 import 'package:noteit/features/home/view/shared/tag_sort_view_menu.dart';
 import 'package:noteit/features/home/viewmodel/viewmodel.dart';
-import 'package:noteit/shared/widgets/note_card/dynamic_notes_layout.dart';
+import 'package:noteit/shared/note_card/dynamic_notes_layout.dart';
 
 import '../../../../database/sync/sync_orchestrator.dart';
 import '../../../drawer/mobile_app_drawer.dart';
@@ -80,7 +80,7 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
                   ),
                   const SizedBox(width: 8),
 
-                  const FolderSortViewButton(),
+                  const SortViewButton(),
 
                   // SortFilterOptionMenu(),
                   // _buildFilterMenu(

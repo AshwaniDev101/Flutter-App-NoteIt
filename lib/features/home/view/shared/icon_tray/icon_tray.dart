@@ -4,7 +4,7 @@ import 'package:noteit/features/home/view/shared/icon_tray/spinning_sync_icon.da
 import 'package:noteit/features/home/view/shared/icon_tray/websocket_connection_indicator.dart';
 
 import '../../../../../database/sync/sync_orchestrator.dart';
-import '../../../../../shared/widgets/snack_bar_manager.dart';
+import '../../../../../shared/snack_bar_manager.dart';
 import 'mdns_broadcast_indicator.dart';
 import 'mdns_search_indicator.dart';
 

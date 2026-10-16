@@ -59,34 +59,63 @@ class HomeSearchBar extends ConsumerWidget {
       child: TextField(
         controller: controller,
         focusNode: focusNode,
+
         decoration: InputDecoration(
+          filled: true,
+          fillColor: Theme.of(context).colorScheme.surfaceContainerLowest,
+          isDense: true,
+          // contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           hintText: hintText,
-          prefixIcon: const Icon(Icons.search),
+
           suffixIcon: ValueListenableBuilder<TextEditingValue>(
             valueListenable: controller,
             builder: (context, value, child) {
               return value.text.isNotEmpty
                   ? ExcludeFocus(
-                      child: IconButton(
-                        icon: const Icon(Icons.clear, size: 20),
-                        onPressed: () => _clearSearch(ref),
-                      ),
+                      child: IconButton(icon: const Icon(Icons.clear, size: 20), onPressed: () => _clearSearch(ref)),
                     )
                   : const SizedBox.shrink();
             },
           ),
-          filled: true,
-          fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-          border: OutlineInputBorder(
-            borderRadius: effectiveBorderRadius,
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: effectiveBorderRadius,
-            borderSide: BorderSide.none,
-          ),
+          prefixIcon: const Icon(Icons.search, size: 18),
+          hintStyle: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+
+          prefixIconConstraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+          border: OutlineInputBorder(borderRadius: effectiveBorderRadius, borderSide: BorderSide.none),
+
+          focusedBorder: OutlineInputBorder(borderRadius: effectiveBorderRadius, borderSide: BorderSide.none),
           contentPadding: const EdgeInsets.symmetric(vertical: 0),
         ),
+        // decoration: InputDecoration(
+        //   hintText: hintText,
+        //   prefixIcon: const Icon(Icons.search),
+        //   suffixIcon: ValueListenableBuilder<TextEditingValue>(
+        //     valueListenable: controller,
+        //     builder: (context, value, child) {
+        //       return value.text.isNotEmpty
+        //           ? ExcludeFocus(
+        //               child: IconButton(
+        //                 icon: const Icon(Icons.clear, size: 20),
+        //                 onPressed: () => _clearSearch(ref),
+        //               ),
+        //             )
+        //           : const SizedBox.shrink();
+        //     },
+        //   ),
+        //   filled: true,
+        //   fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        //   border: OutlineInputBorder(
+        //     borderRadius: effectiveBorderRadius,
+        //     borderSide: BorderSide.none,
+        //   ),
+        //   focusedBorder: OutlineInputBorder(
+        //     borderRadius: effectiveBorderRadius,
+        //     borderSide: BorderSide.none,
+        //   ),
+        //   contentPadding: const EdgeInsets.symmetric(vertical: 0),
+        // ),
         onTap: () {
           if (onKeyboardModeChanged != null) {
             onKeyboardModeChanged!(false);

@@ -6,7 +6,7 @@ import 'package:noteit/core/app_env.dart';
 import 'package:noteit/core/routing/routing.dart';
 import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
 import 'package:noteit/firebase_options.dart';
-import 'package:noteit/shared/widgets/snack_bar_manager.dart';
+import 'package:noteit/shared/snack_bar_manager.dart';
 import 'package:noteit/startup_initializer.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:toastification/toastification.dart';

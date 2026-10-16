@@ -10,10 +10,10 @@ import 'package:noteit/database/drift/local_database.dart';
 
 import 'package:noteit/database/drift/notes/notes_dao.dart';
 import '../../../../shared/find_replace.dart';
-import '../../../../shared/widgets/app_scaffold.dart';
-import '../../../../shared/widgets/note_card/core/note_action_controller.dart';
-import '../../../../shared/widgets/note_card/highlighting_textediting_controller.dart';
-import '../../../../shared/widgets/snack_bar_manager.dart';
+import '../../../../shared/app_scaffold.dart';
+import '../../../../shared/note_card/core/note_action_controller.dart';
+import '../../../../shared/highlighting_textfield.dart';
+import '../../../../shared/snack_bar_manager.dart';
 import '../../widgets/checklist_editor.dart';
 import '../../../home/core/providers.dart';
 import '../../../home/view/desktop/right_panel/core/navigator.dart';
@@ -55,7 +55,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
   late final TextEditingController _titleController;
 
   // Find and replace Controller
-  late final HighlightingTextEditingController _contentController;
+  late final HighlightingTextField _highlightedContentController;
 
   final UndoHistoryController _undoController = UndoHistoryController();
   late final EditNoteViewModel _viewModel;
@@ -91,12 +91,12 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
     _titleController = TextEditingController(text: widget.existingNote?.title ?? '');
 
     // Initialize the new controller
-    _contentController = HighlightingTextEditingController(text: widget.existingNote?.content ?? '');
+    _highlightedContentController = HighlightingTextField(text: widget.existingNote?.content ?? '');
 
 
       // --- Checklist init logic ---
     if (widget.existingNote != null) {
-      final String textContent = _contentController.text.trim();
+      final String textContent = _highlightedContentController.text.trim();
 
       // Check if DB says it's a checklist OR if the text is clearly a JSON array
       if (widget.existingNote!.contentVersion == ContentVersion.checklist.value) {
@@ -109,18 +109,18 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
     _titleFocusNode = FocusNode()..addListener(() => setState(() {}));
     _contentFocusNode = FocusNode();
 
-    if (_titleController.text.isEmpty && _contentController.text.isEmpty) {
+    if (_titleController.text.isEmpty && _highlightedContentController.text.isEmpty) {
       _isAutoSyncingTitle = true;
     } else {
       _isAutoSyncingTitle = false;
     }
 
-    _contentController.addListener(_syncTitleFromContent);
+    _highlightedContentController.addListener(_syncTitleFromContent);
     _titleController.addListener(_onTitleChanged);
 
     // used for saving changes to the note automatically
     _titleController.addListener(_scheduleAutoSave);
-    _contentController.addListener(_scheduleAutoSave);
+    _highlightedContentController.addListener(_scheduleAutoSave);
 
 
   }
@@ -187,7 +187,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
     if (_contentVersion == ContentVersion.checklist) return;
     if (!_isAutoSyncingTitle) return;
 
-    String firstLine = _contentController.text.isNotEmpty ? _contentController.text.split('\n').first : '';
+    String firstLine = _highlightedContentController.text.isNotEmpty ? _highlightedContentController.text.split('\n').first : '';
 
     // FIX: Restrict to exactly 30 characters maximum
     if (firstLine.length > 30) {
@@ -203,11 +203,11 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
   }
 
   void _onTitleChanged() {
-    if (_titleController.text.isEmpty && _contentController.text.isEmpty) {
+    if (_titleController.text.isEmpty && _highlightedContentController.text.isEmpty) {
       _isAutoSyncingTitle = true;
     } else {
       // Calculate what the auto-sync text should look like right now
-      String expectedSync = _contentController.text.isNotEmpty ? _contentController.text.split('\n').first : '';
+      String expectedSync = _highlightedContentController.text.isNotEmpty ? _highlightedContentController.text.split('\n').first : '';
       if (expectedSync.length > 30) expectedSync = expectedSync.substring(0, 30);
 
       // If the actual title text doesn't match the expected sync text,
@@ -225,7 +225,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
 
     // Grab the exact text before the controllers are destroyed
     final finalTitle = _titleController.text;
-    final finalContent = _contentController.text;
+    final finalContent = _highlightedContentController.text;
 
     // Push the final DB save to the next event loop, completely escaping Flutter's widget teardown cycle!
     Future(() {
@@ -233,13 +233,13 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
     });
 
     // Clean up listeners and controllers
-    _contentController.removeListener(_syncTitleFromContent);
+    _highlightedContentController.removeListener(_syncTitleFromContent);
     _titleController.removeListener(_onTitleChanged);
     _titleController.removeListener(_scheduleAutoSave);
-    _contentController.removeListener(_scheduleAutoSave);
+    _highlightedContentController.removeListener(_scheduleAutoSave);
 
     _titleController.dispose();
-    _contentController.dispose();
+    _highlightedContentController.dispose();
     _undoController.dispose();
 
     _titleFocusNode.dispose();
@@ -259,7 +259,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
 
     // Use the overrides if we are disposing, otherwise read directly from controllers
     final title = (overrideTitle ?? _titleController.text).trim();
-    final content = (overrideContent ?? _contentController.text).trim();
+    final content = (overrideContent ?? _highlightedContentController.text).trim();
 
     if (title.isEmpty && content.isEmpty) return;
 
@@ -367,24 +367,24 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
                         _contentVersion = ContentVersion.checklist;
 
                         // Parse the existing plain text into checklist items
-                        _currentChecklist = _convertTextToChecklist(_contentController.text);
+                        _currentChecklist = _convertTextToChecklist(_highlightedContentController.text);
 
                         // Inject the JSON back into the controller so auto-save works immediately
-                        _contentController.text = jsonEncode(_currentChecklist.map((e) => e.toJson()).toList());
+                        _highlightedContentController.text = jsonEncode(_currentChecklist.map((e) => e.toJson()).toList());
 
                       } else {
                         // Switch back to plain text mode
                         _contentVersion = ContentVersion.plainText;
 
                         // Convert the checklist items back to readable markdown-style text
-                        _contentController.text = _convertChecklistToText(_currentChecklist);
+                        _highlightedContentController.text = _convertChecklistToText(_currentChecklist);
                       }
                     });
                     break;
                   case NoteEditorOption.find:
                     // If it's currently open, clear the highlights BEFORE we setState to close it
                     if (_isFind) {
-                      _contentController.searchQuery = '';
+                      _highlightedContentController.searchQuery = '';
                     }
 
                     setState(() {
@@ -402,7 +402,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
             children: [
               if (_isFind) ...{
                 FindReplaceWidget(
-                  contentController: _contentController,
+                  contentController: _highlightedContentController,
                   contentFocusNode: _contentFocusNode,
                   onClose: () {
                     setState(() {
@@ -450,11 +450,11 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
               _currentChecklist = updatedList;
 
               // This instantly fires your existing _scheduleAutoSave() method.
-              _contentController.text = jsonEncode(updatedList.map((e) => e.toJson()).toList());
+              _highlightedContentController.text = jsonEncode(updatedList.map((e) => e.toJson()).toList());
             },
           )
               : TextField(
-            controller: _contentController,
+            controller: _highlightedContentController,
             undoController: _undoController,
             maxLines: null,
             expands: true,

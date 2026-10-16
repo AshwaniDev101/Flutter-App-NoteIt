@@ -5,7 +5,7 @@ import '../../../../database/sync/sync_orchestrator.dart';
 import '../../keybinding/keybindings_provider.dart';
 import '../../lock/lock_manger/lock_manager.dart';
 import '../../lock/password_prompt_helper.dart';
-import '../../../shared/widgets/app_scaffold.dart';
+import '../../../shared/app_scaffold.dart';
 import '../../home/view/desktop/right_panel/core/navigator.dart';
 
 class SettingsPage extends ConsumerWidget {

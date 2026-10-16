@@ -53,7 +53,6 @@ class _DrawerMenuButtonState extends ConsumerState<DrawerMenuButton> {
         );
       },
       menuChildren: [
-        // Draw the exact same SharedDrawerContent inside a floating Card!
         Card(
           color: Theme.of(context).colorScheme.surface,
           elevation: 12,

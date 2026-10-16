@@ -51,7 +51,7 @@ ThemeData get _darkThemeData => ThemeData(
 
     // ==== Surface levels ====
     // surfaceContainerHighest :Color(0xFF1B1E27),
-    // surfaceContainerHigh :Color(0xFF1B1E27),
+    surfaceContainerHigh :Color(0xFF1B1E27), // * Used for card backgrounds Folder menu
     surfaceContainer: Color(0xFF22263A),
     surfaceContainerLow: Color(0xFF1A1D2D), // * Used for card backgrounds
 

@@ -8,7 +8,7 @@ import 'package:noteit/features/others/archive_page.dart';
 import '../../features/backup/export_page.dart';
 import '../../features/backup/import_page.dart';
 import '../../features/dev_tools/dev_page.dart';
-import '../../features/home/view/desktop/desktop_home_page.dart';
+import '../../features/home/view/desktop/home_page.dart';
 import '../../features/home/view/mobile/mobile_home_page.dart';
 import '../../features/local_sync/view/mdns/broadcast/host_broadcast.dart';
 import '../../features/local_sync/view/mdns/searcher/host_searcher.dart';
@@ -53,7 +53,7 @@ final routerProvider = Provider((ref) {
         path: AppRoutes.home,
         builder: (context, state) {
           if (PlatformHelper.isDesktopScreen) {
-            return DesktopHomePage();
+            return DesktopHomePanel();
           } else {
             return MobileHomePage();
           }

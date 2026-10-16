@@ -4,7 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/util/platform_helper.dart';
-import 'package:noteit/shared/widgets/note_card/widgets/lock_overlay.dart';
+import 'package:noteit/shared/note_card/widgets/lock_overlay.dart';
 
 import '../../../core/helpers/time_helper.dart';
 import '../../../database/drift/local_database.dart';
@@ -12,7 +12,6 @@ import '../../../features/home/core/providers.dart';
 import '../../../features/home/view/shared/tag_sort_view_menu.dart';
 import '../../../features/lock/lock_manger/lock_manager.dart';
 import '../highlighted_text.dart';
-
 
 enum NoteContextMenuOption {
   // Common
@@ -85,7 +84,6 @@ class _NoteCardState extends ConsumerState<NoteCard> {
 
   final MenuController _menuController = MenuController();
 
-
   @override
   Widget build(BuildContext context) {
     final viewType = ref.watch(noteViewTypeProvider);
@@ -95,34 +93,33 @@ class _NoteCardState extends ConsumerState<NoteCard> {
       controller: _menuController,
       consumeOutsideTap: true,
       menuChildren: widget.contextMenuOptions
-            // Hide 'Select' if this specific card is already selected
+          // Hide 'Select' if this specific card is already selected
           .where((option) => !(option == NoteContextMenuOption.select && widget.isSelected))
           .map((option) {
-        final effectiveOption = (isPinned && option == NoteContextMenuOption.pin)
-            ? NoteContextMenuOption.unpin
-            : (!isPinned && option == NoteContextMenuOption.unpin)
+            final effectiveOption = (isPinned && option == NoteContextMenuOption.pin)
+                ? NoteContextMenuOption.unpin
+                : (!isPinned && option == NoteContextMenuOption.unpin)
                 ? NoteContextMenuOption.pin
                 : option;
 
-        return MenuItemButton(
-          leadingIcon: Icon(
-            effectiveOption.icon,
-            // Paint destructive actions red
-            color: effectiveOption.isDestructive ? Theme.of(context).colorScheme.error : null,
-          ),
-          onPressed: () {
-            if (widget.onContextMenuAction != null) {
-              widget.onContextMenuAction!(effectiveOption);
-            }
-          },
-          child: Text(
-            effectiveOption.label,
-            style: TextStyle(
-              color: effectiveOption.isDestructive ? Theme.of(context).colorScheme.error : null,
-            ),
-          ),
-        );
-      }).toList(),
+            return MenuItemButton(
+              leadingIcon: Icon(
+                effectiveOption.icon,
+                // Paint destructive actions red
+                color: effectiveOption.isDestructive ? Theme.of(context).colorScheme.error : null,
+              ),
+              onPressed: () {
+                if (widget.onContextMenuAction != null) {
+                  widget.onContextMenuAction!(effectiveOption);
+                }
+              },
+              child: Text(
+                effectiveOption.label,
+                style: TextStyle(color: effectiveOption.isDestructive ? Theme.of(context).colorScheme.error : null),
+              ),
+            );
+          })
+          .toList(),
 
       child: GestureDetector(
         //Capture right-click (secondary tap) and open menu at exact pointer location
@@ -141,10 +138,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
               },
             ),
           },
-          child: MouseRegion(
-            cursor: SystemMouseCursors.click,
-            child: _buildLayoutRouter(viewType),
-          ),
+          child: MouseRegion(cursor: SystemMouseCursors.click, child: _buildLayoutRouter(viewType)),
         ),
       ),
     );
@@ -154,11 +148,11 @@ class _NoteCardState extends ConsumerState<NoteCard> {
   Widget _buildLayoutRouter(NoteViewType viewType) {
     switch (viewType) {
       case NoteViewType.list:
-      // Plain list gets the flat wrapper
+        // Plain list gets the flat wrapper
         return _buildFlatListWrapper(child: _buildCompactList());
 
       case NoteViewType.detailedList:
-      // Detailed list, Grids get the Card wrapper
+        // Detailed list, Grids get the Card wrapper
         return _buildCardWrapper(child: _buildDetailedList());
 
       case NoteViewType.grid:
@@ -187,12 +181,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
           width: _isFocused ? 2 : 1,
         ),
       ),
-      child: InkWell(
-        onTap: widget.onTap,
-        onLongPress: widget.onLongPress,
-        canRequestFocus: false,
-        child: child,
-      ),
+      child: InkWell(onTap: widget.onTap, onLongPress: widget.onLongPress, canRequestFocus: false, child: child),
     );
   }
 
@@ -214,20 +203,11 @@ class _NoteCardState extends ConsumerState<NoteCard> {
       color: backgroundColor,
       // Add a subtle divider at the bottom of each list item
       shape: Border(
-        bottom: BorderSide(
-          color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.3),
-          width: 1,
-        ),
+        bottom: BorderSide(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.3), width: 1),
       ),
-      child: InkWell(
-        onTap: widget.onTap,
-        onLongPress: widget.onLongPress,
-        canRequestFocus: false,
-        child: child,
-      ),
+      child: InkWell(onTap: widget.onTap, onLongPress: widget.onLongPress, canRequestFocus: false, child: child),
     );
   }
-
 
   // ==== COMPACT LIST LAYOUT ====
   Widget _buildCompactList() {
@@ -299,41 +279,46 @@ class _NoteCardState extends ConsumerState<NoteCard> {
           // const SizedBox(height: 2),
           widget.note.lockedAt != null
               ? Align(
-            alignment: Alignment.centerLeft,
-            child: Icon(
-              Icons.lock_outlined,
-              size: 20,
-              color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-            ),
-          )
+                  alignment: Alignment.centerLeft,
+                  child: Icon(
+                    Icons.lock_outlined,
+                    size: 20,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                  ),
+                )
               : HighlightedText(
-            // text: widget.note.content,
-            text: _getNotePreviewText(widget.note),
-            query: widget.searchQuery,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            // normalStyle: const TextStyle(fontSize: 13, height: 1.4),
-            normalStyle: Theme.of(context).textTheme.bodyMedium,
-            highlightStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-              color: Theme.of(context).colorScheme.onPrimaryContainer,
-            ),
-          ),
+                  // text: widget.note.content,
+                  text: _getNotePreviewText(widget.note),
+                  query: widget.searchQuery,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  // normalStyle: const TextStyle(fontSize: 13, height: 1.4),
+                  normalStyle: Theme.of(context).textTheme.bodyMedium,
+                  highlightStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  ),
+                ),
 
           // Timestamp
           const SizedBox(height: 4),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                TimeHelper.formatTimeAgo(widget.note.updatedAt),
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
+              Expanded(
+                child: Text(
+                  TimeHelper.formatTimeAgo(widget.note.updatedAt),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-              if (platform != null)
+              if (platform != null) ...[
+                const SizedBox(width: 8),
                 Tooltip(
                   message: widget.note.deletedPlatform != null ? 'Deleted on $platform' : 'Created on $platform',
-                  child: _getPlatformIcon(platform,),
+                  child: _getPlatformIcon(platform),
                 ),
+              ],
             ],
           ),
         ],
@@ -343,7 +328,6 @@ class _NoteCardState extends ConsumerState<NoteCard> {
 
   // ==== GRID LAYOUT ====
   Widget _buildGrid() {
-
     final isSessionUnlocked = ref.watch(lockManagerProvider).sessionUnlockedNoteIds.contains(widget.note.uuid);
 
     return Padding(
@@ -395,7 +379,6 @@ class _NoteCardState extends ConsumerState<NoteCard> {
                       backgroundColor: Theme.of(context).colorScheme.primaryContainer,
                       color: Theme.of(context).colorScheme.onPrimaryContainer,
                     ),
-
                   ),
                 ),
 
@@ -404,9 +387,6 @@ class _NoteCardState extends ConsumerState<NoteCard> {
               ],
             ),
           ),
-
-
-
         ],
       ),
     );
@@ -467,7 +447,6 @@ class _NoteCardState extends ConsumerState<NoteCard> {
                       backgroundColor: Theme.of(context).colorScheme.primaryContainer,
                       color: Theme.of(context).colorScheme.onPrimaryContainer,
                     ),
-
                   ),
                 ),
 
@@ -478,7 +457,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
           ),
 
           // Looks better in Android this way
-          if (PlatformHelper.isDesktopScreen)...[
+          if (PlatformHelper.isDesktopScreen) ...[
             const SizedBox(height: 4),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -486,7 +465,9 @@ class _NoteCardState extends ConsumerState<NoteCard> {
                 Text(
                   TimeHelper.formatTimeAgo(widget.note.updatedAt),
 
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.labelMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                 ),
                 if (platform != null)
                   Tooltip(
@@ -495,15 +476,11 @@ class _NoteCardState extends ConsumerState<NoteCard> {
                   ),
               ],
             ),
-          ]
-
-
-
+          ],
         ],
       ),
     );
   }
-
 
   // ==== PREVIEW HELPER ====
   String _getNotePreviewText(Note note) {
@@ -511,11 +488,13 @@ class _NoteCardState extends ConsumerState<NoteCard> {
     if (note.contentVersion == 2) {
       try {
         final List<dynamic> decoded = jsonDecode(note.content);
-        return decoded.map((item) {
-          bool isChecked = item['isChecked'] == true;
-          String text = item['text'] ?? '';
-          return '${isChecked ? "☑" : "☐"} $text';
-        }).join('\n');
+        return decoded
+            .map((item) {
+              bool isChecked = item['isChecked'] == true;
+              String text = item['text'] ?? '';
+              return '${isChecked ? "☑" : "☐"} $text';
+            })
+            .join('\n');
       } catch (_) {
         return note.content;
       }
@@ -523,7 +502,6 @@ class _NoteCardState extends ConsumerState<NoteCard> {
     // Otherwise, just return the plain text
     return note.content;
   }
-
 
   // ==== SHARED ICONS ====
   Widget _getPlatformIcon(String platform) {

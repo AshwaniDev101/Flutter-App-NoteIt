@@ -6,14 +6,14 @@ import '../../core/providers.dart';
 
 
 // BUTTON WIDGET
-class FolderSortViewButton extends StatefulWidget {
-  const FolderSortViewButton({super.key});
+class SortViewButton extends StatefulWidget {
+  const SortViewButton({super.key});
 
   @override
-  State<FolderSortViewButton> createState() => _FolderSortViewButtonState();
+  State<SortViewButton> createState() => _SortViewButtonState();
 }
 
-class _FolderSortViewButtonState extends State<FolderSortViewButton> {
+class _SortViewButtonState extends State<SortViewButton> {
   final MenuController _menuController = MenuController();
 
   @override
@@ -56,13 +56,12 @@ class FolderSortViewMenu extends StatelessWidget {
       elevation: 2,
       margin: const EdgeInsets.all(4.0),
       child: const DefaultTabController(
-        length: 3,
+        length: 2,
         child: Column(
           children: [
             TabBar(
               labelPadding: EdgeInsets.zero,
               tabs: [
-                Tab(icon: Icon(Icons.folder, size: 20), text: 'Folder'),
                 Tab(icon: Icon(Icons.filter_list, size: 20), text: 'Sort'),
                 Tab(icon: Icon(Icons.view_comfortable_rounded, size: 20), text: 'View'),
               ],
@@ -70,7 +69,6 @@ class FolderSortViewMenu extends StatelessWidget {
             Expanded(
               child: TabBarView(
                 children: [
-                  FolderTab(),
                   SortTab(),
                   ViewTab(),
                 ],
@@ -84,81 +82,8 @@ class FolderSortViewMenu extends StatelessWidget {
 }
 
 
-// TAB 1: FOLDERS
-class FolderTab extends StatefulWidget {
-  const FolderTab({super.key});
 
-  @override
-  State<FolderTab> createState() => _FolderTabState();
-}
-
-class _FolderTabState extends State<FolderTab> {
-  final List<String> _availableFolders = ['Work', 'Personal', 'Ideas', 'Urgent', 'To-Do', 'Archive', 'Finance'];
-  String? _selectedFolder;
-  String _folderSearchQuery = '';
-
-  @override
-  Widget build(BuildContext context) {
-    final filteredFolders = _availableFolders.where((folder) {
-      return folder.toLowerCase().contains(_folderSearchQuery.toLowerCase());
-    }).toList();
-
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 0),
-          child: TextField(
-            style: Theme.of(context).textTheme.bodySmall,
-            onChanged: (value) {
-              setState(() {
-                _folderSearchQuery = value;
-              });
-            },
-            decoration: InputDecoration(
-              isDense: true,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-              hintText: 'Search folders...',
-              hintStyle: Theme.of(context).textTheme.bodySmall,
-              prefixIcon: const Icon(Icons.search, size: 16),
-              prefixIconConstraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(6),
-              ),
-            ),
-          ),
-        ),
-        Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(8.0),
-            child: SizedBox(
-              width: double.infinity,
-              child: Wrap(
-                spacing: 4.0,
-                runSpacing: 4.0,
-                children: filteredFolders.map((folder) {
-                  final isSelected = _selectedFolder == folder;
-                  return ChoiceChip(
-                    visualDensity: VisualDensity.compact,
-                    label: Text(folder, style: Theme.of(context).textTheme.bodySmall),
-                    selected: isSelected,
-                    onSelected: (bool selected) {
-                      setState(() {
-                        _selectedFolder = selected ? folder : null;
-                      });
-                    },
-                    // selectedColor: Colors.blue.withValues(alpha: 0.2),
-                  );
-                }).toList(),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// TAB 2: SORT & FILTER
+// TAB 1: SORT & FILTER
 enum MenuActionCategory { sort, filter }
 enum HomeMenuAction {
   sortCreated('by created time', Icons.calendar_month_outlined, MenuActionCategory.sort),
@@ -224,7 +149,7 @@ class SortTab extends ConsumerWidget {
 }
 
 
-// TAB 3: VIEWS
+// TAB 2: VIEWS
 enum NoteViewType {
   list('List', Icons.view_headline),
   detailedList('Details', Icons.table_rows),

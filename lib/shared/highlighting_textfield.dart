@@ -1,10 +1,10 @@
 
 import 'package:flutter/material.dart';
 
-class HighlightingTextEditingController extends TextEditingController {
+class HighlightingTextField extends TextEditingController {
   String _searchQuery = '';
 
-  HighlightingTextEditingController({super.text});
+  HighlightingTextField({super.text});
 
   String get searchQuery => _searchQuery;
 

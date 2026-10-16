@@ -7,8 +7,8 @@ import 'package:file_picker/file_picker.dart';
 import '../../core/util/logger.dart';
 import '../../database/drift/notes/notes_dao.dart';
 import '../lock/password_prompt_helper.dart';
-import '../../shared/widgets/app_scaffold.dart';
-import '../../shared/widgets/snack_bar_manager.dart';
+import '../../shared/app_scaffold.dart';
+import '../../shared/snack_bar_manager.dart';
 import '../home/view/desktop/right_panel/core/navigator.dart';
 
 enum ExportFormat { json, csv }

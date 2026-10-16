@@ -6,9 +6,9 @@ import '../../database/drift/local_database.dart';
 import '../../database/drift/notes/notes_dao.dart';
 import '../../database/firebase/firebase_database.dart';
 import '../../database/sync/sync_orchestrator.dart';
-import '../../shared/widgets/note_card/note_card.dart';
-import '../../shared/widgets/app_scaffold.dart';
-import '../../shared/widgets/snack_bar_manager.dart';
+import '../../shared/note_card/note_card.dart';
+import '../../shared/app_scaffold.dart';
+import '../../shared/snack_bar_manager.dart';
 import '../home/view/shared/desktop_close_button.dart';
 
 final trashNotesProvider = StreamProvider.autoDispose<List<Note>>((ref) {

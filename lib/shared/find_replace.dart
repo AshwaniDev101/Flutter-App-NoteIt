@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'widgets/note_card/highlighting_textediting_controller.dart';
-import 'widgets/snack_bar_manager.dart';
+import 'highlighting_textfield.dart';
+import 'snack_bar_manager.dart';
 
 class FindReplaceWidget extends StatefulWidget {
-  final HighlightingTextEditingController contentController;
+  final HighlightingTextField contentController;
   final FocusNode contentFocusNode;
   final VoidCallback onClose;
   final double padding;
@@ -224,7 +224,7 @@ class _FindReplaceWidgetState extends State<FindReplaceWidget> {
           child: Container(
             padding: const EdgeInsets.all(8.0),
             decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHigh,
+              color: colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: colorScheme.outlineVariant, width: 0.5),
               boxShadow: [
@@ -270,6 +270,9 @@ class _FindReplaceWidgetState extends State<FindReplaceWidget> {
                           hintText: 'Find',
                           isDense: true,
                           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          filled: true,
+                          fillColor: Theme.of(context).colorScheme.surfaceContainerLowest,
+
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(6),
                             borderSide: BorderSide(color: colorScheme.outlineVariant),

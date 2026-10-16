@@ -9,9 +9,9 @@ import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/features/note_editor/screens/view/desktop_edit_page.dart';
 
 import '../../../../shared/find_replace.dart';
-import '../../../../shared/widgets/note_card/core/note_action_controller.dart';
-import '../../../../shared/widgets/note_card/highlighting_textediting_controller.dart';
-import '../../../../shared/widgets/snack_bar_manager.dart';
+import '../../../../shared/note_card/core/note_action_controller.dart';
+import '../../../../shared/highlighting_textfield.dart';
+import '../../../../shared/snack_bar_manager.dart';
 import '../../../home/view/desktop/right_panel/core/navigator.dart';
 import '../../widgets/checklist_editor.dart';
 import '../../widgets/note_editor_options.dart';
@@ -32,7 +32,7 @@ class MobileEditNotePage extends ConsumerStatefulWidget {
 class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
 
   late final TextEditingController _titleController;
-  late final HighlightingTextEditingController _contentController;
+  late final HighlightingTextField _contentController;
   final UndoHistoryController _undoController = UndoHistoryController();
 
   late final EditNoteViewModel _viewModel;
@@ -66,7 +66,7 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
     _isPinned = widget.existingNote?.pinnedAt != null;
 
     _titleController = TextEditingController(text: widget.existingNote?.title ?? '');
-    _contentController = HighlightingTextEditingController(text: widget.existingNote?.content ?? '');
+    _contentController = HighlightingTextField(text: widget.existingNote?.content ?? '');
 
     // --- Checklist Init ---
     if (widget.existingNote != null) {
