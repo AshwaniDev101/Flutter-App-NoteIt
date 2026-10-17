@@ -10,6 +10,8 @@ import 'synced_devices/synced_devices_dao.dart';
 import 'synced_devices/synced_devices_table.dart';
 import 'notes/notes_dao.dart';
 import 'notes/notes_table.dart';
+import 'folders/folders_dao.dart';
+import 'folders/folders_table.dart';
 
 part 'local_database.g.dart';
 
@@ -22,20 +24,24 @@ final localDatabaseProvider = Provider((ref) {
   return LocalDatabase();
 });
 
-@DriftDatabase(tables: [Notes, SyncedDevices, AppKeybindings], daos: [NotesDao, SyncedDevicesDao, KeybindingsDao])
+// 2. Add Folders and FoldersDao to the annotation
+@DriftDatabase(
+    tables: [Notes, Folders, SyncedDevices, AppKeybindings],
+    daos: [NotesDao, FoldersDao, SyncedDevicesDao, KeybindingsDao]
+)
 class LocalDatabase extends _$LocalDatabase {
   LocalDatabase()
-    : super(
-        driftDatabase(
-          name: 'note_it_db',
-          // Routes native persistent storage to the application's sandboxed support directory (`AppData` on Windows)
-          // to comply with MSIX packaging and avoid OneDrive locking collisions.
-          // Without this the 'my_notes_db' will be created in Windows Document folder
-          native: const DriftNativeOptions(databaseDirectory: getApplicationSupportDirectory),
+      : super(
+    driftDatabase(
+      name: 'note_it_db',
+      // Routes native persistent storage to the application's sandboxed support directory (`AppData` on Windows)
+      // to comply with MSIX packaging and avoid OneDrive locking collisions.
+      // Without this the 'my_notes_db' will be created in Windows Document folder
+      native: const DriftNativeOptions(databaseDirectory: getApplicationSupportDirectory),
 
-          web: DriftWebOptions(sqlite3Wasm: Uri.parse('sqlite3.wasm'), driftWorker: Uri.parse('drift_worker.js')),
-        ),
-      );
+      web: DriftWebOptions(sqlite3Wasm: Uri.parse('sqlite3.wasm'), driftWorker: Uri.parse('drift_worker.js')),
+    ),
+  );
 
   @override
   int get schemaVersion => 1;

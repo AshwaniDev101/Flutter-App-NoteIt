@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../../../shared/app_scaffold.dart';
 import '../../../../../../shared/snack_bar_manager.dart';
-import '../../../../../home/view/desktop/right_panel/core/navigator.dart';
+import '../../../../../home/view/desktop/content_panel/core/navigator.dart';
 
 class PinEntryDialog extends StatefulWidget {
   const PinEntryDialog({super.key});

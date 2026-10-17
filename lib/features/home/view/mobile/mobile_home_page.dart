@@ -5,7 +5,7 @@ import 'package:noteit/core/routing/routing.dart';
 import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/features/home/view/shared/icon_tray/icon_tray.dart';
 import 'package:noteit/features/home/view/shared/select_mode_app_bars.dart';
-import 'package:noteit/features/home/view/shared/tag_sort_view_menu.dart';
+import 'package:noteit/features/home/view/shared/sort_view_menu.dart';
 import 'package:noteit/features/home/viewmodel/viewmodel.dart';
 import 'package:noteit/shared/note_card/dynamic_notes_layout.dart';
 

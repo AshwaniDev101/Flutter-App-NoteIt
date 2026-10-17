@@ -5,8 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/features/local_sync/provider/sync_server_provider.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
-import '../../../core/config.dart';
-import '../../../core/device_info.dart';
+import '../../../core/config/config.dart';
+import '../../../core/util/device_info.dart';
 import '../../../core/util/logger.dart';
 import '../../../database/drift/synced_devices/synced_devices_dao.dart';
 import '../../../database/shared_preference/shared_preference_manager.dart';

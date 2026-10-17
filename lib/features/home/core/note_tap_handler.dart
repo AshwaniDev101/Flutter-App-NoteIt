@@ -5,7 +5,7 @@ import 'package:noteit/core/routing/routing.dart';
 import 'package:noteit/core/util/platform_helper.dart';
 import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/features/home/core/providers.dart';
-import 'package:noteit/features/home/view/desktop/right_panel/core/navigator.dart';
+import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
 import 'package:noteit/features/lock/lock_manger/lock_manager.dart';
 import 'package:noteit/features/lock/password_prompt_helper.dart';
 

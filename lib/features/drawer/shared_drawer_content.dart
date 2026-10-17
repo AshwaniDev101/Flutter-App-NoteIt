@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in_all_platforms/google_sign_in_all_platforms.dart';
 
-import '../../core/app_env.dart';
-import '../../core/provider/provider.dart';
+import '../../core/config/app_env.dart';
+import '../../database/firebase/auth/firebase_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/util/logger.dart';
-import '../home/view/desktop/right_panel/core/navigator.dart';
+import '../home/view/desktop/content_panel/core/navigator.dart';
 
 class SharedDrawerContent extends ConsumerWidget {
   final RightPanelPageOptions? selectedOption;

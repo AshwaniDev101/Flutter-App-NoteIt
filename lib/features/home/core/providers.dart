@@ -2,8 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/features/home/core/db_sorting_filtering.dart';
 import '../../../database/drift/local_database.dart';
 import '../../lock/lock_manger/lock_manager.dart';
-import '../view/desktop/right_panel/core/navigator.dart';
-import '../view/shared/tag_sort_view_menu.dart';
+import '../view/desktop/content_panel/core/navigator.dart';
+import '../view/shared/sort_view_menu.dart';
 
 
 /// MAIN FILTER: Combines all the filters (SORT + PLATFORM + SEARCH + LOCK-STATE)

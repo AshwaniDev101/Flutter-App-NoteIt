@@ -5,18 +5,17 @@ import 'package:noteit/core/util/platform_helper.dart';
 import 'package:noteit/database/drift/local_database.dart';
 import 'package:window_manager/window_manager.dart';
 
-import '../../../../core/app_env.dart';
+import '../../../../core/config/app_env.dart';
 import '../../../../database/drift/keybindings/keybindings_dao.dart';
-import '../../../../folders/folders.dart';
 import '../../../drawer/desktop_drawer_button.dart';
 import '../../../keybinding/smart_action_widget.dart';
 import '../../viewmodel/viewmodel.dart';
 import '../shared/select_mode_app_bars.dart';
-import '../shared/tag_sort_view_menu.dart';
+import '../shared/sort_view_menu.dart';
 import '../../../../shared/note_card/dynamic_notes_layout.dart';
 import '../shared/home_search_bar.dart';
 
-class DesktopMiddlePanel extends ConsumerWidget {
+class DesktopListPanel extends ConsumerWidget {
   final TextEditingController searchController;
   final FocusNode searchFocusNode;
   final String? activeNoteId;
@@ -29,7 +28,7 @@ class DesktopMiddlePanel extends ConsumerWidget {
   final GlobalKey<ScaffoldState> scaffoldKey;
   final ValueChanged<bool> onDrawerChanged;
 
-  const DesktopMiddlePanel({
+  const DesktopListPanel({
     super.key,
     required this.searchController,
     required this.searchFocusNode,
@@ -170,45 +169,7 @@ class DesktopMiddlePanel extends ConsumerWidget {
             ),
           ),
 
-          // Folder Row
-          Padding(
-            padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: FocusTraversalOrder(
-                    order: const NumericFocusOrder(1),
-                    child: Focus(
-                      canRequestFocus: true,
-                      onKeyEvent: (node, event) {
-                        if (event is KeyDownEvent) {
-                          if (event.logicalKey == LogicalKeyboardKey.enter) {
-                            searchFocusNode.requestFocus();
-                            return KeyEventResult.handled;
-                          }
-                          if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-                            node.nextFocus();
-                            return KeyEventResult.handled;
-                          }
-                          if (event.logicalKey == LogicalKeyboardKey.escape) {
-                            node.requestFocus();
-                            return KeyEventResult.handled;
-                          }
-                        }
-                        return KeyEventResult.ignored;
-                      },
-                      child: FolderMenuButton(),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 4),
-                IconButton(onPressed: (){}, icon: const Icon(Icons.add)),
-              ],
-            ),
-          ),
-          SizedBox(height: 8,),
 
-          // The Note List Layout
           Expanded(
             child: FocusTraversalOrder(
               order: const NumericFocusOrder(2),

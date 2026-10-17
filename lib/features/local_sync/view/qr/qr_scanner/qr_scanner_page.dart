@@ -6,7 +6,7 @@ import 'package:noteit/features/local_sync/view/qr/qr_scanner/widgets/shaded_ove
 import '../../../provider/sync_client_provider.dart';
 import '../../../../../shared/app_scaffold.dart';
 import '../../../../../shared/snack_bar_manager.dart';
-import '../../../../home/view/desktop/right_panel/core/navigator.dart';
+import '../../../../home/view/desktop/content_panel/core/navigator.dart';
 
 class QrScannerPage extends ConsumerStatefulWidget {
   const QrScannerPage({super.key});

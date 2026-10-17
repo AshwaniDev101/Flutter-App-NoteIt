@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:noteit/core/device_info.dart';
+import 'package:noteit/core/util/device_info.dart';
 
 import '../../../core/util/platform_helper.dart';
 import '../../../../database/drift/local_database.dart';
@@ -10,7 +10,7 @@ import 'core/note_action_controller.dart';
 import 'note_card.dart';
 import '../../../features/home/core/providers.dart';
 import '../../../features/home/viewmodel/viewmodel.dart';
-import '../../../features/home/view/shared/tag_sort_view_menu.dart';
+import '../../features/home/view/shared/sort_view_menu.dart';
 
 class DynamicNotesLayout extends ConsumerWidget {
   final bool isSelectMode;
@@ -35,6 +35,9 @@ class DynamicNotesLayout extends ConsumerWidget {
     final notesState = ref.watch(filteredNotesProvider);
     final viewType = ref.watch(noteViewTypeProvider);
 
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4.0),
       child: notesState.when(
@@ -42,7 +45,37 @@ class DynamicNotesLayout extends ConsumerWidget {
         error: (error, stack) => Center(child: Text('Error: $error')),
         data: (notes) {
           if (notes.isEmpty) {
-            return const Center(child: Text('No notes found.'));
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.note_alt_outlined,
+                      size: 64,
+                      color: colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      "No notes found",
+                      style: textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      "Create your first note to get started.",
+                      textAlign: TextAlign.center,
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
           }
 
           return RefreshIndicator(

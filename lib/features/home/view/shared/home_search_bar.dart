@@ -88,34 +88,7 @@ class HomeSearchBar extends ConsumerWidget {
           focusedBorder: OutlineInputBorder(borderRadius: effectiveBorderRadius, borderSide: BorderSide.none),
           contentPadding: const EdgeInsets.symmetric(vertical: 0),
         ),
-        // decoration: InputDecoration(
-        //   hintText: hintText,
-        //   prefixIcon: const Icon(Icons.search),
-        //   suffixIcon: ValueListenableBuilder<TextEditingValue>(
-        //     valueListenable: controller,
-        //     builder: (context, value, child) {
-        //       return value.text.isNotEmpty
-        //           ? ExcludeFocus(
-        //               child: IconButton(
-        //                 icon: const Icon(Icons.clear, size: 20),
-        //                 onPressed: () => _clearSearch(ref),
-        //               ),
-        //             )
-        //           : const SizedBox.shrink();
-        //     },
-        //   ),
-        //   filled: true,
-        //   fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-        //   border: OutlineInputBorder(
-        //     borderRadius: effectiveBorderRadius,
-        //     borderSide: BorderSide.none,
-        //   ),
-        //   focusedBorder: OutlineInputBorder(
-        //     borderRadius: effectiveBorderRadius,
-        //     borderSide: BorderSide.none,
-        //   ),
-        //   contentPadding: const EdgeInsets.symmetric(vertical: 0),
-        // ),
+
         onTap: () {
           if (onKeyboardModeChanged != null) {
             onKeyboardModeChanged!(false);

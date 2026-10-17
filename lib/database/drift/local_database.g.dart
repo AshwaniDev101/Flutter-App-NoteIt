@@ -1519,6 +1519,1011 @@ class NotesCompanion extends UpdateCompanion<Note> {
   }
 }
 
+class $FoldersTable extends Folders with TableInfo<$FoldersTable, Folder> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $FoldersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _uuidMeta = const VerificationMeta('uuid');
+  @override
+  late final GeneratedColumn<String> uuid = GeneratedColumn<String>(
+    'uuid',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: () => const Uuid().v4(),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 255,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _colorIndexMeta = const VerificationMeta(
+    'colorIndex',
+  );
+  @override
+  late final GeneratedColumn<int> colorIndex = GeneratedColumn<int>(
+    'color_index',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _ownerUidMeta = const VerificationMeta(
+    'ownerUid',
+  );
+  @override
+  late final GeneratedColumn<String> ownerUid = GeneratedColumn<String>(
+    'owner_uid',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _pinnedAtMeta = const VerificationMeta(
+    'pinnedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> pinnedAt = GeneratedColumn<DateTime>(
+    'pinned_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _updateCounterMeta = const VerificationMeta(
+    'updateCounter',
+  );
+  @override
+  late final GeneratedColumn<int> updateCounter = GeneratedColumn<int>(
+    'update_counter',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _cloudSyncStatusMeta = const VerificationMeta(
+    'cloudSyncStatus',
+  );
+  @override
+  late final GeneratedColumn<int> cloudSyncStatus = GeneratedColumn<int>(
+    'cloud_sync_status',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _localSyncStatusMeta = const VerificationMeta(
+    'localSyncStatus',
+  );
+  @override
+  late final GeneratedColumn<int> localSyncStatus = GeneratedColumn<int>(
+    'local_sync_status',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _creationPlatformMeta = const VerificationMeta(
+    'creationPlatform',
+  );
+  @override
+  late final GeneratedColumn<String> creationPlatform = GeneratedColumn<String>(
+    'creation_platform',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _creationDeviceMeta = const VerificationMeta(
+    'creationDevice',
+  );
+  @override
+  late final GeneratedColumn<String> creationDevice = GeneratedColumn<String>(
+    'creation_device',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lastEditedPlatformMeta =
+      const VerificationMeta('lastEditedPlatform');
+  @override
+  late final GeneratedColumn<String> lastEditedPlatform =
+      GeneratedColumn<String>(
+        'last_edited_platform',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _lastEditedDeviceMeta = const VerificationMeta(
+    'lastEditedDevice',
+  );
+  @override
+  late final GeneratedColumn<String> lastEditedDevice = GeneratedColumn<String>(
+    'last_edited_device',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _deletedPlatformMeta = const VerificationMeta(
+    'deletedPlatform',
+  );
+  @override
+  late final GeneratedColumn<String> deletedPlatform = GeneratedColumn<String>(
+    'deleted_platform',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _deletedDeviceMeta = const VerificationMeta(
+    'deletedDevice',
+  );
+  @override
+  late final GeneratedColumn<String> deletedDevice = GeneratedColumn<String>(
+    'deleted_device',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    uuid,
+    name,
+    colorIndex,
+    ownerUid,
+    createdAt,
+    updatedAt,
+    deletedAt,
+    pinnedAt,
+    updateCounter,
+    cloudSyncStatus,
+    localSyncStatus,
+    creationPlatform,
+    creationDevice,
+    lastEditedPlatform,
+    lastEditedDevice,
+    deletedPlatform,
+    deletedDevice,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'folders';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Folder> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('uuid')) {
+      context.handle(
+        _uuidMeta,
+        uuid.isAcceptableOrUnknown(data['uuid']!, _uuidMeta),
+      );
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('color_index')) {
+      context.handle(
+        _colorIndexMeta,
+        colorIndex.isAcceptableOrUnknown(data['color_index']!, _colorIndexMeta),
+      );
+    }
+    if (data.containsKey('owner_uid')) {
+      context.handle(
+        _ownerUidMeta,
+        ownerUid.isAcceptableOrUnknown(data['owner_uid']!, _ownerUidMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    if (data.containsKey('pinned_at')) {
+      context.handle(
+        _pinnedAtMeta,
+        pinnedAt.isAcceptableOrUnknown(data['pinned_at']!, _pinnedAtMeta),
+      );
+    }
+    if (data.containsKey('update_counter')) {
+      context.handle(
+        _updateCounterMeta,
+        updateCounter.isAcceptableOrUnknown(
+          data['update_counter']!,
+          _updateCounterMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cloud_sync_status')) {
+      context.handle(
+        _cloudSyncStatusMeta,
+        cloudSyncStatus.isAcceptableOrUnknown(
+          data['cloud_sync_status']!,
+          _cloudSyncStatusMeta,
+        ),
+      );
+    }
+    if (data.containsKey('local_sync_status')) {
+      context.handle(
+        _localSyncStatusMeta,
+        localSyncStatus.isAcceptableOrUnknown(
+          data['local_sync_status']!,
+          _localSyncStatusMeta,
+        ),
+      );
+    }
+    if (data.containsKey('creation_platform')) {
+      context.handle(
+        _creationPlatformMeta,
+        creationPlatform.isAcceptableOrUnknown(
+          data['creation_platform']!,
+          _creationPlatformMeta,
+        ),
+      );
+    }
+    if (data.containsKey('creation_device')) {
+      context.handle(
+        _creationDeviceMeta,
+        creationDevice.isAcceptableOrUnknown(
+          data['creation_device']!,
+          _creationDeviceMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_edited_platform')) {
+      context.handle(
+        _lastEditedPlatformMeta,
+        lastEditedPlatform.isAcceptableOrUnknown(
+          data['last_edited_platform']!,
+          _lastEditedPlatformMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_edited_device')) {
+      context.handle(
+        _lastEditedDeviceMeta,
+        lastEditedDevice.isAcceptableOrUnknown(
+          data['last_edited_device']!,
+          _lastEditedDeviceMeta,
+        ),
+      );
+    }
+    if (data.containsKey('deleted_platform')) {
+      context.handle(
+        _deletedPlatformMeta,
+        deletedPlatform.isAcceptableOrUnknown(
+          data['deleted_platform']!,
+          _deletedPlatformMeta,
+        ),
+      );
+    }
+    if (data.containsKey('deleted_device')) {
+      context.handle(
+        _deletedDeviceMeta,
+        deletedDevice.isAcceptableOrUnknown(
+          data['deleted_device']!,
+          _deletedDeviceMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {uuid};
+  @override
+  Folder map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Folder(
+      uuid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}uuid'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      colorIndex: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}color_index'],
+      )!,
+      ownerUid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_uid'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+      pinnedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}pinned_at'],
+      ),
+      updateCounter: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}update_counter'],
+      )!,
+      cloudSyncStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cloud_sync_status'],
+      )!,
+      localSyncStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}local_sync_status'],
+      )!,
+      creationPlatform: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}creation_platform'],
+      ),
+      creationDevice: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}creation_device'],
+      ),
+      lastEditedPlatform: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_edited_platform'],
+      ),
+      lastEditedDevice: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_edited_device'],
+      ),
+      deletedPlatform: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}deleted_platform'],
+      ),
+      deletedDevice: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}deleted_device'],
+      ),
+    );
+  }
+
+  @override
+  $FoldersTable createAlias(String alias) {
+    return $FoldersTable(attachedDatabase, alias);
+  }
+}
+
+class Folder extends DataClass implements Insertable<Folder> {
+  final String uuid;
+  final String name;
+  final int colorIndex;
+  final String? ownerUid;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  final DateTime? pinnedAt;
+  final int updateCounter;
+  final int cloudSyncStatus;
+  final int localSyncStatus;
+  final String? creationPlatform;
+  final String? creationDevice;
+  final String? lastEditedPlatform;
+  final String? lastEditedDevice;
+  final String? deletedPlatform;
+  final String? deletedDevice;
+  const Folder({
+    required this.uuid,
+    required this.name,
+    required this.colorIndex,
+    this.ownerUid,
+    required this.createdAt,
+    required this.updatedAt,
+    this.deletedAt,
+    this.pinnedAt,
+    required this.updateCounter,
+    required this.cloudSyncStatus,
+    required this.localSyncStatus,
+    this.creationPlatform,
+    this.creationDevice,
+    this.lastEditedPlatform,
+    this.lastEditedDevice,
+    this.deletedPlatform,
+    this.deletedDevice,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['uuid'] = Variable<String>(uuid);
+    map['name'] = Variable<String>(name);
+    map['color_index'] = Variable<int>(colorIndex);
+    if (!nullToAbsent || ownerUid != null) {
+      map['owner_uid'] = Variable<String>(ownerUid);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || pinnedAt != null) {
+      map['pinned_at'] = Variable<DateTime>(pinnedAt);
+    }
+    map['update_counter'] = Variable<int>(updateCounter);
+    map['cloud_sync_status'] = Variable<int>(cloudSyncStatus);
+    map['local_sync_status'] = Variable<int>(localSyncStatus);
+    if (!nullToAbsent || creationPlatform != null) {
+      map['creation_platform'] = Variable<String>(creationPlatform);
+    }
+    if (!nullToAbsent || creationDevice != null) {
+      map['creation_device'] = Variable<String>(creationDevice);
+    }
+    if (!nullToAbsent || lastEditedPlatform != null) {
+      map['last_edited_platform'] = Variable<String>(lastEditedPlatform);
+    }
+    if (!nullToAbsent || lastEditedDevice != null) {
+      map['last_edited_device'] = Variable<String>(lastEditedDevice);
+    }
+    if (!nullToAbsent || deletedPlatform != null) {
+      map['deleted_platform'] = Variable<String>(deletedPlatform);
+    }
+    if (!nullToAbsent || deletedDevice != null) {
+      map['deleted_device'] = Variable<String>(deletedDevice);
+    }
+    return map;
+  }
+
+  FoldersCompanion toCompanion(bool nullToAbsent) {
+    return FoldersCompanion(
+      uuid: Value(uuid),
+      name: Value(name),
+      colorIndex: Value(colorIndex),
+      ownerUid: ownerUid == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ownerUid),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      pinnedAt: pinnedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(pinnedAt),
+      updateCounter: Value(updateCounter),
+      cloudSyncStatus: Value(cloudSyncStatus),
+      localSyncStatus: Value(localSyncStatus),
+      creationPlatform: creationPlatform == null && nullToAbsent
+          ? const Value.absent()
+          : Value(creationPlatform),
+      creationDevice: creationDevice == null && nullToAbsent
+          ? const Value.absent()
+          : Value(creationDevice),
+      lastEditedPlatform: lastEditedPlatform == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastEditedPlatform),
+      lastEditedDevice: lastEditedDevice == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastEditedDevice),
+      deletedPlatform: deletedPlatform == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedPlatform),
+      deletedDevice: deletedDevice == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedDevice),
+    );
+  }
+
+  factory Folder.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Folder(
+      uuid: serializer.fromJson<String>(json['uuid']),
+      name: serializer.fromJson<String>(json['name']),
+      colorIndex: serializer.fromJson<int>(json['colorIndex']),
+      ownerUid: serializer.fromJson<String?>(json['ownerUid']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      pinnedAt: serializer.fromJson<DateTime?>(json['pinnedAt']),
+      updateCounter: serializer.fromJson<int>(json['updateCounter']),
+      cloudSyncStatus: serializer.fromJson<int>(json['cloudSyncStatus']),
+      localSyncStatus: serializer.fromJson<int>(json['localSyncStatus']),
+      creationPlatform: serializer.fromJson<String?>(json['creationPlatform']),
+      creationDevice: serializer.fromJson<String?>(json['creationDevice']),
+      lastEditedPlatform: serializer.fromJson<String?>(
+        json['lastEditedPlatform'],
+      ),
+      lastEditedDevice: serializer.fromJson<String?>(json['lastEditedDevice']),
+      deletedPlatform: serializer.fromJson<String?>(json['deletedPlatform']),
+      deletedDevice: serializer.fromJson<String?>(json['deletedDevice']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'uuid': serializer.toJson<String>(uuid),
+      'name': serializer.toJson<String>(name),
+      'colorIndex': serializer.toJson<int>(colorIndex),
+      'ownerUid': serializer.toJson<String?>(ownerUid),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'pinnedAt': serializer.toJson<DateTime?>(pinnedAt),
+      'updateCounter': serializer.toJson<int>(updateCounter),
+      'cloudSyncStatus': serializer.toJson<int>(cloudSyncStatus),
+      'localSyncStatus': serializer.toJson<int>(localSyncStatus),
+      'creationPlatform': serializer.toJson<String?>(creationPlatform),
+      'creationDevice': serializer.toJson<String?>(creationDevice),
+      'lastEditedPlatform': serializer.toJson<String?>(lastEditedPlatform),
+      'lastEditedDevice': serializer.toJson<String?>(lastEditedDevice),
+      'deletedPlatform': serializer.toJson<String?>(deletedPlatform),
+      'deletedDevice': serializer.toJson<String?>(deletedDevice),
+    };
+  }
+
+  Folder copyWith({
+    String? uuid,
+    String? name,
+    int? colorIndex,
+    Value<String?> ownerUid = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<DateTime?> deletedAt = const Value.absent(),
+    Value<DateTime?> pinnedAt = const Value.absent(),
+    int? updateCounter,
+    int? cloudSyncStatus,
+    int? localSyncStatus,
+    Value<String?> creationPlatform = const Value.absent(),
+    Value<String?> creationDevice = const Value.absent(),
+    Value<String?> lastEditedPlatform = const Value.absent(),
+    Value<String?> lastEditedDevice = const Value.absent(),
+    Value<String?> deletedPlatform = const Value.absent(),
+    Value<String?> deletedDevice = const Value.absent(),
+  }) => Folder(
+    uuid: uuid ?? this.uuid,
+    name: name ?? this.name,
+    colorIndex: colorIndex ?? this.colorIndex,
+    ownerUid: ownerUid.present ? ownerUid.value : this.ownerUid,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    pinnedAt: pinnedAt.present ? pinnedAt.value : this.pinnedAt,
+    updateCounter: updateCounter ?? this.updateCounter,
+    cloudSyncStatus: cloudSyncStatus ?? this.cloudSyncStatus,
+    localSyncStatus: localSyncStatus ?? this.localSyncStatus,
+    creationPlatform: creationPlatform.present
+        ? creationPlatform.value
+        : this.creationPlatform,
+    creationDevice: creationDevice.present
+        ? creationDevice.value
+        : this.creationDevice,
+    lastEditedPlatform: lastEditedPlatform.present
+        ? lastEditedPlatform.value
+        : this.lastEditedPlatform,
+    lastEditedDevice: lastEditedDevice.present
+        ? lastEditedDevice.value
+        : this.lastEditedDevice,
+    deletedPlatform: deletedPlatform.present
+        ? deletedPlatform.value
+        : this.deletedPlatform,
+    deletedDevice: deletedDevice.present
+        ? deletedDevice.value
+        : this.deletedDevice,
+  );
+  Folder copyWithCompanion(FoldersCompanion data) {
+    return Folder(
+      uuid: data.uuid.present ? data.uuid.value : this.uuid,
+      name: data.name.present ? data.name.value : this.name,
+      colorIndex: data.colorIndex.present
+          ? data.colorIndex.value
+          : this.colorIndex,
+      ownerUid: data.ownerUid.present ? data.ownerUid.value : this.ownerUid,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      pinnedAt: data.pinnedAt.present ? data.pinnedAt.value : this.pinnedAt,
+      updateCounter: data.updateCounter.present
+          ? data.updateCounter.value
+          : this.updateCounter,
+      cloudSyncStatus: data.cloudSyncStatus.present
+          ? data.cloudSyncStatus.value
+          : this.cloudSyncStatus,
+      localSyncStatus: data.localSyncStatus.present
+          ? data.localSyncStatus.value
+          : this.localSyncStatus,
+      creationPlatform: data.creationPlatform.present
+          ? data.creationPlatform.value
+          : this.creationPlatform,
+      creationDevice: data.creationDevice.present
+          ? data.creationDevice.value
+          : this.creationDevice,
+      lastEditedPlatform: data.lastEditedPlatform.present
+          ? data.lastEditedPlatform.value
+          : this.lastEditedPlatform,
+      lastEditedDevice: data.lastEditedDevice.present
+          ? data.lastEditedDevice.value
+          : this.lastEditedDevice,
+      deletedPlatform: data.deletedPlatform.present
+          ? data.deletedPlatform.value
+          : this.deletedPlatform,
+      deletedDevice: data.deletedDevice.present
+          ? data.deletedDevice.value
+          : this.deletedDevice,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Folder(')
+          ..write('uuid: $uuid, ')
+          ..write('name: $name, ')
+          ..write('colorIndex: $colorIndex, ')
+          ..write('ownerUid: $ownerUid, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('pinnedAt: $pinnedAt, ')
+          ..write('updateCounter: $updateCounter, ')
+          ..write('cloudSyncStatus: $cloudSyncStatus, ')
+          ..write('localSyncStatus: $localSyncStatus, ')
+          ..write('creationPlatform: $creationPlatform, ')
+          ..write('creationDevice: $creationDevice, ')
+          ..write('lastEditedPlatform: $lastEditedPlatform, ')
+          ..write('lastEditedDevice: $lastEditedDevice, ')
+          ..write('deletedPlatform: $deletedPlatform, ')
+          ..write('deletedDevice: $deletedDevice')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    uuid,
+    name,
+    colorIndex,
+    ownerUid,
+    createdAt,
+    updatedAt,
+    deletedAt,
+    pinnedAt,
+    updateCounter,
+    cloudSyncStatus,
+    localSyncStatus,
+    creationPlatform,
+    creationDevice,
+    lastEditedPlatform,
+    lastEditedDevice,
+    deletedPlatform,
+    deletedDevice,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Folder &&
+          other.uuid == this.uuid &&
+          other.name == this.name &&
+          other.colorIndex == this.colorIndex &&
+          other.ownerUid == this.ownerUid &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.pinnedAt == this.pinnedAt &&
+          other.updateCounter == this.updateCounter &&
+          other.cloudSyncStatus == this.cloudSyncStatus &&
+          other.localSyncStatus == this.localSyncStatus &&
+          other.creationPlatform == this.creationPlatform &&
+          other.creationDevice == this.creationDevice &&
+          other.lastEditedPlatform == this.lastEditedPlatform &&
+          other.lastEditedDevice == this.lastEditedDevice &&
+          other.deletedPlatform == this.deletedPlatform &&
+          other.deletedDevice == this.deletedDevice);
+}
+
+class FoldersCompanion extends UpdateCompanion<Folder> {
+  final Value<String> uuid;
+  final Value<String> name;
+  final Value<int> colorIndex;
+  final Value<String?> ownerUid;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<DateTime?> pinnedAt;
+  final Value<int> updateCounter;
+  final Value<int> cloudSyncStatus;
+  final Value<int> localSyncStatus;
+  final Value<String?> creationPlatform;
+  final Value<String?> creationDevice;
+  final Value<String?> lastEditedPlatform;
+  final Value<String?> lastEditedDevice;
+  final Value<String?> deletedPlatform;
+  final Value<String?> deletedDevice;
+  final Value<int> rowid;
+  const FoldersCompanion({
+    this.uuid = const Value.absent(),
+    this.name = const Value.absent(),
+    this.colorIndex = const Value.absent(),
+    this.ownerUid = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.pinnedAt = const Value.absent(),
+    this.updateCounter = const Value.absent(),
+    this.cloudSyncStatus = const Value.absent(),
+    this.localSyncStatus = const Value.absent(),
+    this.creationPlatform = const Value.absent(),
+    this.creationDevice = const Value.absent(),
+    this.lastEditedPlatform = const Value.absent(),
+    this.lastEditedDevice = const Value.absent(),
+    this.deletedPlatform = const Value.absent(),
+    this.deletedDevice = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  FoldersCompanion.insert({
+    this.uuid = const Value.absent(),
+    required String name,
+    this.colorIndex = const Value.absent(),
+    this.ownerUid = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.pinnedAt = const Value.absent(),
+    this.updateCounter = const Value.absent(),
+    this.cloudSyncStatus = const Value.absent(),
+    this.localSyncStatus = const Value.absent(),
+    this.creationPlatform = const Value.absent(),
+    this.creationDevice = const Value.absent(),
+    this.lastEditedPlatform = const Value.absent(),
+    this.lastEditedDevice = const Value.absent(),
+    this.deletedPlatform = const Value.absent(),
+    this.deletedDevice = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : name = Value(name);
+  static Insertable<Folder> custom({
+    Expression<String>? uuid,
+    Expression<String>? name,
+    Expression<int>? colorIndex,
+    Expression<String>? ownerUid,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<DateTime>? pinnedAt,
+    Expression<int>? updateCounter,
+    Expression<int>? cloudSyncStatus,
+    Expression<int>? localSyncStatus,
+    Expression<String>? creationPlatform,
+    Expression<String>? creationDevice,
+    Expression<String>? lastEditedPlatform,
+    Expression<String>? lastEditedDevice,
+    Expression<String>? deletedPlatform,
+    Expression<String>? deletedDevice,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (uuid != null) 'uuid': uuid,
+      if (name != null) 'name': name,
+      if (colorIndex != null) 'color_index': colorIndex,
+      if (ownerUid != null) 'owner_uid': ownerUid,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (pinnedAt != null) 'pinned_at': pinnedAt,
+      if (updateCounter != null) 'update_counter': updateCounter,
+      if (cloudSyncStatus != null) 'cloud_sync_status': cloudSyncStatus,
+      if (localSyncStatus != null) 'local_sync_status': localSyncStatus,
+      if (creationPlatform != null) 'creation_platform': creationPlatform,
+      if (creationDevice != null) 'creation_device': creationDevice,
+      if (lastEditedPlatform != null)
+        'last_edited_platform': lastEditedPlatform,
+      if (lastEditedDevice != null) 'last_edited_device': lastEditedDevice,
+      if (deletedPlatform != null) 'deleted_platform': deletedPlatform,
+      if (deletedDevice != null) 'deleted_device': deletedDevice,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  FoldersCompanion copyWith({
+    Value<String>? uuid,
+    Value<String>? name,
+    Value<int>? colorIndex,
+    Value<String?>? ownerUid,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<DateTime?>? deletedAt,
+    Value<DateTime?>? pinnedAt,
+    Value<int>? updateCounter,
+    Value<int>? cloudSyncStatus,
+    Value<int>? localSyncStatus,
+    Value<String?>? creationPlatform,
+    Value<String?>? creationDevice,
+    Value<String?>? lastEditedPlatform,
+    Value<String?>? lastEditedDevice,
+    Value<String?>? deletedPlatform,
+    Value<String?>? deletedDevice,
+    Value<int>? rowid,
+  }) {
+    return FoldersCompanion(
+      uuid: uuid ?? this.uuid,
+      name: name ?? this.name,
+      colorIndex: colorIndex ?? this.colorIndex,
+      ownerUid: ownerUid ?? this.ownerUid,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      pinnedAt: pinnedAt ?? this.pinnedAt,
+      updateCounter: updateCounter ?? this.updateCounter,
+      cloudSyncStatus: cloudSyncStatus ?? this.cloudSyncStatus,
+      localSyncStatus: localSyncStatus ?? this.localSyncStatus,
+      creationPlatform: creationPlatform ?? this.creationPlatform,
+      creationDevice: creationDevice ?? this.creationDevice,
+      lastEditedPlatform: lastEditedPlatform ?? this.lastEditedPlatform,
+      lastEditedDevice: lastEditedDevice ?? this.lastEditedDevice,
+      deletedPlatform: deletedPlatform ?? this.deletedPlatform,
+      deletedDevice: deletedDevice ?? this.deletedDevice,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (uuid.present) {
+      map['uuid'] = Variable<String>(uuid.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (colorIndex.present) {
+      map['color_index'] = Variable<int>(colorIndex.value);
+    }
+    if (ownerUid.present) {
+      map['owner_uid'] = Variable<String>(ownerUid.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (pinnedAt.present) {
+      map['pinned_at'] = Variable<DateTime>(pinnedAt.value);
+    }
+    if (updateCounter.present) {
+      map['update_counter'] = Variable<int>(updateCounter.value);
+    }
+    if (cloudSyncStatus.present) {
+      map['cloud_sync_status'] = Variable<int>(cloudSyncStatus.value);
+    }
+    if (localSyncStatus.present) {
+      map['local_sync_status'] = Variable<int>(localSyncStatus.value);
+    }
+    if (creationPlatform.present) {
+      map['creation_platform'] = Variable<String>(creationPlatform.value);
+    }
+    if (creationDevice.present) {
+      map['creation_device'] = Variable<String>(creationDevice.value);
+    }
+    if (lastEditedPlatform.present) {
+      map['last_edited_platform'] = Variable<String>(lastEditedPlatform.value);
+    }
+    if (lastEditedDevice.present) {
+      map['last_edited_device'] = Variable<String>(lastEditedDevice.value);
+    }
+    if (deletedPlatform.present) {
+      map['deleted_platform'] = Variable<String>(deletedPlatform.value);
+    }
+    if (deletedDevice.present) {
+      map['deleted_device'] = Variable<String>(deletedDevice.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FoldersCompanion(')
+          ..write('uuid: $uuid, ')
+          ..write('name: $name, ')
+          ..write('colorIndex: $colorIndex, ')
+          ..write('ownerUid: $ownerUid, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('pinnedAt: $pinnedAt, ')
+          ..write('updateCounter: $updateCounter, ')
+          ..write('cloudSyncStatus: $cloudSyncStatus, ')
+          ..write('localSyncStatus: $localSyncStatus, ')
+          ..write('creationPlatform: $creationPlatform, ')
+          ..write('creationDevice: $creationDevice, ')
+          ..write('lastEditedPlatform: $lastEditedPlatform, ')
+          ..write('lastEditedDevice: $lastEditedDevice, ')
+          ..write('deletedPlatform: $deletedPlatform, ')
+          ..write('deletedDevice: $deletedDevice, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $SyncedDevicesTable extends SyncedDevices
     with TableInfo<$SyncedDevicesTable, SyncedDevice> {
   @override
@@ -3422,15 +4427,28 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
   _$LocalDatabase(QueryExecutor e) : super(e);
   $LocalDatabaseManager get managers => $LocalDatabaseManager(this);
   late final $NotesTable notes = $NotesTable(this);
+  late final $FoldersTable folders = $FoldersTable(this);
   late final $SyncedDevicesTable syncedDevices = $SyncedDevicesTable(this);
   late final $AppKeybindingsTable appKeybindings = $AppKeybindingsTable(this);
   late final Index idxNotesUpdatedAt = Index(
     'idx_notes_updated_at',
     'CREATE INDEX idx_notes_updated_at ON notes (updated_at)',
   );
-  late final Index idxNotesDeletedAt = Index(
-    'idx_notes_deleted_at',
-    'CREATE INDEX idx_notes_deleted_at ON notes (deleted_at)',
+  late final Index idxNotesActive = Index(
+    'idx_notes_active',
+    'CREATE INDEX idx_notes_active ON notes (deleted_at, archived_at)',
+  );
+  late final Index idxNotesFolder = Index(
+    'idx_notes_folder',
+    'CREATE INDEX idx_notes_folder ON notes (folder_id)',
+  );
+  late final Index idxFoldersUpdatedAt = Index(
+    'idx_folders_updated_at',
+    'CREATE INDEX idx_folders_updated_at ON folders (updated_at)',
+  );
+  late final Index idxFoldersActive = Index(
+    'idx_folders_active',
+    'CREATE INDEX idx_folders_active ON folders (deleted_at)',
   );
   late final Index idxSyncedDevicesUpdatedAt = Index(
     'idx_synced_devices_updated_at',
@@ -3449,6 +4467,7 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
     'CREATE INDEX idx_keybindings_deleted_at ON app_keybindings (deleted_at)',
   );
   late final NotesDao notesDao = NotesDao(this as LocalDatabase);
+  late final FoldersDao foldersDao = FoldersDao(this as LocalDatabase);
   late final SyncedDevicesDao syncedDevicesDao = SyncedDevicesDao(
     this as LocalDatabase,
   );
@@ -3461,10 +4480,14 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     notes,
+    folders,
     syncedDevices,
     appKeybindings,
     idxNotesUpdatedAt,
-    idxNotesDeletedAt,
+    idxNotesActive,
+    idxNotesFolder,
+    idxFoldersUpdatedAt,
+    idxFoldersActive,
     idxSyncedDevicesUpdatedAt,
     idxSyncedDevicesDeletedAt,
     idxKeybindingsUpdatedAt,
@@ -4112,6 +5135,448 @@ typedef $$NotesTableProcessedTableManager =
       $$NotesTableUpdateCompanionBuilder,
       (Note, BaseReferences<_$LocalDatabase, $NotesTable, Note>),
       Note,
+      PrefetchHooks Function()
+    >;
+typedef $$FoldersTableCreateCompanionBuilder =
+    FoldersCompanion Function({
+      Value<String> uuid,
+      required String name,
+      Value<int> colorIndex,
+      Value<String?> ownerUid,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<DateTime?> pinnedAt,
+      Value<int> updateCounter,
+      Value<int> cloudSyncStatus,
+      Value<int> localSyncStatus,
+      Value<String?> creationPlatform,
+      Value<String?> creationDevice,
+      Value<String?> lastEditedPlatform,
+      Value<String?> lastEditedDevice,
+      Value<String?> deletedPlatform,
+      Value<String?> deletedDevice,
+      Value<int> rowid,
+    });
+typedef $$FoldersTableUpdateCompanionBuilder =
+    FoldersCompanion Function({
+      Value<String> uuid,
+      Value<String> name,
+      Value<int> colorIndex,
+      Value<String?> ownerUid,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<DateTime?> pinnedAt,
+      Value<int> updateCounter,
+      Value<int> cloudSyncStatus,
+      Value<int> localSyncStatus,
+      Value<String?> creationPlatform,
+      Value<String?> creationDevice,
+      Value<String?> lastEditedPlatform,
+      Value<String?> lastEditedDevice,
+      Value<String?> deletedPlatform,
+      Value<String?> deletedDevice,
+      Value<int> rowid,
+    });
+
+class $$FoldersTableFilterComposer
+    extends Composer<_$LocalDatabase, $FoldersTable> {
+  $$FoldersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get uuid => $composableBuilder(
+    column: $table.uuid,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get colorIndex => $composableBuilder(
+    column: $table.colorIndex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ownerUid => $composableBuilder(
+    column: $table.ownerUid,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get pinnedAt => $composableBuilder(
+    column: $table.pinnedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updateCounter => $composableBuilder(
+    column: $table.updateCounter,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get cloudSyncStatus => $composableBuilder(
+    column: $table.cloudSyncStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get localSyncStatus => $composableBuilder(
+    column: $table.localSyncStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get creationPlatform => $composableBuilder(
+    column: $table.creationPlatform,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get creationDevice => $composableBuilder(
+    column: $table.creationDevice,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lastEditedPlatform => $composableBuilder(
+    column: $table.lastEditedPlatform,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lastEditedDevice => $composableBuilder(
+    column: $table.lastEditedDevice,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deletedPlatform => $composableBuilder(
+    column: $table.deletedPlatform,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deletedDevice => $composableBuilder(
+    column: $table.deletedDevice,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$FoldersTableOrderingComposer
+    extends Composer<_$LocalDatabase, $FoldersTable> {
+  $$FoldersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get uuid => $composableBuilder(
+    column: $table.uuid,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get colorIndex => $composableBuilder(
+    column: $table.colorIndex,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ownerUid => $composableBuilder(
+    column: $table.ownerUid,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get pinnedAt => $composableBuilder(
+    column: $table.pinnedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updateCounter => $composableBuilder(
+    column: $table.updateCounter,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get cloudSyncStatus => $composableBuilder(
+    column: $table.cloudSyncStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get localSyncStatus => $composableBuilder(
+    column: $table.localSyncStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get creationPlatform => $composableBuilder(
+    column: $table.creationPlatform,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get creationDevice => $composableBuilder(
+    column: $table.creationDevice,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lastEditedPlatform => $composableBuilder(
+    column: $table.lastEditedPlatform,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lastEditedDevice => $composableBuilder(
+    column: $table.lastEditedDevice,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deletedPlatform => $composableBuilder(
+    column: $table.deletedPlatform,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deletedDevice => $composableBuilder(
+    column: $table.deletedDevice,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$FoldersTableAnnotationComposer
+    extends Composer<_$LocalDatabase, $FoldersTable> {
+  $$FoldersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get uuid =>
+      $composableBuilder(column: $table.uuid, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<int> get colorIndex => $composableBuilder(
+    column: $table.colorIndex,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get ownerUid =>
+      $composableBuilder(column: $table.ownerUid, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get pinnedAt =>
+      $composableBuilder(column: $table.pinnedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get updateCounter => $composableBuilder(
+    column: $table.updateCounter,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get cloudSyncStatus => $composableBuilder(
+    column: $table.cloudSyncStatus,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get localSyncStatus => $composableBuilder(
+    column: $table.localSyncStatus,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get creationPlatform => $composableBuilder(
+    column: $table.creationPlatform,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get creationDevice => $composableBuilder(
+    column: $table.creationDevice,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get lastEditedPlatform => $composableBuilder(
+    column: $table.lastEditedPlatform,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get lastEditedDevice => $composableBuilder(
+    column: $table.lastEditedDevice,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get deletedPlatform => $composableBuilder(
+    column: $table.deletedPlatform,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get deletedDevice => $composableBuilder(
+    column: $table.deletedDevice,
+    builder: (column) => column,
+  );
+}
+
+class $$FoldersTableTableManager
+    extends
+        RootTableManager<
+          _$LocalDatabase,
+          $FoldersTable,
+          Folder,
+          $$FoldersTableFilterComposer,
+          $$FoldersTableOrderingComposer,
+          $$FoldersTableAnnotationComposer,
+          $$FoldersTableCreateCompanionBuilder,
+          $$FoldersTableUpdateCompanionBuilder,
+          (Folder, BaseReferences<_$LocalDatabase, $FoldersTable, Folder>),
+          Folder,
+          PrefetchHooks Function()
+        > {
+  $$FoldersTableTableManager(_$LocalDatabase db, $FoldersTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$FoldersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$FoldersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$FoldersTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> uuid = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<int> colorIndex = const Value.absent(),
+                Value<String?> ownerUid = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<DateTime?> pinnedAt = const Value.absent(),
+                Value<int> updateCounter = const Value.absent(),
+                Value<int> cloudSyncStatus = const Value.absent(),
+                Value<int> localSyncStatus = const Value.absent(),
+                Value<String?> creationPlatform = const Value.absent(),
+                Value<String?> creationDevice = const Value.absent(),
+                Value<String?> lastEditedPlatform = const Value.absent(),
+                Value<String?> lastEditedDevice = const Value.absent(),
+                Value<String?> deletedPlatform = const Value.absent(),
+                Value<String?> deletedDevice = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => FoldersCompanion(
+                uuid: uuid,
+                name: name,
+                colorIndex: colorIndex,
+                ownerUid: ownerUid,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                pinnedAt: pinnedAt,
+                updateCounter: updateCounter,
+                cloudSyncStatus: cloudSyncStatus,
+                localSyncStatus: localSyncStatus,
+                creationPlatform: creationPlatform,
+                creationDevice: creationDevice,
+                lastEditedPlatform: lastEditedPlatform,
+                lastEditedDevice: lastEditedDevice,
+                deletedPlatform: deletedPlatform,
+                deletedDevice: deletedDevice,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String> uuid = const Value.absent(),
+                required String name,
+                Value<int> colorIndex = const Value.absent(),
+                Value<String?> ownerUid = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<DateTime?> pinnedAt = const Value.absent(),
+                Value<int> updateCounter = const Value.absent(),
+                Value<int> cloudSyncStatus = const Value.absent(),
+                Value<int> localSyncStatus = const Value.absent(),
+                Value<String?> creationPlatform = const Value.absent(),
+                Value<String?> creationDevice = const Value.absent(),
+                Value<String?> lastEditedPlatform = const Value.absent(),
+                Value<String?> lastEditedDevice = const Value.absent(),
+                Value<String?> deletedPlatform = const Value.absent(),
+                Value<String?> deletedDevice = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => FoldersCompanion.insert(
+                uuid: uuid,
+                name: name,
+                colorIndex: colorIndex,
+                ownerUid: ownerUid,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                pinnedAt: pinnedAt,
+                updateCounter: updateCounter,
+                cloudSyncStatus: cloudSyncStatus,
+                localSyncStatus: localSyncStatus,
+                creationPlatform: creationPlatform,
+                creationDevice: creationDevice,
+                lastEditedPlatform: lastEditedPlatform,
+                lastEditedDevice: lastEditedDevice,
+                deletedPlatform: deletedPlatform,
+                deletedDevice: deletedDevice,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$FoldersTableProcessedTableManager =
+    ProcessedTableManager<
+      _$LocalDatabase,
+      $FoldersTable,
+      Folder,
+      $$FoldersTableFilterComposer,
+      $$FoldersTableOrderingComposer,
+      $$FoldersTableAnnotationComposer,
+      $$FoldersTableCreateCompanionBuilder,
+      $$FoldersTableUpdateCompanionBuilder,
+      (Folder, BaseReferences<_$LocalDatabase, $FoldersTable, Folder>),
+      Folder,
       PrefetchHooks Function()
     >;
 typedef $$SyncedDevicesTableCreateCompanionBuilder =
@@ -4982,6 +6447,8 @@ class $LocalDatabaseManager {
   $LocalDatabaseManager(this._db);
   $$NotesTableTableManager get notes =>
       $$NotesTableTableManager(_db, _db.notes);
+  $$FoldersTableTableManager get folders =>
+      $$FoldersTableTableManager(_db, _db.folders);
   $$SyncedDevicesTableTableManager get syncedDevices =>
       $$SyncedDevicesTableTableManager(_db, _db.syncedDevices);
   $$AppKeybindingsTableTableManager get appKeybindings =>

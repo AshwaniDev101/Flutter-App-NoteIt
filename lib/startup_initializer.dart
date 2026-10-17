@@ -5,8 +5,8 @@ import 'package:noteit/database/shared_preference/shared_preference_manager.dart
 import 'package:noteit/features/local_sync/provider/sync_session_provider.dart';
 import 'package:noteit/shared/snack_bar_manager.dart';
 
-import 'core/config.dart';
-import 'core/device_info.dart';
+import 'core/config/config.dart';
+import 'core/util/device_info.dart';
 import 'core/util/logger.dart';
 import 'database/drift/local_database.dart';
 import 'features/local_sync/auto_connect/mdns_broadcast.dart';

@@ -5,10 +5,10 @@ import 'package:noteit/features/home/view/shared/icon_tray/icon_tray.dart';
 import 'package:noteit/features/others/archive_page.dart';
 import 'package:window_manager/window_manager.dart';
 import '../../../../../core/util/platform_helper.dart';
-import '../../../../../folders/folders.dart';
 import '../../../../backup/export_page.dart';
 import '../../../../backup/import_page.dart';
 import '../../../../dev_tools/dev_page.dart';
+import '../../../../folders/view/folders.dart';
 import '../../../../local_sync/view/mdns/broadcast/host_broadcast.dart';
 import '../../../../local_sync/view/mdns/searcher/host_searcher.dart';
 import '../../../../local_sync/view/mdns/searcher/pin_dialog/pin_entry_dialog.dart';
@@ -24,10 +24,10 @@ import '../../../../others/trash_page.dart';
 import '../../../core/providers.dart';
 import 'core/navigator.dart';
 
-class DesktopRightPanel extends ConsumerWidget {
+class DesktopContentPanel extends ConsumerWidget {
   final Note? activeNote;
 
-  const DesktopRightPanel({super.key, required this.activeNote});
+  const DesktopContentPanel({super.key, required this.activeNote});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

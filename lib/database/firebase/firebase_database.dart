@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/provider/provider.dart';
+import 'auth/firebase_provider.dart';
 import '../../core/util/logger.dart';
 import '../drift/local_database.dart';
 

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/features/home/core/note_tap_handler.dart';
-import 'package:noteit/features/home/view/desktop/right_panel/core/navigator.dart';
+import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../../database/drift/keybindings/keybindings_dao.dart';
@@ -11,9 +11,9 @@ import '../../../../database/sync/sync_orchestrator.dart';
 import '../../../keybinding/shortcut_config.dart';
 import '../../core/providers.dart';
 import '../../viewmodel/viewmodel.dart';
-import 'left_panel.dart';
-import 'middle_panel.dart';
-import 'right_panel/right_panel.dart';
+import '../../../drawer/left_drawer.dart';
+import 'list_panel.dart';
+import 'content_panel/content_panel.dart';
 
 class DesktopHomePanel extends ConsumerStatefulWidget {
   const DesktopHomePanel({super.key});
@@ -27,10 +27,10 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePanel> {
   final FocusNode _searchFocusNode = FocusNode();
 
   /// Tracks the current width of the middle panel. Modified by the draggable divider.
-  double _middlePanelWidth = 340.0;
+  double _listPanelWidth = 340.0;
 
   // ==== LEFT PANEL STATE ====
-  bool _isLeftPanelExpanded = true;
+  bool _isLeftPanelExpanded = false;
   double get _currentLeftWidth => _isLeftPanelExpanded ? 240.0 : 64.0;
 
   // For helping close the drawer when user click on the invisible barrier on top of the right panel
@@ -140,6 +140,8 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePanel> {
     final viewModel = ref.read(homeViewModelProvider.notifier);
     final activeNote = ref.watch(activeNoteProvider);
 
+    final colorSchema = Theme.of(context).colorScheme;
+
     ref.watch(syncOrchestratorProvider);
     final shortcutsAsync = ref.watch(keybindingsProvider);
 
@@ -175,30 +177,30 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePanel> {
                         Row(
                           children: [
                             //  Static/Animated Left Panel (Snaps between 240px and 64px)
-                            AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              curve: Curves.easeInOut,
-                              width: _currentLeftWidth,
-                              child: DesktopLeftPanel(
-                                isExpanded: _isLeftPanelExpanded,
-                                onToggle: () => setState(() => _isLeftPanelExpanded = !_isLeftPanelExpanded),
-                                scaffoldKey: _leftScaffoldKey,
-                                onDrawerChanged: (isOpen) => setState(() => _isDrawerOpen = isOpen),
-                                searchController: _searchController,
-                                searchFocusNode: _searchFocusNode,
-                                activeNoteId: activeNote?.uuid,
-                                isKeyboardDriven: _isKeyboardDriven,
-                                onAddNote: _addNote,
-                                onNoteTap: _handleNoteTap,
-                                onKeyboardModeChanged: (mode) => setState(() => _isKeyboardDriven = mode),
-                              ),
-                            ),
-                            const VerticalDivider(width: 1, thickness: 1),
+                            // AnimatedContainer(
+                            //   duration: const Duration(milliseconds: 200),
+                            //   curve: Curves.easeInOut,
+                            //   width: _currentLeftWidth,
+                            //   child: LeftDrawer(
+                            //     isExpanded: _isLeftPanelExpanded,
+                            //     onToggle: () => setState(() => _isLeftPanelExpanded = !_isLeftPanelExpanded),
+                            //     scaffoldKey: _leftScaffoldKey,
+                            //     onDrawerChanged: (isOpen) => setState(() => _isDrawerOpen = isOpen),
+                            //     searchController: _searchController,
+                            //     searchFocusNode: _searchFocusNode,
+                            //     activeNoteId: activeNote?.uuid,
+                            //     isKeyboardDriven: _isKeyboardDriven,
+                            //     onAddNote: _addNote,
+                            //     onNoteTap: _handleNoteTap,
+                            //     onKeyboardModeChanged: (mode) => setState(() => _isKeyboardDriven = mode),
+                            //   ),
+                            // ),
+                            // VerticalDivider(width: 1, thickness: 1,color: Colors.transparent,),
 
                             // Middle Panel
                             SizedBox(
-                              width: _middlePanelWidth,
-                              child: DesktopMiddlePanel(
+                              width: _listPanelWidth,
+                              child: DesktopListPanel(
                                 scaffoldKey: _leftScaffoldKey,
                                 onDrawerChanged: (isOpen) => setState(() => _isDrawerOpen = isOpen),
                                 searchController: _searchController,
@@ -210,16 +212,16 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePanel> {
                                 onKeyboardModeChanged: (mode) => setState(() => _isKeyboardDriven = mode),
                               ),
                             ),
-                            const VerticalDivider(width: 1, thickness: 1),
+                            VerticalDivider(width: 1, thickness: 1,color: Colors.transparent),
 
                             // Right Panel
-                            Expanded(child: DesktopRightPanel(activeNote: activeNote)),
+                            Expanded(child: DesktopContentPanel(activeNote: activeNote)),
                           ],
                         ),
 
                         // Middle Panel Divider
                         Positioned(
-                          left: _currentLeftWidth + _middlePanelWidth - 6,
+                          left: _currentLeftWidth + _listPanelWidth - 6,
                           width: 13,
                           top: 0,
                           bottom: 0,
@@ -229,9 +231,9 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePanel> {
                               behavior: HitTestBehavior.opaque,
                               onPanUpdate: (details) {
                                 setState(() {
-                                  _middlePanelWidth += details.delta.dx;
-                                  if (_middlePanelWidth < 250) _middlePanelWidth = 250;
-                                  if (_middlePanelWidth > 600) _middlePanelWidth = 600;
+                                  _listPanelWidth += details.delta.dx;
+                                  if (_listPanelWidth < 250) _listPanelWidth = 250;
+                                  if (_listPanelWidth > 600) _listPanelWidth = 600;
                                 });
                               },
                               child: Container(color: Colors.transparent),
@@ -242,7 +244,7 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePanel> {
                         // Invisible barrier over Right Panel
                         if (_isDrawerOpen)
                           Positioned(
-                            left: _currentLeftWidth + _middlePanelWidth + 1,
+                            left: _currentLeftWidth + _listPanelWidth + 1,
                             top: 0,
                             bottom: 0,
                             right: 0,

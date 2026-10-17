@@ -8,7 +8,7 @@ import '../../database/drift/local_database.dart';
 import '../../database/drift/notes/notes_dao.dart';
 import '../../shared/app_scaffold.dart';
 import '../../shared/snack_bar_manager.dart';
-import '../home/view/desktop/right_panel/core/navigator.dart';
+import '../home/view/desktop/content_panel/core/navigator.dart';
 
 class ImportNotesPage extends ConsumerStatefulWidget {
   const ImportNotesPage({super.key});

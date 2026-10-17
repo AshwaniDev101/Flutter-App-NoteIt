@@ -12,7 +12,7 @@ import '../../../../shared/find_replace.dart';
 import '../../../../shared/note_card/core/note_action_controller.dart';
 import '../../../../shared/highlighting_textfield.dart';
 import '../../../../shared/snack_bar_manager.dart';
-import '../../../home/view/desktop/right_panel/core/navigator.dart';
+import '../../../home/view/desktop/content_panel/core/navigator.dart';
 import '../../widgets/checklist_editor.dart';
 import '../../widgets/note_editor_options.dart';
 import '../../../lock/lock_manger/lock_manager.dart';

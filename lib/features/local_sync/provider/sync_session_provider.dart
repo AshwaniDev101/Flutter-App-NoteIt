@@ -3,8 +3,8 @@ import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/features/local_sync/provider/sync_server_provider.dart';
 
-import '../../../core/config.dart'; // <-- ADDED THIS FOR AppConfig
-import '../../../core/device_info.dart';
+import '../../../core/config/config.dart'; // <-- ADDED THIS FOR AppConfig
+import '../../../core/util/device_info.dart';
 import '../../../core/util/logger.dart';
 import '../../../database/shared_preference/shared_preference_manager.dart';
 import '../auto_connect/mdns_broadcast.dart';

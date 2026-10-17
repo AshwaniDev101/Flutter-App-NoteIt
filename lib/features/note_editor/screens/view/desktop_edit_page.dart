@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:noteit/core/device_info.dart';
+import 'package:noteit/core/util/device_info.dart';
 import 'package:noteit/database/drift/local_database.dart';
 
 import 'package:noteit/database/drift/notes/notes_dao.dart';
@@ -16,7 +16,7 @@ import '../../../../shared/highlighting_textfield.dart';
 import '../../../../shared/snack_bar_manager.dart';
 import '../../widgets/checklist_editor.dart';
 import '../../../home/core/providers.dart';
-import '../../../home/view/desktop/right_panel/core/navigator.dart';
+import '../../../home/view/desktop/content_panel/core/navigator.dart';
 import '../../widgets/note_editor_options.dart';
 import '../../../lock/lock_manger/lock_manager.dart';
 import '../../../lock/view/setup_password_page.dart';

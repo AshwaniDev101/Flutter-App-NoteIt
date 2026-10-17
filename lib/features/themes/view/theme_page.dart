@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/theme/app_theme.dart';
 
-import '../../home/view/desktop/right_panel/core/navigator.dart';
+import '../../home/view/desktop/content_panel/core/navigator.dart';
 import '../../../shared/app_scaffold.dart';
 
 class ThemesPage extends ConsumerWidget {

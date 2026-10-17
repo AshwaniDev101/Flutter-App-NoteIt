@@ -4,7 +4,7 @@ import 'package:noteit/core/util/platform_helper.dart';
 import 'package:noteit/database/drift/notes/notes_dao.dart';
 import 'package:noteit/features/note_editor/screens/view/desktop_edit_page.dart';
 
-import '../../../../core/device_info.dart';
+import '../../../../core/util/device_info.dart';
 import '../../../../database/sync/sync_orchestrator.dart';
 
 class EditNoteState {

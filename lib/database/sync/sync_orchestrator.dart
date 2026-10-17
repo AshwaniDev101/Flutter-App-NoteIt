@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/database/sync/sync_engine.dart';
-import '../../core/provider/provider.dart';
+import '../firebase/auth/firebase_provider.dart';
 import '../../core/util/logger.dart';
 import 'cloud_sync_service.dart';
 import 'local_sync_service.dart';

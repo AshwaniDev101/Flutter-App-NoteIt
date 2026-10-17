@@ -114,7 +114,7 @@ enum RightPanelPageOptions {
   devTools('Dev Tools', 'Advanced debugging and diagnostic utilities', Icons.bug_report_outlined),
   clientMode('Client Mode', 'Connect to a host device on your network to sync notes', Icons.devices_outlined),
   hostMode('Host Mode', 'Broadcast a local connection for other devices to join and sync', Icons.wifi_tethering_outlined),
-  syncedList('Sync List', 'Displays the list of all previously synced devices', Icons.wifi_tethering_outlined),
+  syncedList('Sync List', 'Displays the list of all previously synced devices', Icons.list_alt),
   noteDetails('Note Details', 'Shows all the metadata about the note', Icons.info_outline),
   export('Export Notes', 'Download notes to a file', Icons.download_outlined),
   import('Import Notes', 'Upload notes from a file', Icons.upload_outlined),

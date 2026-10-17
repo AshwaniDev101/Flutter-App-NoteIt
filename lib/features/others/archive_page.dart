@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/features/home/core/note_tap_handler.dart';
 import 'package:noteit/shared/app_scaffold.dart';
 
-import '../../core/device_info.dart';
+import '../../core/util/device_info.dart';
 import '../../core/util/platform_helper.dart';
 import '../../database/drift/local_database.dart';
 import '../../database/drift/notes/notes_dao.dart';

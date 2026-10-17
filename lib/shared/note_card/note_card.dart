@@ -9,7 +9,7 @@ import 'package:noteit/shared/note_card/widgets/lock_overlay.dart';
 import '../../../core/helpers/time_helper.dart';
 import '../../../database/drift/local_database.dart';
 import '../../../features/home/core/providers.dart';
-import '../../../features/home/view/shared/tag_sort_view_menu.dart';
+import '../../features/home/view/shared/sort_view_menu.dart';
 import '../../../features/lock/lock_manger/lock_manager.dart';
 import '../highlighted_text.dart';
 
