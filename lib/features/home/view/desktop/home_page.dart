@@ -29,7 +29,7 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePanel> {
   /// Tracks the current width of the middle panel. Modified by the draggable divider.
   double _listPanelWidth = 340.0;
 
-  // ==== LEFT PANEL STATE ====
+  // ==== LEFT PANEL STATE ==== // Todo: remove this
   bool _isLeftPanelExpanded = false;
   double get _currentLeftWidth => _isLeftPanelExpanded ? 240.0 : 64.0;
 
@@ -221,7 +221,7 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePanel> {
 
                         // Middle Panel Divider
                         Positioned(
-                          left: _currentLeftWidth + _listPanelWidth - 6,
+                          left: _listPanelWidth - 6, // Removed _currentLeftWidth
                           width: 13,
                           top: 0,
                           bottom: 0,
@@ -244,7 +244,7 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePanel> {
                         // Invisible barrier over Right Panel
                         if (_isDrawerOpen)
                           Positioned(
-                            left: _currentLeftWidth + _listPanelWidth + 1,
+                            left: _listPanelWidth + 1,
                             top: 0,
                             bottom: 0,
                             right: 0,
