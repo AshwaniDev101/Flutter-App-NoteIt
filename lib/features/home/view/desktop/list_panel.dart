@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/util/platform_helper.dart';
 import 'package:noteit/database/drift/local_database.dart';
+import 'package:noteit/features/folders/view/folders.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../../../../core/config/app_env.dart';
@@ -48,7 +49,7 @@ class DesktopListPanel extends ConsumerWidget {
     final homeState = ref.watch(homeViewModelProvider);
     final colorScheme = Theme.of(context).colorScheme;
 
-    final versionString = "v${AppEnv.version}-${AppEnv.buildNumber}";
+    // final versionString = "v${AppEnv.version}-${AppEnv.buildNumber}";
 
     return Scaffold(
       // for closing the drawer on right panel click
@@ -103,87 +104,92 @@ class DesktopListPanel extends ConsumerWidget {
                 flexibleSpace: DragToMoveArea(child: Container(color: Colors.transparent)),
                 backgroundColor: Colors.transparent,
                 // Ensures clicks pass through to the drag area
+
+          title: FolderMenuButton(),
                 leading: const DrawerMenuButton(),
-                title: Text(
-                  'Note-It',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                ),
+                // title: Text(
+                //   'Note-It',
+                //   style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                // ),
                 elevation: 0,
                 scrolledUnderElevation: PlatformHelper.isDesktopScreen ? 0.0 : null,
-                actions: [
-                  SelectableText(
-                    versionString,
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(color: colorScheme.onSurfaceVariant),
-                  ),
-                  const SizedBox(width: 16),
-                ],
+                // actions: [
+                //   SelectableText(
+                //     versionString,
+                //     style: Theme.of(context).textTheme.labelLarge?.copyWith(color: colorScheme.onSurfaceVariant),
+                //   ),
+                //   const SizedBox(width: 16),
+                // ],
                 iconTheme: IconThemeData(color: Theme.of(context).colorScheme.primary),
               ),
       ),
 
       // Body holding the search bar and the actual note list
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Search & Filter Row
-          Padding(
-            padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: FocusTraversalOrder(
-                    order: const NumericFocusOrder(1),
-                    child: Focus(
-                      canRequestFocus: true,
-                      onKeyEvent: (node, event) {
-                        if (event is KeyDownEvent) {
-                          if (event.logicalKey == LogicalKeyboardKey.enter) {
-                            searchFocusNode.requestFocus();
-                            return KeyEventResult.handled;
+      body: Padding(
+        padding: const EdgeInsets.only(left: 8,bottom: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Search & Filter Row
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: FocusTraversalOrder(
+                      order: const NumericFocusOrder(1),
+                      child: Focus(
+                        canRequestFocus: true,
+                        onKeyEvent: (node, event) {
+                          if (event is KeyDownEvent) {
+                            if (event.logicalKey == LogicalKeyboardKey.enter) {
+                              searchFocusNode.requestFocus();
+                              return KeyEventResult.handled;
+                            }
+                            if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                              node.nextFocus();
+                              return KeyEventResult.handled;
+                            }
+                            if (event.logicalKey == LogicalKeyboardKey.escape) {
+                              node.requestFocus();
+                              return KeyEventResult.handled;
+                            }
                           }
-                          if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-                            node.nextFocus();
-                            return KeyEventResult.handled;
-                          }
-                          if (event.logicalKey == LogicalKeyboardKey.escape) {
-                            node.requestFocus();
-                            return KeyEventResult.handled;
-                          }
-                        }
-                        return KeyEventResult.ignored;
-                      },
-                      child: HomeSearchBar(
-                        controller: searchController,
-                        focusNode: searchFocusNode,
-                        hintText: 'Search...',
-                        borderRadius: BorderRadius.circular(8),
-                        isKeyboardDriven: isKeyboardDriven,
-                        onKeyboardModeChanged: onKeyboardModeChanged,
+                          return KeyEventResult.ignored;
+                        },
+                        child: HomeSearchBar(
+                          controller: searchController,
+                          focusNode: searchFocusNode,
+                          hintText: 'Search...',
+                          borderRadius: BorderRadius.circular(8),
+                          isKeyboardDriven: isKeyboardDriven,
+                          onKeyboardModeChanged: onKeyboardModeChanged,
+                        ),
                       ),
                     ),
                   ),
-                ),
 
-                const SortViewButton(),
-              ],
-            ),
-          ),
-
-
-          Expanded(
-            child: FocusTraversalOrder(
-              order: const NumericFocusOrder(2),
-              child: DynamicNotesLayout(
-                isSelectMode: homeState.isSelectMode,
-                noteIds: homeState.selectedNoteIds,
-                activeNoteId: activeNoteId,
-                onToggleSelection: ref.read(homeViewModelProvider.notifier).toggleSelection,
-                onEnableSelectMode: ref.read(homeViewModelProvider.notifier).enableSelectMode,
-                onNoteTap: onNoteTap,
+                  const SortViewButton(),
+                ],
               ),
             ),
-          ),
-        ],
+
+
+            Expanded(
+              child: FocusTraversalOrder(
+                order: const NumericFocusOrder(2),
+                child: DynamicNotesLayout(
+                  isSelectMode: homeState.isSelectMode,
+                  noteIds: homeState.selectedNoteIds,
+                  activeNoteId: activeNoteId,
+                  onToggleSelection: ref.read(homeViewModelProvider.notifier).toggleSelection,
+                  onEnableSelectMode: ref.read(homeViewModelProvider.notifier).enableSelectMode,
+                  onNoteTap: onNoteTap,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

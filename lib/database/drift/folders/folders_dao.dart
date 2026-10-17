@@ -2,7 +2,6 @@ import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../../core/util/logger.dart';
 import '../local_database.dart';
 import 'folders_table.dart';
 import '../notes/notes_table.dart';
@@ -62,7 +61,7 @@ class FoldersDao extends DatabaseAccessor<LocalDatabase> with _$FoldersDaoMixin 
     ) > 0;
   }
 
-  // ADDED: Toggles the pin state safely
+
   Future<void> toggleFolderPinStatus(String uuid) async {
     await transaction(() async {
       final targetFolder = await (select(folders)..where((t) => t.uuid.equals(uuid))).getSingle();
@@ -94,7 +93,6 @@ class FoldersDao extends DatabaseAccessor<LocalDatabase> with _$FoldersDaoMixin 
       ..where(folders.deletedAt.isNull())
       ..addColumns([amountOfNotes])
       ..groupBy([folders.uuid])
-    // ADDED: Sort pinned folders first, then alphabetical
       ..orderBy([
         OrderingTerm(expression: folders.pinnedAt, mode: OrderingMode.desc, nulls: NullsOrder.last),
         OrderingTerm(expression: folders.name.collate(Collate.noCase), mode: OrderingMode.asc)

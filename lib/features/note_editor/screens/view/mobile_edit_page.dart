@@ -10,7 +10,7 @@ import 'package:noteit/features/note_editor/screens/view/desktop_edit_page.dart'
 
 import '../../../../shared/find_replace.dart';
 import '../../../../shared/note_card/core/note_action_controller.dart';
-import '../../../../shared/highlighting_textfield.dart';
+import '../../../../shared/highlighting_text_field.dart';
 import '../../../../shared/snack_bar_manager.dart';
 import '../../../home/view/desktop/content_panel/core/navigator.dart';
 import '../../widgets/checklist_editor.dart';

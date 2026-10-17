@@ -5,14 +5,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+// Core & Database
 import 'package:noteit/core/util/device_info.dart';
 import 'package:noteit/database/drift/local_database.dart';
-
 import 'package:noteit/database/drift/notes/notes_dao.dart';
+
+// Features & Shared Widgets
+import 'package:noteit/features/folders/view/folder_selector_widget.dart';
 import '../../../../shared/find_replace.dart';
 import '../../../../shared/app_scaffold.dart';
 import '../../../../shared/note_card/core/note_action_controller.dart';
-import '../../../../shared/highlighting_textfield.dart';
+import '../../../../shared/highlighting_text_field.dart';
 import '../../../../shared/snack_bar_manager.dart';
 import '../../widgets/checklist_editor.dart';
 import '../../../home/core/providers.dart';
@@ -22,26 +26,28 @@ import '../../../lock/lock_manger/lock_manager.dart';
 import '../../../lock/view/setup_password_page.dart';
 import '../viewmodel/edit_note_view_model.dart';
 
+/// Defines the content structure currently active in the note editor.
 enum ContentVersion {
   plainText(1),
   checklist(2);
 
-  // 1. The integer value associated with the enum
   final int value;
 
-  // 2. The constructor that assigns the value
   const ContentVersion(this.value);
 
-  // 3. A helper method to easily convert a database integer back into an Enum
+  /// Helper method to easily convert a database integer back into an Enum.
+  /// Fallbacks to [ContentVersion.plainText] if the integer is unrecognized.
   static ContentVersion fromValue(int val) {
     return ContentVersion.values.firstWhere(
-      (e) => e.value == val,
-      // Fallback to plainText if the database has an unexpected number
+          (e) => e.value == val,
       orElse: () => ContentVersion.plainText,
     );
   }
 }
 
+/// A desktop-optimized page for creating and editing notes.
+///
+/// Handles automatic saving, syncing, check-lists, and lock management.
 class DesktopEditNotePage extends ConsumerStatefulWidget {
   final Note? existingNote;
 
@@ -52,81 +58,112 @@ class DesktopEditNotePage extends ConsumerStatefulWidget {
 }
 
 class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
+  // --- Controllers ---
   late final TextEditingController _titleController;
-
-  // Find and replace Controller
   late final HighlightingTextField _highlightedContentController;
-
   final UndoHistoryController _undoController = UndoHistoryController();
+
+  // --- View Models & State Management ---
   late final EditNoteViewModel _viewModel;
+  Note? _currentNote;
 
-  bool _isAutoSyncingTitle = false;
+  // --- UI State Flags ---
   late bool _isLocked;
-  ContentVersion _contentVersion = ContentVersion.plainText; // (1 = Plain text, 2 = Checklist)
-  List<CheckListItemModel> _currentChecklist = [];
-
-  // bool _hasTriggeredFinalSave = false;
-  bool _hasCreatedNewNote = false;
-  Timer? _autoSaveTimer;
+  bool _isAutoSyncingTitle = false;
   bool _isDeleted = false;
-  bool _isSaved = true;
   bool _isFind = false;
+  bool _hasCreatedNewNote = false;
 
+  final ValueNotifier<bool> _isSaved = ValueNotifier(true);
+
+  // --- Timers & Focus ---
+  Timer? _autoSaveTimer;
   late final FocusNode _titleFocusNode;
   late final FocusNode _contentFocusNode;
 
+  // --- Checklist Management ---
+  ContentVersion _contentVersion = ContentVersion.plainText;
+  List<CheckListItemModel> _currentChecklist = [];
+
+  /// Determines if the note is brand new and unsaved to the local database.
   bool get _isNewNote =>
-      widget.existingNote == null ||
-      (widget.existingNote!.title.isEmpty &&
-          widget.existingNote!.content.isEmpty &&
-          widget.existingNote!.cloudSyncStatus == 0 &&
-          widget.existingNote!.localSyncStatus == 0);
+      _currentNote == null ||
+          (_currentNote!.title.isEmpty &&
+              _currentNote!.content.isEmpty &&
+              _currentNote!.cloudSyncStatus == 0 &&
+              _currentNote!.localSyncStatus == 0);
 
   @override
   void initState() {
     super.initState();
+
+    _currentNote = widget.existingNote;
     _viewModel = ref.read(editNoteViewModelProvider.notifier);
-    _isLocked = widget.existingNote?.lockedAt != null;
+    _isLocked = _currentNote?.lockedAt != null;
 
-    _titleController = TextEditingController(text: widget.existingNote?.title ?? '');
+    _titleController = TextEditingController(text: _currentNote?.title ?? '');
+    _highlightedContentController = HighlightingTextField(text: _currentNote?.content ?? '');
 
-    // Initialize the new controller
-    _highlightedContentController = HighlightingTextField(text: widget.existingNote?.content ?? '');
-
-
-      // --- Checklist init logic ---
-    if (widget.existingNote != null) {
+    // Initialize checklist logic if applicable
+    if (_currentNote != null) {
       final String textContent = _highlightedContentController.text.trim();
-
-      // Check if DB says it's a checklist OR if the text is clearly a JSON array
-      if (widget.existingNote!.contentVersion == ContentVersion.checklist.value) {
-
+      if (_currentNote!.contentVersion == ContentVersion.checklist.value) {
         _contentVersion = ContentVersion.checklist;
         _currentChecklist = _convertTextToChecklist(textContent);
       }
     }
 
-    _titleFocusNode = FocusNode()..addListener(() => setState(() {}));
+    _titleFocusNode = FocusNode();
     _contentFocusNode = FocusNode();
 
-    if (_titleController.text.isEmpty && _highlightedContentController.text.isEmpty) {
-      _isAutoSyncingTitle = true;
-    } else {
-      _isAutoSyncingTitle = false;
-    }
+    _isAutoSyncingTitle = _titleController.text.isEmpty && _highlightedContentController.text.isEmpty;
 
+    // Attach listeners
     _highlightedContentController.addListener(_syncTitleFromContent);
     _titleController.addListener(_onTitleChanged);
-
-    // used for saving changes to the note automatically
     _titleController.addListener(_scheduleAutoSave);
     _highlightedContentController.addListener(_scheduleAutoSave);
-
-
   }
 
-// Converts JSON (or plain text) into a Checklist
-// Converts JSON (or plain text) into a Checklist
+  @override
+  void dispose() {
+    _autoSaveTimer?.cancel();
+
+    // Capture exact final state before destruction
+    final finalTitle = _titleController.text;
+    final finalContent = _highlightedContentController.text;
+
+    // Push final save to the next event loop, safely escaping widget teardown
+    Future(() {
+      _executeSave(
+        isManualSave: false,
+        isDisposing: true,
+        overrideTitle: finalTitle,
+        overrideContent: finalContent,
+      );
+    });
+
+    // Cleanup
+    _highlightedContentController.removeListener(_syncTitleFromContent);
+    _titleController.removeListener(_onTitleChanged);
+    _titleController.removeListener(_scheduleAutoSave);
+    _highlightedContentController.removeListener(_scheduleAutoSave);
+
+    _titleController.dispose();
+    _highlightedContentController.dispose();
+    _undoController.dispose();
+    _titleFocusNode.dispose();
+    _contentFocusNode.dispose();
+    _isSaved.dispose();
+
+    super.dispose();
+  }
+
+  // ===========================================================================
+  // DATA PARSING & SYNC LOGIC
+  // ===========================================================================
+
+  /// Converts JSON (or plain text) into a List of Checklist Items.
   List<CheckListItemModel> _convertTextToChecklist(String text) {
     if (text.trim().isEmpty) return [];
 
@@ -137,59 +174,38 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
       // Fallback: Parsing normal text
       return text.split('\n').where((line) => line.trim().isNotEmpty).map((line) {
         String cleanLine = line.trimLeft();
-
-        // Let's strip normal bullets just in case they typed "- cake"
-        cleanLine = cleanLine.replaceFirst(RegExp(r'^[-*]\s+'), '');
+        cleanLine = cleanLine.replaceFirst(RegExp(r'^[-*]\s+'), ''); // Strip bullets
 
         bool isChecked = false;
-
-        // If the line starts with "X " or "x ", mark it checked and remove the X!
         if (cleanLine.toLowerCase().startsWith('x ')) {
           isChecked = true;
-          cleanLine = cleanLine.substring(2).trimLeft(); // Removes the 'x '
+          cleanLine = cleanLine.substring(2).trimLeft();
         }
 
         return CheckListItemModel(
-            id: UniqueKey().toString(),
-            text: cleanLine,
-            isChecked: isChecked
+          id: UniqueKey().toString(),
+          text: cleanLine,
+          isChecked: isChecked,
         );
       }).toList();
     }
   }
 
-
-// Converts a Checklist back into plain text (strips check status)
+  /// Converts a Checklist back into plain text, stripping check status.
   String _convertChecklistToText(List<CheckListItemModel> items) {
-    // Just return the raw text of each item, separated by a new line!
     return items.map((e) => e.text).join('\n');
   }
 
-
-  void _scheduleAutoSave() {
-    // Hide the "Saved" text the moment they start typing
-    if (_isSaved && mounted) {
-      setState(() => _isSaved = false);
-    }
-
-    // If the user is still typing, cancel the previous countdown
-    if (_autoSaveTimer?.isActive ?? false) _autoSaveTimer!.cancel();
-
-    // Start a new 1-second countdown
-    _autoSaveTimer = Timer(const Duration(seconds: 2), () {
-      if (!mounted) return;
-      _executeSave(); // Silently save in the background
-    });
-  }
-
+  /// Extracts the first line of content and automatically assigns it to the title.
   void _syncTitleFromContent() {
-    // IGNORE IF CHECKLIST
     if (_contentVersion == ContentVersion.checklist) return;
     if (!_isAutoSyncingTitle) return;
 
-    String firstLine = _highlightedContentController.text.isNotEmpty ? _highlightedContentController.text.split('\n').first : '';
+    String firstLine = _highlightedContentController.text.isNotEmpty
+        ? _highlightedContentController.text.split('\n').first
+        : '';
 
-    // FIX: Restrict to exactly 30 characters maximum
+    // Restrict to exactly 30 characters maximum
     if (firstLine.length > 30) {
       firstLine = firstLine.substring(0, 30);
     }
@@ -202,62 +218,49 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
     }
   }
 
+  /// Detects if the user manually typed in the title field, disabling auto-sync.
   void _onTitleChanged() {
     if (_titleController.text.isEmpty && _highlightedContentController.text.isEmpty) {
       _isAutoSyncingTitle = true;
     } else {
-      // Calculate what the auto-sync text should look like right now
-      String expectedSync = _highlightedContentController.text.isNotEmpty ? _highlightedContentController.text.split('\n').first : '';
+      String expectedSync = _highlightedContentController.text.isNotEmpty
+          ? _highlightedContentController.text.split('\n').first
+          : '';
       if (expectedSync.length > 30) expectedSync = expectedSync.substring(0, 30);
 
-      // If the actual title text doesn't match the expected sync text,
-      // it means the user manually typed in the title field. Turn off auto-sync!
       if (_titleController.text != expectedSync) {
         _isAutoSyncingTitle = false;
       }
     }
   }
 
-  @override
-  void dispose() {
-    // Cancel the auto-save timer
-    _autoSaveTimer?.cancel();
+  // ===========================================================================
+  // SAVING & DATABASE LOGIC
+  // ===========================================================================
 
-    // Grab the exact text before the controllers are destroyed
-    final finalTitle = _titleController.text;
-    final finalContent = _highlightedContentController.text;
+  /// Triggers a delayed auto-save when typing occurs.
+  void _scheduleAutoSave() {
+    if (_isSaved.value) {
+      _isSaved.value = false; // localized update, no setState needed
+    }
 
-    // Push the final DB save to the next event loop, completely escaping Flutter's widget teardown cycle!
-    Future(() {
-      _executeSave(isManualSave: false, isDisposing: true, overrideTitle: finalTitle, overrideContent: finalContent);
+    if (_autoSaveTimer?.isActive ?? false) _autoSaveTimer!.cancel();
+
+    _autoSaveTimer = Timer(const Duration(seconds: 2), () {
+      if (!mounted) return;
+      _executeSave();
     });
-
-    // Clean up listeners and controllers
-    _highlightedContentController.removeListener(_syncTitleFromContent);
-    _titleController.removeListener(_onTitleChanged);
-    _titleController.removeListener(_scheduleAutoSave);
-    _highlightedContentController.removeListener(_scheduleAutoSave);
-
-    _titleController.dispose();
-    _highlightedContentController.dispose();
-    _undoController.dispose();
-
-    _titleFocusNode.dispose();
-    _contentFocusNode.dispose();
-
-    super.dispose();
   }
 
-  void _executeSave({
-    // when true show snack bar
+  /// Executes database insertion or update based on current state.
+  Future<void> _executeSave({
     bool isManualSave = false,
     bool isDisposing = false,
     String? overrideTitle,
     String? overrideContent,
-  }) {
+  }) async {
     if (_isDeleted) return;
 
-    // Use the overrides if we are disposing, otherwise read directly from controllers
     final title = (overrideTitle ?? _titleController.text).trim();
     final content = (overrideContent ?? _highlightedContentController.text).trim();
 
@@ -265,36 +268,93 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
 
     if (_isNewNote) {
       if (_hasCreatedNewNote) return;
-      // Pass the version integer here!
-      _viewModel.saveNote(title, content, _contentVersion);
       if (!isDisposing) _hasCreatedNewNote = true;
-    } else {
 
-      if (title != widget.existingNote!.title ||
-          content != widget.existingNote!.content ||
-          widget.existingNote!.contentVersion != _contentVersion.value) {
+      final newlySavedNote = await _viewModel.saveNote(title, content, _contentVersion);
 
-        _viewModel.updateNote(widget.existingNote!.uuid, title, content, _contentVersion);
+      if (!isDisposing && mounted && newlySavedNote != null) {
+        setState(() {
+          _currentNote = newlySavedNote; // Transitions _isNewNote to false
+        });
+        _isSaved.value = true;
+
+        if (isManualSave) {
+          SnackBarManager.show(msg: 'Saved!', type: SnackBarMessageType.acknowledgment);
+        }
       }
-    }
+    } else {
+      if (title != _currentNote!.title ||
+          content != _currentNote!.content ||
+          _currentNote!.contentVersion != _contentVersion.value) {
+        await _viewModel.updateNote(_currentNote!.uuid, title, content, _contentVersion);
+      }
 
-
-    // Only touch setState if we are 100% sure the widget is alive and not disposing
-    if (!isDisposing && mounted) {
-      setState(() => _isSaved = true);
-
-      if (isManualSave) {
-        // ScaffoldMessenger.of(context).showSnackBar(
-        //   const SnackBar(content: Text('Saved!'), behavior: SnackBarBehavior.floating, duration: Duration(seconds: 1)),
-        //
-        // );
-        SnackBarManager.show(msg: 'Saved!', type: SnackBarMessageType.acknowledgment);
+      if (!isDisposing && mounted) {
+        _isSaved.value = true;
+        if (isManualSave) {
+          SnackBarManager.show(msg: 'Saved!', type: SnackBarMessageType.acknowledgment);
+        }
       }
     }
   }
 
+  /// Handles locking and unlocking of notes via the master password.
+  Future<void> _handleLockToggle() async {
+    bool isCurrentlyLocked = _isLocked;
+    final lockManager = ref.read(lockManagerProvider.notifier);
+    bool shouldProceed = false;
+
+    if (!lockManager.hasMasterPassword) {
+      final enteredPassword = await showGeneralDialog<String>(
+        context: context,
+        barrierDismissible: true,
+        barrierLabel: 'Dismiss',
+        barrierColor: Colors.black45,
+        pageBuilder: (context, anim1, anim2) => const SetupPasswordPage(),
+      );
+
+      if (enteredPassword != null && enteredPassword.isNotEmpty) {
+        await lockManager.setupMasterPassword(enteredPassword);
+        if (context.mounted) SnackBarManager.show(msg: 'Master Password Created!');
+        shouldProceed = true;
+      }
+    } else {
+      shouldProceed = true;
+    }
+
+    if (shouldProceed && _currentNote != null) {
+      final success = await lockManager.togglePersistentLock(
+        _currentNote!.uuid,
+        '',
+        shouldLock: !isCurrentlyLocked,
+        ignorePassword: true,
+      );
+
+      if (success) {
+        if (mounted) {
+          setState(() => _isLocked = !_isLocked);
+        }
+
+        if (!isCurrentlyLocked) {
+          _handleCloseNote(); // Only close the note if it was just locked
+        }
+      } else {
+        if (mounted) SnackBarManager.show(msg: 'Action failed');
+      }
+    }
+  }
+
+  void _handleCloseNote() {
+    ref.read(activeNoteProvider.notifier).clear();
+    if (context.canPop()) context.pop();
+  }
+
+  // ===========================================================================
+  // UI BUILDERS
+  // ===========================================================================
+
   String _getFormattedDate() {
-    final now = widget.existingNote?.updatedAt ?? widget.existingNote?.createdAt ?? DateTime.now();
+    final now = _currentNote?.updatedAt ?? _currentNote?.createdAt ?? DateTime.now();
     return _isNewNote
         ? "${now.month}/${now.day}/${now.year}"
         : "${now.month}/${now.day}/${now.year} ${now.hour}:${now.minute.toString().padLeft(2, '0')}";
@@ -306,97 +366,85 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Calculate exactly 50% of this specific panel's available width
         final dynamicMaxWidth = constraints.maxWidth * 0.50;
 
         return AppScaffold(
           backgroundColor: panelColor,
-          title: _buildTitleField(maxWidth: dynamicMaxWidth),
+          title: _buildTopMetaRow(padding: 24),
           centerTitle: false,
           onClose: _handleCloseNote,
           actions: [
             _buildUndoRedoButtons(),
             const SizedBox(width: 8),
-            NoteEditorOptionButton(
-              isLocked: _isLocked,
-              isPinned: widget.existingNote?.pinnedAt != null,
-              onPressed: (NoteEditorOption option) async {
-                // If it's a new, unsaved note, we can't do DB actions on it yet!
-                if (_isNewNote && option != NoteEditorOption.info) {
-                  // Todo: update it to warning from error
-                  SnackBarManager.show(msg: 'Please save the note first', type: SnackBarMessageType.error);
-                  return;
-                }
 
-                final targetUuid = widget.existingNote!.uuid;
-                final actionsController = ref.read(noteActionsControllerProvider);
-                final deviceInfo = await ref.read(deviceInfoProvider.future);
+            if (!_isNewNote)
+              NoteEditorOptionButton(
+                isLocked: _isLocked,
+                isPinned: _currentNote?.pinnedAt != null,
+                onPressed: (NoteEditorOption option) async {
+                  if (_isNewNote && option != NoteEditorOption.info) {
+                    SnackBarManager.show(msg: 'Please save the note first', type: SnackBarMessageType.error);
+                    return;
+                  }
 
-                switch (option) {
-                  case NoteEditorOption.delete:
-                    _isDeleted = true; // Stops the auto-saver from running!
-                    await actionsController.deleteNotes([targetUuid], deviceInfo.extractPlatform);
-                    _handleCloseNote(); // UI side-effect: Close the editor
-                    // _handleDeleteNote();
-                    break;
-                  case NoteEditorOption.pin:
-                    await actionsController.togglePinNotes([targetUuid]);
-                    try {
-                      final updatedNote = await ref.read(notesDaoProvider).getNoteById(targetUuid);
-                      ref.read(activeNoteProvider.notifier).setNote(updatedNote);
-                    } catch (_) {}
-                    if (mounted) setState(() {}); // Refresh the editor UI
-                    break;
-                  case NoteEditorOption.lock:
-                    // lock logic handles the master password check perfectly.
-                    _handleLockToggle();
-                    break;
-                  case NoteEditorOption.archive:
-                    await actionsController.archiveNotes([targetUuid]);
-                    _handleCloseNote(); // Usually, archiving a note closes it
-                    break;
-                  case NoteEditorOption.info:
-                    if (!context.mounted) return;
-                    ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.noteDetails);
-                    break;
+                  final targetUuid = _currentNote!.uuid;
+                  final actionsController = ref.read(noteActionsControllerProvider);
+                  final deviceInfo = await ref.read(deviceInfoProvider.future);
 
-                  case NoteEditorOption.checklist:
-                    setState(() {
-                      if (_contentVersion != ContentVersion.checklist) {
-                        // Switch to checklist mode
-                        _contentVersion = ContentVersion.checklist;
-
-                        // Parse the existing plain text into checklist items
-                        _currentChecklist = _convertTextToChecklist(_highlightedContentController.text);
-
-                        // Inject the JSON back into the controller so auto-save works immediately
-                        _highlightedContentController.text = jsonEncode(_currentChecklist.map((e) => e.toJson()).toList());
-
-                      } else {
-                        // Switch back to plain text mode
-                        _contentVersion = ContentVersion.plainText;
-
-                        // Convert the checklist items back to readable markdown-style text
-                        _highlightedContentController.text = _convertChecklistToText(_currentChecklist);
+                  switch (option) {
+                    case NoteEditorOption.delete:
+                      _isDeleted = true;
+                      await actionsController.deleteNotes([targetUuid], deviceInfo.extractPlatform);
+                      _handleCloseNote();
+                      break;
+                    case NoteEditorOption.pin:
+                      await actionsController.togglePinNotes([targetUuid]);
+                      try {
+                        final updatedNote = await ref.read(notesDaoProvider).getNoteById(targetUuid);
+                        ref.read(activeNoteProvider.notifier).setNote(updatedNote);
+                        _currentNote = updatedNote;
+                      } catch (_) {}
+                      if (mounted) setState(() {});
+                      break;
+                    case NoteEditorOption.lock:
+                      _handleLockToggle();
+                      break;
+                    case NoteEditorOption.archive:
+                      await actionsController.archiveNotes([targetUuid]);
+                      _handleCloseNote();
+                      break;
+                    case NoteEditorOption.info:
+                      if (!context.mounted) return;
+                      ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.noteDetails);
+                      break;
+                    case NoteEditorOption.checklist:
+                      setState(() {
+                        if (_contentVersion != ContentVersion.checklist) {
+                          _contentVersion = ContentVersion.checklist;
+                          _currentChecklist = _convertTextToChecklist(_highlightedContentController.text);
+                          _highlightedContentController.text = jsonEncode(
+                            _currentChecklist.map((e) => e.toJson()).toList(),
+                          );
+                        } else {
+                          _contentVersion = ContentVersion.plainText;
+                          _highlightedContentController.text = _convertChecklistToText(_currentChecklist);
+                        }
+                      });
+                      break;
+                    case NoteEditorOption.find:
+                      if (_isFind) {
+                        _highlightedContentController.searchQuery = '';
                       }
-                    });
-                    break;
-                  case NoteEditorOption.find:
-                    // If it's currently open, clear the highlights BEFORE we setState to close it
-                    if (_isFind) {
-                      _highlightedContentController.searchQuery = '';
-                    }
-
-                    setState(() {
-                      _isFind = !_isFind;
-                    });
-                    break;
-                  case NoteEditorOption.reminder:
+                      setState(() {
+                        _isFind = !_isFind;
+                      });
+                      break;
+                    case NoteEditorOption.reminder:
                     // TODO: UI Action - Open DatePicker
-                    break;
-                }
-              },
-            ),
+                      break;
+                  }
+                },
+              ),
           ],
           body: Column(
             children: [
@@ -412,10 +460,9 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
                   padding: 0,
                 ),
               } else ...{
-                _buildMetaDataRow(padding: 24.0),
+                _buildTitleField(maxWidth: dynamicMaxWidth),
               },
-
-              Expanded(child: _buildContentField(padding: 24.0)),
+              Expanded(child: _buildContentField(padding: 40.0)),
             ],
           ),
         );
@@ -423,77 +470,38 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
     );
   }
 
-  Widget _buildContentField({required double padding}) {
+  Widget _buildTopMetaRow({required double padding}) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: padding, vertical: 0),
-      child: FocusTraversalOrder(
-        order: const NumericFocusOrder(5),
-        child: Focus(
-          focusNode: _contentFocusNode,
-          onKeyEvent: (node, event) {
-            if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
-              node.unfocus();
-              return KeyEventResult.handled;
-            }
-            if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.tab) {
-              node.nextFocus();
-              return KeyEventResult.handled;
-            }
-            return KeyEventResult.ignored;
-          },
-          // --- THE UI SWAP ---
-          child: _contentVersion == ContentVersion.checklist
-              ? CheckListWidget(
-            initialData: _currentChecklist,
-            onChange: (List<CheckListItemModel> updatedList) {
-              // Update our local memory state
-              _currentChecklist = updatedList;
-
-              // This instantly fires your existing _scheduleAutoSave() method.
-              _highlightedContentController.text = jsonEncode(updatedList.map((e) => e.toJson()).toList());
-            },
-          )
-              : TextField(
-            controller: _highlightedContentController,
-            undoController: _undoController,
-            maxLines: null,
-            expands: true,
-            textAlignVertical: TextAlignVertical.top,
-            textCapitalization: TextCapitalization.sentences,
-            decoration: const InputDecoration(border: InputBorder.none),
-            style: Theme.of(context).textTheme.bodyLarge,
+      padding: EdgeInsets.symmetric(horizontal: padding),
+      child: Row(
+        children: [
+          FolderSelectorWidget(), // Placeholder for your custom dropdown widget
+          const SizedBox(width: 16),
+          Text(
+            "Edited ${_getFormattedDate()}",
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
-        ),
+          const SizedBox(width: 16),
+          _buildNewLabel()
+        ],
       ),
     );
   }
 
-  Widget _buildMetaDataRow({required double padding}) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: padding, vertical: 8.0),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-            decoration: BoxDecoration(
-              color: _isNewNote
-                  ? Theme.of(context).colorScheme.primaryContainer
-                  : Theme.of(context).colorScheme.secondaryContainer,
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Text(
-              _isNewNote ? 'New' : 'Updating...',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold),
-            ),
-          ),
-          const Spacer(),
-          SelectableText(
-            _getFormattedDate(),
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-          ),
-        ],
+  Widget _buildNewLabel() {
+    if (!_isNewNote) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primaryContainer,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        'New',
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold),
       ),
     );
   }
@@ -507,7 +515,6 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
           valueListenable: _undoController,
           builder: (context, value, child) {
             return Opacity(
-              // Hides the button completely when false, but keeps its layout space
               opacity: value.canUndo ? 1.0 : 0.0,
               child: IconButton(
                 onPressed: value.canUndo ? () => _undoController.undo() : null,
@@ -533,193 +540,183 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
   }
 
   Widget _buildTitleField({required double maxWidth}) {
-    return Row(
-      mainAxisSize: MainAxisSize.min, // Tells the Row to tightly hug its children
-      children: [
-        Flexible(
-          //  Protects the layout on tiny screens
-          child: IntrinsicWidth(
-            // Forces the text field to hug the typed text
-            child: Container(
-              height: 40,
-              constraints: BoxConstraints(
-                minWidth: 80, // Gives you enough space to click when the title is empty!
-                maxWidth: maxWidth, // Stops growing and starts scrolling at 300px
-              ),
-              child: FocusTraversalOrder(
-                order: const NumericFocusOrder(4),
-                child: Focus(
-                  onKeyEvent: (node, event) {
-                    if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
-                      node.unfocus();
-                      return KeyEventResult.handled;
-                    }
-                    return KeyEventResult.ignored;
-                  },
-                  child: TextField(
-                    controller: _titleController,
-                    focusNode: _titleFocusNode,
-                    autofocus: _isNewNote,
-                    textAlignVertical: TextAlignVertical.center,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
-                    decoration: InputDecoration(
-                      isDense: true,
-                      hintText: "Title",
-                      suffixIcon: _titleFocusNode.hasFocus
-                          ? ValueListenableBuilder<TextEditingValue>(
-                              valueListenable: _titleController,
-                              builder: (context, value, child) {
-                                if (value.text.isEmpty) {
-                                  return const SizedBox.shrink();
-                                }
-                                return IconButton(
-                                  icon: const Icon(Icons.close, size: 16),
-                                  onPressed: () {
-                                    _titleController.clear();
-                                    _isAutoSyncingTitle = true;
-                                  },
-                                );
-                              },
-                            )
-                          : const SizedBox.shrink(),
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: IntrinsicWidth(
+                child: Container(
+                  height: 40,
+                  constraints: BoxConstraints(
+                    minWidth: 80,
+                    maxWidth: maxWidth,
+                  ),
+                  child: FocusTraversalOrder(
+                    order: const NumericFocusOrder(4),
+                    child: Focus(
+                      onKeyEvent: (node, event) {
+                        if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
+                          node.unfocus();
+                          return KeyEventResult.handled;
+                        }
+                        return KeyEventResult.ignored;
+                      },
+                      child: TextField(
+                        controller: _titleController,
+                        focusNode: _titleFocusNode,
+                        autofocus: _isNewNote,
+                        textAlignVertical: TextAlignVertical.center,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+                        decoration: InputDecoration(
+                          isDense: true,
+                          hintText: "Title",
+                          // Optimization: Only rebuild suffix icon when focus changes
+                          suffixIcon: ListenableBuilder(
+                            listenable: _titleFocusNode,
+                            builder: (context, child) {
+                              if (!_titleFocusNode.hasFocus) return const SizedBox.shrink();
 
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+                              return ValueListenableBuilder<TextEditingValue>(
+                                valueListenable: _titleController,
+                                builder: (context, value, child) {
+                                  if (value.text.isEmpty) {
+                                    return const SizedBox.shrink();
+                                  }
+                                  return IconButton(
+                                    icon: const Icon(Icons.close, size: 16),
+                                    onPressed: () {
+                                      _titleController.clear();
+                                      _isAutoSyncingTitle = true;
+                                    },
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-        ),
 
-        // Auto save indicator
-        // Animated Save/Saved Button
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 300),
-          // Creates a clean vertical swipe transition
-          transitionBuilder: (Widget child, Animation<double> animation) {
-            return SlideTransition(
-              position: Tween<Offset>(begin: const Offset(0.0, 0.5), end: Offset.zero).animate(animation),
-              child: FadeTransition(opacity: animation, child: child),
-            );
-          },
-          child: _isSaved
-              ? // ---- SAVED STATE (Passive) ----
-                Padding(
-                  key: const ValueKey('saved_state'),
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.done_all, size: 16, color: Theme.of(context).colorScheme.outline),
-                      const SizedBox(width: 4),
-                      Text(
-                        "Saved",
-                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.outline,
-                          fontStyle: FontStyle.italic,
+            ValueListenableBuilder<bool>(
+              valueListenable: _isSaved,
+              builder: (context, isSaved, child) {
+                return AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  transitionBuilder: (Widget child, Animation<double> animation) {
+                    return SlideTransition(
+                      position: Tween<Offset>(begin: const Offset(0.0, 0.5), end: Offset.zero).animate(animation),
+                      child: FadeTransition(opacity: animation, child: child),
+                    );
+                  },
+                  child: isSaved
+                      ? Padding(
+                    key: const ValueKey('saved_state'),
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.done_all, size: 16, color: Theme.of(context).colorScheme.outline),
+                        const SizedBox(width: 4),
+                        Text(
+                          "Saved",
+                          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.outline,
+                            fontStyle: FontStyle.italic,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                )
-              : // ---- SAVE STATE (Clickable) ----
-                Material(
-                  key: const ValueKey('save_state'),
-                  color: Colors.transparent, // Keeps the label look without a button background
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(4),
-                    onTap: () {
-                      _executeSave(isManualSave: true);
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.done,
-                            size: 16,
-                            color: Theme.of(context).colorScheme.primary, // Highlights it as an action
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            "Save",
-                            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      ],
+                    ),
+                  )
+                      : Material(
+                    key: const ValueKey('save_state'),
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(4),
+                      onTap: () {
+                        _executeSave(isManualSave: true);
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.done,
+                              size: 16,
                               color: Theme.of(context).colorScheme.primary,
-                              fontWeight: FontWeight.bold, // Makes the call-to-action stand out slightly
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 4),
+                            Text(
+                              "Save",
+                              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
+                );
+              },
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
-  Future<void> _handleLockToggle() async {
-    bool isCurrentlyLocked = _isLocked;
-    final lockManager = ref.read(lockManagerProvider.notifier);
-    bool shouldProceed = false;
-
-    if (!lockManager.hasMasterPassword) {
-      final enteredPassword = await showGeneralDialog<String>(
-        context: context,
-        barrierDismissible: true,
-        barrierLabel: 'Dismiss',
-        barrierColor: Colors.black45,
-        pageBuilder: (context, anim1, anim2) => const SetupPasswordPage(),
-      );
-
-      if (enteredPassword != null && enteredPassword.isNotEmpty) {
-        await lockManager.setupMasterPassword(enteredPassword);
-        if (context.mounted) SnackBarManager.show(msg: 'Master Password Created!');
-        shouldProceed = true;
-      }
-    } else {
-      shouldProceed = true;
-    }
-
-    if (shouldProceed && widget.existingNote != null) {
-      final success = await lockManager.togglePersistentLock(
-        widget.existingNote!.uuid,
-        '',
-        shouldLock: !isCurrentlyLocked,
-        ignorePassword: true,
-      );
-
-      if (success) {
-        if (mounted) {
-          setState(() => _isLocked = !_isLocked);
-        }
-
-        // If we are unlocking (!isCurrentlyLocked == false), Notes it stays open!
-        if (!isCurrentlyLocked) {
-          _handleCloseNote();
-        }
-      } else {
-        if (mounted) SnackBarManager.show(msg: 'Action failed');
-      }
-    }
+  Widget _buildContentField({required double padding}) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: padding, vertical: 0),
+      child: FocusTraversalOrder(
+        order: const NumericFocusOrder(5),
+        child: Focus(
+          focusNode: _contentFocusNode,
+          onKeyEvent: (node, event) {
+            if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
+              node.unfocus();
+              return KeyEventResult.handled;
+            }
+            if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.tab) {
+              node.nextFocus();
+              return KeyEventResult.handled;
+            }
+            return KeyEventResult.ignored;
+          },
+          child: _contentVersion == ContentVersion.checklist
+              ? CheckListWidget(
+            initialData: _currentChecklist,
+            onChange: (List<CheckListItemModel> updatedList) {
+              _currentChecklist = updatedList;
+              _highlightedContentController.text = jsonEncode(updatedList.map((e) => e.toJson()).toList());
+            },
+          )
+              : TextField(
+            controller: _highlightedContentController,
+            undoController: _undoController,
+            maxLines: null,
+            expands: true,
+            textAlignVertical: TextAlignVertical.top,
+            textCapitalization: TextCapitalization.sentences,
+            decoration: const InputDecoration(border: InputBorder.none, hint: Text("Type here...")),
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
+        ),
+      ),
+    );
   }
-
-  void _handleCloseNote() {
-    // send signal the parent class to pop the note
-    ref.read(activeNoteProvider.notifier).clear();
-
-    // Pop if opened via router/mobile
-    if (context.canPop()) context.pop();
-  }
-
-  // void _handleDeleteNote() {
-  //   if (!_isNewNote && widget.existingNote != null) {
-  //     _isDeleted = true;
-  //     // _hasTriggeredFinalSave = true;
-  //     ref.read(editNoteViewModelProvider.notifier).deleteNote(widget.existingNote!.uuid);
-  //   }
-  //   _handleCloseNote();
-  // }
 }

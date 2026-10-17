@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'highlighting_textfield.dart';
+import 'highlighting_text_field.dart';
 import 'snack_bar_manager.dart';
 
 class FindReplaceWidget extends StatefulWidget {

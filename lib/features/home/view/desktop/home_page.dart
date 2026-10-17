@@ -219,6 +219,7 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePanel> {
                           ],
                         ),
 
+
                         // Middle Panel Divider
                         Positioned(
                           left: _listPanelWidth - 6, // Removed _currentLeftWidth
@@ -240,6 +241,27 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePanel> {
                             ),
                           ),
                         ),
+                        // Middle Panel Divider
+                        // Positioned(
+                        //   left: _currentLeftWidth + _listPanelWidth - 6,
+                        //   width: 13,
+                        //   top: 0,
+                        //   bottom: 0,
+                        //   child: MouseRegion(
+                        //     cursor: SystemMouseCursors.resizeColumn,
+                        //     child: GestureDetector(
+                        //       behavior: HitTestBehavior.opaque,
+                        //       onPanUpdate: (details) {
+                        //         setState(() {
+                        //           _listPanelWidth += details.delta.dx;
+                        //           if (_listPanelWidth < 250) _listPanelWidth = 250;
+                        //           if (_listPanelWidth > 600) _listPanelWidth = 600;
+                        //         });
+                        //       },
+                        //       child: Container(color: Colors.transparent),
+                        //     ),
+                        //   ),
+                        // ),
 
                         // Invisible barrier over Right Panel
                         if (_isDrawerOpen)

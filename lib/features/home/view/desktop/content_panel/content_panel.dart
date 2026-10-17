@@ -47,10 +47,10 @@ class DesktopContentPanel extends ConsumerWidget {
           // backgroundColor: Colors.red,
 
           leadingWidth: 130,
-          leading: Padding(
-            padding: EdgeInsets.only(left: 16),
-            child: const FolderMenuButton(),
-          ),
+          // leading: Padding(
+          //   padding: EdgeInsets.only(left: 16),
+          //   child: const FolderMenuButton(),
+          // ),
           elevation: 0,
           scrolledUnderElevation: PlatformHelper.isDesktopScreen ? 0.0 : null,
           actions: [

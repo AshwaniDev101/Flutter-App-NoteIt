@@ -20,7 +20,7 @@ class Folders extends Table {
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get deletedAt => dateTime().nullable()();
 
-  // ADDED: Tracks pin status and time for sorting
+  // Tracks pin status and time for sorting
   DateTimeColumn get pinnedAt => dateTime().nullable()();
 
   IntColumn get updateCounter => integer().withDefault(const Constant(1))();

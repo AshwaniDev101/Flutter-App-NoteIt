@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../database/drift/folders/folders_dao.dart';
 import '../../../database/drift/local_database.dart';
-import '../core/providers.dart'; // Ensure this points to your activeFolderProvider
+import '../core/providers.dart';
 
 final activeFoldersStreamProvider = StreamProvider<List<FolderWithCount>>((ref) {
   final foldersDao = ref.watch(foldersDaoProvider);
@@ -60,7 +60,7 @@ class _FolderMenuButtonState extends State<FolderMenuButton> {
                       size: 22,
                     ),
                     const SizedBox(width: 8),
-                    Text("Folders", style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+                    Text("Folders", style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),),
                   ],
                 ),
               ),
@@ -151,7 +151,7 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
       position: menuPosition,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       elevation: 6,
-      constraints: const BoxConstraints(minWidth: 160), // Keeps menu slim
+      constraints: const BoxConstraints(minWidth: 160),
       items: [
         PopupMenuItem(
           value: 'open',
@@ -260,7 +260,6 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
   Future<void> _showCreateFolderDialog(BuildContext context, WidgetRef ref) async {
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
-      // Pass no parameters to act as a "Create" dialog
       builder: (context) => const FolderEditorDialog(),
     );
 
