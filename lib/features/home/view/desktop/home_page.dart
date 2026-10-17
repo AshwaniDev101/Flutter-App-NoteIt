@@ -11,7 +11,6 @@ import '../../../../database/sync/sync_orchestrator.dart';
 import '../../../keybinding/shortcut_config.dart';
 import '../../core/providers.dart';
 import '../../viewmodel/viewmodel.dart';
-import '../../../drawer/left_drawer.dart';
 import 'list_panel.dart';
 import 'content_panel/content_panel.dart';
 
@@ -30,7 +29,7 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePanel> {
   double _listPanelWidth = 340.0;
 
   // ==== LEFT PANEL STATE ==== // Todo: remove this
-  bool _isLeftPanelExpanded = false;
+  final bool _isLeftPanelExpanded = false;
   double get _currentLeftWidth => _isLeftPanelExpanded ? 240.0 : 64.0;
 
   // For helping close the drawer when user click on the invisible barrier on top of the right panel

@@ -56,7 +56,12 @@ class EditNoteViewModel extends Notifier<EditNoteState> {
   /// [contentVersion] Enum dictating the format of the content (e.g., plain text vs. checklist).
   ///
   /// Returns the newly created [Note] object if successful, or `null` if an error occurs.
-  Future<Note?> saveNote(String title, String content, ContentVersion contentVersion) async {
+  Future<Note?> saveNote(
+      String title,
+      String content,
+      ContentVersion contentVersion, {
+        String? folderId,
+      }) async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
@@ -70,6 +75,7 @@ class EditNoteViewModel extends Notifier<EditNoteState> {
         creationPlatform: deviceInfo.extractPlatform,
         creationDevice: deviceInfo.extractName,
         contentVersion: contentVersion.value,
+        folderId: folderId, // Pass the folderId to the database
       );
 
       AppLogger.d('EditNoteViewModel: Saved new note ($newUuid)');

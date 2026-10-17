@@ -118,11 +118,25 @@ class SharedDrawerContent extends ConsumerWidget {
                   onTap: () => onOptionSelected(RightPanelPageOptions.archivePage),
                 ),
 
-                SizedBox(height: 8,),
-                SelectableText("version: ${AppEnv.version}", style: Theme.of(context).textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),),
-                SizedBox(height: 4,),
-                SelectableText("build number: ${AppEnv.buildNumber}", style: Theme.of(context).textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),),
-                SizedBox(height:8,),
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.only(left: 12.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SelectableText(
+                        "version: ${AppEnv.version}",
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                      ),
+                      const SizedBox(height: 4),
+                      SelectableText(
+                        "build number: ${AppEnv.buildNumber}",
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
 
               ],
             ),

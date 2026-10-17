@@ -212,7 +212,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
   // ==== COMPACT LIST LAYOUT ====
   Widget _buildCompactList() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       child: Row(
         children: [
           Expanded(
@@ -276,7 +276,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
               ],
             ],
           ),
-          // const SizedBox(height: 2),
+          const SizedBox(height: 4),
           widget.note.lockedAt != null
               ? Align(
                   alignment: Alignment.centerLeft,

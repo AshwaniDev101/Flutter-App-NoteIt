@@ -3,12 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/util/platform_helper.dart';
 import 'package:noteit/database/drift/local_database.dart';
-import 'package:noteit/features/folders/view/folders.dart';
 import 'package:window_manager/window_manager.dart';
 
-import '../../../../core/config/app_env.dart';
 import '../../../../database/drift/keybindings/keybindings_dao.dart';
 import '../../../drawer/desktop_drawer_button.dart';
+import '../../../folders/core/providers.dart';
+import '../../../folders/view/folder_selector.dart';
 import '../../../keybinding/smart_action_widget.dart';
 import '../../viewmodel/viewmodel.dart';
 import '../shared/select_mode_app_bars.dart';
@@ -105,7 +105,18 @@ class DesktopListPanel extends ConsumerWidget {
                 backgroundColor: Colors.transparent,
                 // Ensures clicks pass through to the drag area
 
-          title: FolderMenuButton(),
+          title: FolderButton(
+            selectedFolder: ref.watch(activeFolderProvider),
+            emptyLabel: 'All Notes',
+            showContextMenus: true,
+            onFolderSelected: (folder) {
+              if (folder == null) {
+                ref.read(activeFolderProvider.notifier).clear();
+              } else {
+                ref.read(activeFolderProvider.notifier).setFolder(folder);
+              }
+            },
+          ),
                 leading: const DrawerMenuButton(),
                 // title: Text(
                 //   'Note-It',
@@ -126,13 +137,13 @@ class DesktopListPanel extends ConsumerWidget {
 
       // Body holding the search bar and the actual note list
       body: Padding(
-        padding: const EdgeInsets.only(left: 8,bottom: 8),
+        padding: const EdgeInsets.only(left: 8, right: 8, bottom: 8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Search & Filter Row
             Padding(
-              padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+              padding: const EdgeInsets.only(bottom: 8),
               child: Row(
                 children: [
                   Expanded(
@@ -168,7 +179,7 @@ class DesktopListPanel extends ConsumerWidget {
                       ),
                     ),
                   ),
-
+                  const SizedBox(width: 8),
                   const SortViewButton(),
                 ],
               ),

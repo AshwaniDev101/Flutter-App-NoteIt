@@ -8,7 +8,6 @@ import '../../../../../core/util/platform_helper.dart';
 import '../../../../backup/export_page.dart';
 import '../../../../backup/import_page.dart';
 import '../../../../dev_tools/dev_page.dart';
-import '../../../../folders/view/folders.dart';
 import '../../../../local_sync/view/mdns/broadcast/host_broadcast.dart';
 import '../../../../local_sync/view/mdns/searcher/host_searcher.dart';
 import '../../../../local_sync/view/mdns/searcher/pin_dialog/pin_entry_dialog.dart';
@@ -46,11 +45,6 @@ class DesktopContentPanel extends ConsumerWidget {
           ),
           // backgroundColor: Colors.red,
 
-          leadingWidth: 130,
-          // leading: Padding(
-          //   padding: EdgeInsets.only(left: 16),
-          //   child: const FolderMenuButton(),
-          // ),
           elevation: 0,
           scrolledUnderElevation: PlatformHelper.isDesktopScreen ? 0.0 : null,
           actions: [
@@ -178,6 +172,7 @@ class _HomepagePlaceholder extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               SelectableText(
                 'Select a note from the list or press',

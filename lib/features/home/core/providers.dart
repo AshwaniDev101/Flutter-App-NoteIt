@@ -1,23 +1,32 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/features/home/core/db_sorting_filtering.dart';
 import '../../../database/drift/local_database.dart';
+import '../../folders/core/providers.dart';
 import '../../lock/lock_manger/lock_manager.dart';
 import '../view/desktop/content_panel/core/navigator.dart';
 import '../view/shared/sort_view_menu.dart';
 
 
-/// MAIN FILTER: Combines all the filters (SORT + PLATFORM + SEARCH + LOCK-STATE)
+/// MAIN FILTER: Combines all the filters (FOLDER + SORT + PLATFORM + SEARCH + LOCK-STATE)
 final filteredNotesProvider = Provider<AsyncValue<List<Note>>>((ref) {
-  // Watch dependencies. If any of these 4 change, this entire function re-runs automatically.
+  // Watch dependencies. If any of these 5 change, this entire function re-runs automatically.
   final sortedNotesAsync = ref.watch(sortedNotesStreamProvider);
   final searchQuery = ref.watch(searchQueryProvider).toLowerCase().trim();
   final platformFilter = ref.watch(platformFilterProvider);
   final lockState = ref.watch(lockManagerProvider);
 
-  // states, and only runs filter logic if the database successfully returned data.
+  // Watch the currently active folder
+  final activeFolder = ref.watch(activeFolderProvider);
+
   return sortedNotesAsync.whenData((notes) {
     // Start with the full list
     List<Note> result = notes;
+
+    // Apply Folder Filter
+    // If a folder is selected (not 'All Notes'), only keep notes with a matching folderId
+    if (activeFolder != null) {
+      result = result.where((note) => note.folderId == activeFolder.uuid).toList();
+    }
 
     // Apply Platform Filter
     if (platformFilter != FilterPlatformOptions.all) {
@@ -42,7 +51,8 @@ final filteredNotesProvider = Provider<AsyncValue<List<Note>>>((ref) {
 
     return result; // Return the final UI-ready list
   });
-}); // it combines all the filter into one,  search query, platform filter, and lock state.
+});
+
 
 /// PLATFORM FILTER
 enum FilterPlatformOptions { all, android, windows } // State Holder : holds for platform filter

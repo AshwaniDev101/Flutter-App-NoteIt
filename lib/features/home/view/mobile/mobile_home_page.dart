@@ -69,7 +69,7 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(4, 0, 4, 0),
+              padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
               child: Row(
                 children: [
                   Expanded(

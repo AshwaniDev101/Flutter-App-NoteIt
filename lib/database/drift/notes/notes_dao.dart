@@ -24,6 +24,7 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
   Future<String> addNote({
     required String title,
     required String content,
+    String? folderId,
     String? creationPlatform,
     String? creationDevice,
     required int contentVersion,
@@ -34,13 +35,13 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
         uuid: Value(newUuid),
         title: title,
         content: content,
+        folderId: Value(folderId),
         creationPlatform: Value(creationPlatform),
         creationDevice: Value(creationDevice),
         createdAt: Value(DateTime.now().toUtc()),
         updatedAt: Value(DateTime.now().toUtc()),
         cloudSyncStatus: const Value(0),
         localSyncStatus: const Value(0),
-        // updateCounter automatically defaults to 1 on insert
         contentVersion: Value(contentVersion),
       ),
     );
@@ -117,6 +118,19 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
         updateCounter: notes.updateCounter + const Constant(1),
       ),
     );
+  }
+
+  /// Updates only the folder assignment of a note and triggers sync workers
+  Future<bool> updateNoteFolder(String uuid, String? folderId) async {
+    return await (update(notes)..where((t) => t.uuid.equals(uuid))).write(
+      NotesCompanion.custom(
+        folderId: Variable(folderId),
+        cloudSyncStatus: const Variable(0),
+        localSyncStatus: const Variable(0),
+        updatedAt: Variable(DateTime.now().toUtc()),
+        updateCounter: notes.updateCounter + const Constant(1), // Crucial for conflict resolution
+      ),
+    ) > 0;
   }
 
   Future<bool> lockNote(String uuid, {required bool isLocked}) async {

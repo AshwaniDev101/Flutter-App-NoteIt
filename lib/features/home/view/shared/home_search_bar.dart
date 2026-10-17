@@ -64,7 +64,7 @@ class HomeSearchBar extends ConsumerWidget {
           filled: true,
           fillColor: Theme.of(context).colorScheme.surfaceContainerLowest,
           isDense: true,
-          // contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           hintText: hintText,
 
           suffixIcon: ValueListenableBuilder<TextEditingValue>(
@@ -82,11 +82,10 @@ class HomeSearchBar extends ConsumerWidget {
             context,
           ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
 
-          prefixIconConstraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+          prefixIconConstraints: const BoxConstraints(minWidth: 36, minHeight: 36),
           border: OutlineInputBorder(borderRadius: effectiveBorderRadius, borderSide: BorderSide.none),
 
           focusedBorder: OutlineInputBorder(borderRadius: effectiveBorderRadius, borderSide: BorderSide.none),
-          contentPadding: const EdgeInsets.symmetric(vertical: 0),
         ),
 
         onTap: () {

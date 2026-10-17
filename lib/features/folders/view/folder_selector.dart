@@ -2,29 +2,48 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../database/drift/folders/folders_dao.dart';
 import '../../../database/drift/local_database.dart';
-import '../core/providers.dart';
 
 final activeFoldersStreamProvider = StreamProvider<List<FolderWithCount>>((ref) {
   final foldersDao = ref.watch(foldersDaoProvider);
   return foldersDao.watchActiveFoldersWithCounts();
 });
 
-class FolderMenuButton extends StatefulWidget {
-  const FolderMenuButton({super.key});
+/// Reusable folder selection button and dropdown.
+///
+/// It relies on the parent to provide the [selectedFolder] and handle
+/// the [onFolderSelected] action.
+class FolderButton extends ConsumerStatefulWidget {
+  final Folder? selectedFolder;
+  final ValueChanged<Folder?> onFolderSelected;
+  final bool showContextMenus;
+  final String emptyLabel;
+
+  const FolderButton({
+    super.key,
+    required this.selectedFolder,
+    required this.onFolderSelected,
+    this.showContextMenus = true,
+    this.emptyLabel = 'All Notes',
+  });
 
   @override
-  State<FolderMenuButton> createState() => _FolderMenuButtonState();
+  ConsumerState<FolderButton> createState() => _FolderButtonState();
 }
 
-class _FolderMenuButtonState extends State<FolderMenuButton> {
+class _FolderButtonState extends ConsumerState<FolderButton> {
   final MenuController _menuController = MenuController();
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+    final activeFolder = widget.selectedFolder;
+
+    final currentName = activeFolder?.name ?? widget.emptyLabel;
+    final currentColor = activeFolder != null
+        ? Colors.primaries[activeFolder.colorIndex % Colors.primaries.length]
+        : Theme.of(context).colorScheme.onSurfaceVariant;
 
     return MenuAnchor(
       controller: _menuController,
@@ -34,35 +53,55 @@ class _FolderMenuButtonState extends State<FolderMenuButton> {
         elevation: WidgetStatePropertyAll(0),
       ),
       builder: (BuildContext context, MenuController controller, Widget? child) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 2.0, vertical: 2.0),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(12),
-              hoverColor: colorScheme.onSurface.withValues(alpha: 0.04),
-              highlightColor: colorScheme.onSurface.withValues(alpha: 0.08),
-              splashColor: colorScheme.onSurface.withValues(alpha: 0.12),
-              onTap: () {
-                if (controller.isOpen) {
-                  controller.close();
-                } else {
-                  controller.open();
-                }
-              },
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 8.0),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.folder_outlined,
-                      color: colorScheme.onSurfaceVariant,
-                      size: 22,
-                    ),
-                    const SizedBox(width: 8),
-                    Text("Folders", style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),),
-                  ],
+        final isOpen = controller.isOpen;
+
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              if (isOpen) {
+                controller.close();
+              } else {
+                controller.open();
+              }
+            },
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
                 ),
+                borderRadius: BorderRadius.circular(8),
+                color: isOpen
+                    ? Theme.of(context).colorScheme.surfaceContainerHighest
+                    : Colors.transparent,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: currentColor,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    currentName,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    isOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+                    size: 20,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ],
               ),
             ),
           ),
@@ -70,23 +109,31 @@ class _FolderMenuButtonState extends State<FolderMenuButton> {
       },
       menuChildren: [
         Padding(
-          padding: const EdgeInsets.only(left: 12.0),
+          padding: const EdgeInsets.only(top: 8.0),
           child: Material(
-            color: colorScheme.surface,
+            color: Theme.of(context).colorScheme.surface,
             elevation: 8,
             shadowColor: Colors.black.withValues(alpha: 0.4),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12.0),
               side: BorderSide(
-                color: colorScheme.outlineVariant.withValues(alpha: 0.4),
+                color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.4),
                 width: 1,
               ),
             ),
             clipBehavior: Clip.antiAlias,
-            child: const SizedBox(
+            child: SizedBox(
               width: 240,
               height: 500,
-              child: FolderContainer(),
+              child: FolderContainer(
+                selectedFolder: widget.selectedFolder,
+                emptyLabel: widget.emptyLabel,
+                showContextMenus: widget.showContextMenus,
+                onFolderSelected: (folder) {
+                  widget.onFolderSelected(folder);
+                  _menuController.close();
+                },
+              ),
             ),
           ),
         ),
@@ -96,7 +143,18 @@ class _FolderMenuButtonState extends State<FolderMenuButton> {
 }
 
 class FolderContainer extends ConsumerStatefulWidget {
-  const FolderContainer({super.key});
+  final Folder? selectedFolder;
+  final ValueChanged<Folder?> onFolderSelected;
+  final bool showContextMenus;
+  final String emptyLabel;
+
+  const FolderContainer({
+    super.key,
+    required this.selectedFolder,
+    required this.onFolderSelected,
+    required this.showContextMenus,
+    required this.emptyLabel,
+  });
 
   @override
   ConsumerState<FolderContainer> createState() => _FolderContainerState();
@@ -125,7 +183,6 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
     });
   }
 
-  /// Compact Helper for generating context menu items
   Widget _buildMenuItem(IconData icon, String label, {Color? color}) {
     return Row(
       children: [
@@ -137,6 +194,8 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
   }
 
   void _showFolderContextMenu(BuildContext context, Folder folder, Offset? position) async {
+    if (!widget.showContextMenus) return;
+
     final Offset tapPosition = position ?? Offset.zero;
     final RelativeRect menuPosition = RelativeRect.fromLTRB(
       tapPosition.dx, tapPosition.dy, tapPosition.dx + 1, tapPosition.dy + 1,
@@ -145,7 +204,6 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
     final isPinned = folder.pinnedAt != null;
     final errorColor = Theme.of(context).colorScheme.error;
 
-    // Compact Context Menu Configuration
     final selectedAction = await showMenu<String>(
       context: context,
       position: menuPosition,
@@ -155,9 +213,9 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
       items: [
         PopupMenuItem(
           value: 'open',
-          height: 36, // Reduced height
+          height: 36,
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: _buildMenuItem(Icons.folder_open, 'Open'),
+          child: _buildMenuItem(Icons.folder_open, 'Select'),
         ),
         PopupMenuItem(
           value: 'pin',
@@ -191,7 +249,7 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
 
     switch (action) {
       case 'open':
-        ref.read(activeFolderProvider.notifier).setFolder(folder);
+        widget.onFolderSelected(folder);
         break;
 
       case 'pin':
@@ -214,10 +272,10 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
             colorIndex: result['colorIndex'],
           );
 
-          final currentActive = ref.read(activeFolderProvider);
-          if (currentActive?.uuid == folder.uuid) {
+          // If the updated folder was the selected one, bubble the updated folder up
+          if (widget.selectedFolder?.uuid == folder.uuid) {
             final updatedFolder = (await dao.select(dao.folders).get()).firstWhere((f) => f.uuid == folder.uuid);
-            ref.read(activeFolderProvider.notifier).setFolder(updatedFolder);
+            widget.onFolderSelected(updatedFolder);
           }
         }
         break;
@@ -227,7 +285,7 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Delete Folder?'),
-            content: Text('Are you sure you want to delete "${folder.name}"?\nNotes inside will be kept in "All Notes".'),
+            content: Text('Are you sure you want to delete "${folder.name}"?\nNotes inside will be kept safely.'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
@@ -247,10 +305,8 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
 
         if (confirm == true && mounted) {
           await dao.softDeleteFolder(folder.uuid, platform: 'desktop');
-
-          final currentActive = ref.read(activeFolderProvider);
-          if (currentActive?.uuid == folder.uuid) {
-            ref.read(activeFolderProvider.notifier).clear();
+          if (widget.selectedFolder?.uuid == folder.uuid) {
+            widget.onFolderSelected(null);
           }
         }
         break;
@@ -277,7 +333,7 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
     final textTheme = Theme.of(context).textTheme;
     final colorScheme = Theme.of(context).colorScheme;
     final foldersAsync = ref.watch(activeFoldersStreamProvider);
-    final activeFolder = ref.watch(activeFolderProvider);
+    final activeFolder = widget.selectedFolder;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(12.0, 16.0, 12.0, 0.0),
@@ -287,7 +343,7 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
         children: [
           // Header Row
           Padding(
-            padding: const EdgeInsets.only(left: 8.0, bottom: 8.0),
+            padding: const EdgeInsets.only(left: 4.0, right: 4.0, bottom: 8.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -299,13 +355,14 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
                     color: colorScheme.onSurfaceVariant,
                   ),
                 ),
-                IconButton(
-                  onPressed: () => _showCreateFolderDialog(context, ref),
-                  icon: const Icon(Icons.add, size: 18),
-                  tooltip: 'New Folder',
-                  visualDensity: VisualDensity.compact,
-                  color: colorScheme.onSurfaceVariant,
-                )
+                if (widget.showContextMenus) // Only allow creation if context menus are enabled
+                  IconButton(
+                    onPressed: () => _showCreateFolderDialog(context, ref),
+                    icon: const Icon(Icons.add, size: 18),
+                    tooltip: 'New Folder',
+                    visualDensity: VisualDensity.compact,
+                    color: colorScheme.onSurfaceVariant,
+                  )
               ],
             ),
           ),
@@ -325,6 +382,7 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
                 filled: true,
                 fillColor: colorScheme.surfaceContainerLowest,
                 isDense: true,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 hintText: 'Search...',
                 suffixIcon: ValueListenableBuilder<TextEditingValue>(
                   valueListenable: _searchController,
@@ -353,7 +411,6 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
                   borderRadius: BorderRadius.circular(30),
                   borderSide: BorderSide.none,
                 ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 0),
               ),
             ),
           ),
@@ -365,7 +422,7 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (err, stack) => Center(child: Text('Error: $err')),
               data: (folders) {
-                if (folders.isEmpty) {
+                if (folders.isEmpty && _folderSearchQuery.isEmpty) {
                   return Center(
                     child: Padding(
                       padding: const EdgeInsets.only(bottom: 32.0),
@@ -379,7 +436,9 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            "No folders yet.\nPress + to create one.",
+                            widget.showContextMenus
+                                ? "No folders yet.\nPress + to create one."
+                                : "No folders available.",
                             textAlign: TextAlign.center,
                             style: textTheme.bodyMedium?.copyWith(
                               color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
@@ -392,11 +451,17 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
                   );
                 }
 
+                // Check against both "all notes" and whatever custom label was provided
+                final lowerQuery = _folderSearchQuery.toLowerCase();
+                final showEmptyOption = 'all notes'.contains(lowerQuery) ||
+                    widget.emptyLabel.toLowerCase().contains(lowerQuery) ||
+                    _folderSearchQuery.isEmpty;
+
                 final filteredFolders = folders.where((f) {
-                  return f.folder.name.toLowerCase().contains(_folderSearchQuery.toLowerCase());
+                  return f.folder.name.toLowerCase().contains(lowerQuery);
                 }).toList();
 
-                if (filteredFolders.isEmpty) {
+                if (filteredFolders.isEmpty && !showEmptyOption) {
                   return Center(
                     child: Text(
                       "No results found",
@@ -405,29 +470,66 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
                   );
                 }
 
-                return ListView.builder(
+                return ListView(
                   padding: const EdgeInsets.only(bottom: 8.0),
-                  itemCount: filteredFolders.length,
-                  itemBuilder: (context, index) {
-                    final folderWithCount = filteredFolders[index];
-                    final folderData = folderWithCount.folder;
-                    final isSelected = activeFolder?.uuid == folderData.uuid;
+                  children: [
+                    if (showEmptyOption)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 2.0),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(8),
+                            hoverColor: colorScheme.onSurface.withValues(alpha: 0.04),
+                            onTap: () => widget.onFolderSelected(null),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 150),
+                              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+                              decoration: BoxDecoration(
+                                color: activeFolder == null ? colorScheme.secondaryContainer : Colors.transparent,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                children: [
+                                  const SizedBox(
+                                    width: 32,
+                                    // child: Center(
+                                    //   child: Icon(Icons.all_inbox, size: 18),
+                                    // ),
+                                  ),
+                                  Expanded(
+                                    child: Text(
+                                      widget.emptyLabel,
+                                      style: textTheme.bodyMedium?.copyWith(
+                                        fontWeight: activeFolder == null ? FontWeight.w600 : FontWeight.w500,
+                                        color: activeFolder == null
+                                            ? colorScheme.onSecondaryContainer
+                                            : colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
 
-                    return FolderListItem(
-                      folderWithCount: folderWithCount,
-                      isSelected: isSelected,
-                      onSelect: () {
-                        if (isSelected) {
-                          ref.read(activeFolderProvider.notifier).clear();
-                        } else {
-                          ref.read(activeFolderProvider.notifier).setFolder(folderData);
-                        }
-                      },
-                      onContextMenu: (details) {
-                        _showFolderContextMenu(context, folderData, details?.globalPosition);
-                      },
-                    );
-                  },
+                    ...filteredFolders.map((folderWithCount) {
+                      final folderData = folderWithCount.folder;
+                      final isSelected = activeFolder?.uuid == folderData.uuid;
+
+                      return FolderListItem(
+                        folderWithCount: folderWithCount,
+                        isSelected: isSelected,
+                        allowPinning: widget.showContextMenus,
+                        onSelect: () => widget.onFolderSelected(folderData),
+                        onContextMenu: widget.showContextMenus ? (details) {
+                          _showFolderContextMenu(context, folderData, details?.globalPosition);
+                        } : null,
+                      );
+                    }),
+                  ],
                 );
               },
             ),
@@ -438,17 +540,18 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
   }
 }
 
-/// A dedicated widget to handle isolated hover states and pinning logic per folder item.
 class FolderListItem extends ConsumerStatefulWidget {
   final FolderWithCount folderWithCount;
   final bool isSelected;
+  final bool allowPinning;
   final VoidCallback onSelect;
-  final Function(TapUpDetails?) onContextMenu;
+  final Function(TapUpDetails?)? onContextMenu;
 
   const FolderListItem({
     super.key,
     required this.folderWithCount,
     required this.isSelected,
+    required this.allowPinning,
     required this.onSelect,
     required this.onContextMenu,
   });
@@ -480,7 +583,7 @@ class _FolderListItemState extends ConsumerState<FolderListItem> {
           highlightColor: colorScheme.onSurface.withValues(alpha: 0.08),
           splashColor: colorScheme.onSurface.withValues(alpha: 0.12),
           onTap: widget.onSelect,
-          onLongPress: () => widget.onContextMenu(null),
+          onLongPress: widget.onContextMenu != null ? () => widget.onContextMenu!(null) : null,
           onSecondaryTapUp: widget.onContextMenu,
           onHover: (hovering) {
             setState(() {
@@ -504,7 +607,7 @@ class _FolderListItemState extends ConsumerState<FolderListItem> {
                     SizedBox(
                       width: 32,
                       child: Center(
-                        child: (isPinned || _isHovering)
+                        child: (widget.allowPinning && (isPinned || _isHovering))
                             ? IconButton(
                           onPressed: () {
                             ref.read(foldersDaoProvider).toggleFolderPinStatus(folderData.uuid);
@@ -569,7 +672,6 @@ class _FolderListItemState extends ConsumerState<FolderListItem> {
   }
 }
 
-/// Unified dialog for both Creating and Updating folders.
 class FolderEditorDialog extends StatefulWidget {
   final String? initialName;
   final int? initialColorIndex;

@@ -1,23 +1,21 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
-// Core & Database
 import 'package:noteit/core/util/device_info.dart';
 import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/database/drift/notes/notes_dao.dart';
 
-// Features & Shared Widgets
-import 'package:noteit/features/folders/view/folder_selector_widget.dart';
 import '../../../../shared/find_replace.dart';
 import '../../../../shared/app_scaffold.dart';
 import '../../../../shared/note_card/core/note_action_controller.dart';
 import '../../../../shared/highlighting_text_field.dart';
 import '../../../../shared/snack_bar_manager.dart';
+import '../../../folders/view/folder_selector.dart';
 import '../../widgets/checklist_editor.dart';
 import '../../../home/core/providers.dart';
 import '../../../home/view/desktop/content_panel/core/navigator.dart';
@@ -66,6 +64,8 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
   // --- View Models & State Management ---
   late final EditNoteViewModel _viewModel;
   Note? _currentNote;
+
+  String? _selectedFolderIdForNewNote;
 
   // --- UI State Flags ---
   late bool _isLocked;
@@ -270,7 +270,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
       if (_hasCreatedNewNote) return;
       if (!isDisposing) _hasCreatedNewNote = true;
 
-      final newlySavedNote = await _viewModel.saveNote(title, content, _contentVersion);
+      final newlySavedNote = await _viewModel.saveNote(title, content, _contentVersion, folderId: _selectedFolderIdForNewNote,);
 
       if (!isDisposing && mounted && newlySavedNote != null) {
         setState(() {
@@ -370,7 +370,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
 
         return AppScaffold(
           backgroundColor: panelColor,
-          title: _buildTopMetaRow(padding: 24),
+          title: _buildTopMetaRow(),
           centerTitle: false,
           onClose: _handleCloseNote,
           actions: [
@@ -462,7 +462,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
               } else ...{
                 _buildTitleField(maxWidth: dynamicMaxWidth),
               },
-              Expanded(child: _buildContentField(padding: 40.0)),
+              Expanded(child: _buildContentField(padding: 24.0)),
             ],
           ),
         );
@@ -470,12 +470,45 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
     );
   }
 
-  Widget _buildTopMetaRow({required double padding}) {
+  Widget _buildTopMetaRow() {
+    final foldersAsync = ref.watch(activeFoldersStreamProvider);
+
+    Folder? currentFolder;
+    if (_currentNote?.folderId != null && foldersAsync.hasValue) {
+      final match = foldersAsync.value!.where(
+              (f) => f.folder.uuid == _currentNote!.folderId
+      ).firstOrNull;
+      currentFolder = match?.folder;
+    }
+
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: padding),
+      padding: EdgeInsets.zero,
       child: Row(
         children: [
-          FolderSelectorWidget(), // Placeholder for your custom dropdown widget
+          FolderButton(
+            selectedFolder: currentFolder,
+            emptyLabel: 'No Folder',
+            showContextMenus: false,
+            onFolderSelected: (folder) async {
+              final newFolderId = folder?.uuid; // If they pick "All Notes", this becomes null
+
+              if (_currentNote?.folderId == newFolderId) return;
+
+              if (!_isNewNote && _currentNote != null) {
+                await ref.read(notesDaoProvider).updateNoteFolder(_currentNote!.uuid, newFolderId);
+              }
+
+              setState(() {
+                if (_currentNote != null) {
+                  // Update existing note UI
+                  _currentNote = _currentNote!.copyWith(folderId: drift.Value(newFolderId));
+                } else {
+                  // TRACK THE FOLDER FOR THE NEW NOTE
+                  _selectedFolderIdForNewNote = newFolderId;
+                }
+              });
+            },
+          ),
           const SizedBox(width: 16),
           Text(
             "Edited ${_getFormattedDate()}",
@@ -573,6 +606,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
                         decoration: InputDecoration(
                           isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
                           hintText: "Title",
                           // Optimization: Only rebuild suffix icon when focus changes
                           suffixIcon: ListenableBuilder(

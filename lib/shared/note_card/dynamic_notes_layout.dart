@@ -6,6 +6,7 @@ import 'package:noteit/core/util/device_info.dart';
 import '../../../core/util/platform_helper.dart';
 import '../../../../database/drift/local_database.dart';
 import '../../../../../database/sync/sync_orchestrator.dart';
+import '../../features/folders/core/providers.dart';
 import 'core/note_action_controller.dart';
 import 'note_card.dart';
 import '../../../features/home/core/providers.dart';
@@ -35,6 +36,9 @@ class DynamicNotesLayout extends ConsumerWidget {
     final notesState = ref.watch(filteredNotesProvider);
     final viewType = ref.watch(noteViewTypeProvider);
 
+    // WATCH THE ACTIVE FOLDER
+    final activeFolder = ref.watch(activeFolderProvider);
+
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
@@ -45,37 +49,7 @@ class DynamicNotesLayout extends ConsumerWidget {
         error: (error, stack) => Center(child: Text('Error: $error')),
         data: (notes) {
           if (notes.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.note_alt_outlined,
-                      size: 64,
-                      color: colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      "No notes found",
-                      style: textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      "Create your first note to get started.",
-                      textAlign: TextAlign.center,
-                      style: textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
+            return _emptyNotePlaceholder(colorScheme, textTheme, activeFolder: activeFolder);
           }
 
           return RefreshIndicator(
@@ -109,13 +83,6 @@ class DynamicNotesLayout extends ConsumerWidget {
             onNoteTap(currentNote);
           }
         },
-        // onTap: () {
-        //   if (isSelectMode) {
-        //     onToggleSelection(currentNote.uuid);
-        //   } else {
-        //     onNoteTap(currentNote);
-        //   }
-        // },
         onLongPress: () {
           if (!isSelectMode) {
             onEnableSelectMode();
@@ -124,23 +91,17 @@ class DynamicNotesLayout extends ConsumerWidget {
         },
 
         onContextMenuAction: (option) {
-          //  INTERCEPT THE 'SELECT' UI ACTION
           if (option == NoteContextMenuOption.select) {
             if (!isSelectMode) onEnableSelectMode();
-
-            // Only toggle it if it isn't already selected
             if (!isCurrentlySelected) {
               onToggleSelection(currentNote.uuid);
             }
-            return; // Stop here, don't send to DB controller
+            return;
           }
 
-          // ROUTE TO DATABASE CONTROLLER
-          // SCENARIO B: Already selected, apply to whole batch
           if (isCurrentlySelected) {
             _handleBatchAction(ref, option, noteIds.toList());
           }
-          // SCENARIO A: Not selected, apply to this note only
           else {
             _handleBatchAction(ref, option, [currentNote.uuid]);
           }
@@ -148,12 +109,9 @@ class DynamicNotesLayout extends ConsumerWidget {
       );
     }
 
-
-    // Shared Settings
     const physics = AlwaysScrollableScrollPhysics();
-    const padding = EdgeInsets.only(bottom: 100); // Unified bottom clearance
+    const padding = EdgeInsets.only(bottom: 100);
 
-    // Adaptive Return
     if (viewType == NoteViewType.list || viewType == NoteViewType.detailedList) {
       return ListView.builder(
         physics: physics,
@@ -172,75 +130,51 @@ class DynamicNotesLayout extends ConsumerWidget {
     );
   }
 
-
   void _handleBatchAction(WidgetRef ref, NoteContextMenuOption option, List<String> targetUuids) async {
-    // Immediately clear the UI selection for a snappy, instant user experience
     ref.read(homeViewModelProvider.notifier).clearSelection();
-
-    // Read the action controller
     final actionsController = ref.read(noteActionsControllerProvider);
-
-    // Fetch device info for sync metadata
     final deviceInfo = await ref.read(deviceInfoProvider.future);
-    // Note: If extractPlatform is a method and not a getter, change this to extractPlatform()
     final String platform = deviceInfo.extractPlatform;
 
-    // Route to the correct database action
     switch (option) {
       case NoteContextMenuOption.select:
-      // Unreachable: Handled upstream in the itemBuilder
         throw AssertionError('Select action should be intercepted before reaching here.');
-
       case NoteContextMenuOption.delete:
         await actionsController.deleteNotes(targetUuids, platform);
         break;
-
       case NoteContextMenuOption.pin:
         await actionsController.pinNotes(targetUuids);
         break;
-
       case NoteContextMenuOption.unpin:
         await actionsController.unpinNotes(targetUuids);
         break;
-
       case NoteContextMenuOption.archive:
         await actionsController.archiveNotes(targetUuids);
         break;
-
       case NoteContextMenuOption.lock:
         await actionsController.lockNotes(targetUuids);
         break;
-
       case NoteContextMenuOption.duplicate:
         await actionsController.duplicateNotes(targetUuids, platform);
         break;
-
       case NoteContextMenuOption.moveTo:
-      // Todo: Open a dialog to select a folder, then call actionsController.moveNotes(targetUuids, newFolderId)
         break;
-
       case NoteContextMenuOption.reminder:
-      // Todo: Open a date/time picker
         break;
-
       case NoteContextMenuOption.openNewWindow:
-      // Todo: Send to window_manager API
         break;
       case NoteContextMenuOption.unarchive:
         await actionsController.unarchiveNotes(targetUuids);
         break;
-
       case NoteContextMenuOption.restore:
         await actionsController.restoreNotes(targetUuids);
         break;
-
       case NoteContextMenuOption.deleteForever:
         await actionsController.deleteForever(targetUuids);
         break;
     }
   }
 
-  // Clean Delegate Extraction
   SliverGridDelegate _getGridDelegate(NoteViewType viewType) {
     final isMobile = PlatformHelper.isMobileScreen;
 
@@ -256,7 +190,6 @@ class DynamicNotesLayout extends ConsumerWidget {
       );
     }
 
-    // largeGrid fallback
     return isMobile
         ? const SliverGridDelegateWithFixedCrossAxisCount(
       crossAxisCount: 1,
@@ -265,6 +198,100 @@ class DynamicNotesLayout extends ConsumerWidget {
         : const SliverGridDelegateWithMaxCrossAxisExtent(
       maxCrossAxisExtent: 400,
       mainAxisExtent: 200,
+    );
+  }
+
+  // Empty note placeholder
+  Widget _emptyNotePlaceholder(ColorScheme colorScheme, TextTheme textTheme, {Folder? activeFolder}) {
+    final isFolderSelected = activeFolder != null;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              isFolderSelected ? Icons.folder_open_outlined : Icons.note_alt_outlined,
+              size: 64,
+              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+            ),
+            const SizedBox(height: 16),
+
+            if (isFolderSelected)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    "No notes in ",
+                    style: textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w500,
+                      color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  // The "Icon-like" Container for the folder
+                  Flexible(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                        border: Border.all(
+                          color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: Colors.primaries[activeFolder.colorIndex % Colors.primaries.length],
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              activeFolder.name,
+                              style: textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: colorScheme.onSurface,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            else
+              Text(
+                "No notes found",
+                style: textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                ),
+              ),
+
+            const SizedBox(height: 12),
+
+            Text(
+              isFolderSelected
+                  ? "Press + to add a note to this folder."
+                  : "Create your first note to get started.",
+              textAlign: TextAlign.center,
+              style: textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

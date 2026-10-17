@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/database/drift/local_database.dart';
-import 'package:noteit/features/folders/view/folders.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
+
 
 class LeftDrawer extends ConsumerWidget {
   final bool isExpanded;
@@ -128,12 +128,12 @@ class LeftDrawer extends ConsumerWidget {
         const SizedBox(height: 16),
 
         // Responsive Folder Area
-        if (isExpanded)
-          const Expanded(
-            child: FolderContainer(),
-          )
-        else
-          const FolderMenuButton(),
+        // if (isExpanded)
+        //   const Expanded(
+        //     child: FolderButton(),
+        //   )
+        // else
+        //   const FolderMenuButton(),
 
         // Replaced Spacer with a fixed sized box since Expanded takes the rest
         if (!isExpanded) const Spacer(),
