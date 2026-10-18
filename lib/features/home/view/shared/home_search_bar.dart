@@ -44,50 +44,61 @@ class HomeSearchBar extends ConsumerWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final effectiveBorderRadius = borderRadius ?? BorderRadius.circular(30);
 
-    final isFocused = focusNode?.hasFocus ?? false;
+    // Wrap in AnimatedBuilder to actively listen to the TextField's focusNode
+    return AnimatedBuilder(
+      animation: focusNode ?? FocusNode(),
+      builder: (context, child) {
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 100),
-      decoration: BoxDecoration(
-        borderRadius: effectiveBorderRadius,
-        border: Border.all(
-          // Show accent focus border when keyboard navigation is active
-          color: (isFocused && isKeyboardDriven) ? colorScheme.primary : Colors.transparent,
-          width: 2,
-        ),
-      ),
+        // =Check BOTH the text field's focus and the parent wrapper's focus
+        final isFocused = (focusNode?.hasFocus ?? false) || Focus.of(context).hasFocus;
+
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 100),
+          decoration: BoxDecoration(
+            borderRadius: effectiveBorderRadius,
+            border: Border.all(
+              color: (isFocused && isKeyboardDriven) ? colorScheme.primary : Colors.transparent,
+              width: (isFocused && isKeyboardDriven) ?2:0, // Keeps layout completely stable!
+            ),
+          ),
+          // We pass the TextField as 'child' so it doesn't rebuild unnecessarily
+          child: child,
+        );
+      },
+      // Put your TextField in the 'child' parameter
       child: TextField(
         controller: controller,
         focusNode: focusNode,
-
         decoration: InputDecoration(
           filled: true,
           fillColor: Theme.of(context).colorScheme.surfaceContainerLowest,
           isDense: true,
           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           hintText: hintText,
-
           suffixIcon: ValueListenableBuilder<TextEditingValue>(
             valueListenable: controller,
             builder: (context, value, child) {
               return value.text.isNotEmpty
                   ? ExcludeFocus(
-                      child: IconButton(icon: const Icon(Icons.clear, size: 20), onPressed: () => _clearSearch(ref)),
-                    )
+                child: IconButton(
+                  icon: const Icon(Icons.clear, size: 20),
+                  onPressed: () => _clearSearch(ref),
+                ),
+              )
                   : const SizedBox.shrink();
             },
           ),
           prefixIcon: const Icon(Icons.search, size: 18),
-          hintStyle: Theme.of(
-            context,
-          ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-
+          hintStyle: Theme.of(context)
+              .textTheme
+              .bodyMedium
+              ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
           prefixIconConstraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-          border: OutlineInputBorder(borderRadius: effectiveBorderRadius, borderSide: BorderSide.none),
 
+          // Disable internal borders so our AnimatedContainer handles it
+          border: OutlineInputBorder(borderRadius: effectiveBorderRadius, borderSide: BorderSide.none),
           focusedBorder: OutlineInputBorder(borderRadius: effectiveBorderRadius, borderSide: BorderSide.none),
         ),
-
         onTap: () {
           if (onKeyboardModeChanged != null) {
             onKeyboardModeChanged!(false);

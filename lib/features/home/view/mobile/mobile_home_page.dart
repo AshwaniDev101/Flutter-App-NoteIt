@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -5,13 +6,18 @@ import 'package:noteit/core/routing/routing.dart';
 import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/features/home/view/shared/icon_tray/icon_tray.dart';
 import 'package:noteit/features/home/view/shared/select_mode_app_bars.dart';
-import 'package:noteit/features/home/view/shared/sort_view_menu.dart';
 import 'package:noteit/features/home/viewmodel/viewmodel.dart';
 import 'package:noteit/shared/note_card/dynamic_notes_layout.dart';
 
 import '../../../../database/sync/sync_orchestrator.dart';
+import '../../../../shared/sort_menu_button.dart';
+import '../../../../shared/view_menu_button.dart';
 import '../../../drawer/mobile_app_drawer.dart';
+import '../../../folders/core/providers.dart';
+import '../../../folders/view/folder_selector.dart';
+import '../../core/db_sorting_filtering.dart';
 import '../../core/note_tap_handler.dart';
+import '../../core/providers.dart';
 import '../shared/home_search_bar.dart';
 
 class MobileHomePage extends ConsumerStatefulWidget {
@@ -52,6 +58,9 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
     // Watched solely to keep the sync manager alive in the widget tree.
     ref.watch(syncOrchestratorProvider);
 
+    final currentSort = ref.watch(noteSortPreferenceProvider);
+    final currentView = ref.watch(noteViewTypeProvider);
+
     return PopScope(
       canPop: !homeState.isSelectMode,
       onPopInvokedWithResult: (bool didPop, Object? result) {
@@ -80,7 +89,7 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
                   ),
                   const SizedBox(width: 8),
 
-                  const SortViewButton(),
+                  // const SortViewButton(),
 
                   // SortFilterOptionMenu(),
                   // _buildFilterMenu(
@@ -88,6 +97,66 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
                   //   currentPlatformFilter,
                   //   colorScheme,
                   // ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4), // This is to compensate for the card 4px padding
+              child: Row(
+                children: [
+                  FolderButton(
+                    selectedFolder: ref.watch(activeFolderProvider),
+                    emptyLabel: 'All Notes',
+                    showContextMenus: true,
+                    onFolderSelected: (folder) {
+                      if (folder == null) {
+                        ref.read(activeFolderProvider.notifier).clear();
+                      } else {
+                        ref.read(activeFolderProvider.notifier).setFolder(folder);
+                      }
+                    },
+                  ),
+                  Spacer(),
+
+                  // IconButton(onPressed: (){}, icon: Icon(CupertinoIcons.sort_down)),
+                  // IconButton(onPressed: (){}, icon: Icon(Icons.grid_view)),
+                  SortMenuButton(
+
+                    icon: Icon(CupertinoIcons.sort_down,color: Theme.of(context).colorScheme.primary),
+                    currentSelection: _getCurrentSortAction(currentSort),
+                    onSelected: (HomeMenuAction action) {
+                      // Route the UI action to the correct Riverpod provider
+                      switch (action) {
+                        case HomeMenuAction.sortCreated:
+                          ref.read(noteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.createdAt);
+                          break;
+                        case HomeMenuAction.sortName:
+                          ref.read(noteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.name);
+                          break;
+                        case HomeMenuAction.sortUpdated:
+                          ref.read(noteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.updatedAt);
+                          break;
+                        case HomeMenuAction.filterPhone:
+                          ref.read(platformFilterProvider.notifier).toggleFilter(FilterPlatformOptions.android);
+                          break;
+                        case HomeMenuAction.filterWindows:
+                          ref.read(platformFilterProvider.notifier).toggleFilter(FilterPlatformOptions.windows);
+                          break;
+                      }
+                    },
+                  ),
+
+                  ViewMenuButton(
+                    icon: Icon(Icons.grid_view,color: Theme.of(context).colorScheme.primary),
+                    currentView: currentView,
+                    onViewSelected: (NoteViewType selectedView) {
+                      ref.read(noteViewTypeProvider.notifier).updateView(selectedView);
+                    },
+                  ),
+
+                  // IconButton(onPressed: (){}, icon: HugeIcon(
+                  //   icon: HugeIcons.strokeRoundedHome01,
+                  // ))
                 ],
               ),
             ),
@@ -133,5 +202,17 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
         SizedBox(width: 8),
       ],
     );
+  }
+
+  // Helper method to map your internal NoteSortPreference back to the UI Enum (HomeMenuAction)
+  HomeMenuAction _getCurrentSortAction(NoteSortPreference currentSort) {
+    switch (currentSort) {
+      case NoteSortPreference.createdAt:
+        return HomeMenuAction.sortCreated;
+      case NoteSortPreference.name:
+        return HomeMenuAction.sortName;
+      case NoteSortPreference.updatedAt:
+        return HomeMenuAction.sortUpdated;
+    }
   }
 }

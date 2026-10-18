@@ -9,9 +9,9 @@ import 'package:noteit/shared/note_card/widgets/lock_overlay.dart';
 import '../../../core/helpers/time_helper.dart';
 import '../../../database/drift/local_database.dart';
 import '../../../features/home/core/providers.dart';
-import '../../features/home/view/shared/sort_view_menu.dart';
 import '../../../features/lock/lock_manger/lock_manager.dart';
 import '../highlighted_text.dart';
+import '../view_menu_button.dart';
 
 enum NoteContextMenuOption {
   // Common
@@ -168,6 +168,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
   /// Used for Grids and Detailed Lists
   Widget _buildCardWrapper({required Widget child}) {
     return Card(
+      // margin: EdgeInsets.zero,
       margin: const EdgeInsets.all(4.0),
       elevation: widget.isSelected ? 1 : (_isFocused ? 4 : 0),
       clipBehavior: Clip.antiAlias,

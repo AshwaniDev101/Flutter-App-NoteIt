@@ -7,11 +7,11 @@ import '../../../core/util/platform_helper.dart';
 import '../../../../database/drift/local_database.dart';
 import '../../../../../database/sync/sync_orchestrator.dart';
 import '../../features/folders/core/providers.dart';
+import '../view_menu_button.dart';
 import 'core/note_action_controller.dart';
 import 'note_card.dart';
 import '../../../features/home/core/providers.dart';
 import '../../../features/home/viewmodel/viewmodel.dart';
-import '../../features/home/view/shared/sort_view_menu.dart';
 
 class DynamicNotesLayout extends ConsumerWidget {
   final bool isSelectMode;
@@ -42,22 +42,19 @@ class DynamicNotesLayout extends ConsumerWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4.0),
-      child: notesState.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(child: Text('Error: $error')),
-        data: (notes) {
-          if (notes.isEmpty) {
-            return _emptyNotePlaceholder(colorScheme, textTheme, activeFolder: activeFolder);
-          }
+    return notesState.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) => Center(child: Text('Error: $error')),
+      data: (notes) {
+        if (notes.isEmpty) {
+          return _emptyNotePlaceholder(colorScheme, textTheme, activeFolder: activeFolder);
+        }
 
-          return RefreshIndicator(
-            onRefresh: () async => ref.read(syncOrchestratorProvider).triggerSync(),
-            child: _buildAdaptiveLayout(notes, viewType, ref),
-          );
-        },
-      ),
+        return RefreshIndicator(
+          onRefresh: () async => ref.read(syncOrchestratorProvider).triggerSync(),
+          child: _buildAdaptiveLayout(notes, viewType, ref),
+        );
+      },
     );
   }
 
@@ -110,7 +107,7 @@ class DynamicNotesLayout extends ConsumerWidget {
     }
 
     const physics = AlwaysScrollableScrollPhysics();
-    const padding = EdgeInsets.only(bottom: 100);
+    const padding = EdgeInsets.only(bottom: 0);
 
     if (viewType == NoteViewType.list || viewType == NoteViewType.detailedList) {
       return ListView.builder(
@@ -230,7 +227,7 @@ class DynamicNotesLayout extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(width: 4),
-                  // The "Icon-like" Container for the folder
+                  // The "Folder selector like" Container for the folder
                   Flexible(
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),

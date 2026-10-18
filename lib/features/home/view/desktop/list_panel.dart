@@ -1,18 +1,23 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/util/platform_helper.dart';
 import 'package:noteit/database/drift/local_database.dart';
+
 import 'package:window_manager/window_manager.dart';
 
 import '../../../../database/drift/keybindings/keybindings_dao.dart';
+import '../../../../shared/sort_menu_button.dart';
+import '../../../../shared/view_menu_button.dart';
 import '../../../drawer/desktop_drawer_button.dart';
 import '../../../folders/core/providers.dart';
 import '../../../folders/view/folder_selector.dart';
 import '../../../keybinding/smart_action_widget.dart';
+import '../../core/db_sorting_filtering.dart';
+import '../../core/providers.dart';
 import '../../viewmodel/viewmodel.dart';
 import '../shared/select_mode_app_bars.dart';
-import '../shared/sort_view_menu.dart';
 import '../../../../shared/note_card/dynamic_notes_layout.dart';
 import '../shared/home_search_bar.dart';
 
@@ -49,6 +54,9 @@ class DesktopListPanel extends ConsumerWidget {
     final homeState = ref.watch(homeViewModelProvider);
     final colorScheme = Theme.of(context).colorScheme;
 
+    final currentSort = ref.watch(noteSortPreferenceProvider);
+    final currentView = ref.watch(noteViewTypeProvider);
+
     // final versionString = "v${AppEnv.version}-${AppEnv.buildNumber}";
 
     return Scaffold(
@@ -79,7 +87,7 @@ class DesktopListPanel extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: (isFocused && isKeyboardDriven) ? colorScheme.primary : Colors.transparent,
-                    width: 2,
+                    width: (isFocused && isKeyboardDriven) ? 0 : 2,
                   ),
                 ),
                 child: SmartActionWidget(
@@ -105,18 +113,7 @@ class DesktopListPanel extends ConsumerWidget {
                 backgroundColor: Colors.transparent,
                 // Ensures clicks pass through to the drag area
 
-          title: FolderButton(
-            selectedFolder: ref.watch(activeFolderProvider),
-            emptyLabel: 'All Notes',
-            showContextMenus: true,
-            onFolderSelected: (folder) {
-              if (folder == null) {
-                ref.read(activeFolderProvider.notifier).clear();
-              } else {
-                ref.read(activeFolderProvider.notifier).setFolder(folder);
-              }
-            },
-          ),
+                // title:
                 leading: const DrawerMenuButton(),
                 // title: Text(
                 //   'Note-It',
@@ -137,37 +134,30 @@ class DesktopListPanel extends ConsumerWidget {
 
       // Body holding the search bar and the actual note list
       body: Padding(
-        padding: const EdgeInsets.only(left: 8, right: 8, bottom: 8),
+        padding: const EdgeInsets.only(left: 16, bottom: 16),// 8px from left+right side of the grid,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Search & Filter Row
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: FocusTraversalOrder(
-                      order: const NumericFocusOrder(1),
-                      child: Focus(
-                        canRequestFocus: true,
-                        onKeyEvent: (node, event) {
-                          if (event is KeyDownEvent) {
-                            if (event.logicalKey == LogicalKeyboardKey.enter) {
-                              searchFocusNode.requestFocus();
-                              return KeyEventResult.handled;
-                            }
-                            if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-                              node.nextFocus();
-                              return KeyEventResult.handled;
-                            }
-                            if (event.logicalKey == LogicalKeyboardKey.escape) {
-                              node.requestFocus();
-                              return KeyEventResult.handled;
-                            }
+            // Search
+            Row(
+              children: [
+                Expanded(
+                  child: FocusTraversalOrder(
+                    order: const NumericFocusOrder(1),
+                    child: Focus(
+                      canRequestFocus: true,
+                      onKeyEvent: (node, event) {
+                        if (event is KeyDownEvent) {
+                          if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                            node.nextFocus(); // Still lets you press down arrow to go to notes
+                            return KeyEventResult.handled;
                           }
-                          return KeyEventResult.ignored;
-                        },
+                        }
+                        return KeyEventResult.ignored;
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        // This is to compensate for the card 4px padding
                         child: HomeSearchBar(
                           controller: searchController,
                           focusNode: searchFocusNode,
@@ -179,13 +169,76 @@ class DesktopListPanel extends ConsumerWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  const SortViewButton(),
+                ),
+              ],
+            ),
+
+
+            // Folder Selector & Filter Row
+            SizedBox(height: 8,),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4), // This is to compensate for the card 4px padding
+              child: Row(
+                children: [
+                  FolderButton(
+                    selectedFolder: ref.watch(activeFolderProvider),
+                    emptyLabel: 'All Notes',
+                    showContextMenus: true,
+                    onFolderSelected: (folder) {
+                      if (folder == null) {
+                        ref.read(activeFolderProvider.notifier).clear();
+                      } else {
+                        ref.read(activeFolderProvider.notifier).setFolder(folder);
+                      }
+                    },
+                  ),
+                  Spacer(),
+
+                  // IconButton(onPressed: (){}, icon: Icon(CupertinoIcons.sort_down)),
+                  // IconButton(onPressed: (){}, icon: Icon(Icons.grid_view)),
+                  SortMenuButton(
+
+                    icon: Icon(CupertinoIcons.sort_down,color: Theme.of(context).colorScheme.primary),
+                    currentSelection: _getCurrentSortAction(currentSort),
+                    onSelected: (HomeMenuAction action) {
+                      // Route the UI action to the correct Riverpod provider
+                      switch (action) {
+                        case HomeMenuAction.sortCreated:
+                          ref.read(noteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.createdAt);
+                          break;
+                        case HomeMenuAction.sortName:
+                          ref.read(noteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.name);
+                          break;
+                        case HomeMenuAction.sortUpdated:
+                          ref.read(noteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.updatedAt);
+                          break;
+                        case HomeMenuAction.filterPhone:
+                          ref.read(platformFilterProvider.notifier).toggleFilter(FilterPlatformOptions.android);
+                          break;
+                        case HomeMenuAction.filterWindows:
+                          ref.read(platformFilterProvider.notifier).toggleFilter(FilterPlatformOptions.windows);
+                          break;
+                      }
+                    },
+                  ),
+
+                  ViewMenuButton(
+                    icon: Icon(Icons.grid_view,color: Theme.of(context).colorScheme.primary),
+                    currentView: currentView,
+                    onViewSelected: (NoteViewType selectedView) {
+                      ref.read(noteViewTypeProvider.notifier).updateView(selectedView);
+                    },
+                  ),
+
+                  // IconButton(onPressed: (){}, icon: HugeIcon(
+                  //   icon: HugeIcons.strokeRoundedHome01,
+                  // ))
                 ],
               ),
             ),
 
-
+            // Notes Layout
+            SizedBox(height: 4,), // Notes have 4x already on top
             Expanded(
               child: FocusTraversalOrder(
                 order: const NumericFocusOrder(2),
@@ -203,5 +256,17 @@ class DesktopListPanel extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  // Helper method to map your internal NoteSortPreference back to the UI Enum (HomeMenuAction)
+  HomeMenuAction _getCurrentSortAction(NoteSortPreference currentSort) {
+    switch (currentSort) {
+      case NoteSortPreference.createdAt:
+        return HomeMenuAction.sortCreated;
+      case NoteSortPreference.name:
+        return HomeMenuAction.sortName;
+      case NoteSortPreference.updatedAt:
+        return HomeMenuAction.sortUpdated;
+    }
   }
 }
