@@ -163,7 +163,6 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
   // DATA PARSING & SYNC LOGIC
   // ===========================================================================
 
-  /// Converts JSON (or plain text) into a List of Checklist Items.
   List<CheckListItemModel> _convertTextToChecklist(String text) {
     if (text.trim().isEmpty) return [];
 
@@ -191,12 +190,10 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
     }
   }
 
-  /// Converts a Checklist back into plain text, stripping check status.
   String _convertChecklistToText(List<CheckListItemModel> items) {
     return items.map((e) => e.text).join('\n');
   }
 
-  /// Extracts the first line of content and automatically assigns it to the title.
   void _syncTitleFromContent() {
     if (_contentVersion == ContentVersion.checklist) return;
     if (!_isAutoSyncingTitle) return;
@@ -218,7 +215,6 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
     }
   }
 
-  /// Detects if the user manually typed in the title field, disabling auto-sync.
   void _onTitleChanged() {
     if (_titleController.text.isEmpty && _highlightedContentController.text.isEmpty) {
       _isAutoSyncingTitle = true;
@@ -238,7 +234,6 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
   // SAVING & DATABASE LOGIC
   // ===========================================================================
 
-  /// Triggers a delayed auto-save when typing occurs.
   void _scheduleAutoSave() {
     if (_isSaved.value) {
       _isSaved.value = false; // localized update, no setState needed
@@ -252,7 +247,6 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
     });
   }
 
-  /// Executes database insertion or update based on current state.
   Future<void> _executeSave({
     bool isManualSave = false,
     bool isDisposing = false,
@@ -270,7 +264,12 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
       if (_hasCreatedNewNote) return;
       if (!isDisposing) _hasCreatedNewNote = true;
 
-      final newlySavedNote = await _viewModel.saveNote(title, content, _contentVersion, folderId: _selectedFolderIdForNewNote,);
+      final newlySavedNote = await _viewModel.saveNote(
+        title,
+        content,
+        _contentVersion,
+        folderId: _selectedFolderIdForNewNote,
+      );
 
       if (!isDisposing && mounted && newlySavedNote != null) {
         setState(() {
@@ -298,7 +297,6 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
     }
   }
 
-  /// Handles locking and unlocking of notes via the master password.
   Future<void> _handleLockToggle() async {
     bool isCurrentlyLocked = _isLocked;
     final lockManager = ref.read(lockManagerProvider.notifier);
@@ -366,7 +364,18 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final dynamicMaxWidth = constraints.maxWidth * 0.50;
+
+        // Optimal reading width
+        const double maxTextWidth = 850.0;
+
+        // Lock the left margin
+        const double leftPadding = 48.0;
+
+        // The right margin absorbs the extra screen width so text doesn't stretch forever.
+        // It maintains a minimum right padding of 48.0 on smaller screens.
+        final double rightPadding = constraints.maxWidth > (maxTextWidth + leftPadding + 48.0)
+            ? constraints.maxWidth - maxTextWidth - leftPadding
+            : 48.0;
 
         return AppScaffold(
           backgroundColor: panelColor,
@@ -376,7 +385,6 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
           actions: [
             _buildUndoRedoButtons(),
             const SizedBox(width: 8),
-
             if (!_isNewNote)
               NoteEditorOptionButton(
                 isLocked: _isLocked,
@@ -447,8 +455,9 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
               ),
           ],
           body: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (_isFind) ...{
+              if (_isFind)
                 FindReplaceWidget(
                   contentController: _highlightedContentController,
                   contentFocusNode: _contentFocusNode,
@@ -457,12 +466,11 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
                       _isFind = false;
                     });
                   },
-                  padding: 0,
+                  padding: leftPadding,
                 ),
-              } else ...{
-                _buildTitleField(maxWidth: dynamicMaxWidth),
-              },
-              Expanded(child: _buildContentField(padding: 24.0)),
+
+              _buildTitleField(leftPadding: leftPadding, rightPadding: rightPadding),
+              Expanded(child: _buildContentField(leftPadding: leftPadding, rightPadding: rightPadding)),
             ],
           ),
         );
@@ -470,54 +478,108 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
     );
   }
 
+  // ===========================================================================
+  // Top Meta Row
+  // ===========================================================================
+
   Widget _buildTopMetaRow() {
     final foldersAsync = ref.watch(activeFoldersStreamProvider);
 
     Folder? currentFolder;
     if (_currentNote?.folderId != null && foldersAsync.hasValue) {
-      final match = foldersAsync.value!.where(
-              (f) => f.folder.uuid == _currentNote!.folderId
-      ).firstOrNull;
+      final match = foldersAsync.value!.where((f) => f.folder.uuid == _currentNote!.folderId).firstOrNull;
       currentFolder = match?.folder;
     }
 
-    return Padding(
-      padding: EdgeInsets.zero,
-      child: Row(
-        children: [
-          FolderButton(
-            selectedFolder: currentFolder,
-            emptyLabel: 'No Folder',
-            showContextMenus: false,
-            onFolderSelected: (folder) async {
-              final newFolderId = folder?.uuid; // If they pick "All Notes", this becomes null
+    return Row(
+      children: [
+        const SizedBox(width: 8),
+        FolderButton(
+          selectedFolder: currentFolder,
+          emptyLabel: 'none',
+          showContextMenus: false,
+          onFolderSelected: (folder) async {
+            final newFolderId = folder?.uuid;
 
-              if (_currentNote?.folderId == newFolderId) return;
+            if (_currentNote?.folderId == newFolderId) return;
 
-              if (!_isNewNote && _currentNote != null) {
-                await ref.read(notesDaoProvider).updateNoteFolder(_currentNote!.uuid, newFolderId);
+            if (!_isNewNote && _currentNote != null) {
+              await ref.read(notesDaoProvider).updateNoteFolder(_currentNote!.uuid, newFolderId);
+            }
+
+            setState(() {
+              if (_currentNote != null) {
+                _currentNote = _currentNote!.copyWith(folderId: drift.Value(newFolderId));
+              } else {
+                _selectedFolderIdForNewNote = newFolderId;
               }
-
-              setState(() {
-                if (_currentNote != null) {
-                  // Update existing note UI
-                  _currentNote = _currentNote!.copyWith(folderId: drift.Value(newFolderId));
-                } else {
-                  // TRACK THE FOLDER FOR THE NEW NOTE
-                  _selectedFolderIdForNewNote = newFolderId;
-                }
-              });
-            },
+            });
+          },
+        ),
+        const SizedBox(width: 16),
+        Text(
+          "Edited ${_getFormattedDate()}",
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
-          const SizedBox(width: 16),
-          Text(
-            "Edited ${_getFormattedDate()}",
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-          ),
-          const SizedBox(width: 16),
-          _buildNewLabel()
-        ],
-      ),
+        ),
+        const SizedBox(width: 16),
+        ValueListenableBuilder<bool>(
+          valueListenable: _isSaved,
+          builder: (context, isSaved, child) {
+            return isSaved
+                ? Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.done_all, size: 16, color: Theme.of(context).colorScheme.outline),
+                  const SizedBox(width: 4),
+                  Text(
+                    "Saved",
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.outline,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+              ),
+            )
+                : Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(4),
+                onTap: () {
+                  _executeSave(isManualSave: true);
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.done,
+                        size: 16,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        "Save",
+                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+        const SizedBox(width: 16),
+        _buildNewLabel(),
+      ],
     );
   }
 
@@ -572,182 +634,109 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
     );
   }
 
-  Widget _buildTitleField({required double maxWidth}) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Flexible(
-              child: IntrinsicWidth(
-                child: Container(
-                  height: 40,
-                  constraints: BoxConstraints(
-                    minWidth: 80,
-                    maxWidth: maxWidth,
-                  ),
-                  child: FocusTraversalOrder(
-                    order: const NumericFocusOrder(4),
-                    child: Focus(
-                      onKeyEvent: (node, event) {
-                        if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
-                          node.unfocus();
-                          return KeyEventResult.handled;
-                        }
-                        return KeyEventResult.ignored;
-                      },
-                      child: TextField(
-                        controller: _titleController,
-                        focusNode: _titleFocusNode,
-                        autofocus: _isNewNote,
-                        textAlignVertical: TextAlignVertical.center,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
-                        decoration: InputDecoration(
-                          isDense: true,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
-                          hintText: "Title",
-                          // Optimization: Only rebuild suffix icon when focus changes
-                          suffixIcon: ListenableBuilder(
-                            listenable: _titleFocusNode,
-                            builder: (context, child) {
-                              if (!_titleFocusNode.hasFocus) return const SizedBox.shrink();
+  // ===========================================================================
+  // Title & Content Fields
+  // ===========================================================================
 
-                              return ValueListenableBuilder<TextEditingValue>(
-                                valueListenable: _titleController,
-                                builder: (context, value, child) {
-                                  if (value.text.isEmpty) {
-                                    return const SizedBox.shrink();
-                                  }
-                                  return IconButton(
-                                    icon: const Icon(Icons.close, size: 16),
-                                    onPressed: () {
-                                      _titleController.clear();
-                                      _isAutoSyncingTitle = true;
-                                    },
-                                  );
-                                },
-                              );
-                            },
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide.none,
-                          ),
-                        ),
+  Widget _buildTitleField({required double leftPadding, required double rightPadding}) {
+    return FocusTraversalOrder(
+      order: const NumericFocusOrder(4),
+      child: Focus(
+        onKeyEvent: (node, event) {
+          if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
+            node.unfocus();
+            return KeyEventResult.handled;
+          }
+          return KeyEventResult.ignored;
+        },
+        child: TextField(
+          controller: _titleController,
+          focusNode: _titleFocusNode,
+          autofocus: _isNewNote,
+          textAlignVertical: TextAlignVertical.center,
+          textCapitalization: TextCapitalization.sentences,
+          style: Theme.of(context).textTheme.titleLarge,
+          decoration: InputDecoration(
+            isDense: true,
+            contentPadding: EdgeInsets.fromLTRB(leftPadding, 24, rightPadding, 8),
+            hintText: "Title",
+            border: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            suffixIcon: ListenableBuilder(
+              listenable: _titleFocusNode,
+              builder: (context, child) {
+                if (!_titleFocusNode.hasFocus) return const SizedBox.shrink();
+
+                return ValueListenableBuilder<TextEditingValue>(
+                  valueListenable: _titleController,
+                  builder: (context, value, child) {
+                    if (value.text.isEmpty) {
+                      return const SizedBox.shrink();
+                    }
+                    return Padding(
+                      padding: EdgeInsets.only(left: leftPadding, right: rightPadding),
+                      child: IconButton(
+                        icon: const Icon(Icons.close, size: 20),
+                        onPressed: () {
+                          _titleController.clear();
+                          _isAutoSyncingTitle = true;
+                        },
                       ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
-            ValueListenableBuilder<bool>(
-              valueListenable: _isSaved,
-              builder: (context, isSaved, child) {
-                return AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  transitionBuilder: (Widget child, Animation<double> animation) {
-                    return SlideTransition(
-                      position: Tween<Offset>(begin: const Offset(0.0, 0.5), end: Offset.zero).animate(animation),
-                      child: FadeTransition(opacity: animation, child: child),
                     );
                   },
-                  child: isSaved
-                      ? Padding(
-                    key: const ValueKey('saved_state'),
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.done_all, size: 16, color: Theme.of(context).colorScheme.outline),
-                        const SizedBox(width: 4),
-                        Text(
-                          "Saved",
-                          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.outline,
-                            fontStyle: FontStyle.italic,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                      : Material(
-                    key: const ValueKey('save_state'),
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(4),
-                      onTap: () {
-                        _executeSave(isManualSave: true);
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.done,
-                              size: 16,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              "Save",
-                              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                                color: Theme.of(context).colorScheme.primary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
                 );
               },
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildContentField({required double padding}) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: padding, vertical: 0),
-      child: FocusTraversalOrder(
-        order: const NumericFocusOrder(5),
-        child: Focus(
-          focusNode: _contentFocusNode,
-          onKeyEvent: (node, event) {
-            if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
-              node.unfocus();
-              return KeyEventResult.handled;
-            }
-            if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.tab) {
-              node.nextFocus();
-              return KeyEventResult.handled;
-            }
-            return KeyEventResult.ignored;
-          },
-          child: _contentVersion == ContentVersion.checklist
-              ? CheckListWidget(
+  Widget _buildContentField({required double leftPadding, required double rightPadding}) {
+    return FocusTraversalOrder(
+      order: const NumericFocusOrder(5),
+      child: Focus(
+        focusNode: _contentFocusNode,
+        onKeyEvent: (node, event) {
+          if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
+            node.unfocus();
+            return KeyEventResult.handled;
+          }
+          if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.tab) {
+            node.nextFocus();
+            return KeyEventResult.handled;
+          }
+          return KeyEventResult.ignored;
+        },
+        child: _contentVersion == ContentVersion.checklist
+            ? Padding(
+          padding: EdgeInsets.only(left: leftPadding, right: rightPadding),
+          child: CheckListWidget(
             initialData: _currentChecklist,
             onChange: (List<CheckListItemModel> updatedList) {
               _currentChecklist = updatedList;
               _highlightedContentController.text = jsonEncode(updatedList.map((e) => e.toJson()).toList());
             },
-          )
-              : TextField(
-            controller: _highlightedContentController,
-            undoController: _undoController,
-            maxLines: null,
-            expands: true,
-            textAlignVertical: TextAlignVertical.top,
-            textCapitalization: TextCapitalization.sentences,
-            decoration: const InputDecoration(border: InputBorder.none, hint: Text("Type here...")),
-            style: Theme.of(context).textTheme.bodyLarge,
+          ),
+        )
+            : TextField(
+          controller: _highlightedContentController,
+          undoController: _undoController,
+          maxLines: null,
+          expands: true,
+          textAlignVertical: TextAlignVertical.top,
+          textCapitalization: TextCapitalization.sentences,
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            height: 1.6, // improved line height for reading
+          ),
+          decoration: InputDecoration(
+            border: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            contentPadding: EdgeInsets.fromLTRB(leftPadding, 8, rightPadding, 32),
+            hintText: "Type here...",
           ),
         ),
       ),
