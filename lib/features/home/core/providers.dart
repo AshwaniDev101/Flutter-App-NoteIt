@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/features/home/core/db_sorting_filtering.dart';
-import '../../../database/drift/local_database.dart';
+import '../../../database/drift/notes/notes_dao.dart';
 import '../../../shared/view_menu_button.dart';
 import '../../folders/core/providers.dart';
 import '../../lock/lock_manger/lock_manager.dart';
@@ -8,7 +8,7 @@ import '../view/desktop/content_panel/core/navigator.dart';
 
 
 /// MAIN FILTER: Combines all the filters (FOLDER + SORT + PLATFORM + SEARCH + LOCK-STATE)
-final filteredNotesProvider = Provider<AsyncValue<List<Note>>>((ref) {
+final filteredNotesProvider = Provider<AsyncValue<List<NoteWithFolder>>>((ref) {
   // Watch dependencies. If any of these 5 change, this entire function re-runs automatically.
   final sortedNotesAsync = ref.watch(sortedNotesStreamProvider);
   final searchQuery = ref.watch(searchQueryProvider).toLowerCase().trim();
@@ -20,30 +20,30 @@ final filteredNotesProvider = Provider<AsyncValue<List<Note>>>((ref) {
 
   return sortedNotesAsync.whenData((notes) {
     // Start with the full list
-    List<Note> result = notes;
+    List<NoteWithFolder> result = notes;
 
     // Apply Folder Filter
     // If a folder is selected (not 'All Notes'), only keep notes with a matching folderId
     if (activeFolder != null) {
-      result = result.where((note) => note.folderId == activeFolder.uuid).toList();
+      result = result.where((noteWithFolder) => noteWithFolder.note.folderId == activeFolder.uuid).toList();
     }
 
     // Apply Platform Filter
     if (platformFilter != FilterPlatformOptions.all) {
       final targetPlatform = platformFilter == FilterPlatformOptions.android ? 'android' : 'windows';
-      result = result.where((note) {
-        return note.creationPlatform?.toLowerCase() == targetPlatform;
+      result = result.where((noteWithFolder) {
+        return noteWithFolder.note.creationPlatform?.toLowerCase() == targetPlatform;
       }).toList();
     }
 
     // Apply Text Search
     if (searchQuery.isNotEmpty) {
-      result = result.where((note) {
-        final matchesTitle = note.title.toLowerCase().contains(searchQuery);
+      result = result.where((noteWithFolder) {
+        final matchesTitle = noteWithFolder.note.title.toLowerCase().contains(searchQuery);
 
         // Security check: Only search content if the note is unlocked or currently open in session
-        final canReadContent = note.lockedAt == null || lockState.sessionUnlockedNoteIds.contains(note.uuid);
-        final matchesContent = canReadContent && note.content.toLowerCase().contains(searchQuery);
+        final canReadContent = noteWithFolder.note.lockedAt == null || lockState.sessionUnlockedNoteIds.contains(noteWithFolder.note.uuid);
+        final matchesContent = canReadContent && noteWithFolder.note.content.toLowerCase().contains(searchQuery);
 
         return matchesTitle || matchesContent;
       }).toList();
@@ -89,19 +89,19 @@ class SearchQueryNotifier extends Notifier<String> {
 }
 
 /// ACTIVE NOTE STATE HOLDER
-final activeNoteProvider = NotifierProvider<ActiveNoteNotifier, Note?>(() {
+final activeNoteProvider = NotifierProvider<ActiveNoteNotifier, NoteWithFolder?>(() {
   return ActiveNoteNotifier();
 });
-class ActiveNoteNotifier extends Notifier<Note?> {
+class ActiveNoteNotifier extends Notifier<NoteWithFolder?> {
   @override
-  Note? build() {
+  NoteWithFolder? build() {
     // Initial state: no note is selected
     return null;
   }
 
   // Action to select a note
-  void setNote(Note note) {
-    state = note;
+  void setNote(NoteWithFolder noteWithFolder) {
+    state = noteWithFolder;
   }
 
   // Action to close/clear the editor

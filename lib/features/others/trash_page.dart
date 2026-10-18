@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/util/platform_helper.dart';
-import '../../database/drift/local_database.dart';
 import '../../database/drift/notes/notes_dao.dart';
 import '../../database/firebase/firebase_database.dart';
 import '../../database/sync/sync_orchestrator.dart';
@@ -11,7 +10,7 @@ import '../../shared/app_scaffold.dart';
 import '../../shared/snack_bar_manager.dart';
 import '../home/view/shared/desktop_close_button.dart';
 
-final trashNotesProvider = StreamProvider.autoDispose<List<Note>>((ref) {
+final trashNotesProvider = StreamProvider.autoDispose<List<NoteWithFolder>>((ref) {
   final notesDao = ref.watch(notesDaoProvider);
   return notesDao.watchTrashNotes();
 });
@@ -207,7 +206,7 @@ class _TrashPageState extends ConsumerState<TrashPage> {
   }
 
   // App Bar Builder (Handles Default vs Select Mode)
-  PreferredSizeWidget _buildAppBar(List<Note> currentNotes) {
+  PreferredSizeWidget _buildAppBar(List<NoteWithFolder> currentNotes) {
 
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -249,7 +248,7 @@ class _TrashPageState extends ConsumerState<TrashPage> {
                     noteIds.clear();
                     isSelectMode = false;
                   } else {
-                    noteIds.addAll(currentNotes.map((note) => note.uuid));
+                    noteIds.addAll(currentNotes.map((noteWithFolder) => noteWithFolder.note.uuid));
                   }
                 });
               },
@@ -291,24 +290,12 @@ class _TrashPageState extends ConsumerState<TrashPage> {
             },
           ),
 
-        // if (currentNotes.isNotEmpty)
-        //   showLabel
-        //       ? OutlinedButton.icon(
-        //           onPressed: _handleEmptyTrash,
-        //           icon: const Icon(Icons.delete_sweep_outlined),
-        //           label: const Text('Empty Trash'),
-        //           style: OutlinedButton.styleFrom(
-        //             shape: RoundedRectangleBorder(
-        //               borderRadius: BorderRadius.circular(8.0),
-        //             ),
-        //             side: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1),
-        //           ),
-        //         )
-        //       : IconButton(
-        //           onPressed: _handleEmptyTrash,
-        //           icon: const Icon(Icons.delete_sweep_outlined),
-        //           tooltip: 'Empty Trash',
-        //         ),
+        if (currentNotes.isNotEmpty)
+          IconButton(
+            onPressed: _handleEmptyTrash,
+            icon: const Icon(Icons.delete_sweep_outlined),
+            tooltip: 'Empty Trash',
+          ),
 
         const SizedBox(width: 8), DesktopCloseButton(),
 
@@ -384,15 +371,15 @@ class _TrashPageState extends ConsumerState<TrashPage> {
               child: trashState.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, stack) => Center(child: Text('Error: $error')),
-                data: (notes) {
-                  final filteredNotes = searchQueryLower.isEmpty
+                data: (List<NoteWithFolder> notes) {
+                  final filteredNotesWithFolder = searchQueryLower.isEmpty
                       ? notes
-                      : notes.where((note) {
-                          return note.title.toLowerCase().contains(searchQueryLower) ||
-                              note.content.toLowerCase().contains(searchQueryLower);
+                      : notes.where((noteWithFolder) {
+                          return noteWithFolder.note.title.toLowerCase().contains(searchQueryLower) ||
+                              noteWithFolder.note.content.toLowerCase().contains(searchQueryLower);
                         }).toList();
 
-                  if (filteredNotes.isEmpty) {
+                  if (filteredNotesWithFolder.isEmpty) {
                     return Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -424,14 +411,14 @@ class _TrashPageState extends ConsumerState<TrashPage> {
                       crossAxisSpacing: 4,
                       mainAxisSpacing: 4,
                     ),
-                    itemCount: filteredNotes.length,
+                    itemCount: filteredNotesWithFolder.length,
                     itemBuilder: (context, index) {
-                      final note = filteredNotes[index];
-                      final isSelected = noteIds.contains(note.uuid);
+                      final noteWithFolder = filteredNotesWithFolder[index];
+                      final isSelected = noteIds.contains(noteWithFolder.note.uuid);
 
                       return NoteCard(
-                        key: ValueKey(note.uuid),
-                        note: note,
+                        key: ValueKey(noteWithFolder.note.uuid),
+                        noteWithFolder: noteWithFolder,
                         searchQuery: searchQuery,
                         isSelected: isSelected,
                         contextMenuOptions: const [
@@ -441,7 +428,7 @@ class _TrashPageState extends ConsumerState<TrashPage> {
                         ],
                         onTap: () {
                           if (isSelectMode) {
-                            _toggleSelection(note.uuid);
+                            _toggleSelection(noteWithFolder.note.uuid);
                           } else {
                             // Todo: Open a read-only view of the trashed note
                           }
@@ -449,7 +436,7 @@ class _TrashPageState extends ConsumerState<TrashPage> {
                         onLongPress: () {
                           if (!isSelectMode) {
                             setState(() => isSelectMode = true);
-                            _toggleSelection(note.uuid);
+                            _toggleSelection(noteWithFolder.note.uuid);
                           }
                         },
                         onContextMenuAction: (option) {
@@ -458,19 +445,19 @@ class _TrashPageState extends ConsumerState<TrashPage> {
                               setState(() => isSelectMode = true);
                             }
                             if (!isSelected) {
-                              _toggleSelection(note.uuid);
+                              _toggleSelection(noteWithFolder.note.uuid);
                             }
                             return;
                           }
 
                           if (option == NoteContextMenuOption.restore) {
-                            final targetUuids = isSelected ? noteIds.toList() : [note.uuid];
+                            final targetUuids = isSelected ? noteIds.toList() : [noteWithFolder.note.uuid];
                             _restoreNotes(targetUuids);
                             return;
                           }
 
                           if (option == NoteContextMenuOption.deleteForever) {
-                            final targetUuids = isSelected ? noteIds.toList() : [note.uuid];
+                            final targetUuids = isSelected ? noteIds.toList() : [noteWithFolder.note.uuid];
                             _handleDeleteUuids(targetUuids);
                             return;
                           }

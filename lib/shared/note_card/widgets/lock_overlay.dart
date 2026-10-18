@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/database/drift/notes/notes_dao.dart';
 
-import '../../../../database/drift/local_database.dart';
 import '../../../../features/lock/lock_manger/lock_manager.dart';
 
 class LockOverlayWidget extends ConsumerWidget {
-  final Note note;
+  final NoteWithFolder noteWithFolder;
 
-  const LockOverlayWidget({super.key, required this.note});
+  const LockOverlayWidget({super.key, required this.noteWithFolder});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // If completely unlocked, render nothing (no overlay)
-    if (note.lockedAt == null) return const SizedBox.shrink();
+    if (noteWithFolder.note.lockedAt == null) return const SizedBox.shrink();
 
     // Check session state
-    final isSessionUnlocked = ref.watch(lockManagerProvider).sessionUnlockedNoteIds.contains(note.uuid);
+    final isSessionUnlocked = ref.watch(lockManagerProvider).sessionUnlockedNoteIds.contains(noteWithFolder.note.uuid);
 
     // If session unlocked -> Transparent background, small icon top-right
     if (isSessionUnlocked) {

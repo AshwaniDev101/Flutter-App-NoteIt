@@ -4,10 +4,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/util/platform_helper.dart';
+import 'package:noteit/database/drift/notes/notes_dao.dart';
 import 'package:noteit/shared/note_card/widgets/lock_overlay.dart';
 
 import '../../../core/helpers/time_helper.dart';
-import '../../../database/drift/local_database.dart';
 import '../../../features/home/core/providers.dart';
 import '../../../features/lock/lock_manger/lock_manager.dart';
 import '../highlighted_text.dart';
@@ -41,7 +41,7 @@ enum NoteContextMenuOption {
 }
 
 class NoteCard extends ConsumerStatefulWidget {
-  final Note note;
+  final NoteWithFolder noteWithFolder;
   final bool isSelected;
   final String searchQuery;
 
@@ -54,7 +54,7 @@ class NoteCard extends ConsumerStatefulWidget {
 
   const NoteCard({
     super.key,
-    required this.note,
+    required this.noteWithFolder,
     this.isSelected = false,
     this.searchQuery = '',
     this.onTap,
@@ -87,7 +87,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
   @override
   Widget build(BuildContext context) {
     final viewType = ref.watch(noteViewTypeProvider);
-    final isPinned = widget.note.pinnedAt != null;
+    final isPinned = widget.noteWithFolder.note.pinnedAt != null;
 
     return MenuAnchor(
       controller: _menuController,
@@ -138,40 +138,62 @@ class _NoteCardState extends ConsumerState<NoteCard> {
               },
             ),
           },
-          child: MouseRegion(cursor: SystemMouseCursors.click, child: _buildLayoutRouter(viewType)),
+          child: MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: _buildLayoutRouter(
+              viewType,
+              widget.noteWithFolder.folder != null
+                  ? Colors.primaries[widget.noteWithFolder.folder!.colorIndex % Colors.primaries.length]
+                  : null,
+            ),
+          ),
         ),
       ),
     );
   }
 
   // ==== LAYOUT ROUTER ====
-  Widget _buildLayoutRouter(NoteViewType viewType) {
+
+  Widget _buildLayoutRouter(NoteViewType viewType, Color? accentColor) {
     switch (viewType) {
       case NoteViewType.list:
-        // Plain list gets the flat wrapper
-        return _buildFlatListWrapper(child: _buildCompactList());
-
+        return _buildFlatListWrapper(child: _buildCompactList(), accentColor: accentColor);
       case NoteViewType.detailedList:
-        // Detailed list, Grids get the Card wrapper
-        return _buildCardWrapper(child: _buildDetailedList());
-
+        return _buildCardWrapper(child: _buildDetailedList(), accentColor: accentColor);
       case NoteViewType.grid:
-        return _buildCardWrapper(child: _buildGrid());
-
+        return _buildCardWrapper(child: _buildGrid(), accentColor: accentColor);
       case NoteViewType.largeGrid:
-        return _buildCardWrapper(child: _buildLargeGrid());
+        return _buildCardWrapper(child: _buildLargeGrid(), accentColor: accentColor);
     }
   }
+  // Widget _buildLayoutRouter(NoteViewType viewType) {
+  //   switch (viewType) {
+  //     case NoteViewType.list:
+  //       // Plain list gets the flat wrapper
+  //       return _buildFlatListWrapper(child: _buildCompactList());
+  //
+  //     case NoteViewType.detailedList:
+  //       // Detailed list, Grids get the Card wrapper
+  //       return _buildCardWrapper(child: _buildDetailedList());
+  //
+  //     case NoteViewType.grid:
+  //       return _buildCardWrapper(child: _buildGrid());
+  //
+  //     case NoteViewType.largeGrid:
+  //       return _buildCardWrapper(child: _buildLargeGrid());
+  //   }
+  // }
 
   // ==== WRAPPERS ====
 
   /// Used for Grids and Detailed Lists
-  Widget _buildCardWrapper({required Widget child}) {
+
+  /// Used for Grids and Detailed Lists
+  Widget _buildCardWrapper({required Widget child, required Color? accentColor}) {
     return Card(
-      // margin: EdgeInsets.zero,
       margin: const EdgeInsets.all(4.0),
       elevation: widget.isSelected ? 1 : (_isFocused ? 4 : 0),
-      clipBehavior: Clip.antiAlias,
+      clipBehavior: Clip.antiAlias, // This automatically curves our color bar to match the card!
       color: widget.isSelected ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.5) : null,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
@@ -182,33 +204,97 @@ class _NoteCardState extends ConsumerState<NoteCard> {
           width: _isFocused ? 2 : 1,
         ),
       ),
-      child: InkWell(onTap: widget.onTap, onLongPress: widget.onLongPress, canRequestFocus: false, child: child),
+      child: InkWell(
+        onTap: widget.onTap,
+        onLongPress: widget.onLongPress,
+        canRequestFocus: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (accentColor != null)
+              Container(height: 4, color: accentColor), // The top accent!
+            Flexible(child: child),
+          ],
+        ),
+      ),
     );
   }
+  // Widget _buildCardWrapper({required Widget child}) {
+  //   return Card(
+  //     // margin: EdgeInsets.zero,
+  //     margin: const EdgeInsets.all(4.0),
+  //     elevation: widget.isSelected ? 1 : (_isFocused ? 4 : 0),
+  //     clipBehavior: Clip.antiAlias,
+  //     color: widget.isSelected ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.5) : null,
+  //     shape: RoundedRectangleBorder(
+  //       borderRadius: BorderRadius.circular(8),
+  //       side: BorderSide(
+  //         color: _isFocused
+  //             ? Theme.of(context).colorScheme.primary
+  //             : Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.3),
+  //         width: _isFocused ? 2 : 1,
+  //       ),
+  //     ),
+  //     child: InkWell(onTap: widget.onTap, onLongPress: widget.onLongPress, canRequestFocus: false, child: child),
+  //   );
+  // }
 
   /// Used ONLY for the compact plain list
-  Widget _buildFlatListWrapper({required Widget child}) {
-    // Determine the correct background color
+  /// Used ONLY for the compact plain list
+  Widget _buildFlatListWrapper({required Widget child, required Color? accentColor}) {
     Color backgroundColor;
     if (widget.isSelected) {
       backgroundColor = Theme.of(context).colorScheme.primary.withValues(alpha: 0.3);
     } else if (_isFocused) {
-      // Show a slight highlight when hovered/focused
       backgroundColor = Theme.of(context).colorScheme.surfaceContainerHighest;
     } else {
-      // Solid surface color instead of transparent so it pops from the background
       backgroundColor = Theme.of(context).colorScheme.surface;
     }
 
     return Material(
       color: backgroundColor,
-      // Add a subtle divider at the bottom of each list item
       shape: Border(
         bottom: BorderSide(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.3), width: 1),
       ),
-      child: InkWell(onTap: widget.onTap, onLongPress: widget.onLongPress, canRequestFocus: false, child: child),
+      child: InkWell(
+        onTap: widget.onTap,
+        onLongPress: widget.onLongPress,
+        canRequestFocus: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (accentColor != null)
+              Container(height: 3, color: accentColor),
+            child,
+          ],
+        ),
+      ),
     );
   }
+  // Widget _buildFlatListWrapper({required Widget child}) {
+  //   // Determine the correct background color
+  //   Color backgroundColor;
+  //   if (widget.isSelected) {
+  //     backgroundColor = Theme.of(context).colorScheme.primary.withValues(alpha: 0.3);
+  //   } else if (_isFocused) {
+  //     // Show a slight highlight when hovered/focused
+  //     backgroundColor = Theme.of(context).colorScheme.surfaceContainerHighest;
+  //   } else {
+  //     // Solid surface color instead of transparent so it pops from the background
+  //     backgroundColor = Theme.of(context).colorScheme.surface;
+  //   }
+  //
+  //   return Material(
+  //     color: backgroundColor,
+  //     // Add a subtle divider at the bottom of each list item
+  //     shape: Border(
+  //       bottom: BorderSide(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.3), width: 1),
+  //     ),
+  //     child: InkWell(onTap: widget.onTap, onLongPress: widget.onLongPress, canRequestFocus: false, child: child),
+  //   );
+  // }
 
   // ==== COMPACT LIST LAYOUT ====
   Widget _buildCompactList() {
@@ -218,7 +304,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
         children: [
           Expanded(
             child: HighlightedText(
-              text: widget.note.title.isEmpty ? "Untitled" : widget.note.title,
+              text: widget.noteWithFolder.note.title.isEmpty ? "Untitled" : widget.noteWithFolder.note.title,
               query: widget.searchQuery,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -232,7 +318,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
               ),
             ),
           ),
-          if (widget.note.pinnedAt != null) ...[
+          if (widget.noteWithFolder.note.pinnedAt != null) ...[
             const SizedBox(width: 8),
             Icon(Icons.push_pin, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
           ],
@@ -243,7 +329,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
 
   // ==== DETAILED LIST LAYOUT ====
   Widget _buildDetailedList() {
-    final platform = widget.note.deletedPlatform ?? widget.note.creationPlatform;
+    final platform = widget.noteWithFolder.note.deletedPlatform ?? widget.noteWithFolder.note.creationPlatform;
 
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -258,7 +344,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
             children: [
               Expanded(
                 child: HighlightedText(
-                  text: widget.note.title.isEmpty ? "Untitled" : widget.note.title,
+                  text: widget.noteWithFolder.note.title.isEmpty ? "Untitled" : widget.noteWithFolder.note.title,
                   query: widget.searchQuery,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -271,14 +357,14 @@ class _NoteCardState extends ConsumerState<NoteCard> {
                   ),
                 ),
               ),
-              if (widget.note.pinnedAt != null) ...[
+              if (widget.noteWithFolder.note.pinnedAt != null) ...[
                 const SizedBox(width: 8),
                 Icon(Icons.push_pin, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
               ],
             ],
           ),
           const SizedBox(height: 4),
-          widget.note.lockedAt != null
+          widget.noteWithFolder.note.lockedAt != null
               ? Align(
                   alignment: Alignment.centerLeft,
                   child: Icon(
@@ -287,27 +373,32 @@ class _NoteCardState extends ConsumerState<NoteCard> {
                     color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                   ),
                 )
-              : HighlightedText(
-                  // text: widget.note.content,
-                  text: _getNotePreviewText(widget.note),
-                  query: widget.searchQuery,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  // normalStyle: const TextStyle(fontSize: 13, height: 1.4),
-                  normalStyle: Theme.of(context).textTheme.bodyMedium,
-                  highlightStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                    color: Theme.of(context).colorScheme.onPrimaryContainer,
-                  ),
-                ),
 
+          // Old preview
+              // : HighlightedText(
+              //     // text: widget.note.content,
+              //     text: _getNotePreviewText(widget.note),
+              //     query: widget.searchQuery,
+              //     maxLines: 2,
+              //     overflow: TextOverflow.ellipsis,
+              //     // normalStyle: const TextStyle(fontSize: 13, height: 1.4),
+              //     normalStyle: Theme.of(context).textTheme.bodyMedium,
+              //     highlightStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              //       backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+              //       color: Theme.of(context).colorScheme.onPrimaryContainer,
+              //     ),
+              //   ),
+
+
+          // New Preview for check list
+              : _buildNotePreview(context, maxLines: 2, overflow: TextOverflow.ellipsis),
           // Timestamp
           const SizedBox(height: 4),
           Row(
             children: [
               Expanded(
                 child: Text(
-                  TimeHelper.formatTimeAgo(widget.note.updatedAt),
+                  TimeHelper.formatTimeAgo(widget.noteWithFolder.note.updatedAt),
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -316,7 +407,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
               if (platform != null) ...[
                 const SizedBox(width: 8),
                 Tooltip(
-                  message: widget.note.deletedPlatform != null ? 'Deleted on $platform' : 'Created on $platform',
+                  message: widget.noteWithFolder.note.deletedPlatform != null ? 'Deleted on $platform' : 'Created on $platform',
                   child: _getPlatformIcon(platform),
                 ),
               ],
@@ -329,8 +420,6 @@ class _NoteCardState extends ConsumerState<NoteCard> {
 
   // ==== GRID LAYOUT ====
   Widget _buildGrid() {
-    final isSessionUnlocked = ref.watch(lockManagerProvider).sessionUnlockedNoteIds.contains(widget.note.uuid);
-
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Column(
@@ -342,7 +431,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
             children: [
               Expanded(
                 child: HighlightedText(
-                  text: widget.note.title.isEmpty ? "Untitled" : widget.note.title,
+                  text: widget.noteWithFolder.note.title.isEmpty ? "Untitled" : widget.noteWithFolder.note.title,
                   query: widget.searchQuery,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -355,7 +444,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
                   ),
                 ),
               ),
-              if (widget.note.pinnedAt != null) ...[
+              if (widget.noteWithFolder.note.pinnedAt != null) ...[
                 const SizedBox(width: 8),
                 Icon(Icons.push_pin, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
               ],
@@ -367,24 +456,11 @@ class _NoteCardState extends ConsumerState<NoteCard> {
               children: [
                 Align(
                   alignment: Alignment.topLeft,
-
-                  child: HighlightedText(
-                    //  Pass empty string if locked & not verified, SECURITY: not doing so, ill allow screen reader to fetch the content
-                    text: (widget.note.lockedAt != null && !isSessionUnlocked) ? "" : _getNotePreviewText(widget.note),
-                    query: widget.searchQuery,
-                    // maxLines: maxLines,
-                    overflow: TextOverflow.fade,
-                    normalStyle: Theme.of(context).textTheme.bodyMedium,
-
-                    highlightStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                      color: Theme.of(context).colorScheme.onPrimaryContainer,
-                    ),
-                  ),
+                  child: _buildNotePreview(context, overflow: TextOverflow.fade),
                 ),
 
                 // Lock icon overlay
-                LockOverlayWidget(note: widget.note),
+                LockOverlayWidget(noteWithFolder: widget.noteWithFolder),
               ],
             ),
           ),
@@ -395,9 +471,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
 
   // ==== Large GRID LAYOUT ====
   Widget _buildLargeGrid() {
-    final platform = widget.note.deletedPlatform ?? widget.note.creationPlatform;
-
-    final isSessionUnlocked = ref.watch(lockManagerProvider).sessionUnlockedNoteIds.contains(widget.note.uuid);
+    final platform = widget.noteWithFolder.note.deletedPlatform ?? widget.noteWithFolder.note.creationPlatform;
 
     return Padding(
       padding: const EdgeInsets.all(8.0),
@@ -410,7 +484,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
             children: [
               Expanded(
                 child: HighlightedText(
-                  text: widget.note.title.isEmpty ? "Untitled" : widget.note.title,
+                  text: widget.noteWithFolder.note.title.isEmpty ? "Untitled" : widget.noteWithFolder.note.title,
                   query: widget.searchQuery,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -423,7 +497,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
                   ),
                 ),
               ),
-              if (widget.note.pinnedAt != null) ...[
+              if (widget.noteWithFolder.note.pinnedAt != null) ...[
                 const SizedBox(width: 8),
                 Icon(Icons.push_pin, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
               ],
@@ -435,24 +509,11 @@ class _NoteCardState extends ConsumerState<NoteCard> {
               children: [
                 Align(
                   alignment: Alignment.topLeft,
-
-                  child: HighlightedText(
-                    //  Pass empty string if locked & not verified, SECURITY: not doing so, ill allow screen reader to fetch the content
-                    text: (widget.note.lockedAt != null && !isSessionUnlocked) ? "" : _getNotePreviewText(widget.note),
-                    query: widget.searchQuery,
-                    // maxLines: maxLines,
-                    overflow: TextOverflow.fade,
-                    normalStyle: Theme.of(context).textTheme.bodyMedium,
-
-                    highlightStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                      color: Theme.of(context).colorScheme.onPrimaryContainer,
-                    ),
-                  ),
+                  child: _buildNotePreview(context, overflow: TextOverflow.fade),
                 ),
 
                 // Lock icon overlay
-                LockOverlayWidget(note: widget.note),
+                LockOverlayWidget(noteWithFolder: widget.noteWithFolder),
               ],
             ),
           ),
@@ -464,7 +525,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  TimeHelper.formatTimeAgo(widget.note.updatedAt),
+                  TimeHelper.formatTimeAgo(widget.noteWithFolder.note.updatedAt),
 
                   style: Theme.of(
                     context,
@@ -472,7 +533,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
                 ),
                 if (platform != null)
                   Tooltip(
-                    message: widget.note.deletedPlatform != null ? 'Deleted on $platform' : 'Created on $platform',
+                    message: widget.noteWithFolder.note.deletedPlatform != null ? 'Deleted on $platform' : 'Created on $platform',
                     child: _getPlatformIcon(platform),
                   ),
               ],
@@ -483,25 +544,58 @@ class _NoteCardState extends ConsumerState<NoteCard> {
     );
   }
 
-  // ==== PREVIEW HELPER ====
-  String _getNotePreviewText(Note note) {
-    // If it's a checklist (version 2), format the JSON into text boxes
-    if (note.contentVersion == 2) {
+// ==== PREVIEW WIDGET HELPER ====
+  Widget _buildNotePreview(BuildContext context, {int? maxLines, TextOverflow overflow = TextOverflow.ellipsis}) {
+    final isSessionUnlocked = ref.watch(lockManagerProvider).sessionUnlockedNoteIds.contains(widget.noteWithFolder.note.uuid);
+
+    // Security check: Completely drop text from the widget tree if locked.
+    // This prevents assistive screen readers from finding it.
+    if (widget.noteWithFolder.note.lockedAt != null && !isSessionUnlocked) {
+      return const SizedBox.shrink();
+    }
+
+    final textTheme = Theme.of(context).textTheme.bodyMedium;
+
+    // If it's a checklist
+    if (widget.noteWithFolder.note.contentVersion == 2) {
       try {
-        final List<dynamic> decoded = jsonDecode(note.content);
-        return decoded
-            .map((item) {
-              bool isChecked = item['isChecked'] == true;
-              String text = item['text'] ?? '';
-              return '${isChecked ? "☑" : "☐"} $text';
-            })
-            .join('\n');
+        final List<dynamic> decoded = jsonDecode(widget.noteWithFolder.note.content);
+        final itemsToRender = maxLines != null ? decoded.take(maxLines).toList() : decoded;
+
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: itemsToRender.map((item) {
+            bool isChecked = item['isChecked'] == true;
+            String text = item['text'] ?? '';
+
+            // Using standard Flutter Text to guarantee maxLines works per individual item
+            return Text(
+              '${isChecked ? "◆" : "◇"} $text',
+              maxLines: 1, // Strictly one line
+              softWrap: false, // Absolutely disables wrapping
+              overflow: TextOverflow.ellipsis, // Truncates with ...
+              style: textTheme,
+            );
+          }).toList(),
+        );
       } catch (_) {
-        return note.content;
+        // Fallback if JSON parsing fails, drops down to standard text rendering
       }
     }
-    // Otherwise, just return the plain text
-    return note.content;
+
+    // Standard text note
+    return HighlightedText(
+      text: widget.noteWithFolder.note.content,
+      query: widget.searchQuery,
+      maxLines: maxLines,
+      overflow: overflow,
+      normalStyle: textTheme,
+      highlightStyle: textTheme?.copyWith(
+        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+        color: Theme.of(context).colorScheme.onPrimaryContainer,
+      ),
+    );
   }
 
   // ==== SHARED ICONS ====

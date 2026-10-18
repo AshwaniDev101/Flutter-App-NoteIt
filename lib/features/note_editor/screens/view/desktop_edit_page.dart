@@ -47,9 +47,12 @@ enum ContentVersion {
 ///
 /// Handles automatic saving, syncing, check-lists, and lock management.
 class DesktopEditNotePage extends ConsumerStatefulWidget {
-  final Note? existingNote;
+  final NoteWithFolder? existingNoteWithFolder;
 
-  const DesktopEditNotePage({super.key, this.existingNote});
+  const DesktopEditNotePage({
+    super.key,
+    this.existingNoteWithFolder,
+  });
 
   @override
   ConsumerState<DesktopEditNotePage> createState() => _DesktopEditNotePageState();
@@ -63,9 +66,10 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
 
   // --- View Models & State Management ---
   late final EditNoteViewModel _viewModel;
-  Note? _currentNote;
+  NoteWithFolder? _currentNoteWithFolder;
 
-  String? _selectedFolderIdForNewNote;
+  // String? _selectedFolderIdForNewNote;
+  Folder? _selectedFolderForNewNote;
 
   // --- UI State Flags ---
   late bool _isLocked;
@@ -87,27 +91,27 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
 
   /// Determines if the note is brand new and unsaved to the local database.
   bool get _isNewNote =>
-      _currentNote == null ||
-          (_currentNote!.title.isEmpty &&
-              _currentNote!.content.isEmpty &&
-              _currentNote!.cloudSyncStatus == 0 &&
-              _currentNote!.localSyncStatus == 0);
+      _currentNoteWithFolder == null ||
+          (_currentNoteWithFolder!.note.title.isEmpty &&
+              _currentNoteWithFolder!.note.content.isEmpty &&
+              _currentNoteWithFolder!.note.cloudSyncStatus == 0 &&
+              _currentNoteWithFolder!.note.localSyncStatus == 0);
 
   @override
   void initState() {
     super.initState();
 
-    _currentNote = widget.existingNote;
+    _currentNoteWithFolder = widget.existingNoteWithFolder;
     _viewModel = ref.read(editNoteViewModelProvider.notifier);
-    _isLocked = _currentNote?.lockedAt != null;
+    _isLocked = _currentNoteWithFolder?.note.lockedAt != null;
 
-    _titleController = TextEditingController(text: _currentNote?.title ?? '');
-    _highlightedContentController = HighlightingTextField(text: _currentNote?.content ?? '');
+    _titleController = TextEditingController(text: _currentNoteWithFolder?.note.title ?? '');
+    _highlightedContentController = HighlightingTextField(text: _currentNoteWithFolder?.note.content ?? '');
 
     // Initialize checklist logic if applicable
-    if (_currentNote != null) {
+    if (_currentNoteWithFolder != null) {
       final String textContent = _highlightedContentController.text.trim();
-      if (_currentNote!.contentVersion == ContentVersion.checklist.value) {
+      if (_currentNoteWithFolder!.note.contentVersion == ContentVersion.checklist.value) {
         _contentVersion = ContentVersion.checklist;
         _currentChecklist = _convertTextToChecklist(textContent);
       }
@@ -268,12 +272,12 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
         title,
         content,
         _contentVersion,
-        folderId: _selectedFolderIdForNewNote,
+        folderId: _selectedFolderForNewNote?.uuid,
       );
 
       if (!isDisposing && mounted && newlySavedNote != null) {
         setState(() {
-          _currentNote = newlySavedNote; // Transitions _isNewNote to false
+          _currentNoteWithFolder = newlySavedNote; // Transitions _isNewNote to false
         });
         _isSaved.value = true;
 
@@ -282,10 +286,10 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
         }
       }
     } else {
-      if (title != _currentNote!.title ||
-          content != _currentNote!.content ||
-          _currentNote!.contentVersion != _contentVersion.value) {
-        await _viewModel.updateNote(_currentNote!.uuid, title, content, _contentVersion);
+      if (title != _currentNoteWithFolder!.note.title ||
+          content != _currentNoteWithFolder!.note.content ||
+          _currentNoteWithFolder!.note.contentVersion != _contentVersion.value) {
+        await _viewModel.updateNote(_currentNoteWithFolder!.note.uuid, title, content, _contentVersion);
       }
 
       if (!isDisposing && mounted) {
@@ -320,9 +324,9 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
       shouldProceed = true;
     }
 
-    if (shouldProceed && _currentNote != null) {
+    if (shouldProceed && _currentNoteWithFolder != null) {
       final success = await lockManager.togglePersistentLock(
-        _currentNote!.uuid,
+        _currentNoteWithFolder!.note.uuid,
         '',
         shouldLock: !isCurrentlyLocked,
         ignorePassword: true,
@@ -352,7 +356,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
   // ===========================================================================
 
   String _getFormattedDate() {
-    final now = _currentNote?.updatedAt ?? _currentNote?.createdAt ?? DateTime.now();
+    final now = _currentNoteWithFolder?.note.updatedAt ?? _currentNoteWithFolder?.note.createdAt ?? DateTime.now();
     return _isNewNote
         ? "${now.month}/${now.day}/${now.year}"
         : "${now.month}/${now.day}/${now.year} ${now.hour}:${now.minute.toString().padLeft(2, '0')}";
@@ -361,6 +365,14 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
   @override
   Widget build(BuildContext context) {
     final panelColor = Theme.of(context).colorScheme.surfaceContainerLow;
+
+
+    final currentFolder = _currentNoteWithFolder?.folder ?? _selectedFolderForNewNote;
+
+    // Extract the color directly from our localized currentFolder
+    final folderAccentColor = currentFolder != null
+        ? Colors.primaries[currentFolder.colorIndex % Colors.primaries.length]
+        : Colors.transparent;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -379,7 +391,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
 
         return AppScaffold(
           backgroundColor: panelColor,
-          title: _buildTopMetaRow(),
+          title: _buildTopMetaRow(currentFolder),
           centerTitle: false,
           onClose: _handleCloseNote,
           actions: [
@@ -388,14 +400,14 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
             if (!_isNewNote)
               NoteEditorOptionButton(
                 isLocked: _isLocked,
-                isPinned: _currentNote?.pinnedAt != null,
+                isPinned: _currentNoteWithFolder?.note.pinnedAt != null,
                 onPressed: (NoteEditorOption option) async {
                   if (_isNewNote && option != NoteEditorOption.info) {
                     SnackBarManager.show(msg: 'Please save the note first', type: SnackBarMessageType.error);
                     return;
                   }
 
-                  final targetUuid = _currentNote!.uuid;
+                  final targetUuid = _currentNoteWithFolder!.note.uuid;
                   final actionsController = ref.read(noteActionsControllerProvider);
                   final deviceInfo = await ref.read(deviceInfoProvider.future);
 
@@ -410,7 +422,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
                       try {
                         final updatedNote = await ref.read(notesDaoProvider).getNoteById(targetUuid);
                         ref.read(activeNoteProvider.notifier).setNote(updatedNote);
-                        _currentNote = updatedNote;
+                        _currentNoteWithFolder = updatedNote;
                       } catch (_) {}
                       if (mounted) setState(() {});
                       break;
@@ -457,6 +469,15 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+
+              // --- The Top Accent Border ---
+              if (currentFolder != null)
+                Container(
+                  height: 4, // Change thickness here if you want it bolder
+                  width: double.infinity,
+                  color: folderAccentColor,
+                ),
+
               if (_isFind)
                 FindReplaceWidget(
                   contentController: _highlightedContentController,
@@ -482,14 +503,14 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
   // Top Meta Row
   // ===========================================================================
 
-  Widget _buildTopMetaRow() {
-    final foldersAsync = ref.watch(activeFoldersStreamProvider);
-
-    Folder? currentFolder;
-    if (_currentNote?.folderId != null && foldersAsync.hasValue) {
-      final match = foldersAsync.value!.where((f) => f.folder.uuid == _currentNote!.folderId).firstOrNull;
-      currentFolder = match?.folder;
-    }
+  Widget _buildTopMetaRow(Folder? currentFolder) {
+    // final foldersAsync = ref.watch(activeFoldersStreamProvider);
+    //
+    // Folder? currentFolder;
+    // if (_currentNoteWithFolder?.note.folderId != null && foldersAsync.hasValue) {
+    //   final match = foldersAsync.value!.where((f) => f.folder.uuid == _currentNoteWithFolder!.note.folderId).firstOrNull;
+    //   currentFolder = match?.folder;
+    // }
 
     return Row(
       children: [
@@ -501,17 +522,26 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
           onFolderSelected: (folder) async {
             final newFolderId = folder?.uuid;
 
-            if (_currentNote?.folderId == newFolderId) return;
+            if (_currentNoteWithFolder?.note.folderId == newFolderId) return;
 
-            if (!_isNewNote && _currentNote != null) {
-              await ref.read(notesDaoProvider).updateNoteFolder(_currentNote!.uuid, newFolderId);
+            if (!_isNewNote && _currentNoteWithFolder != null) {
+              await ref.read(notesDaoProvider).updateNoteFolder(_currentNoteWithFolder!.note.uuid, newFolderId);
             }
 
             setState(() {
-              if (_currentNote != null) {
-                _currentNote = _currentNote!.copyWith(folderId: drift.Value(newFolderId));
+              if (_currentNoteWithFolder != null) {
+                // Copy the underlying Drift Note, updating the folderId
+                final updatedDriftNote = _currentNoteWithFolder!.note.copyWith(
+                    folderId: drift.Value(newFolderId)
+                );
+                // Re-wrap it in a new NoteWithFolder class, passing the
+                // new folder object (which was passed in from the dropdown).
+                _currentNoteWithFolder = NoteWithFolder(
+                  note: updatedDriftNote,
+                  folder: folder,
+                );
               } else {
-                _selectedFolderIdForNewNote = newFolderId;
+                _selectedFolderForNewNote = folder;
               }
             });
           },
@@ -716,6 +746,10 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
           child: CheckListWidget(
             initialData: _currentChecklist,
             onChange: (List<CheckListItemModel> updatedList) {
+              _currentChecklist = updatedList;
+              _highlightedContentController.text = jsonEncode(updatedList.map((e) => e.toJson()).toList());
+            },
+            onSubmit: (List<CheckListItemModel> updatedList) {
               _currentChecklist = updatedList;
               _highlightedContentController.text = jsonEncode(updatedList.map((e) => e.toJson()).toList());
             },

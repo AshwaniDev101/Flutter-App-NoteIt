@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:noteit/database/drift/local_database.dart';
+import 'package:noteit/database/drift/notes/notes_dao.dart';
 import 'package:noteit/shared/snack_bar_manager.dart';
 
 import 'lock_manger/lock_manager.dart';
@@ -12,7 +12,7 @@ class PasswordPromptHelper {
   static Future<bool> promptAndVerify(
     BuildContext context,
     WidgetRef ref,
-    Note note,
+    NoteWithFolder noteWithFolder,
   ) async {
     final String? enteredPassword = await showGeneralDialog<String>(
       context: context,
@@ -41,7 +41,7 @@ class PasswordPromptHelper {
       }
 
       final success = lockManager.verifyAndSessionUnlock(
-        note.uuid,
+        noteWithFolder.note.uuid,
         enteredPassword,
       );
 

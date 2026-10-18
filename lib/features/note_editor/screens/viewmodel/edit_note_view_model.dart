@@ -6,7 +6,6 @@ import 'package:noteit/core/util/platform_helper.dart';
 import 'package:noteit/core/util/device_info.dart';
 
 // Database and Sync
-import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/database/drift/notes/notes_dao.dart';
 import 'package:noteit/database/sync/sync_orchestrator.dart';
 
@@ -55,8 +54,8 @@ class EditNoteViewModel extends Notifier<EditNoteState> {
   /// [content] The body text or JSON content of the note.
   /// [contentVersion] Enum dictating the format of the content (e.g., plain text vs. checklist).
   ///
-  /// Returns the newly created [Note] object if successful, or `null` if an error occurs.
-  Future<Note?> saveNote(
+  /// Returns the newly created [NoteWithFolder] object if successful, or `null` if an error occurs.
+  Future<NoteWithFolder?> saveNote(
       String title,
       String content,
       ContentVersion contentVersion, {

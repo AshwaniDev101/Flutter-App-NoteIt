@@ -5,7 +5,6 @@ import 'package:noteit/shared/app_scaffold.dart';
 
 import '../../core/util/device_info.dart';
 import '../../core/util/platform_helper.dart';
-import '../../database/drift/local_database.dart';
 import '../../database/drift/notes/notes_dao.dart';
 import '../../database/sync/sync_orchestrator.dart';
 import '../../shared/note_card/core/note_action_controller.dart';
@@ -13,7 +12,7 @@ import '../../shared/note_card/note_card.dart';
 import '../../shared/snack_bar_manager.dart';
 import '../home/view/shared/desktop_close_button.dart';
 
-final archivedNotesStreamProvider = StreamProvider.autoDispose<List<Note>>((ref) {
+final archivedNotesStreamProvider = StreamProvider.autoDispose<List<NoteWithFolder>>((ref) {
   return ref.watch(notesDaoProvider).watchArchivedNotes();
 });
 
@@ -99,12 +98,12 @@ class _ArchivePageState extends ConsumerState<ArchivePage> {
     }
   }
 
-  PreferredSizeWidget _buildAppBar(List<Note> currentNotes) {
+  PreferredSizeWidget _buildAppBar(List<NoteWithFolder> currentNotesWithFolder) {
     final colorScheme = Theme.of(context).colorScheme;
 
     if (isSelectMode) {
       final isAllSelected =
-          currentNotes.isNotEmpty && noteIds.length == currentNotes.length;
+          currentNotesWithFolder.isNotEmpty && noteIds.length == currentNotesWithFolder.length;
 
       return AppBar(
         foregroundColor: Colors.white,
@@ -140,7 +139,7 @@ class _ArchivePageState extends ConsumerState<ArchivePage> {
                     noteIds.clear();
                     isSelectMode = false;
                   } else {
-                    noteIds.addAll(currentNotes.map((note) => note.uuid));
+                    noteIds.addAll(currentNotesWithFolder.map((noteWithFolder) => noteWithFolder.note.uuid));
                   }
                 });
               },
@@ -252,10 +251,10 @@ class _ArchivePageState extends ConsumerState<ArchivePage> {
               data: (notes) {
                 final filteredNotes = searchQuery.isEmpty
                     ? notes
-                    : notes.where((note) {
+                    : notes.where((noteWithFolder) {
                         final queryLower = searchQuery.toLowerCase();
-                        return note.title.toLowerCase().contains(queryLower) ||
-                            note.content.toLowerCase().contains(queryLower);
+                        return noteWithFolder.note.title.toLowerCase().contains(queryLower) ||
+                            noteWithFolder.note.content.toLowerCase().contains(queryLower);
                       }).toList();
 
                 if (filteredNotes.isEmpty) {
@@ -299,12 +298,12 @@ class _ArchivePageState extends ConsumerState<ArchivePage> {
                         ),
                   itemCount: filteredNotes.length,
                   itemBuilder: (context, index) {
-                    final note = filteredNotes[index];
-                    final isSelected = noteIds.contains(note.uuid);
+                    final NoteWithFolder noteWithFolder = filteredNotes[index];
+                    final isSelected = noteIds.contains(noteWithFolder.note.uuid);
 
                     return NoteCard(
-                      key: ValueKey(note.uuid),
-                      note: note,
+                      key: ValueKey(noteWithFolder.note.uuid),
+                      noteWithFolder: noteWithFolder,
                       searchQuery: searchQuery,
                       isSelected: isSelected,
                       contextMenuOptions: const [
@@ -314,15 +313,15 @@ class _ArchivePageState extends ConsumerState<ArchivePage> {
                       ],
                       onTap: () {
                         if (isSelectMode) {
-                          _toggleSelection(note.uuid);
+                          _toggleSelection(noteWithFolder.note.uuid);
                         } else {
-                          NoteTapHandler.openNote(context, ref, note);
+                          NoteTapHandler.openNote(context, ref, noteWithFolder);
                         }
                       },
                       onLongPress: () {
                         if (!isSelectMode) {
                           setState(() => isSelectMode = true);
-                          _toggleSelection(note.uuid);
+                          _toggleSelection(noteWithFolder.note.uuid);
                         }
                       },
                       onContextMenuAction: (option) {
@@ -331,19 +330,19 @@ class _ArchivePageState extends ConsumerState<ArchivePage> {
                             setState(() => isSelectMode = true);
                           }
                           if (!isSelected) {
-                            _toggleSelection(note.uuid);
+                            _toggleSelection(noteWithFolder.note.uuid);
                           }
                           return;
                         }
 
                         if (option == NoteContextMenuOption.unarchive) {
-                          final targetUuids = isSelected ? noteIds.toList() : [note.uuid];
+                          final targetUuids = isSelected ? noteIds.toList() : [noteWithFolder.note.uuid];
                           _unarchiveNotes(targetUuids);
                           return;
                         }
 
                         if (option == NoteContextMenuOption.delete) {
-                          final targetUuids = isSelected ? noteIds.toList() : [note.uuid];
+                          final targetUuids = isSelected ? noteIds.toList() : [noteWithFolder.note.uuid];
                           _deleteNotes(targetUuids);
                           return;
                         }

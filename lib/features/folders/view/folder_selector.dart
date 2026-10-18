@@ -38,7 +38,7 @@ class _FolderButtonState extends ConsumerState<FolderButton> {
 
   @override
   Widget build(BuildContext context) {
-    final activeFolder = widget.selectedFolder;
+    final Folder? activeFolder = widget.selectedFolder;
 
     final currentName = activeFolder?.name ?? widget.emptyLabel;
     final currentColor = activeFolder != null
@@ -80,14 +80,19 @@ class _FolderButtonState extends ConsumerState<FolderButton> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: currentColor,
-                      shape: BoxShape.circle,
+
+                  // Only show the circle AND its spacing if a folder is selected
+                  if (activeFolder != null) ...[
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: currentColor,
+                        shape: BoxShape.circle,
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 8),
+                  ],
                   const SizedBox(width: 8),
                   Text(
                     currentName,

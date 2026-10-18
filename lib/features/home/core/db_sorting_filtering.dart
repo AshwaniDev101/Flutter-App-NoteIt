@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/database/drift/notes/notes_dao.dart';
 import '../../../core/util/logger.dart';
 
@@ -26,7 +25,7 @@ class NoteSortPreferenceNotifier extends Notifier<NoteSortPreference> {
 /// Passes the sorted list to `filteredNotesProvider`.
 /// Filtering (active notes vs deleted/archived) and sorting (pinned notes first by pin timestamp,
 /// followed by sort preference) are offloaded directly to SQLite for optimal performance.
-final sortedNotesStreamProvider = StreamProvider<List<Note>>((ref) {
+final sortedNotesStreamProvider = StreamProvider<List<NoteWithFolder>>((ref) {
   final notesDao = ref.watch(notesDaoProvider);
   final sortOption = ref.watch(noteSortPreferenceProvider); // Watches the UI choice
 

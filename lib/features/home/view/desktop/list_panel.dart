@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/util/platform_helper.dart';
-import 'package:noteit/database/drift/local_database.dart';
+import 'package:noteit/database/drift/notes/notes_dao.dart';
 
 import 'package:window_manager/window_manager.dart';
 
@@ -27,7 +27,7 @@ class DesktopListPanel extends ConsumerWidget {
   final String? activeNoteId;
   final bool isKeyboardDriven;
   final VoidCallback onAddNote;
-  final Function(Note) onNoteTap;
+  final Function(NoteWithFolder) onNoteTap;
   final Function(bool) onKeyboardModeChanged;
 
   // for closing the drawer on right panel click

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:noteit/database/drift/local_database.dart';
+import 'package:noteit/database/drift/notes/notes_dao.dart';
 
 import 'package:noteit/features/note_editor/screens/view/desktop_edit_page.dart';
 
@@ -12,6 +12,7 @@ import '../../../../shared/find_replace.dart';
 import '../../../../shared/note_card/core/note_action_controller.dart';
 import '../../../../shared/highlighting_text_field.dart';
 import '../../../../shared/snack_bar_manager.dart';
+import '../../../folders/core/providers.dart';
 import '../../../home/view/desktop/content_panel/core/navigator.dart';
 import '../../widgets/checklist_editor.dart';
 import '../../widgets/note_editor_options.dart';
@@ -21,9 +22,9 @@ import '../viewmodel/edit_note_view_model.dart';
 
 
 class MobileEditNotePage extends ConsumerStatefulWidget {
-  final Note? existingNote;
+  final NoteWithFolder? existingNoteWithFolder;
 
-  const MobileEditNotePage({super.key, this.existingNote});
+  const MobileEditNotePage({super.key, this.existingNoteWithFolder});
 
   @override
   ConsumerState<MobileEditNotePage> createState() => _MobileEditNotePageState();
@@ -52,26 +53,26 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
   late final FocusNode _contentFocusNode;
 
   bool get _isNewNote =>
-      widget.existingNote == null ||
-          (widget.existingNote!.title.isEmpty &&
-              widget.existingNote!.content.isEmpty &&
-              widget.existingNote!.cloudSyncStatus == 0 &&
-              widget.existingNote!.localSyncStatus == 0);
+      widget.existingNoteWithFolder == null ||
+          (widget.existingNoteWithFolder!.note.title.isEmpty &&
+              widget.existingNoteWithFolder!.note.content.isEmpty &&
+              widget.existingNoteWithFolder!.note.cloudSyncStatus == 0 &&
+              widget.existingNoteWithFolder!.note.localSyncStatus == 0);
 
   @override
   void initState() {
     super.initState();
     _viewModel = ref.read(editNoteViewModelProvider.notifier);
-    _isLocked = widget.existingNote?.lockedAt != null;
-    _isPinned = widget.existingNote?.pinnedAt != null;
+    _isLocked = widget.existingNoteWithFolder?.note.lockedAt != null;
+    _isPinned = widget.existingNoteWithFolder?.note.pinnedAt != null;
 
-    _titleController = TextEditingController(text: widget.existingNote?.title ?? '');
-    _contentController = HighlightingTextField(text: widget.existingNote?.content ?? '');
+    _titleController = TextEditingController(text: widget.existingNoteWithFolder?.note.title ?? '');
+    _contentController = HighlightingTextField(text: widget.existingNoteWithFolder?.note.content ?? '');
 
     // --- Checklist Init ---
-    if (widget.existingNote != null) {
+    if (widget.existingNoteWithFolder != null) {
       final String textContent = _contentController.text.trim();
-      if (widget.existingNote!.contentVersion == ContentVersion.checklist.value ||
+      if (widget.existingNoteWithFolder!.note.contentVersion == ContentVersion.checklist.value ||
           (textContent.startsWith('[') && textContent.endsWith(']'))) {
         _contentVersion = ContentVersion.checklist;
         _currentChecklist = _convertTextToChecklist(textContent);
@@ -167,15 +168,16 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
     if (_isNewNote) {
       if (_hasCreatedNewNote) return;
 
-      _viewModel.saveNote(title, content, _contentVersion);
+      final activeFolderId = ref.read(activeFolderProvider)?.uuid;
+      _viewModel.saveNote(title, content, _contentVersion, folderId: activeFolderId);
       _hasCreatedNewNote = true;
     } else {
       // Check for version changes and pass _contentVersion
-      if (title != widget.existingNote!.title ||
-          content != widget.existingNote!.content ||
-          widget.existingNote!.contentVersion != _contentVersion.value) {
+      if (title != widget.existingNoteWithFolder!.note.title ||
+          content != widget.existingNoteWithFolder!.note.content ||
+          widget.existingNoteWithFolder!.note.contentVersion != _contentVersion.value) {
 
-        _viewModel.updateNote(widget.existingNote!.uuid, title, content, _contentVersion);
+        _viewModel.updateNote(widget.existingNoteWithFolder!.note.uuid, title, content, _contentVersion);
       }
     }
 
@@ -190,9 +192,9 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
   }
 
   void _handleDeleteNote() {
-    if (!_isNewNote && widget.existingNote != null) {
+    if (!_isNewNote && widget.existingNoteWithFolder != null) {
       _hasTriggeredFinalSave = true;
-      ref.read(editNoteViewModelProvider.notifier).deleteNote(widget.existingNote!.uuid);
+      ref.read(editNoteViewModelProvider.notifier).deleteNote(widget.existingNoteWithFolder!.note.uuid);
       if (mounted) context.pop();
     }
   }
@@ -204,7 +206,7 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
   }
 
   String _getFormattedDate() {
-    final now = widget.existingNote?.updatedAt ?? widget.existingNote?.createdAt ?? DateTime.now();
+    final now = widget.existingNoteWithFolder?.note.updatedAt ?? widget.existingNoteWithFolder?.note.createdAt ?? DateTime.now();
     return _isNewNote
         ? "${now.month}/${now.day}/${now.year}"
         : "${now.month}/${now.day}/${now.year} ${now.hour}:${now.minute.toString().padLeft(2, '0')}";
@@ -238,7 +240,7 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
                       SnackBarManager.show(msg: 'Please save the note first', type: SnackBarMessageType.error);
                       return;
                     }
-                    final targetUuid = widget.existingNote!.uuid;
+                    final targetUuid = widget.existingNoteWithFolder!.note.uuid;
                     final actionsController = ref.read(noteActionsControllerProvider);
                     await actionsController.togglePinNotes([targetUuid]);
                     if (mounted) {
@@ -483,9 +485,9 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
       shouldProceed = true;
     }
 
-    if (shouldProceed && widget.existingNote != null) {
+    if (shouldProceed && widget.existingNoteWithFolder != null) {
       final success = await lockManager.togglePersistentLock(
-        widget.existingNote!.uuid,
+        widget.existingNoteWithFolder!.note.uuid,
         '',
         shouldLock: !isCurrentlyLocked,
         ignorePassword: true,

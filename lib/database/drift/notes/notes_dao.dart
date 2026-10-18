@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/util/logger.dart';
+import '../folders/folders_table.dart';
 import '../local_database.dart';
 import 'notes_table.dart';
 
@@ -13,7 +14,14 @@ final notesDaoProvider = Provider((ref) => ref.watch(localDatabaseProvider).note
 /// Database sorting options for active notes query
 enum NoteSortPreference { name, createdAt, updatedAt }
 
-@DriftAccessor(tables: [Notes])
+class NoteWithFolder {
+  final Note note;
+  final Folder? folder;
+
+  NoteWithFolder({required this.note, this.folder});
+}
+
+@DriftAccessor(tables: [Notes, Folders])
 class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
   NotesDao(super.db);
 
@@ -77,30 +85,73 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
   /// Watches active (non-deleted, non-archived) notes sorted directly by SQLite:
   /// 1. Pinned notes first (pinnedAt IS NOT NULL), sorted by pinnedAt timestamp descending.
   /// 2. Unpinned notes sorted according to [sortOption] (name, createdAt, or updatedAt).
-  Stream<List<Note>> watchSortedNotes(NoteSortPreference sortOption) {
-    return (select(notes)
-          ..where((t) => t.deletedAt.isNull() & t.archivedAt.isNull())
-          ..orderBy([
-            // Pinned notes first (pinnedAt != null), newest pinned first
-            (t) => OrderingTerm(expression: t.pinnedAt, mode: OrderingMode.desc, nulls: NullsOrder.last),
-            // Secondary sort choice
-            (t) {
-              switch (sortOption) {
-                case NoteSortPreference.name:
-                  return OrderingTerm(expression: t.title.collate(Collate.noCase), mode: OrderingMode.asc);
-                case NoteSortPreference.createdAt:
-                  return OrderingTerm(expression: t.createdAt, mode: OrderingMode.desc);
-                case NoteSortPreference.updatedAt:
-                  return OrderingTerm(expression: t.updatedAt, mode: OrderingMode.desc);
-              }
-            },
-          ]))
-        .watch();
+
+  Stream<List<NoteWithFolder>> watchSortedNotes(NoteSortPreference sortOption) {
+    final query = select(notes).join([
+      leftOuterJoin(folders, folders.uuid.equalsExp(notes.folderId)),
+    ]);
+
+    query.where(notes.deletedAt.isNull() & notes.archivedAt.isNull());
+
+    query.orderBy([
+      // Pinned notes first, newest pinned first
+      OrderingTerm(expression: notes.pinnedAt, mode: OrderingMode.desc, nulls: NullsOrder.last),
+      // Secondary sort choice
+      if (sortOption == NoteSortPreference.name)
+        OrderingTerm(expression: notes.title.collate(Collate.noCase), mode: OrderingMode.asc)
+      else if (sortOption == NoteSortPreference.createdAt)
+        OrderingTerm(expression: notes.createdAt, mode: OrderingMode.desc)
+      else
+        OrderingTerm(expression: notes.updatedAt, mode: OrderingMode.desc),
+    ]);
+
+    return query.watch().map((rows) {
+      return rows.map((row) {
+        return NoteWithFolder(
+          note: row.readTable(notes),
+          // readTableOrNull handles the LEFT JOIN where a folder might not exist
+          folder: row.readTableOrNull(folders),
+        );
+      }).toList();
+    });
   }
 
-  Future<Note> getNoteById(String uuid) {
-    return (select(notes)..where((t) => t.uuid.equals(uuid))).getSingle();
+  // Stream<List<Note>> watchSortedNotes(NoteSortPreference sortOption) {
+  //   return (select(notes)
+  //         ..where((t) => t.deletedAt.isNull() & t.archivedAt.isNull())
+  //         ..orderBy([
+  //           // Pinned notes first (pinnedAt != null), newest pinned first
+  //           (t) => OrderingTerm(expression: t.pinnedAt, mode: OrderingMode.desc, nulls: NullsOrder.last),
+  //           // Secondary sort choice
+  //           (t) {
+  //             switch (sortOption) {
+  //               case NoteSortPreference.name:
+  //                 return OrderingTerm(expression: t.title.collate(Collate.noCase), mode: OrderingMode.asc);
+  //               case NoteSortPreference.createdAt:
+  //                 return OrderingTerm(expression: t.createdAt, mode: OrderingMode.desc);
+  //               case NoteSortPreference.updatedAt:
+  //                 return OrderingTerm(expression: t.updatedAt, mode: OrderingMode.desc);
+  //             }
+  //           },
+  //         ]))
+  //       .watch();
+  // }
+
+  /// Fetches a single note and its folder.
+  Future<NoteWithFolder> getNoteById(String uuid) {
+    final query = select(notes).join([
+      leftOuterJoin(folders, folders.uuid.equalsExp(notes.folderId)),
+    ])..where(notes.uuid.equals(uuid));
+
+    return query.map((row) => NoteWithFolder(
+      note: row.readTable(notes),
+      folder: row.readTableOrNull(folders),
+    )).getSingle();
   }
+
+  // Future<Note> getNoteById(String uuid) {
+  //   return (select(notes)..where((t) => t.uuid.equals(uuid))).getSingle();
+  // }
 
   Future<int> deleteNote(String uuid) async {
     // Hard Delete
@@ -288,12 +339,27 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
   // =========================================================================
 
   /// VIEW TRASH: Watch only notes that have a deletedAt timestamp
-  Stream<List<Note>> watchTrashNotes() {
-    return (select(notes)
-          ..where((t) => t.deletedAt.isNotNull())
-          ..orderBy([(t) => OrderingTerm(expression: t.deletedAt, mode: OrderingMode.desc)]))
-        .watch();
+
+  Stream<List<NoteWithFolder>> watchTrashNotes() {
+    final query = select(notes).join([
+      leftOuterJoin(folders, folders.uuid.equalsExp(notes.folderId)),
+    ]);
+
+    query
+      ..where(notes.deletedAt.isNotNull())
+      ..orderBy([OrderingTerm(expression: notes.deletedAt, mode: OrderingMode.desc)]);
+
+    return query.watch().map((rows) => rows.map((row) => NoteWithFolder(
+      note: row.readTable(notes),
+      folder: row.readTableOrNull(folders),
+    )).toList());
   }
+  // Stream<List<Note>> watchTrashNotes() {
+  //   return (select(notes)
+  //         ..where((t) => t.deletedAt.isNotNull())
+  //         ..orderBy([(t) => OrderingTerm(expression: t.deletedAt, mode: OrderingMode.desc)]))
+  //       .watch();
+  // }
 
   Future<bool> restoreNote(String uuid) async {
     return await (update(notes)..where((t) => t.uuid.equals(uuid))).write(
@@ -392,13 +458,29 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
   }
 
   /// VIEW ARCHIVE: Watch only notes that are archived and not in the trash
-  Stream<List<Note>> watchArchivedNotes() {
-    return (select(notes)
-          ..where((t) => t.archivedAt.isNotNull()) // Replaced boolean check
-          ..where((t) => t.deletedAt.isNull())
-          ..orderBy([(t) => OrderingTerm(expression: t.updatedAt, mode: OrderingMode.desc)]))
-        .watch();
-  }
+
+Stream<List<NoteWithFolder>> watchArchivedNotes() {
+  final query = select(notes).join([
+    leftOuterJoin(folders, folders.uuid.equalsExp(notes.folderId)),
+  ]);
+
+  query
+    ..where(notes.archivedAt.isNotNull() & notes.deletedAt.isNull())
+    ..orderBy([OrderingTerm(expression: notes.updatedAt, mode: OrderingMode.desc)]);
+
+  return query.watch().map((rows) => rows.map((row) => NoteWithFolder(
+    note: row.readTable(notes),
+    folder: row.readTableOrNull(folders),
+  )).toList());
+}
+
+// Stream<List<Note>> watchArchivedNotes() {
+  //   return (select(notes)
+  //         ..where((t) => t.archivedAt.isNotNull()) // Replaced boolean check
+  //         ..where((t) => t.deletedAt.isNull())
+  //         ..orderBy([(t) => OrderingTerm(expression: t.updatedAt, mode: OrderingMode.desc)]))
+  //       .watch();
+  // }
 
   /// Fetches specific notes (Used for duplication)
   Future<List<Note>> getNotesByUuids(Iterable<String> uuids) {

@@ -1,10 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/features/local_sync/view/role_selector_page.dart';
 import 'package:noteit/features/note_editor/screens/view/details/detail_page.dart';
 import 'package:noteit/features/others/archive_page.dart';
 
+import '../../database/drift/notes/notes_dao.dart';
 import '../../features/backup/export_page.dart';
 import '../../features/backup/import_page.dart';
 import '../../features/dev_tools/dev_page.dart';
@@ -62,12 +62,12 @@ final routerProvider = Provider((ref) {
       GoRoute(
         path: AppRoutes.edit,
         builder: (context, state) {
-          final note = state.extra as Note?;
+          final noteWithFolder = state.extra as NoteWithFolder?;
 
           if (PlatformHelper.isDesktopScreen) {
-            return DesktopEditNotePage(existingNote: note);
+            return DesktopEditNotePage(existingNoteWithFolder: noteWithFolder);
           } else {
-            return MobileEditNotePage(existingNote: note);
+            return MobileEditNotePage(existingNoteWithFolder: noteWithFolder);
           }
         },
       ),

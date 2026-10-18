@@ -7,7 +7,9 @@ import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.d
 import 'package:uuid/uuid.dart';
 
 import '../../../../database/drift/keybindings/keybindings_dao.dart';
+import '../../../../database/drift/notes/notes_dao.dart';
 import '../../../../database/sync/sync_orchestrator.dart';
+import '../../../folders/core/providers.dart';
 import '../../../keybinding/shortcut_config.dart';
 import '../../core/providers.dart';
 import '../../viewmodel/viewmodel.dart';
@@ -27,10 +29,6 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePanel> {
 
   /// Tracks the current width of the middle panel. Modified by the draggable divider.
   double _listPanelWidth = 340.0;
-
-  // ==== LEFT PANEL STATE ==== // Todo: remove this
-  final bool _isLeftPanelExpanded = false;
-  double get _currentLeftWidth => _isLeftPanelExpanded ? 240.0 : 64.0;
 
   // For helping close the drawer when user click on the invisible barrier on top of the right panel
   final GlobalKey<ScaffoldState> _leftScaffoldKey = GlobalKey<ScaffoldState>();
@@ -95,11 +93,12 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePanel> {
     return false;
   }
 
-  void _handleNoteTap(Note note) {
-    NoteTapHandler.openNote(context, ref, note);
+  void _handleNoteTap(NoteWithFolder noteWithFolder) {
+    NoteTapHandler.openNote(context, ref, noteWithFolder);
   }
 
   void _addNote() {
+    final activeFolder = ref.read(activeFolderProvider);
     final emptyNote = Note(
       uuid: const Uuid().v4(),
       title: '',
@@ -112,7 +111,7 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePanel> {
       lockedAt: null,
       localAttachmentPath: null,
       cloudAttachmentUrl: null,
-      folderId: null,
+      folderId: activeFolder?.uuid,
       tags: null,
       reminderAt: null,
       ownerUid: null,
@@ -129,17 +128,24 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePanel> {
       cloudSyncStatus: 0,
       localSyncStatus: 0,
     );
+
+    // Wrap the raw Note inside your new class
+    final emptyNoteWithFolder = NoteWithFolder(
+      note: emptyNote,
+      folder: activeFolder,
+    );
+
     ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.allNotes);
-    ref.read(activeNoteProvider.notifier).setNote(emptyNote);
+
+    // Pass the wrapper to the provider
+    ref.read(activeNoteProvider.notifier).setNote(emptyNoteWithFolder);
   }
 
   @override
   Widget build(BuildContext context) {
     final homeState = ref.watch(homeViewModelProvider);
     final viewModel = ref.read(homeViewModelProvider.notifier);
-    final activeNote = ref.watch(activeNoteProvider);
-
-    final colorSchema = Theme.of(context).colorScheme;
+    final NoteWithFolder? activeNoteWithFolder = ref.watch(activeNoteProvider);
 
     ref.watch(syncOrchestratorProvider);
     final shortcutsAsync = ref.watch(keybindingsProvider);
@@ -204,7 +210,7 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePanel> {
                                 onDrawerChanged: (isOpen) => setState(() => _isDrawerOpen = isOpen),
                                 searchController: _searchController,
                                 searchFocusNode: _searchFocusNode,
-                                activeNoteId: activeNote?.uuid,
+                                activeNoteId: activeNoteWithFolder?.note.uuid,
                                 isKeyboardDriven: _isKeyboardDriven,
                                 onAddNote: _addNote,
                                 onNoteTap: _handleNoteTap,
@@ -214,7 +220,7 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePanel> {
                             VerticalDivider(width: 1, thickness: 1,color: Colors.transparent),
 
                             // Right Panel
-                            Expanded(child: DesktopContentPanel(activeNote: activeNote)),
+                            Expanded(child: DesktopContentPanel(activeNoteWithFolder: activeNoteWithFolder)),
                           ],
                         ),
 

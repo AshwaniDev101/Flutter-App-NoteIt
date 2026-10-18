@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/util/device_info.dart';
+import 'package:noteit/database/drift/local_database.dart';
+import 'package:noteit/database/drift/notes/notes_dao.dart';
 
 import '../../../core/util/platform_helper.dart';
-import '../../../../database/drift/local_database.dart';
 import '../../../../../database/sync/sync_orchestrator.dart';
 import '../../features/folders/core/providers.dart';
 import '../view_menu_button.dart';
@@ -19,7 +20,7 @@ class DynamicNotesLayout extends ConsumerWidget {
   final String? activeNoteId;
   final Function(String) onToggleSelection;
   final Function() onEnableSelectMode;
-  final void Function(Note) onNoteTap;
+  final void Function(NoteWithFolder) onNoteTap;
 
   const DynamicNotesLayout({
     super.key,
@@ -58,14 +59,14 @@ class DynamicNotesLayout extends ConsumerWidget {
     );
   }
 
-  Widget _buildAdaptiveLayout(List<Note> notes, NoteViewType viewType, WidgetRef ref) {
+  Widget _buildAdaptiveLayout(List<NoteWithFolder> notesWithFolder, NoteViewType viewType, WidgetRef ref) {
     Widget itemBuilder(BuildContext context, int index) {
-      final currentNote = notes[index];
-      final isCurrentlySelected = noteIds.contains(currentNote.uuid);
+      final currentNoteWithFolder = notesWithFolder[index];
+      final isCurrentlySelected = noteIds.contains(currentNoteWithFolder.note.uuid);
       return NoteCard(
-        note: currentNote,
-        key: ValueKey(currentNote.uuid),
-        isSelected: noteIds.contains(currentNote.uuid) || currentNote.uuid == activeNoteId,
+        noteWithFolder: currentNoteWithFolder,
+        key: ValueKey(currentNoteWithFolder.note.uuid),
+        isSelected: noteIds.contains(currentNoteWithFolder.note.uuid) || currentNoteWithFolder.note.uuid == activeNoteId,
         searchQuery: ref.read(searchQueryProvider),
 
         onTap: () {
@@ -75,15 +76,15 @@ class DynamicNotesLayout extends ConsumerWidget {
 
           if (isSelectMode || isModifierPressed) {
             if (!isSelectMode) onEnableSelectMode();
-            onToggleSelection(currentNote.uuid);
+            onToggleSelection(currentNoteWithFolder.note.uuid);
           } else {
-            onNoteTap(currentNote);
+            onNoteTap(currentNoteWithFolder);
           }
         },
         onLongPress: () {
           if (!isSelectMode) {
             onEnableSelectMode();
-            onToggleSelection(currentNote.uuid);
+            onToggleSelection(currentNoteWithFolder.note.uuid);
           }
         },
 
@@ -91,7 +92,7 @@ class DynamicNotesLayout extends ConsumerWidget {
           if (option == NoteContextMenuOption.select) {
             if (!isSelectMode) onEnableSelectMode();
             if (!isCurrentlySelected) {
-              onToggleSelection(currentNote.uuid);
+              onToggleSelection(currentNoteWithFolder.note.uuid);
             }
             return;
           }
@@ -100,7 +101,7 @@ class DynamicNotesLayout extends ConsumerWidget {
             _handleBatchAction(ref, option, noteIds.toList());
           }
           else {
-            _handleBatchAction(ref, option, [currentNote.uuid]);
+            _handleBatchAction(ref, option, [currentNoteWithFolder.note.uuid]);
           }
         },
       );
@@ -113,7 +114,7 @@ class DynamicNotesLayout extends ConsumerWidget {
       return ListView.builder(
         physics: physics,
         padding: padding,
-        itemCount: notes.length,
+        itemCount: notesWithFolder.length,
         itemBuilder: itemBuilder,
       );
     }
@@ -121,7 +122,7 @@ class DynamicNotesLayout extends ConsumerWidget {
     return GridView.builder(
       physics: physics,
       padding: padding,
-      itemCount: notes.length,
+      itemCount: notesWithFolder.length,
       gridDelegate: _getGridDelegate(viewType),
       itemBuilder: itemBuilder,
     );

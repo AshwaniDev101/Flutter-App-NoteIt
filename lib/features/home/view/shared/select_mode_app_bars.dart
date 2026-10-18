@@ -39,7 +39,7 @@ class SelectModeAppBar extends ConsumerWidget implements PreferredSizeWidget {
     final handleClearSelection = onClearSelection ?? viewModel.clearSelection;
     final handleSelectAll = onSelectAll ??
         () {
-          final allNoteUuids = currentNotes.map((n) => n.uuid).toList();
+          final allNoteUuids = currentNotes.map((noteWithFolder) => noteWithFolder.note.uuid).toList();
           viewModel.toggleSelectAll(allNoteUuids);
         };
 

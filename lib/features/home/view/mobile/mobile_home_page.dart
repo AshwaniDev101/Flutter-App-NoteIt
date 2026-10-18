@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:noteit/core/routing/routing.dart';
-import 'package:noteit/database/drift/local_database.dart';
+import 'package:noteit/database/drift/notes/notes_dao.dart';
 import 'package:noteit/features/home/view/shared/icon_tray/icon_tray.dart';
 import 'package:noteit/features/home/view/shared/select_mode_app_bars.dart';
 import 'package:noteit/features/home/viewmodel/viewmodel.dart';
@@ -46,8 +46,8 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
     super.dispose();
   }
 
-  void _handleNoteTap(Note note) {
-    NoteTapHandler.openNote(context, ref, note);
+  void _handleNoteTap(NoteWithFolder noteWithFolder) {
+    NoteTapHandler.openNote(context, ref, noteWithFolder);
   }
 
   @override

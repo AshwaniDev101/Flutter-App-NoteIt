@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/features/home/view/shared/icon_tray/icon_tray.dart';
 import 'package:noteit/features/others/archive_page.dart';
 import 'package:window_manager/window_manager.dart';
 import '../../../../../core/util/platform_helper.dart';
+import '../../../../../database/drift/notes/notes_dao.dart';
 import '../../../../backup/export_page.dart';
 import '../../../../backup/import_page.dart';
 import '../../../../dev_tools/dev_page.dart';
@@ -24,9 +24,9 @@ import '../../../core/providers.dart';
 import 'core/navigator.dart';
 
 class DesktopContentPanel extends ConsumerWidget {
-  final Note? activeNote;
+  final NoteWithFolder? activeNoteWithFolder;
 
-  const DesktopContentPanel({super.key, required this.activeNote});
+  const DesktopContentPanel({super.key, required this.activeNoteWithFolder});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -86,10 +86,10 @@ class DesktopContentPanel extends ConsumerWidget {
   Widget _buildRightPanelContent(RightPanelPageOptions view) {
     return switch (view) {
       RightPanelPageOptions.allNotes =>
-        activeNote != null
+        activeNoteWithFolder != null
             ? _PaddingWrapper(
-                key: ValueKey('editor_view_${activeNote!.uuid}'),
-                child: DesktopEditNotePage(key: ValueKey(activeNote!.uuid), existingNote: activeNote),
+                key: ValueKey('editor_view_${activeNoteWithFolder!.note.uuid}'),
+                child: DesktopEditNotePage(key: ValueKey(activeNoteWithFolder!.note.uuid), existingNoteWithFolder: activeNoteWithFolder),
               )
             : const _HomepagePlaceholder(
                 key: ValueKey('editor_fallback'),
