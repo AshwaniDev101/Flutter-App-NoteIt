@@ -36,10 +36,7 @@ enum ContentVersion {
   /// Helper method to easily convert a database integer back into an Enum.
   /// Fallbacks to [ContentVersion.plainText] if the integer is unrecognized.
   static ContentVersion fromValue(int val) {
-    return ContentVersion.values.firstWhere(
-          (e) => e.value == val,
-      orElse: () => ContentVersion.plainText,
-    );
+    return ContentVersion.values.firstWhere((e) => e.value == val, orElse: () => ContentVersion.plainText);
   }
 }
 
@@ -49,10 +46,7 @@ enum ContentVersion {
 class DesktopEditNotePage extends ConsumerStatefulWidget {
   final NoteWithFolder? existingNoteWithFolder;
 
-  const DesktopEditNotePage({
-    super.key,
-    this.existingNoteWithFolder,
-  });
+  const DesktopEditNotePage({super.key, this.existingNoteWithFolder});
 
   @override
   ConsumerState<DesktopEditNotePage> createState() => _DesktopEditNotePageState();
@@ -92,10 +86,10 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
   /// Determines if the note is brand new and unsaved to the local database.
   bool get _isNewNote =>
       _currentNoteWithFolder == null ||
-          (_currentNoteWithFolder!.note.title.isEmpty &&
-              _currentNoteWithFolder!.note.content.isEmpty &&
-              _currentNoteWithFolder!.note.cloudSyncStatus == 0 &&
-              _currentNoteWithFolder!.note.localSyncStatus == 0);
+      (_currentNoteWithFolder!.note.title.isEmpty &&
+          _currentNoteWithFolder!.note.content.isEmpty &&
+          _currentNoteWithFolder!.note.cloudSyncStatus == 0 &&
+          _currentNoteWithFolder!.note.localSyncStatus == 0);
 
   @override
   void initState() {
@@ -139,12 +133,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
 
     // Push final save to the next event loop, safely escaping widget teardown
     Future(() {
-      _executeSave(
-        isManualSave: false,
-        isDisposing: true,
-        overrideTitle: finalTitle,
-        overrideContent: finalContent,
-      );
+      _executeSave(isManualSave: false, isDisposing: true, overrideTitle: finalTitle, overrideContent: finalContent);
     });
 
     // Cleanup
@@ -185,11 +174,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
           cleanLine = cleanLine.substring(2).trimLeft();
         }
 
-        return CheckListItemModel(
-          id: UniqueKey().toString(),
-          text: cleanLine,
-          isChecked: isChecked,
-        );
+        return CheckListItemModel(id: UniqueKey().toString(), text: cleanLine, isChecked: isChecked);
       }).toList();
     }
   }
@@ -366,7 +351,6 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
   Widget build(BuildContext context) {
     final panelColor = Theme.of(context).colorScheme.surfaceContainerLow;
 
-
     final currentFolder = _currentNoteWithFolder?.folder ?? _selectedFolderForNewNote;
 
     // Extract the color directly from our localized currentFolder
@@ -376,7 +360,6 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-
         // Optimal reading width
         const double maxTextWidth = 850.0;
 
@@ -401,6 +384,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
               NoteEditorOptionButton(
                 isLocked: _isLocked,
                 isPinned: _currentNoteWithFolder?.note.pinnedAt != null,
+                isChecklist: _contentVersion == ContentVersion.checklist,
                 onPressed: (NoteEditorOption option) async {
                   if (_isNewNote && option != NoteEditorOption.info) {
                     SnackBarManager.show(msg: 'Please save the note first', type: SnackBarMessageType.error);
@@ -460,7 +444,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
                       });
                       break;
                     case NoteEditorOption.reminder:
-                    // TODO: UI Action - Open DatePicker
+                      // TODO: UI Action - Open DatePicker
                       break;
                   }
                 },
@@ -469,7 +453,6 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               // --- The Top Accent Border ---
               if (currentFolder != null)
                 Container(
@@ -491,7 +474,9 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
                 ),
 
               _buildTitleField(leftPadding: leftPadding, rightPadding: rightPadding),
-              Expanded(child: _buildContentField(leftPadding: leftPadding, rightPadding: rightPadding)),
+              Expanded(
+                child: _buildContentField(leftPadding: leftPadding, rightPadding: rightPadding),
+              ),
             ],
           ),
         );
@@ -531,15 +516,10 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
             setState(() {
               if (_currentNoteWithFolder != null) {
                 // Copy the underlying Drift Note, updating the folderId
-                final updatedDriftNote = _currentNoteWithFolder!.note.copyWith(
-                    folderId: drift.Value(newFolderId)
-                );
+                final updatedDriftNote = _currentNoteWithFolder!.note.copyWith(folderId: drift.Value(newFolderId));
                 // Re-wrap it in a new NoteWithFolder class, passing the
                 // new folder object (which was passed in from the dropdown).
-                _currentNoteWithFolder = NoteWithFolder(
-                  note: updatedDriftNote,
-                  folder: folder,
-                );
+                _currentNoteWithFolder = NoteWithFolder(note: updatedDriftNote, folder: folder);
               } else {
                 _selectedFolderForNewNote = folder;
               }
@@ -549,9 +529,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
         const SizedBox(width: 16),
         Text(
           "Edited ${_getFormattedDate()}",
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
         ),
         const SizedBox(width: 16),
         ValueListenableBuilder<bool>(
@@ -559,52 +537,48 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
           builder: (context, isSaved, child) {
             return isSaved
                 ? Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.done_all, size: 16, color: Theme.of(context).colorScheme.outline),
-                  const SizedBox(width: 4),
-                  Text(
-                    "Saved",
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.outline,
-                      fontStyle: FontStyle.italic,
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.done_all, size: 16, color: Theme.of(context).colorScheme.outline),
+                        const SizedBox(width: 4),
+                        Text(
+                          "Saved",
+                          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.outline,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-            )
+                  )
                 : Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(4),
-                onTap: () {
-                  _executeSave(isManualSave: true);
-                },
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.done,
-                        size: 16,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        "Save",
-                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.primary,
-                          fontWeight: FontWeight.bold,
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(4),
+                      onTap: () {
+                        _executeSave(isManualSave: true);
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.done, size: 16, color: Theme.of(context).colorScheme.primary),
+                            const SizedBox(width: 4),
+                            Text(
+                              "Save",
+                              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
-                ),
-              ),
-            );
+                    ),
+                  );
           },
         ),
         const SizedBox(width: 16),
@@ -624,10 +598,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
         color: Theme.of(context).colorScheme.primaryContainer,
         borderRadius: BorderRadius.circular(4),
       ),
-      child: Text(
-        'New',
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold),
-      ),
+      child: Text('New', style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold)),
     );
   }
 
@@ -740,39 +711,62 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
           }
           return KeyEventResult.ignored;
         },
+
         child: _contentVersion == ContentVersion.checklist
             ? Padding(
-          padding: EdgeInsets.only(left: leftPadding, right: rightPadding),
-          child: CheckListWidget(
-            initialData: _currentChecklist,
-            onChange: (List<CheckListItemModel> updatedList) {
-              _currentChecklist = updatedList;
-              _highlightedContentController.text = jsonEncode(updatedList.map((e) => e.toJson()).toList());
-            },
-            onSubmit: (List<CheckListItemModel> updatedList) {
-              _currentChecklist = updatedList;
-              _highlightedContentController.text = jsonEncode(updatedList.map((e) => e.toJson()).toList());
-            },
-          ),
-        )
+                padding: EdgeInsets.only(left: leftPadding, right: rightPadding),
+                child: ListenableBuilder(
+                  listenable: _highlightedContentController,
+                  builder: (context, _) {
+                    return CheckListWidget(
+                      initialData: _currentChecklist,
+                      searchQuery: _highlightedContentController.searchQuery, // Passes search query down
+                      onChange: (List<CheckListItemModel> updatedList) {
+                        _currentChecklist = updatedList;
+                        _highlightedContentController.text = jsonEncode(updatedList.map((e) => e.toJson()).toList());
+                      },
+                      onSubmit: (List<CheckListItemModel> updatedList) {
+                        _currentChecklist = updatedList;
+                        _highlightedContentController.text = jsonEncode(updatedList.map((e) => e.toJson()).toList());
+                      },
+                    );
+                  },
+                ),
+              )
+            // : TextField(
+            // child: _contentVersion == ContentVersion.checklist
+            //     ? Padding(
+            //   padding: EdgeInsets.only(left: leftPadding, right: rightPadding),
+            //   child: CheckListWidget(
+            //     initialData: _currentChecklist,
+            //     onChange: (List<CheckListItemModel> updatedList) {
+            //       _currentChecklist = updatedList;
+            //       _highlightedContentController.text = jsonEncode(updatedList.map((e) => e.toJson()).toList());
+            //     },
+            //     onSubmit: (List<CheckListItemModel> updatedList) {
+            //       _currentChecklist = updatedList;
+            //       _highlightedContentController.text = jsonEncode(updatedList.map((e) => e.toJson()).toList());
+            //     },
+            //   ),
+            // )
             : TextField(
-          controller: _highlightedContentController,
-          undoController: _undoController,
-          maxLines: null,
-          expands: true,
-          textAlignVertical: TextAlignVertical.top,
-          textCapitalization: TextCapitalization.sentences,
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-            height: 1.6, // improved line height for reading
-          ),
-          decoration: InputDecoration(
-            border: InputBorder.none,
-            focusedBorder: InputBorder.none,
-            enabledBorder: InputBorder.none,
-            contentPadding: EdgeInsets.fromLTRB(leftPadding, 8, rightPadding, 32),
-            hintText: "Type here...",
-          ),
-        ),
+                controller: _highlightedContentController,
+                undoController: _undoController,
+                maxLines: null,
+                expands: true,
+                textAlignVertical: TextAlignVertical.top,
+                textCapitalization: TextCapitalization.sentences,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  height: 1.6, // improved line height for reading
+                ),
+                decoration: InputDecoration(
+                  border: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  contentPadding: EdgeInsets.fromLTRB(leftPadding, 8, rightPadding, 32),
+                  hintText: "Type here...",
+                ),
+              ),
       ),
     );
   }

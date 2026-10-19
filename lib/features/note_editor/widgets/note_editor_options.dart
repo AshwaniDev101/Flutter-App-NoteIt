@@ -1,29 +1,77 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+// The Enum is now purely the "Identity" of the action.
 enum NoteEditorOption {
-  delete('Delete', Icons.delete_outline, 'Delete Note'),
-  pin('Pin', Icons.push_pin_outlined, 'Pin Note'),
-  lock('Lock', Icons.lock_outline, 'Lock Note'),
-  archive('Archive', Icons.archive_outlined, 'Archive Note'),
-  info('Details', Icons.info_outline, 'Note Meta Data'),
-  checklist('Checklist', Icons.check_box_outlined, 'Turn to Checklist'),
-  find('Find', Icons.search_outlined, 'Find in Note'),
-  reminder('Reminder', Icons.notifications_none_outlined, 'Set Reminder');
+  delete,
+  pin,
+  lock,
+  archive,
+  info,
+  checklist,
+  find,
+  reminder,
+}
 
-  final String label;
-  final IconData icon;
-  final String tooltip;
+//  Define a Dart Record type for how an option should look.
+typedef OptionAppearance = ({String label, IconData icon, String tooltip, bool isActive});
 
-  const NoteEditorOption(this.label, this.icon, this.tooltip);
+// The Extension holds all the dynamic UI logic, removing it from the Widget's build method.
+extension NoteEditorOptionUI on NoteEditorOption {
+  OptionAppearance getAppearance({
+    required bool isLocked,
+    required bool isPinned,
+    required bool isChecklist,
+  }) {
+    switch (this) {
+      case NoteEditorOption.lock:
+        return (
+        label: isLocked ? 'Unlock' : 'Lock',
+        icon: isLocked ? Icons.lock_open_outlined : Icons.lock_outline,
+        tooltip: isLocked ? 'Remove Lock' : 'Lock Note',
+        isActive: isLocked,
+        );
+      case NoteEditorOption.pin:
+        return (
+        label: isPinned ? 'Unpin' : 'Pin',
+        icon: isPinned ? CupertinoIcons.pin_slash : Icons.push_pin_outlined,
+        tooltip: isPinned ? 'Unpin Note' : 'Pin Note',
+        isActive: isPinned,
+        );
+      case NoteEditorOption.checklist:
+        return (
+        label: isChecklist ? 'Plain-text' : 'Checklist',
+        icon: isChecklist ? Icons.notes : Icons.check_box_outlined, // Icons.notes represents plain text well
+        tooltip: isChecklist ? 'Convert to Plain-text' : 'Turn to Checklist',
+        isActive: isChecklist,
+        );
+      case NoteEditorOption.delete:
+        return (label: 'Delete', icon: Icons.delete_outline, tooltip: 'Delete Note', isActive: false);
+      case NoteEditorOption.archive:
+        return (label: 'Archive', icon: Icons.archive_outlined, tooltip: 'Archive Note', isActive: false);
+      case NoteEditorOption.info:
+        return (label: 'Details', icon: Icons.info_outline, tooltip: 'Note Meta Data', isActive: false);
+      case NoteEditorOption.find:
+        return (label: 'Find', icon: Icons.search_outlined, tooltip: 'Find in Note', isActive: false);
+      case NoteEditorOption.reminder:
+        return (label: 'Reminder', icon: Icons.notifications_none_outlined, tooltip: 'Set Reminder', isActive: false);
+    }
+  }
 }
 
 class NoteEditorOptionButton extends StatefulWidget {
   final void Function(NoteEditorOption) onPressed;
   final bool isLocked;
   final bool isPinned;
+  final bool isChecklist;
 
-  const NoteEditorOptionButton({super.key, required this.onPressed, this.isLocked = false, this.isPinned = false});
+  const NoteEditorOptionButton({
+    super.key,
+    required this.onPressed,
+    this.isLocked = false,
+    this.isPinned = false,
+    this.isChecklist = false,
+  });
 
   @override
   State<NoteEditorOptionButton> createState() => _NoteEditorOptionButtonState();
@@ -37,7 +85,6 @@ class _NoteEditorOptionButtonState extends State<NoteEditorOptionButton> {
     final colorSchema = Theme.of(context).colorScheme;
     return MenuAnchor(
       controller: _menuController,
-      // Removes default menu background/padding so your Card looks native
       style: const MenuStyle(
         padding: WidgetStatePropertyAll(EdgeInsets.zero),
         backgroundColor: WidgetStatePropertyAll(Colors.transparent),
@@ -52,13 +99,16 @@ class _NoteEditorOptionButtonState extends State<NoteEditorOptionButton> {
               controller.open();
             }
           },
-          // icon: const Icon(Icons.tab),
           icon: Icon(Icons.segment, color: colorSchema.primary),
-          // icon: const Icon(Icons.keyboard_double_arrow_down),
         );
       },
       menuChildren: [
-        NoteEditorOptionMenu(onPressed: widget.onPressed, isLocked: widget.isLocked, isPinned: widget.isPinned),
+        NoteEditorOptionMenu(
+          onPressed: widget.onPressed,
+          isLocked: widget.isLocked,
+          isPinned: widget.isPinned,
+          isChecklist: widget.isChecklist,
+        ),
       ],
     );
   }
@@ -68,8 +118,15 @@ class NoteEditorOptionMenu extends StatelessWidget {
   final void Function(NoteEditorOption) onPressed;
   final bool isLocked;
   final bool isPinned;
+  final bool isChecklist;
 
-  const NoteEditorOptionMenu({super.key, required this.onPressed, this.isLocked = false, this.isPinned = false});
+  const NoteEditorOptionMenu({
+    super.key,
+    required this.onPressed,
+    this.isLocked = false,
+    this.isPinned = false,
+    this.isChecklist = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -77,7 +134,6 @@ class NoteEditorOptionMenu extends StatelessWidget {
       color: Theme.of(context).colorScheme.surfaceContainer,
       elevation: 2,
       margin: const EdgeInsets.all(4.0),
-      // Padding around the Wrap
       child: Padding(
         padding: const EdgeInsets.all(8.0),
         child: SizedBox(
@@ -86,36 +142,23 @@ class NoteEditorOptionMenu extends StatelessWidget {
             spacing: 8.0,
             runSpacing: 8.0,
             children: NoteEditorOption.values.map((option) {
-              IconData currentIcon = option.icon;
-              String currentTooltip = option.tooltip;
-              String currentLabel = option.label;
 
-              //  Check if this specific option is currently active
-              bool isActive = false;
-              if (option == NoteEditorOption.lock) {
-                currentIcon = isLocked ? Icons.lock_open_outlined : Icons.lock_outline;
-                currentTooltip = isLocked ? 'Remove Lock' : 'Lock Note';
-                currentLabel = isLocked ? 'Unlock' : 'Lock';
-                isActive = isLocked;
-              } else if (option == NoteEditorOption.pin) {
-                currentIcon = isPinned ? CupertinoIcons.pin_slash : Icons.push_pin_outlined;
-                currentTooltip = isPinned ? 'Unpin Note' : 'Pin Note';
-                currentLabel = isPinned ? 'Unpin' : 'Pin';
-                isActive = isPinned;
-              }
+              // Look how clean the build method becomes. No if/else statements.
+              final appearance = option.getAppearance(
+                isLocked: isLocked,
+                isPinned: isPinned,
+                isChecklist: isChecklist,
+              );
 
-              // Only active options get the primary color; others use the default
-              final Color iconColor = isActive
+              final Color iconColor = appearance.isActive
                   ? Theme.of(context).colorScheme.primary
                   : Theme.of(context).colorScheme.onSurfaceVariant;
 
-              final mainIcon = Icon(currentIcon, color: iconColor);
-
               return _editorOption(
                 context: context,
-                icon: mainIcon,
-                name: currentLabel,
-                tooltip: currentTooltip,
+                icon: Icon(appearance.icon, color: iconColor),
+                name: appearance.label,
+                tooltip: appearance.tooltip,
                 onPressed: () {
                   MenuController.maybeOf(context)?.close();
                   onPressed(option);
@@ -158,6 +201,4 @@ class NoteEditorOptionMenu extends StatelessWidget {
       ),
     );
   }
-
-
 }

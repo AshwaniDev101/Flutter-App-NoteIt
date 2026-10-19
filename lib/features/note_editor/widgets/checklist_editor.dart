@@ -36,15 +36,64 @@ class CheckListItemModel {
 // ==========================================
 // UI STATE MODEL (For Controllers/Focus)
 // ==========================================
+
+// Custom controller to highlight text while in Edit Mode
+class ChecklistTextController extends TextEditingController {
+  String _searchQuery = '';
+
+  ChecklistTextController({super.text});
+
+  String get searchQuery => _searchQuery;
+
+  set searchQuery(String value) {
+    if (_searchQuery != value) {
+      _searchQuery = value;
+      notifyListeners();
+    }
+  }
+
+  @override
+  TextSpan buildTextSpan({required BuildContext context, TextStyle? style, required bool withComposing}) {
+    if (_searchQuery.isEmpty) {
+      return super.buildTextSpan(context: context, style: style, withComposing: withComposing);
+    }
+
+    final matches = _searchQuery.toLowerCase().allMatches(text.toLowerCase());
+    if (matches.isEmpty) {
+      return super.buildTextSpan(context: context, style: style, withComposing: withComposing);
+    }
+
+    List<TextSpan> spans = [];
+    int currentIndex = 0;
+
+    for (var match in matches) {
+      if (match.start > currentIndex) {
+        spans.add(TextSpan(text: text.substring(currentIndex, match.start)));
+      }
+      spans.add(TextSpan(
+        text: text.substring(match.start, match.end),
+        style: style?.copyWith(backgroundColor: Colors.yellow.withOpacity(0.5), color: Colors.black) ??
+            const TextStyle(backgroundColor: Colors.yellow, color: Colors.black),
+      ));
+      currentIndex = match.end;
+    }
+    if (currentIndex < text.length) {
+      spans.add(TextSpan(text: text.substring(currentIndex)));
+    }
+
+    return TextSpan(style: style, children: spans);
+  }
+}
+
 class ChecklistItemController {
   final String id;
-  final TextEditingController textController;
+  final ChecklistTextController textController;
   final FocusNode focusNode;
   bool isChecked;
 
   ChecklistItemController({String? initialId, String text = '', this.isChecked = false})
       : id = initialId ?? UniqueKey().toString(),
-        textController = TextEditingController(text: text),
+        textController = ChecklistTextController(text: text),
         focusNode = FocusNode();
 
   void dispose() {
@@ -60,12 +109,14 @@ class CheckListWidget extends StatefulWidget {
   final List<CheckListItemModel>? initialData;
   final Function(List<CheckListItemModel>)? onChange;
   final Function(List<CheckListItemModel>)? onSubmit;
+  final String searchQuery; // Added to pass search queries
 
   const CheckListWidget({
     super.key,
     this.initialData,
     this.onChange,
     this.onSubmit,
+    this.searchQuery = '',
   });
 
   @override
@@ -88,10 +139,22 @@ class _CheckListWidgetState extends State<CheckListWidget> {
           text: item.text,
           isChecked: item.isChecked,
         );
+        uiItem.textController.searchQuery = widget.searchQuery;
         fieldItems.add(uiItem);
       }
     } else {
       _isEditing = true;
+    }
+  }
+
+  // Pushes search updates down to the internal checklist fields
+  @override
+  void didUpdateWidget(CheckListWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.searchQuery != oldWidget.searchQuery) {
+      for (var item in fieldItems) {
+        item.textController.searchQuery = widget.searchQuery;
+      }
     }
   }
 
@@ -123,6 +186,7 @@ class _CheckListWidgetState extends State<CheckListWidget> {
 
   void _addTopItem() {
     final newItem = ChecklistItemController();
+    newItem.textController.searchQuery = widget.searchQuery;
     setState(() {
       fieldItems.insert(0, newItem);
     });
@@ -134,6 +198,7 @@ class _CheckListWidgetState extends State<CheckListWidget> {
 
   void _addBottomItem() {
     final newItem = ChecklistItemController();
+    newItem.textController.searchQuery = widget.searchQuery;
     setState(() {
       fieldItems.add(newItem);
     });
@@ -184,6 +249,33 @@ class _CheckListWidgetState extends State<CheckListWidget> {
     });
   }
 
+  // Custom renderer for highlighted text while in View Mode
+  Widget _buildHighlightedText(String text, String query, TextStyle style) {
+    if (query.isEmpty) return Text(text, style: style);
+
+    final matches = query.toLowerCase().allMatches(text.toLowerCase());
+    if (matches.isEmpty) return Text(text, style: style);
+
+    List<TextSpan> spans = [];
+    int currentIndex = 0;
+
+    for (var match in matches) {
+      if (match.start > currentIndex) {
+        spans.add(TextSpan(text: text.substring(currentIndex, match.start)));
+      }
+      spans.add(TextSpan(
+        text: text.substring(match.start, match.end),
+        style: style.copyWith(backgroundColor: Colors.yellow.withOpacity(0.5), color: Colors.black),
+      ));
+      currentIndex = match.end;
+    }
+    if (currentIndex < text.length) {
+      spans.add(TextSpan(text: text.substring(currentIndex)));
+    }
+
+    return RichText(text: TextSpan(style: style, children: spans));
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!_isEditing) {
@@ -216,9 +308,10 @@ class _CheckListWidgetState extends State<CheckListWidget> {
                     },
                   ),
                   Expanded(
-                    child: Text(
+                    child: _buildHighlightedText(
                       item.textController.text.trim(),
-                      style: TextStyle(
+                      widget.searchQuery,
+                      TextStyle(
                         fontSize: 16,
                         decoration: item.isChecked ? TextDecoration.lineThrough : null,
                         color: item.isChecked ? Colors.grey : Colors.white,
