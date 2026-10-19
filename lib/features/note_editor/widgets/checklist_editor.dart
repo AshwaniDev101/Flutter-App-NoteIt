@@ -109,7 +109,7 @@ class CheckListWidget extends StatefulWidget {
   final List<CheckListItemModel>? initialData;
   final Function(List<CheckListItemModel>)? onChange;
   final Function(List<CheckListItemModel>)? onSubmit;
-  final String searchQuery; // Added to pass search queries
+  final String searchQuery;
 
   const CheckListWidget({
     super.key,
