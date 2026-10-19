@@ -512,4 +512,8 @@ Stream<List<NoteWithFolder>> watchArchivedNotes() {
     await (delete(notes)..where((t) => t.uuid.isIn(uuids))).go();
     return uuids.toList();
   }
+
+  Future<List<Note>> getAllNotes() async {
+    return await select(notes).get();
+  }
 }

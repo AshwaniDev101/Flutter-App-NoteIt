@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/util/platform_helper.dart';
+import '../../database/drift/folders/folders_dao.dart';
+import '../../database/drift/local_database.dart';
 import '../../database/drift/notes/notes_dao.dart';
 import '../../database/firebase/firebase_database.dart';
 import '../../database/sync/sync_orchestrator.dart';
+import '../../shared/note_card/folder_trash_card.dart';
 import '../../shared/note_card/note_card.dart';
 import '../../shared/app_scaffold.dart';
 import '../../shared/snack_bar_manager.dart';
@@ -13,6 +16,11 @@ import '../home/view/shared/desktop_close_button.dart';
 final trashNotesProvider = StreamProvider.autoDispose<List<NoteWithFolder>>((ref) {
   final notesDao = ref.watch(notesDaoProvider);
   return notesDao.watchTrashNotes();
+});
+
+final trashFoldersProvider = StreamProvider.autoDispose<List<Folder>>((ref) {
+  final foldersDao = ref.watch(foldersDaoProvider);
+  return foldersDao.watchTrashFolders();
 });
 
 class TrashPage extends ConsumerStatefulWidget {
@@ -29,7 +37,8 @@ class _TrashPageState extends ConsumerState<TrashPage> {
   late final TextEditingController _searchController;
   late final FocusNode _searchFocusNode;
 
-  final Set<String> noteIds = {};
+  final Set<String> selectedNoteIds = {};
+  final Set<String> selectedFolderIds = {};
 
   @override
   void initState() {
@@ -45,25 +54,35 @@ class _TrashPageState extends ConsumerState<TrashPage> {
     super.dispose();
   }
 
-  void _toggleSelection(String uuid) {
+  void _toggleNoteSelection(String uuid) {
     setState(() {
-      if (noteIds.contains(uuid)) {
-        noteIds.remove(uuid);
-        if (noteIds.isEmpty) isSelectMode = false;
+      if (selectedNoteIds.contains(uuid)) {
+        selectedNoteIds.remove(uuid);
       } else {
-        noteIds.add(uuid);
+        selectedNoteIds.add(uuid);
       }
+      isSelectMode = selectedNoteIds.isNotEmpty || selectedFolderIds.isNotEmpty;
     });
   }
 
-  // Handle the Empty Trash action with a confirmation dialog
+  void _toggleFolderSelection(String uuid) {
+    setState(() {
+      if (selectedFolderIds.contains(uuid)) {
+        selectedFolderIds.remove(uuid);
+      } else {
+        selectedFolderIds.add(uuid);
+      }
+      isSelectMode = selectedNoteIds.isNotEmpty || selectedFolderIds.isNotEmpty;
+    });
+  }
+
   Future<void> _handleEmptyTrash() async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Empty Trash?'),
         content: const Text(
-          'This will permanently delete all items in the trash. This action cannot be undone.',
+          'This will permanently delete all notes and folders in the trash. This action cannot be undone.',
         ),
         actions: [
           TextButton(
@@ -81,6 +100,7 @@ class _TrashPageState extends ConsumerState<TrashPage> {
 
     if (confirmed == true && mounted) {
       final notesDao = ref.read(notesDaoProvider);
+      final foldersDao = ref.read(foldersDaoProvider);
       final firebaseDb = ref.read(noteFirebaseDatabaseProvider);
 
       try {
@@ -89,10 +109,9 @@ class _TrashPageState extends ConsumerState<TrashPage> {
           type: SnackBarMessageType.info,
         );
 
-        // Delete locally and get the UUIDs
         final cloudIdsToDelete = await notesDao.emptyLocalTrash();
+        await foldersDao.emptyLocalFolderTrash();
 
-        // If online and logged in, delete from Firebase using the UUIDs
         if (firebaseDb != null && cloudIdsToDelete.isNotEmpty) {
           await firebaseDb.deleteBatch(cloudIdsToDelete);
         }
@@ -115,39 +134,49 @@ class _TrashPageState extends ConsumerState<TrashPage> {
     }
   }
 
-  // Handle restoring notes
-  Future<void> _restoreNotes(List<String> uuids) async {
+  Future<void> _restoreItems({List<String>? noteUuids, List<String>? folderUuids}) async {
     final notesDao = ref.read(notesDaoProvider);
-    for (final uuid in uuids) {
-      await notesDao.restoreNote(uuid);
+    final foldersDao = ref.read(foldersDaoProvider);
+
+    if (noteUuids != null) {
+      for (final uuid in noteUuids) {
+        await notesDao.restoreNote(uuid);
+      }
     }
 
-    // Trigger the Orchestrator to broadcast the restoration
+    if (folderUuids != null) {
+      for (final uuid in folderUuids) {
+        await foldersDao.restoreFolder(uuid);
+      }
+    }
+
     ref.read(syncOrchestratorProvider).triggerSync();
 
     setState(() {
-      noteIds.removeAll(uuids);
-      if (noteIds.isEmpty) {
-        isSelectMode = false;
-      }
+      if (noteUuids != null) selectedNoteIds.removeAll(noteUuids);
+      if (folderUuids != null) selectedFolderIds.removeAll(folderUuids);
+      isSelectMode = selectedNoteIds.isNotEmpty || selectedFolderIds.isNotEmpty;
     });
 
     if (mounted) {
+      final totalCount = (noteUuids?.length ?? 0) + (folderUuids?.length ?? 0);
       SnackBarManager.show(
-        msg: uuids.length == 1 ? 'Note restored.' : 'Notes restored.',
+        msg: totalCount == 1 ? 'Item restored.' : '$totalCount items restored.',
         type: SnackBarMessageType.acknowledgment,
       );
     }
   }
 
-  // Handle deleting notes permanently
-  Future<void> _handleDeleteUuids(List<String> uuidsToDelete) async {
+  Future<void> _handleDeleteItems({List<String>? noteUuids, List<String>? folderUuids}) async {
+    final totalCount = (noteUuids?.length ?? 0) + (folderUuids?.length ?? 0);
+    if (totalCount == 0) return;
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Permanently?'),
         content: Text(
-          'This will permanently delete ${uuidsToDelete.length == 1 ? 'this item' : 'the ${uuidsToDelete.length} selected items'}. This action cannot be undone.',
+          'This will permanently delete ${totalCount == 1 ? 'this item' : 'the $totalCount selected items'}. This action cannot be undone.',
         ),
         actions: [
           TextButton(
@@ -165,38 +194,41 @@ class _TrashPageState extends ConsumerState<TrashPage> {
 
     if (confirmed == true && mounted) {
       final notesDao = ref.read(notesDaoProvider);
+      final foldersDao = ref.read(foldersDaoProvider);
       final firebaseDb = ref.read(noteFirebaseDatabaseProvider);
 
       try {
-        // Loop and delete locally
-        for (final uuid in uuidsToDelete) {
-          await notesDao.deleteNote(uuid);
+        if (noteUuids != null && noteUuids.isNotEmpty) {
+          for (final uuid in noteUuids) {
+            await notesDao.deleteNote(uuid);
+          }
+          if (firebaseDb != null) {
+            await firebaseDb.deleteBatch(noteUuids);
+          }
         }
 
-        // Delete from Firebase directly using the UUIDs
-        if (firebaseDb != null && uuidsToDelete.isNotEmpty) {
-          await firebaseDb.deleteBatch(uuidsToDelete);
+        if (folderUuids != null && folderUuids.isNotEmpty) {
+          for (final uuid in folderUuids) {
+            await foldersDao.hardDeleteFolder(uuid);
+          }
         }
 
         setState(() {
-          noteIds.removeAll(uuidsToDelete);
-          if (noteIds.isEmpty) {
-            isSelectMode = false;
-          }
+          if (noteUuids != null) selectedNoteIds.removeAll(noteUuids);
+          if (folderUuids != null) selectedFolderIds.removeAll(folderUuids);
+          isSelectMode = selectedNoteIds.isNotEmpty || selectedFolderIds.isNotEmpty;
         });
 
         if (mounted) {
           SnackBarManager.show(
-            msg: uuidsToDelete.length == 1
-                ? 'Note deleted permanently.'
-                : 'Selected notes deleted permanently.',
+            msg: totalCount == 1 ? 'Item deleted permanently.' : 'Selected items deleted permanently.',
             type: SnackBarMessageType.acknowledgment,
           );
         }
       } catch (e) {
         if (mounted) {
           SnackBarManager.show(
-            msg: 'Error deleting notes',
+            msg: 'Error deleting items',
             description: '$e',
             type: SnackBarMessageType.error,
           );
@@ -205,14 +237,13 @@ class _TrashPageState extends ConsumerState<TrashPage> {
     }
   }
 
-  // App Bar Builder (Handles Default vs Select Mode)
-  PreferredSizeWidget _buildAppBar(List<NoteWithFolder> currentNotes) {
-
+  PreferredSizeWidget _buildAppBar(List<NoteWithFolder> currentNotes, List<Folder> currentFolders) {
     final colorScheme = Theme.of(context).colorScheme;
+    final totalSelected = selectedNoteIds.length + selectedFolderIds.length;
+    final totalItems = currentNotes.length + currentFolders.length;
 
     if (isSelectMode) {
-      final isAllSelected =
-          currentNotes.isNotEmpty && noteIds.length == currentNotes.length;
+      final isAllSelected = totalItems > 0 && totalSelected == totalItems;
 
       return AppBar(
         foregroundColor: Colors.white,
@@ -220,19 +251,17 @@ class _TrashPageState extends ConsumerState<TrashPage> {
           icon: const Icon(Icons.close),
           onPressed: () => setState(() {
             isSelectMode = false;
-            noteIds.clear();
+            selectedNoteIds.clear();
+            selectedFolderIds.clear();
           }),
         ),
         title: Text(
-          '${noteIds.length} Selected',
+          '$totalSelected Selected',
           style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white),
         ),
         actions: [
           Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 8.0,
-              vertical: 10.0,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 10.0),
             child: OutlinedButton(
               style: OutlinedButton.styleFrom(
                 foregroundColor: Colors.white,
@@ -245,10 +274,12 @@ class _TrashPageState extends ConsumerState<TrashPage> {
               onPressed: () {
                 setState(() {
                   if (isAllSelected) {
-                    noteIds.clear();
+                    selectedNoteIds.clear();
+                    selectedFolderIds.clear();
                     isSelectMode = false;
                   } else {
-                    noteIds.addAll(currentNotes.map((noteWithFolder) => noteWithFolder.note.uuid));
+                    selectedNoteIds.addAll(currentNotes.map((n) => n.note.uuid));
+                    selectedFolderIds.addAll(currentFolders.map((f) => f.uuid));
                   }
                 });
               },
@@ -258,18 +289,23 @@ class _TrashPageState extends ConsumerState<TrashPage> {
           IconButton(
             icon: const Icon(Icons.restore),
             tooltip: 'Restore Selected',
-            onPressed: () => _restoreNotes(noteIds.toList()),
+            onPressed: () => _restoreItems(
+              noteUuids: selectedNoteIds.toList(),
+              folderUuids: selectedFolderIds.toList(),
+            ),
           ),
           IconButton(
             icon: const Icon(Icons.delete_forever),
             tooltip: 'Delete Selected',
-            onPressed: () => _handleDeleteUuids(noteIds.toList()),
+            onPressed: () => _handleDeleteItems(
+              noteUuids: selectedNoteIds.toList(),
+              folderUuids: selectedFolderIds.toList(),
+            ),
           ),
         ],
       );
     }
 
-    // Default App Bar
     return AppBar(
       title: const Text('Trash Bin'),
       backgroundColor: colorScheme.surfaceContainerLowest,
@@ -283,34 +319,36 @@ class _TrashPageState extends ConsumerState<TrashPage> {
               setState(() {
                 _isSearching = true;
               });
-              // Small delay to ensure the TextField is built before focusing
               Future.delayed(const Duration(milliseconds: 50), () {
                 _searchFocusNode.requestFocus();
               });
             },
           ),
-
-        if (currentNotes.isNotEmpty)
+        if (totalItems > 0)
           IconButton(
             onPressed: _handleEmptyTrash,
             icon: const Icon(Icons.delete_sweep_outlined),
             tooltip: 'Empty Trash',
           ),
-
-        const SizedBox(width: 8), DesktopCloseButton(),
-
+        const SizedBox(width: 8),
+        DesktopCloseButton(),
       ],
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final trashState = ref.watch(trashNotesProvider);
+    final trashNotesState = ref.watch(trashNotesProvider);
+    final trashFoldersState = ref.watch(trashFoldersProvider);
+
     final searchQuery = _searchController.text.trim();
     final searchQueryLower = searchQuery.toLowerCase();
 
+    final currentNotes = trashNotesState.value ?? [];
+    final currentFolders = trashFoldersState.value ?? [];
+
     return AppScaffold(
-      appBar: _buildAppBar(trashState.value ?? []),
+      appBar: _buildAppBar(currentNotes, currentFolders),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 3.0),
         child: Column(
@@ -330,7 +368,7 @@ class _TrashPageState extends ConsumerState<TrashPage> {
                             focusNode: _searchFocusNode,
                             onChanged: (_) => setState(() {}),
                             decoration: InputDecoration(
-                              hintText: 'Search trash notes...',
+                              hintText: 'Search trash notes & folders...',
                               prefixIcon: const Icon(Icons.search, size: 20),
                               suffixIcon: _searchController.text.isNotEmpty
                                   ? IconButton(
@@ -349,9 +387,7 @@ class _TrashPageState extends ConsumerState<TrashPage> {
                             ),
                           ),
                         ),
-
                         const SizedBox(width: 8),
-
                         IconButton(
                           icon: const Icon(Icons.close),
                           tooltip: 'Close Search',
@@ -368,100 +404,198 @@ class _TrashPageState extends ConsumerState<TrashPage> {
                 ),
               ),
             Expanded(
-              child: trashState.when(
+              child: trashNotesState.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, stack) => Center(child: Text('Error: $error')),
-                data: (List<NoteWithFolder> notes) {
-                  final filteredNotesWithFolder = searchQueryLower.isEmpty
-                      ? notes
-                      : notes.where((noteWithFolder) {
-                          return noteWithFolder.note.title.toLowerCase().contains(searchQueryLower) ||
-                              noteWithFolder.note.content.toLowerCase().contains(searchQueryLower);
-                        }).toList();
+                data: (notes) {
+                  return trashFoldersState.when(
+                    loading: () => const Center(child: CircularProgressIndicator()),
+                    error: (error, stack) => Center(child: Text('Error: $error')),
+                    data: (folders) {
+                      final filteredNotes = searchQueryLower.isEmpty
+                          ? notes
+                          : notes.where((nwf) {
+                              return nwf.note.title.toLowerCase().contains(searchQueryLower) ||
+                                  nwf.note.content.toLowerCase().contains(searchQueryLower);
+                            }).toList();
 
-                  if (filteredNotesWithFolder.isEmpty) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.delete_outline, size: 64, color: Colors.grey),
-                          const SizedBox(height: 16),
-                          Text(
-                            notes.isEmpty ? 'Trash is empty' : 'No matching trashed notes found',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant),
+                      final filteredFolders = searchQueryLower.isEmpty
+                          ? folders
+                          : folders.where((f) {
+                              return f.name.toLowerCase().contains(searchQueryLower);
+                            }).toList();
+
+                      if (filteredNotes.isEmpty && filteredFolders.isEmpty) {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.delete_outline, size: 64, color: Colors.grey),
+                              const SizedBox(height: 16),
+                              Text(
+                                notes.isEmpty && folders.isEmpty ? 'Trash is empty' : 'No matching trashed items found',
+                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
+                      final gridDelegate = PlatformHelper.isMobileScreen
+                          ? const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 3,
+                              childAspectRatio: 0.85,
+                              crossAxisSpacing: 4,
+                              mainAxisSpacing: 4,
+                            )
+                          : const SliverGridDelegateWithMaxCrossAxisExtent(
+                              maxCrossAxisExtent: 200,
+                              childAspectRatio: 0.85,
+                              crossAxisSpacing: 4,
+                              mainAxisSpacing: 4,
+                            );
+
+                      return CustomScrollView(
+                        slivers: [
+                          // 1. TRASHED FOLDERS SECTION (Dynamic Wrapped Chips)
+                          if (filteredFolders.isNotEmpty) ...[
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+                                child: Text(
+                                  'Folders (${filteredFolders.length})',
+                                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: Theme.of(context).colorScheme.primary,
+                                      ),
+                                ),
+                              ),
+                            ),
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                                child: Wrap(
+                                  spacing: 8.0,
+                                  runSpacing: 8.0,
+                                  children: filteredFolders.map((folder) {
+                                    final isSelected = selectedFolderIds.contains(folder.uuid);
+
+                                    return FolderTrashCard(
+                                      folder: folder,
+                                      isSelected: isSelected,
+                                      onTap: () {
+                                        if (isSelectMode) {
+                                          _toggleFolderSelection(folder.uuid);
+                                        }
+                                      },
+                                      onLongPress: () {
+                                        if (!isSelectMode) {
+                                          setState(() => isSelectMode = true);
+                                        }
+                                        _toggleFolderSelection(folder.uuid);
+                                      },
+                                      onContextMenuAction: (option) {
+                                        if (option == NoteContextMenuOption.select) {
+                                          if (!isSelectMode) setState(() => isSelectMode = true);
+                                          if (!isSelected) _toggleFolderSelection(folder.uuid);
+                                          return;
+                                        }
+
+                                        if (option == NoteContextMenuOption.restore) {
+                                          final targetUuids = isSelected ? selectedFolderIds.toList() : [folder.uuid];
+                                          _restoreItems(folderUuids: targetUuids);
+                                          return;
+                                        }
+
+                                        if (option == NoteContextMenuOption.deleteForever) {
+                                          final targetUuids = isSelected ? selectedFolderIds.toList() : [folder.uuid];
+                                          _handleDeleteItems(folderUuids: targetUuids);
+                                          return;
+                                        }
+                                      },
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
+                            ),
+                          ],
+
+                          // 2. TRASHED NOTES SECTION
+                          if (filteredNotes.isNotEmpty) ...[
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: const EdgeInsets.fromLTRB(12, 16, 12, 6),
+                                child: Text(
+                                  'Notes (${filteredNotes.length})',
+                                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: Theme.of(context).colorScheme.primary,
+                                      ),
+                                ),
+                              ),
+                            ),
+                            SliverPadding(
+                              padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                              sliver: SliverGrid(
+                                gridDelegate: gridDelegate,
+                                delegate: SliverChildBuilderDelegate(
+                                  (context, index) {
+                                    final noteWithFolder = filteredNotes[index];
+                                    final isSelected = selectedNoteIds.contains(noteWithFolder.note.uuid);
+
+                                    return NoteCard(
+                                      key: ValueKey(noteWithFolder.note.uuid),
+                                      noteWithFolder: noteWithFolder,
+                                      searchQuery: searchQuery,
+                                      isSelected: isSelected,
+                                      contextMenuOptions: const [
+                                        NoteContextMenuOption.select,
+                                        NoteContextMenuOption.restore,
+                                        NoteContextMenuOption.deleteForever,
+                                      ],
+                                      onTap: () {
+                                        if (isSelectMode) {
+                                          _toggleNoteSelection(noteWithFolder.note.uuid);
+                                        }
+                                      },
+                                      onLongPress: () {
+                                        if (!isSelectMode) {
+                                          setState(() => isSelectMode = true);
+                                        }
+                                        _toggleNoteSelection(noteWithFolder.note.uuid);
+                                      },
+                                      onContextMenuAction: (option) {
+                                        if (option == NoteContextMenuOption.select) {
+                                          if (!isSelectMode) setState(() => isSelectMode = true);
+                                          if (!isSelected) _toggleNoteSelection(noteWithFolder.note.uuid);
+                                          return;
+                                        }
+
+                                        if (option == NoteContextMenuOption.restore) {
+                                          final targetUuids = isSelected ? selectedNoteIds.toList() : [noteWithFolder.note.uuid];
+                                          _restoreItems(noteUuids: targetUuids);
+                                          return;
+                                        }
+
+                                        if (option == NoteContextMenuOption.deleteForever) {
+                                          final targetUuids = isSelected ? selectedNoteIds.toList() : [noteWithFolder.note.uuid];
+                                          _handleDeleteItems(noteUuids: targetUuids);
+                                          return;
+                                        }
+                                      },
+                                    );
+                                  },
+                                  childCount: filteredNotes.length,
+                                ),
+                              ),
+                            ),
+                          ],
+                          const SliverToBoxAdapter(
+                            child: SizedBox(height: 32),
                           ),
                         ],
-                      ),
-                    );
-                  }
-
-                  return GridView.builder(
-                    padding: const EdgeInsets.all(8.0),
-                    gridDelegate: PlatformHelper.isMobileScreen
-                        ? const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      childAspectRatio: 0.85,
-                      crossAxisSpacing: 4,
-                      mainAxisSpacing: 4,
-                    )
-                        : const SliverGridDelegateWithMaxCrossAxisExtent(
-                      maxCrossAxisExtent: 200,
-                      childAspectRatio: 0.85,
-                      crossAxisSpacing: 4,
-                      mainAxisSpacing: 4,
-                    ),
-                    itemCount: filteredNotesWithFolder.length,
-                    itemBuilder: (context, index) {
-                      final noteWithFolder = filteredNotesWithFolder[index];
-                      final isSelected = noteIds.contains(noteWithFolder.note.uuid);
-
-                      return NoteCard(
-                        key: ValueKey(noteWithFolder.note.uuid),
-                        noteWithFolder: noteWithFolder,
-                        searchQuery: searchQuery,
-                        isSelected: isSelected,
-                        contextMenuOptions: const [
-                          NoteContextMenuOption.select,
-                          NoteContextMenuOption.restore,
-                          NoteContextMenuOption.deleteForever,
-                        ],
-                        onTap: () {
-                          if (isSelectMode) {
-                            _toggleSelection(noteWithFolder.note.uuid);
-                          } else {
-                            // Todo: Open a read-only view of the trashed note
-                          }
-                        },
-                        onLongPress: () {
-                          if (!isSelectMode) {
-                            setState(() => isSelectMode = true);
-                            _toggleSelection(noteWithFolder.note.uuid);
-                          }
-                        },
-                        onContextMenuAction: (option) {
-                          if (option == NoteContextMenuOption.select) {
-                            if (!isSelectMode) {
-                              setState(() => isSelectMode = true);
-                            }
-                            if (!isSelected) {
-                              _toggleSelection(noteWithFolder.note.uuid);
-                            }
-                            return;
-                          }
-
-                          if (option == NoteContextMenuOption.restore) {
-                            final targetUuids = isSelected ? noteIds.toList() : [noteWithFolder.note.uuid];
-                            _restoreNotes(targetUuids);
-                            return;
-                          }
-
-                          if (option == NoteContextMenuOption.deleteForever) {
-                            final targetUuids = isSelected ? noteIds.toList() : [noteWithFolder.note.uuid];
-                            _handleDeleteUuids(targetUuids);
-                            return;
-                          }
-                        },
                       );
                     },
                   );

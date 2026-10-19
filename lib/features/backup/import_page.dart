@@ -1,14 +1,18 @@
 import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 
 import '../../core/util/logger.dart';
+import '../../database/drift/folders/folders_dao.dart';
 import '../../database/drift/local_database.dart';
 import '../../database/drift/notes/notes_dao.dart';
 import '../../shared/app_scaffold.dart';
 import '../../shared/snack_bar_manager.dart';
 import '../home/view/desktop/content_panel/core/navigator.dart';
+import 'backup_utils.dart';
 
 class ImportNotesPage extends ConsumerStatefulWidget {
   const ImportNotesPage({super.key});
@@ -19,21 +23,43 @@ class ImportNotesPage extends ConsumerStatefulWidget {
 
 class _ImportNotesPageState extends ConsumerState<ImportNotesPage> {
   PlatformFile? _selectedFile;
+  int _fileSize = 0;
+  BackupPreviewResult? _previewResult;
+  bool _useFreshTimestamp = false;
+  bool _importAsDuplicates = false;
   bool _isImporting = false;
   String? _statusMessage;
   bool _isError = false;
 
   Future<void> _pickFile() async {
     try {
-
-      PlatformFile? file = await FilePicker.pickFile(
+      final PlatformFile? file = await FilePicker.pickFile(
         type: FileType.custom,
         allowedExtensions: ['json', 'csv'],
       );
 
       if (file != null) {
+        Uint8List? bytes;
+        try {
+          bytes = await file.readAsBytes();
+        } catch (_) {
+          if (file.path != null) {
+            bytes = await File(file.path!).readAsBytes();
+          }
+        }
+
+        BackupPreviewResult? preview;
+        int computedSize = bytes?.length ?? 0;
+
+        if (bytes != null && bytes.isNotEmpty) {
+          final contentStr = utf8.decode(bytes);
+          preview = BackupUtils.inspectBackupFile(contentStr, file.extension ?? '');
+        }
+
         setState(() {
           _selectedFile = file;
+          _fileSize = computedSize;
+          _previewResult = preview;
           _statusMessage = null;
           _isError = false;
         });
@@ -51,97 +77,193 @@ class _ImportNotesPageState extends ConsumerState<ImportNotesPage> {
 
     setState(() {
       _isImporting = true;
-      _statusMessage = 'Reading file...';
+      _statusMessage = 'Reading backup file...';
       _isError = false;
     });
 
     try {
-      final bytes = await _selectedFile!.readAsBytes();
-      final fileString = utf8.decode(bytes);
-
-      final notesDao = ref.read(notesDaoProvider);
-      List<dynamic> rawData = [];
-
-      if (_selectedFile!.extension == 'json') {
-        rawData = jsonDecode(fileString) as List<dynamic>;
-      } else if (_selectedFile!.extension == 'csv') {
-        rawData = _parseCsvToJson(fileString);
-      }
-
-      if (rawData.isEmpty) {
-        throw Exception("The file is empty or formatted incorrectly.");
-      }
-
-      setState(() {
-        _statusMessage = 'Restoring ${rawData.length} notes...';
-      });
-
-      List<Note> parsedNotes = [];
-      int failedCount = 0;
-
-      for (var rawMap in rawData) {
-        try {
-          final map = rawMap as Map<String, dynamic>;
-
-          map['uuid'] ??= 'restored-${DateTime.now().millisecondsSinceEpoch}-${map.hashCode}';
-          map['title'] ??= 'Untitled Note';
-          map['content'] ??= '';
-          map['color'] ??= 4294967295; // Default white/transparent
-
-          // Backward compatibility for upgraded boolean fields to DateTime timestamps
-          if (map['pinnedAt'] == null && map['isPinned'] == true) {
-            map['pinnedAt'] = DateTime.now().toUtc().toIso8601String();
-          }
-          if (map['archivedAt'] == null && map['isArchived'] == true) {
-            map['archivedAt'] = DateTime.now().toUtc().toIso8601String();
-          }
-          if (map['lockedAt'] == null && map['isLocked'] == true) {
-            map['lockedAt'] = DateTime.now().toUtc().toIso8601String();
-          }
-          if (map['updateCounter'] == null && map['versionCounter'] != null) {
-            map['updateCounter'] = map['versionCounter'];
-          }
-
-          map['updateCounter'] ??= 1;
-          map['schemaVersion'] ??= 1;
-          map['contentVersion'] ??= 1;
-          map['cloudSyncStatus'] ??= 0;
-          map['localSyncStatus'] ??= 0;
-          map['createdAt'] ??= DateTime.now().toUtc().toIso8601String();
-          map['updatedAt'] ??= DateTime.now().toUtc().toIso8601String();
-
-          parsedNotes.add(Note.fromJson(map));
-        } catch (e) {
-          AppLogger.w("ImportNotesPage: Failed to parse a note: $e");
-          failedCount++; // Keep track of failures instead of crashing the whole process
+      Uint8List bytes;
+      try {
+        bytes = await _selectedFile!.readAsBytes();
+      } catch (_) {
+        if (_selectedFile!.path != null) {
+          bytes = await File(_selectedFile!.path!).readAsBytes();
+        } else {
+          throw Exception("Unable to read backup file content.");
         }
       }
 
-      if (parsedNotes.isEmpty) {
-        throw Exception("Failed to parse all notes. Data format might be incompatible.");
+      if (bytes.isEmpty) {
+        throw Exception("Failed to read file content or file is empty.");
       }
 
-      // Insert/Update into database
-      await notesDao.importNotes(parsedNotes);
+      final fileString = utf8.decode(bytes);
 
-      final successMsg = failedCount > 0
-          ? 'Imported ${parsedNotes.length} notes, but $failedCount failed.'
-          : 'Successfully imported ${parsedNotes.length} notes!';
+      final notesDao = ref.read(notesDaoProvider);
+      final foldersDao = ref.read(foldersDaoProvider);
+
+      List<Map<String, dynamic>> rawFolderMaps = [];
+      List<Map<String, dynamic>> rawNoteMaps = [];
+
+      final fileExt = _selectedFile!.extension?.toLowerCase();
+
+      if (fileExt == 'json') {
+        final decoded = jsonDecode(fileString);
+        if (decoded is Map<String, dynamic>) {
+          if (decoded['folders'] is List) {
+            rawFolderMaps = (decoded['folders'] as List)
+                .whereType<Map<String, dynamic>>()
+                .map((e) => Map<String, dynamic>.from(e))
+                .toList();
+          }
+          if (decoded['notes'] is List) {
+            rawNoteMaps = (decoded['notes'] as List)
+                .whereType<Map<String, dynamic>>()
+                .map((e) => Map<String, dynamic>.from(e))
+                .toList();
+          } else if (decoded['data'] is List) {
+            rawNoteMaps = (decoded['data'] as List)
+                .whereType<Map<String, dynamic>>()
+                .map((e) => Map<String, dynamic>.from(e))
+                .toList();
+          }
+        } else if (decoded is List) {
+          rawNoteMaps = decoded
+              .whereType<Map<String, dynamic>>()
+              .map((e) => Map<String, dynamic>.from(e))
+              .toList();
+        }
+      } else if (fileExt == 'csv') {
+        final csvMaps = BackupUtils.parseCsvToMaps(fileString);
+        if (csvMaps.isNotEmpty) {
+          final firstKeys = csvMaps.first.keys.toSet();
+          if (firstKeys.contains('name') && !firstKeys.contains('content') && !firstKeys.contains('title')) {
+            rawFolderMaps = csvMaps;
+          } else {
+            rawNoteMaps = csvMaps;
+          }
+        }
+      } else {
+        throw Exception("Unsupported file format. Please choose a .json or .csv file.");
+      }
+
+      if (rawNoteMaps.isEmpty && rawFolderMaps.isEmpty) {
+        throw Exception("The selected file contains no notes or folders to restore.");
+      }
+
+      // Handle folder references from CSV rows if folders array wasn't explicitly provided
+      if (rawFolderMaps.isEmpty && rawNoteMaps.isNotEmpty) {
+        final existingFolders = await foldersDao.getAllFolders();
+        final existingFolderUuids = existingFolders.map((f) => f.uuid).toSet();
+        final existingFolderNames = existingFolders.map((f) => f.name.toLowerCase()).toSet();
+
+        final Set<String> processedFolderKeys = {};
+
+        for (var noteMap in rawNoteMaps) {
+          final String? folderId = noteMap['folderId']?.toString();
+          final String? folderName = noteMap['folderName']?.toString();
+
+          if (folderId != null && folderId.isNotEmpty) {
+            if (!existingFolderUuids.contains(folderId) && !processedFolderKeys.contains(folderId)) {
+              processedFolderKeys.add(folderId);
+              rawFolderMaps.add({
+                'uuid': folderId,
+                'name': (folderName != null && folderName.isNotEmpty) ? folderName : 'Imported Folder',
+                'createdAt': noteMap['createdAt'],
+                'updatedAt': noteMap['updatedAt'],
+              });
+            }
+          } else if (folderName != null && folderName.isNotEmpty) {
+            final key = folderName.toLowerCase();
+            if (!existingFolderNames.contains(key) && !processedFolderKeys.contains(key)) {
+              processedFolderKeys.add(key);
+              final generatedUuid = 'folder-${DateTime.now().millisecondsSinceEpoch}-${key.hashCode}';
+              noteMap['folderId'] = generatedUuid;
+              rawFolderMaps.add({
+                'uuid': generatedUuid,
+                'name': folderName,
+                'createdAt': noteMap['createdAt'],
+                'updatedAt': noteMap['updatedAt'],
+              });
+            }
+          }
+        }
+      }
+
+      setState(() {
+        _statusMessage = 'Restoring ${rawNoteMaps.length} notes and ${rawFolderMaps.length} folders...';
+      });
+
+      // Apply Duplicate Remapping if user checked option
+      if (_importAsDuplicates) {
+        BackupUtils.prepareForDuplicateImport(
+          folderMaps: rawFolderMaps,
+          noteMaps: rawNoteMaps,
+        );
+      }
+
+      // Apply Fresh Timestamps if user checked option
+      if (_useFreshTimestamp) {
+        BackupUtils.applyFreshTimestamps(
+          folderMaps: rawFolderMaps,
+          noteMaps: rawNoteMaps,
+        );
+      }
+
+      // Sanitize & construct drift objects
+      List<Folder> parsedFolders = [];
+      List<Note> parsedNotes = [];
+      int failedFoldersCount = 0;
+      int failedNotesCount = 0;
+
+      for (var fMap in rawFolderMaps) {
+        try {
+          parsedFolders.add(BackupUtils.sanitizeFolder(fMap));
+        } catch (e) {
+          AppLogger.w("ImportNotesPage: Failed to parse folder: $e");
+          failedFoldersCount++;
+        }
+      }
+
+      for (var nMap in rawNoteMaps) {
+        try {
+          parsedNotes.add(BackupUtils.sanitizeNote(nMap));
+        } catch (e) {
+          AppLogger.w("ImportNotesPage: Failed to parse note: $e");
+          failedNotesCount++;
+        }
+      }
+
+      if (parsedFolders.isEmpty && parsedNotes.isEmpty) {
+        throw Exception("Failed to parse data. Data format might be incompatible.");
+      }
+
+      // Import into database via DAOs
+      if (parsedFolders.isNotEmpty) {
+        await foldersDao.importFolders(parsedFolders);
+      }
+
+      if (parsedNotes.isNotEmpty) {
+        await notesDao.importNotes(parsedNotes);
+      }
+
+      final int totalFailed = failedFoldersCount + failedNotesCount;
+      final String successMsg = totalFailed > 0
+          ? 'Imported ${parsedNotes.length} notes & ${parsedFolders.length} folders ($totalFailed items failed).'
+          : 'Successfully restored ${parsedNotes.length} notes & ${parsedFolders.length} folders!';
 
       setState(() {
         _isImporting = false;
-        _isError = failedCount > 0;
+        _isError = totalFailed > 0;
         _statusMessage = successMsg;
       });
 
       SnackBarManager.show(
         msg: successMsg,
-        type: failedCount > 0
-            ? SnackBarMessageType.suggestion
-            : SnackBarMessageType.acknowledgment,
+        type: totalFailed > 0 ? SnackBarMessageType.suggestion : SnackBarMessageType.acknowledgment,
       );
-
-    } catch (e) {
+    } catch (e, st) {
+      AppLogger.e('ImportNotesPage: Failed to process import', error: e, stack: st);
       setState(() {
         _isImporting = false;
         _isError = true;
@@ -156,45 +278,16 @@ class _ImportNotesPageState extends ConsumerState<ImportNotesPage> {
     }
   }
 
-  List<Map<String, dynamic>> _parseCsvToJson(String csvString) {
-    if (csvString.trim().isEmpty) return [];
+  String _formatFileSize(int bytes) {
+    if (bytes <= 0) return '0 B';
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
 
-    final lines = csvString.split('\n').where((line) => line.trim().isNotEmpty).toList();
-    if (lines.length < 2) return [];
-
-    final headers = lines.first.split(',');
-    List<Map<String, dynamic>> results = [];
-
-    for (int i = 1; i < lines.length; i++) {
-      final RegExp csvSplitter = RegExp(r',(?=(?:[^"]*"[^"]*")*[^"]*$)');
-      final values = lines[i].split(csvSplitter);
-
-      Map<String, dynamic> rowMap = {};
-      for (int j = 0; j < headers.length; j++) {
-        if (j < values.length) {
-          String val = values[j].trim();
-
-          if (val.startsWith('"') && val.endsWith('"')) {
-            val = val.substring(1, val.length - 1).replaceAll('""', '"');
-          }
-
-          // Properly handle nulls so Drift doesn't try to parse 'null' as a String
-          if (val == 'null' || val.isEmpty) {
-            rowMap[headers[j]] = null;
-          } else if (val == 'true') {
-            rowMap[headers[j]] = true;
-          } else if (val == 'false') {
-            rowMap[headers[j]] = false;
-          } else if (int.tryParse(val) != null) {
-            rowMap[headers[j]] = int.parse(val);
-          } else {
-            rowMap[headers[j]] = val;
-          }
-        }
-      }
-      results.add(rowMap);
-    }
-    return results;
+  String _formatDate(DateTime dt) {
+    return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} '
+        '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
   }
 
   @override
@@ -208,38 +301,62 @@ class _ImportNotesPageState extends ConsumerState<ImportNotesPage> {
             padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
             children: [
               Text(
-                'Restore your Backup',
-                style: Theme.of(context).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
+                'Restore Backup',
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+                textAlign: TextAlign.start,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
               Text(
-                'Select a previously exported .json or .csv file to restore your notes. '
-                    'If a note already exists, it will be updated. JSON format is highly recommended for perfect restoration.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-                textAlign: TextAlign.center,
+                'Select a previously exported .json or .csv backup file to restore your notes and folders into the local database.',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
               ),
               const SizedBox(height: 32),
 
+              // 1. FILE PICKER CARD
+              Text(
+                '1. Select Backup File',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
               Card(
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                  ),
+                ),
                 child: Padding(
                   padding: const EdgeInsets.all(24.0),
                   child: Column(
                     children: [
-                      const Icon(Icons.upload_file, size: 48, color: Colors.grey),
+                      Icon(
+                        _selectedFile != null ? Icons.description_outlined : Icons.upload_file,
+                        size: 48,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                       const SizedBox(height: 16),
                       Text(
-                        _selectedFile != null
-                            ? 'Selected: ${_selectedFile!.name}'
-                            : 'No file selected',
+                        _selectedFile != null ? _selectedFile!.name : 'No backup file selected',
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                         textAlign: TextAlign.center,
                       ),
-                      const SizedBox(height: 24),
+                      if (_selectedFile != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          'Size: ${_formatFileSize(_fileSize)} • Format: ${_selectedFile!.extension?.toUpperCase()}',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                        ),
+                      ],
+                      const SizedBox(height: 20),
                       OutlinedButton.icon(
                         onPressed: _isImporting ? null : _pickFile,
                         icon: const Icon(Icons.folder_open),
-                        label: const Text('Choose File'),
+                        label: Text(_selectedFile != null ? 'Change File' : 'Choose File'),
                       ),
                     ],
                   ),
@@ -247,57 +364,161 @@ class _ImportNotesPageState extends ConsumerState<ImportNotesPage> {
               ),
               const SizedBox(height: 24),
 
-              if (_statusMessage != null)
+              // PREVIEW CARD IF FILE SELECTED
+              if (_previewResult != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.inventory_2_outlined, color: Theme.of(context).colorScheme.primary, size: 32),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Backup File Inspector',
+                              style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Contains ${_previewResult!.notesCount} Notes & ${_previewResult!.foldersCount} Folders'
+                              '${_previewResult!.exportedAt != null ? ' • Exported ${_formatDate(_previewResult!.exportedAt!)}' : ''}',
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 32),
+              ],
+
+              // 2. IMPORT OPTIONS
+              Text(
+                '2. Import Options',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              Card(
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    CheckboxListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      title: const Text('Fresh timestamp', style: TextStyle(fontWeight: FontWeight.w600)),
+                      subtitle: const Text(
+                        'Updates creation and modification dates to now, preserving relative creation order with 1 ms time difference between notes.',
+                      ),
+                      value: _useFreshTimestamp,
+                      onChanged: _isImporting
+                          ? null
+                          : (val) {
+                              setState(() {
+                                _useFreshTimestamp = val ?? false;
+                              });
+                            },
+                      activeColor: Theme.of(context).colorScheme.primary,
+                    ),
+                    const Divider(height: 1),
+                    CheckboxListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      title: const Text('Import as new copies (Duplicate)', style: TextStyle(fontWeight: FontWeight.w600)),
+                      subtitle: const Text(
+                        'Generates new unique IDs so existing notes and folders in your database are never overwritten.',
+                      ),
+                      value: _importAsDuplicates,
+                      onChanged: _isImporting
+                          ? null
+                          : (val) {
+                              setState(() {
+                                _importAsDuplicates = val ?? false;
+                              });
+                            },
+                      activeColor: Theme.of(context).colorScheme.primary,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 32),
+
+              // STATUS MESSAGE CONTAINER
+              if (_statusMessage != null) ...[
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: _isError
-                        ? Colors.red.withValues(alpha: 0.1)
-                        : Colors.green.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
+                        ? Theme.of(context).colorScheme.errorContainer
+                        : Theme.of(context).colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: _isError ? Colors.red : Colors.green,
+                      color: _isError
+                          ? Theme.of(context).colorScheme.error
+                          : Theme.of(context).colorScheme.primary,
                     ),
                   ),
                   child: Row(
                     children: [
                       Icon(
                         _isError ? Icons.error_outline : Icons.check_circle_outline,
-                        color: _isError ? Colors.red : Colors.green,
+                        color: _isError
+                            ? Theme.of(context).colorScheme.onErrorContainer
+                            : Theme.of(context).colorScheme.onPrimaryContainer,
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           _statusMessage!,
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: _isError ? Colors.red.shade700 : Colors.green.shade700,
-                            fontWeight: FontWeight.w500,
-                          ),
+                                color: _isError
+                                    ? Theme.of(context).colorScheme.onErrorContainer
+                                    : Theme.of(context).colorScheme.onPrimaryContainer,
+                                fontWeight: FontWeight.w600,
+                              ),
                         ),
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(height: 32),
+              ],
 
-              const SizedBox(height: 32),
-
+              // ACTION BUTTON
               SizedBox(
                 height: 54,
                 child: FilledButton.icon(
                   onPressed: (_selectedFile == null || _isImporting) ? null : _processImport,
                   icon: _isImporting
                       ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)
-                  )
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        )
                       : const Icon(Icons.restore),
                   label: Text(
-                    _isImporting ? 'Processing...' : 'Restore Notes',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.white),
+                    _isImporting ? 'Processing Backup...' : 'Restore Notes & Folders',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onPrimary,
+                          fontWeight: FontWeight.bold,
+                        ),
                   ),
                 ),
               ),
+              const SizedBox(height: 48),
             ],
           ),
         ),

@@ -170,4 +170,46 @@ class FoldersDao extends DatabaseAccessor<LocalDatabase> with _$FoldersDaoMixin 
       await into(folders).insert(companion);
     }
   }
+
+  Future<List<Folder>> getAllFolders() async {
+    return await select(folders).get();
+  }
+
+  Future<void> importFolders(List<Folder> importedFolders) async {
+    if (importedFolders.isEmpty) return;
+    await batch((batch) {
+      batch.insertAllOnConflictUpdate(folders, importedFolders);
+    });
+  }
+
+  Stream<List<Folder>> watchTrashFolders() {
+    return (select(folders)
+          ..where((t) => t.deletedAt.isNotNull())
+          ..orderBy([(t) => OrderingTerm(expression: t.deletedAt, mode: OrderingMode.desc)]))
+        .watch();
+  }
+
+  Future<bool> restoreFolder(String uuid) async {
+    return await (update(folders)..where((t) => t.uuid.equals(uuid))).write(
+          FoldersCompanion.custom(
+            deletedAt: const Variable(null),
+            cloudSyncStatus: const Variable(0),
+            localSyncStatus: const Variable(0),
+            updatedAt: Variable(DateTime.now().toUtc()),
+            updateCounter: folders.updateCounter + const Constant(1),
+          ),
+        ) >
+        0;
+  }
+
+  Future<int> hardDeleteFolder(String uuid) async {
+    return await (delete(folders)..where((t) => t.uuid.equals(uuid))).go();
+  }
+
+  Future<List<String>> emptyLocalFolderTrash() async {
+    final trashedFolders = await (select(folders)..where((t) => t.deletedAt.isNotNull())).get();
+    final uuidsToDelete = trashedFolders.map((f) => f.uuid).toList();
+    await (delete(folders)..where((t) => t.deletedAt.isNotNull())).go();
+    return uuidsToDelete;
+  }
 }
