@@ -54,8 +54,9 @@ class DesktopListPanel extends ConsumerWidget {
     final homeState = ref.watch(homeViewModelProvider);
     final colorScheme = Theme.of(context).colorScheme;
 
-    final currentSort = ref.watch(noteSortPreferenceProvider);
-    final currentView = ref.watch(noteViewTypeProvider);
+    final currentSort = ref.watch(homeNoteSortPreferenceProvider);
+    final currentView = ref.watch(homeNoteViewTypeProvider);
+    final platformFilter = ref.watch(homePlatformFilterProvider);
 
     // final versionString = "v${AppEnv.version}-${AppEnv.buildNumber}";
 
@@ -197,26 +198,29 @@ class DesktopListPanel extends ConsumerWidget {
                   // IconButton(onPressed: (){}, icon: Icon(CupertinoIcons.sort_down)),
                   // IconButton(onPressed: (){}, icon: Icon(Icons.grid_view)),
                   SortMenuButton(
-
                     icon: Icon(CupertinoIcons.sort_down,color: Theme.of(context).colorScheme.primary),
-                    currentSelection: _getCurrentSortAction(currentSort),
+                    currentSortSelection: _getCurrentSortAction(currentSort),
+                    currentPlatformSelection: _getCurrentPlatformAction(platformFilter),
                     onSelected: (HomeMenuAction action) {
                       // Route the UI action to the correct Riverpod provider
                       switch (action) {
                         case HomeMenuAction.sortCreated:
-                          ref.read(noteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.createdAt);
+                          ref.read(homeNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.createdAt);
                           break;
                         case HomeMenuAction.sortName:
-                          ref.read(noteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.name);
+                          ref.read(homeNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.name);
                           break;
                         case HomeMenuAction.sortUpdated:
-                          ref.read(noteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.updatedAt);
+                          ref.read(homeNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.updatedAt);
+                          break;
+                        case HomeMenuAction.filterAll:
+                          ref.read(homePlatformFilterProvider.notifier).setFilter(FilterPlatformOptions.all);
                           break;
                         case HomeMenuAction.filterPhone:
-                          ref.read(platformFilterProvider.notifier).toggleFilter(FilterPlatformOptions.android);
+                          ref.read(homePlatformFilterProvider.notifier).toggleFilter(FilterPlatformOptions.android);
                           break;
                         case HomeMenuAction.filterWindows:
-                          ref.read(platformFilterProvider.notifier).toggleFilter(FilterPlatformOptions.windows);
+                          ref.read(homePlatformFilterProvider.notifier).toggleFilter(FilterPlatformOptions.windows);
                           break;
                       }
                     },
@@ -226,7 +230,7 @@ class DesktopListPanel extends ConsumerWidget {
                     icon: Icon(Icons.grid_view,color: Theme.of(context).colorScheme.primary),
                     currentView: currentView,
                     onViewSelected: (NoteViewType selectedView) {
-                      ref.read(noteViewTypeProvider.notifier).updateView(selectedView);
+                      ref.read(homeNoteViewTypeProvider.notifier).updateView(selectedView);
                     },
                   ),
 
@@ -267,6 +271,17 @@ class DesktopListPanel extends ConsumerWidget {
         return HomeMenuAction.sortName;
       case NoteSortPreference.updatedAt:
         return HomeMenuAction.sortUpdated;
+    }
+  }
+
+  HomeMenuAction _getCurrentPlatformAction(FilterPlatformOptions platformFilter) {
+    switch (platformFilter) {
+      case FilterPlatformOptions.all:
+        return HomeMenuAction.filterAll;
+      case FilterPlatformOptions.android:
+        return HomeMenuAction.filterPhone;
+      case FilterPlatformOptions.windows:
+        return HomeMenuAction.filterWindows;
     }
   }
 }

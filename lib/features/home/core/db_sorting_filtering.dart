@@ -4,8 +4,8 @@ import '../../../core/util/logger.dart';
 
 export 'package:noteit/database/drift/notes/notes_dao.dart' show NoteSortPreference;
 
-/// State Holder: holds the user current choice of sorting method.
-final noteSortPreferenceProvider = NotifierProvider<NoteSortPreferenceNotifier, NoteSortPreference>(() {
+/// State Holder: holds the user's current choice of sorting method for Home / ListPanel.
+final homeNoteSortPreferenceProvider = NotifierProvider<NoteSortPreferenceNotifier, NoteSortPreference>(() {
   return NoteSortPreferenceNotifier();
 });
 
@@ -21,13 +21,10 @@ class NoteSortPreferenceNotifier extends Notifier<NoteSortPreference> {
   }
 }
 
-/// Listens directly to the Drift database stream sorted by SQLite.
-/// Passes the sorted list to `filteredNotesProvider`.
-/// Filtering (active notes vs deleted/archived) and sorting (pinned notes first by pin timestamp,
-/// followed by sort preference) are offloaded directly to SQLite for optimal performance.
+/// Listens directly to the Drift database stream sorted by SQLite for Home / ListPanel.
 final sortedNotesStreamProvider = StreamProvider<List<NoteWithFolder>>((ref) {
   final notesDao = ref.watch(notesDaoProvider);
-  final sortOption = ref.watch(noteSortPreferenceProvider); // Watches the UI choice
+  final sortOption = ref.watch(homeNoteSortPreferenceProvider); // Watches Home UI choice
 
   AppLogger.d("DbSortingFiltering: Querying sorted notes from SQLite with option: $sortOption");
   return notesDao.watchSortedNotes(sortOption);

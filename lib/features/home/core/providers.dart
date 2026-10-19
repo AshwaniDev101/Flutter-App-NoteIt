@@ -12,7 +12,7 @@ final filteredNotesProvider = Provider<AsyncValue<List<NoteWithFolder>>>((ref) {
   // Watch dependencies. If any of these 5 change, this entire function re-runs automatically.
   final sortedNotesAsync = ref.watch(sortedNotesStreamProvider);
   final searchQuery = ref.watch(searchQueryProvider).toLowerCase().trim();
-  final platformFilter = ref.watch(platformFilterProvider);
+  final platformFilter = ref.watch(homePlatformFilterProvider);
   final lockState = ref.watch(lockManagerProvider);
 
   // Watch the currently active folder
@@ -54,9 +54,9 @@ final filteredNotesProvider = Provider<AsyncValue<List<NoteWithFolder>>>((ref) {
 });
 
 
-/// PLATFORM FILTER
+/// PLATFORM FILTER FOR HOME / LIST PANEL
 enum FilterPlatformOptions { all, android, windows } // State Holder : holds for platform filter
-final platformFilterProvider = NotifierProvider<PlatformFilterNotifier, FilterPlatformOptions>(
+final homePlatformFilterProvider = NotifierProvider<PlatformFilterNotifier, FilterPlatformOptions>(
   PlatformFilterNotifier.new,
 );
 class PlatformFilterNotifier extends Notifier<FilterPlatformOptions> {
@@ -70,6 +70,10 @@ class PlatformFilterNotifier extends Notifier<FilterPlatformOptions> {
     } else {
       state = filter;
     }
+  }
+
+  void setFilter(FilterPlatformOptions filter) {
+    state = filter;
   }
 }
 
@@ -110,8 +114,8 @@ class ActiveNoteNotifier extends Notifier<NoteWithFolder?> {
   }
 }
 
-/// VIEW TYPE
-final noteViewTypeProvider = NotifierProvider<NoteViewTypeNotifier, NoteViewType>(NoteViewTypeNotifier.new);
+/// VIEW TYPE FOR HOME / LIST PANEL
+final homeNoteViewTypeProvider = NotifierProvider<NoteViewTypeNotifier, NoteViewType>(NoteViewTypeNotifier.new);
 class NoteViewTypeNotifier extends Notifier<NoteViewType> {
   @override
   NoteViewType build() => NoteViewType.grid;

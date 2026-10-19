@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -7,10 +8,14 @@ import '../../database/drift/local_database.dart';
 import '../../database/drift/notes/notes_dao.dart';
 import '../../database/firebase/firebase_database.dart';
 import '../../database/sync/sync_orchestrator.dart';
+import '../../shared/app_scaffold.dart';
 import '../../shared/note_card/folder_trash_card.dart';
 import '../../shared/note_card/note_card.dart';
-import '../../shared/app_scaffold.dart';
 import '../../shared/snack_bar_manager.dart';
+import '../../shared/sort_menu_button.dart';
+import '../../shared/view_menu_button.dart';
+import '../folders/view/folder_selector.dart';
+import '../home/core/providers.dart';
 import '../home/view/shared/desktop_close_button.dart';
 
 final trashNotesProvider = StreamProvider.autoDispose<List<NoteWithFolder>>((ref) {
@@ -23,6 +28,37 @@ final trashFoldersProvider = StreamProvider.autoDispose<List<Folder>>((ref) {
   return foldersDao.watchTrashFolders();
 });
 
+/// Dedicated Sort Preference Provider for Trash Page
+final trashNoteSortPreferenceProvider = NotifierProvider<TrashNoteSortPreferenceNotifier, NoteSortPreference>(() {
+  return TrashNoteSortPreferenceNotifier();
+});
+
+class TrashNoteSortPreferenceNotifier extends Notifier<NoteSortPreference> {
+  @override
+  NoteSortPreference build() => NoteSortPreference.createdAt;
+
+  void updateSort(NoteSortPreference option) {
+    state = option;
+  }
+}
+
+/// Dedicated View Type Provider for Trash Page
+final trashNoteViewTypeProvider = NotifierProvider<TrashNoteViewTypeNotifier, NoteViewType>(TrashNoteViewTypeNotifier.new);
+
+class TrashNoteViewTypeNotifier extends Notifier<NoteViewType> {
+  @override
+  NoteViewType build() => NoteViewType.grid;
+
+  void updateView(NoteViewType view) {
+    state = view;
+  }
+}
+
+/// Dedicated Platform Filter Provider for Trash Page
+final trashPlatformFilterProvider = NotifierProvider<PlatformFilterNotifier, FilterPlatformOptions>(
+  PlatformFilterNotifier.new,
+);
+
 class TrashPage extends ConsumerStatefulWidget {
   const TrashPage({super.key});
 
@@ -33,6 +69,7 @@ class TrashPage extends ConsumerStatefulWidget {
 class _TrashPageState extends ConsumerState<TrashPage> {
   bool isSelectMode = false;
   bool _isSearching = false;
+  Folder? _selectedFolder;
 
   late final TextEditingController _searchController;
   late final FocusNode _searchFocusNode;
@@ -74,6 +111,76 @@ class _TrashPageState extends ConsumerState<TrashPage> {
       }
       isSelectMode = selectedNoteIds.isNotEmpty || selectedFolderIds.isNotEmpty;
     });
+  }
+
+  HomeMenuAction _getCurrentSortAction(NoteSortPreference currentSort) {
+    switch (currentSort) {
+      case NoteSortPreference.createdAt:
+        return HomeMenuAction.sortCreated;
+      case NoteSortPreference.name:
+        return HomeMenuAction.sortName;
+      case NoteSortPreference.updatedAt:
+        return HomeMenuAction.sortUpdated;
+    }
+  }
+
+  HomeMenuAction _getCurrentPlatformAction(FilterPlatformOptions platformFilter) {
+    switch (platformFilter) {
+      case FilterPlatformOptions.all:
+        return HomeMenuAction.filterAll;
+      case FilterPlatformOptions.android:
+        return HomeMenuAction.filterPhone;
+      case FilterPlatformOptions.windows:
+        return HomeMenuAction.filterWindows;
+    }
+  }
+
+  SliverGridDelegate _getGridDelegate(NoteViewType viewType) {
+    final isMobile = PlatformHelper.isMobileScreen;
+    switch (viewType) {
+      case NoteViewType.list:
+        return const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 1,
+          mainAxisExtent: 44,
+          mainAxisSpacing: 2,
+          crossAxisSpacing: 2,
+        );
+      case NoteViewType.detailedList:
+        return const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 1,
+          mainAxisExtent: 110,
+          mainAxisSpacing: 4,
+          crossAxisSpacing: 4,
+        );
+      case NoteViewType.largeGrid:
+        return isMobile
+            ? const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                childAspectRatio: 0.95,
+                crossAxisSpacing: 6,
+                mainAxisSpacing: 6,
+              )
+            : const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 320,
+                childAspectRatio: 1.0,
+                crossAxisSpacing: 6,
+                mainAxisSpacing: 6,
+              );
+      case NoteViewType.grid:
+        return isMobile
+            ? const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                childAspectRatio: 0.85,
+                crossAxisSpacing: 4,
+                mainAxisSpacing: 4,
+              )
+            : const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 200,
+                childAspectRatio: 0.85,
+                crossAxisSpacing: 4,
+                mainAxisSpacing: 4,
+              );
+    }
   }
 
   Future<void> _handleEmptyTrash() async {
@@ -347,6 +454,10 @@ class _TrashPageState extends ConsumerState<TrashPage> {
     final currentNotes = trashNotesState.value ?? [];
     final currentFolders = trashFoldersState.value ?? [];
 
+    final currentSort = ref.watch(trashNoteSortPreferenceProvider);
+    final currentView = ref.watch(trashNoteViewTypeProvider);
+    final platformFilter = ref.watch(trashPlatformFilterProvider);
+
     return AppScaffold(
       appBar: _buildAppBar(currentNotes, currentFolders),
       body: Padding(
@@ -403,6 +514,61 @@ class _TrashPageState extends ConsumerState<TrashPage> {
                   ),
                 ),
               ),
+
+            // Control Bar Row: FolderButton + SortMenuButton + ViewMenuButton
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
+              child: Row(
+                children: [
+                  FolderButton(
+                    selectedFolder: _selectedFolder,
+                    emptyLabel: 'All Folders',
+                    showContextMenus: true,
+                    onFolderSelected: (folder) {
+                      setState(() {
+                        _selectedFolder = folder;
+                      });
+                    },
+                  ),
+                  const Spacer(),
+                  SortMenuButton(
+                    icon: Icon(CupertinoIcons.sort_down, color: Theme.of(context).colorScheme.primary),
+                    currentSortSelection: _getCurrentSortAction(currentSort),
+                    currentPlatformSelection: _getCurrentPlatformAction(platformFilter),
+                    onSelected: (HomeMenuAction action) {
+                      switch (action) {
+                        case HomeMenuAction.sortCreated:
+                          ref.read(trashNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.createdAt);
+                          break;
+                        case HomeMenuAction.sortName:
+                          ref.read(trashNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.name);
+                          break;
+                        case HomeMenuAction.sortUpdated:
+                          ref.read(trashNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.updatedAt);
+                          break;
+                        case HomeMenuAction.filterAll:
+                          ref.read(trashPlatformFilterProvider.notifier).setFilter(FilterPlatformOptions.all);
+                          break;
+                        case HomeMenuAction.filterPhone:
+                          ref.read(trashPlatformFilterProvider.notifier).toggleFilter(FilterPlatformOptions.android);
+                          break;
+                        case HomeMenuAction.filterWindows:
+                          ref.read(trashPlatformFilterProvider.notifier).toggleFilter(FilterPlatformOptions.windows);
+                          break;
+                      }
+                    },
+                  ),
+                  ViewMenuButton(
+                    icon: Icon(Icons.grid_view, color: Theme.of(context).colorScheme.primary),
+                    currentView: currentView,
+                    onViewSelected: (NoteViewType selectedView) {
+                      ref.read(trashNoteViewTypeProvider.notifier).updateView(selectedView);
+                    },
+                  ),
+                ],
+              ),
+            ),
+
             Expanded(
               child: trashNotesState.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
@@ -412,18 +578,57 @@ class _TrashPageState extends ConsumerState<TrashPage> {
                     loading: () => const Center(child: CircularProgressIndicator()),
                     error: (error, stack) => Center(child: Text('Error: $error')),
                     data: (folders) {
-                      final filteredNotes = searchQueryLower.isEmpty
+                      // 1. Folder Filter
+                      var filteredNotes = _selectedFolder == null
                           ? notes
-                          : notes.where((nwf) {
-                              return nwf.note.title.toLowerCase().contains(searchQueryLower) ||
-                                  nwf.note.content.toLowerCase().contains(searchQueryLower);
-                            }).toList();
+                          : notes.where((nwf) => nwf.note.folderId == _selectedFolder!.uuid).toList();
 
-                      final filteredFolders = searchQueryLower.isEmpty
+                      var filteredFolders = _selectedFolder == null
                           ? folders
-                          : folders.where((f) {
-                              return f.name.toLowerCase().contains(searchQueryLower);
-                            }).toList();
+                          : folders.where((f) => f.uuid == _selectedFolder!.uuid).toList();
+
+                      // 2. Platform Filter
+                      if (platformFilter != FilterPlatformOptions.all) {
+                        final targetPlatform = platformFilter == FilterPlatformOptions.android ? 'android' : 'windows';
+                        filteredNotes = filteredNotes.where((nwf) {
+                          return nwf.note.creationPlatform?.toLowerCase() == targetPlatform;
+                        }).toList();
+                      }
+
+                      // 3. Text Search Filter
+                      if (searchQueryLower.isNotEmpty) {
+                        filteredNotes = filteredNotes.where((nwf) {
+                          return nwf.note.title.toLowerCase().contains(searchQueryLower) ||
+                              nwf.note.content.toLowerCase().contains(searchQueryLower);
+                        }).toList();
+
+                        filteredFolders = filteredFolders.where((f) {
+                          return f.name.toLowerCase().contains(searchQueryLower);
+                        }).toList();
+                      }
+
+                      // 4. Sorting
+                      filteredNotes.sort((a, b) {
+                        switch (currentSort) {
+                          case NoteSortPreference.name:
+                            return a.note.title.toLowerCase().compareTo(b.note.title.toLowerCase());
+                          case NoteSortPreference.createdAt:
+                            return b.note.createdAt.compareTo(a.note.createdAt);
+                          case NoteSortPreference.updatedAt:
+                            return b.note.updatedAt.compareTo(a.note.updatedAt);
+                        }
+                      });
+
+                      filteredFolders.sort((a, b) {
+                        switch (currentSort) {
+                          case NoteSortPreference.name:
+                            return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+                          case NoteSortPreference.createdAt:
+                            return b.createdAt.compareTo(a.createdAt);
+                          case NoteSortPreference.updatedAt:
+                            return b.updatedAt.compareTo(a.updatedAt);
+                        }
+                      });
 
                       if (filteredNotes.isEmpty && filteredFolders.isEmpty) {
                         return Center(
@@ -442,20 +647,6 @@ class _TrashPageState extends ConsumerState<TrashPage> {
                           ),
                         );
                       }
-
-                      final gridDelegate = PlatformHelper.isMobileScreen
-                          ? const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 3,
-                              childAspectRatio: 0.85,
-                              crossAxisSpacing: 4,
-                              mainAxisSpacing: 4,
-                            )
-                          : const SliverGridDelegateWithMaxCrossAxisExtent(
-                              maxCrossAxisExtent: 200,
-                              childAspectRatio: 0.85,
-                              crossAxisSpacing: 4,
-                              mainAxisSpacing: 4,
-                            );
 
                       return CustomScrollView(
                         slivers: [
@@ -539,7 +730,7 @@ class _TrashPageState extends ConsumerState<TrashPage> {
                             SliverPadding(
                               padding: const EdgeInsets.symmetric(horizontal: 4.0),
                               sliver: SliverGrid(
-                                gridDelegate: gridDelegate,
+                                gridDelegate: _getGridDelegate(currentView),
                                 delegate: SliverChildBuilderDelegate(
                                   (context, index) {
                                     final noteWithFolder = filteredNotes[index];
@@ -548,6 +739,7 @@ class _TrashPageState extends ConsumerState<TrashPage> {
                                     return NoteCard(
                                       key: ValueKey(noteWithFolder.note.uuid),
                                       noteWithFolder: noteWithFolder,
+                                      viewType: currentView,
                                       searchQuery: searchQuery,
                                       isSelected: isSelected,
                                       contextMenuOptions: const [

@@ -35,7 +35,7 @@ class DynamicNotesLayout extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notesState = ref.watch(filteredNotesProvider);
-    final viewType = ref.watch(noteViewTypeProvider);
+    final viewType = ref.watch(homeNoteViewTypeProvider);
 
     // WATCH THE ACTIVE FOLDER
     final activeFolder = ref.watch(activeFolderProvider);

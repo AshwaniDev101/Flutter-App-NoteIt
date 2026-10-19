@@ -64,9 +64,12 @@ class NoteCard extends ConsumerStatefulWidget {
     NoteContextMenuOption.delete,
   ];
 
+  final NoteViewType? viewType;
+
   const NoteCard({
     super.key,
     required this.noteWithFolder,
+    this.viewType,
     this.isSelected = false,
     this.searchQuery = '',
     this.onTap,
@@ -95,7 +98,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
 
   @override
   Widget build(BuildContext context) {
-    final viewType = ref.watch(noteViewTypeProvider);
+    final NoteViewType viewType = widget.viewType ?? ref.watch(homeNoteViewTypeProvider);
     final accentColor = _folderAccentColor;
 
     return MenuAnchor(
@@ -351,7 +354,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.all(12.0),
+      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
@@ -360,7 +363,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
             context,
             textStyle: Theme.of(context).textTheme.titleMedium,
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           _isLocked
               ? Align(
                   alignment: Alignment.centerLeft,
@@ -371,7 +374,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
                   ),
                 )
               : _buildNotePreview(context, maxLines: 2, overflow: TextOverflow.ellipsis),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           _buildMetadataRow(context),
         ],
       ),
