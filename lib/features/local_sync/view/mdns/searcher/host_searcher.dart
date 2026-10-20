@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:noteit/core/routing/routing.dart';
 
 import '../../../../../core/config/config.dart';
-import '../../../../home/view/desktop/content_panel/core/navigator.dart';
+import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
 import '../../../../../shared/app_scaffold.dart';
 import '../../../../../shared/snack_bar_manager.dart';
 import '../../../auto_connect/mdns_searcher.dart';

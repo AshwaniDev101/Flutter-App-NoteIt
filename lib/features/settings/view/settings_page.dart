@@ -6,7 +6,7 @@ import '../../keybinding/keybindings_provider.dart';
 import '../../lock/lock_manger/lock_manager.dart';
 import '../../lock/password_prompt_helper.dart';
 import '../../../shared/app_scaffold.dart';
-import '../../home/view/desktop/content_panel/core/navigator.dart';
+import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
@@ -92,12 +92,12 @@ class SettingsPage extends ConsumerWidget {
                               ),
                               ButtonSegment<SyncEngine>(
                                 value: SyncEngine.local,
-                                label: Text('Wi-Fi'),
+                                label: Text('Offline Sync'),
                                 icon: Icon(Icons.wifi),
                               ),
                               ButtonSegment<SyncEngine>(
                                 value: SyncEngine.offline,
-                                label: Text('Offline'),
+                                label: Text('No Sync'),
                                 icon: Icon(Icons.signal_wifi_off),
                               ),
                             ],
@@ -204,6 +204,16 @@ class SettingsPage extends ConsumerWidget {
                           value: shortcutPrefs.appendShortcutToTooltips,
                           onChanged: (bool value) {
                             ref.read(shortcutPreferencesProvider.notifier).toggleTooltips(value);
+                          },
+                        ),
+                        Divider(height: 1, indent: 64, color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                        SettingsTile(
+                          icon: Icons.tune_outlined,
+                          iconColor: Colors.purpleAccent,
+                          title: 'Default views & layout',
+                          subtitle: 'Configure default page views, sort orders, and window size',
+                          onTap: () {
+                            ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.defaultSettings);
                           },
                         ),
                       ],

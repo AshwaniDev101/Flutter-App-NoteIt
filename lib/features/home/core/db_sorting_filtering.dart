@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/database/drift/notes/notes_dao.dart';
 import '../../../core/util/logger.dart';
+import '../../../database/shared_preference/shared_preference_manager.dart';
 
 export 'package:noteit/database/drift/notes/notes_dao.dart' show NoteSortPreference;
 
@@ -12,12 +13,12 @@ final homeNoteSortPreferenceProvider = NotifierProvider<NoteSortPreferenceNotifi
 class NoteSortPreferenceNotifier extends Notifier<NoteSortPreference> {
   @override
   NoteSortPreference build() {
-    // Default to newest first
-    return NoteSortPreference.createdAt;
+    return SharedPreferenceManager.instance.getPageSortOption('home');
   }
 
   void updateSort(NoteSortPreference option) {
     state = option;
+    SharedPreferenceManager.instance.setPageSortOption('home', option);
   }
 }
 

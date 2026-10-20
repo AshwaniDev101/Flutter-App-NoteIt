@@ -15,8 +15,10 @@ import '../../shared/snack_bar_manager.dart';
 import '../../shared/sort_menu_button.dart';
 import '../../shared/view_menu_button.dart';
 import '../folders/view/folder_selector.dart';
-import '../home/core/providers.dart';
+import 'package:noteit/features/home/core/providers.dart';
 import '../home/view/shared/desktop_close_button.dart';
+
+import '../../database/shared_preference/shared_preference_manager.dart';
 
 final trashNotesProvider = StreamProvider.autoDispose<List<NoteWithFolder>>((ref) {
   final notesDao = ref.watch(notesDaoProvider);
@@ -35,10 +37,13 @@ final trashNoteSortPreferenceProvider = NotifierProvider<TrashNoteSortPreference
 
 class TrashNoteSortPreferenceNotifier extends Notifier<NoteSortPreference> {
   @override
-  NoteSortPreference build() => NoteSortPreference.createdAt;
+  NoteSortPreference build() {
+    return SharedPreferenceManager.instance.getPageSortOption('trash');
+  }
 
   void updateSort(NoteSortPreference option) {
     state = option;
+    SharedPreferenceManager.instance.setPageSortOption('trash', option);
   }
 }
 
@@ -47,10 +52,13 @@ final trashNoteViewTypeProvider = NotifierProvider<TrashNoteViewTypeNotifier, No
 
 class TrashNoteViewTypeNotifier extends Notifier<NoteViewType> {
   @override
-  NoteViewType build() => NoteViewType.grid;
+  NoteViewType build() {
+    return SharedPreferenceManager.instance.getPageViewType('trash');
+  }
 
   void updateView(NoteViewType view) {
     state = view;
+    SharedPreferenceManager.instance.setPageViewType('trash', view);
   }
 }
 

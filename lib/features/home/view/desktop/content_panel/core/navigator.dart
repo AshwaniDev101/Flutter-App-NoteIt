@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../../../core/routing/routing.dart';
-import '../../../../../../core/util/platform_helper.dart';
-import '../../../../core/providers.dart';
+import 'package:noteit/core/routing/routing.dart';
+import 'package:noteit/core/util/platform_helper.dart';
+import 'package:noteit/features/home/core/providers.dart';
 
 // To Navigate to Any page use
 // ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.allNotes);
@@ -86,7 +86,10 @@ class DrawerNavigationController {
         _handlePlatformRouting(context, option, AppRoutes.pin);
         break;
       case RightPanelPageOptions.archivePage:
-        _handlePlatformRouting(context, option, AppRoutes.pin);
+        _handlePlatformRouting(context, option, AppRoutes.archive);
+        break;
+      case RightPanelPageOptions.defaultSettings:
+        _handlePlatformRouting(context, option, AppRoutes.defaultSettings);
         break;
     }
   }
@@ -121,7 +124,8 @@ enum RightPanelPageOptions {
   qr('Host QR Code', 'Show QR code for device pairing', Icons.qr_code_outlined),
   scan('Scan QR Code', 'Scan a host QR code to join', Icons.qr_code_scanner_outlined),
   pin('Pairing PIN', 'Enter PIN to pair with device', Icons.pin_outlined),
-  archivePage('Archive', 'Archive Notes to reduce clutter', Icons.archive_outlined);
+  archivePage('Archive', 'Archive Notes to reduce clutter', Icons.archive_outlined),
+  defaultSettings('Default Layout', 'Configure default views, sort options, and window layout', Icons.tune_outlined);
 
   final String label;
   final String description;

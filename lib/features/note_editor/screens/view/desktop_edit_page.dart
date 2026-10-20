@@ -18,7 +18,7 @@ import '../../../../shared/snack_bar_manager.dart';
 import '../../../folders/view/folder_selector.dart';
 import '../../widgets/checklist_editor.dart';
 import '../../../home/core/providers.dart';
-import '../../../home/view/desktop/content_panel/core/navigator.dart';
+import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
 import '../../widgets/note_editor_options.dart';
 import '../../../lock/lock_manger/lock_manager.dart';
 import '../../../lock/view/setup_password_page.dart';

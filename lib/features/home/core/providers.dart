@@ -1,10 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/features/home/core/db_sorting_filtering.dart';
 import '../../../database/drift/notes/notes_dao.dart';
+import '../../../database/shared_preference/shared_preference_manager.dart';
 import '../../../shared/view_menu_button.dart';
 import '../../folders/core/providers.dart';
 import '../../lock/lock_manger/lock_manager.dart';
-import '../view/desktop/content_panel/core/navigator.dart';
+import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
 
 
 /// MAIN FILTER: Combines all the filters (FOLDER + SORT + PLATFORM + SEARCH + LOCK-STATE)
@@ -118,10 +119,13 @@ class ActiveNoteNotifier extends Notifier<NoteWithFolder?> {
 final homeNoteViewTypeProvider = NotifierProvider<NoteViewTypeNotifier, NoteViewType>(NoteViewTypeNotifier.new);
 class NoteViewTypeNotifier extends Notifier<NoteViewType> {
   @override
-  NoteViewType build() => NoteViewType.grid;
+  NoteViewType build() {
+    return SharedPreferenceManager.instance.getPageViewType('home');
+  }
 
   void updateView(NoteViewType view) {
     state = view;
+    SharedPreferenceManager.instance.setPageViewType('home', view);
   }
 }
 

@@ -1,27 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:noteit/features/home/view/shared/icon_tray/icon_tray.dart';
-import 'package:noteit/features/others/archive_page.dart';
 import 'package:window_manager/window_manager.dart';
-import '../../../../../core/util/platform_helper.dart';
-import '../../../../../database/drift/notes/notes_dao.dart';
-import '../../../../backup/export_page.dart';
-import '../../../../backup/import_page.dart';
-import '../../../../dev_tools/dev_page.dart';
-import '../../../../local_sync/view/mdns/broadcast/host_broadcast.dart';
-import '../../../../local_sync/view/mdns/searcher/host_searcher.dart';
-import '../../../../local_sync/view/mdns/searcher/pin_dialog/pin_entry_dialog.dart';
-import '../../../../local_sync/view/qr/qr_page.dart';
-import '../../../../local_sync/view/qr/qr_scanner/qr_scanner_page.dart';
-import '../../../../local_sync/view/role_selector_page.dart';
-import '../../../../local_sync/view/synced_list.dart';
-import '../../../../note_editor/screens/view/desktop_edit_page.dart';
-import '../../../../note_editor/screens/view/details/detail_page.dart';
-import '../../../../settings/view/settings_page.dart';
-import '../../../../themes/view/theme_page.dart';
-import '../../../../others/trash_page.dart';
-import '../../../core/providers.dart';
-import 'core/navigator.dart';
+
+import 'package:noteit/core/util/platform_helper.dart';
+import 'package:noteit/database/drift/notes/notes_dao.dart';
+import 'package:noteit/features/backup/export_page.dart';
+import 'package:noteit/features/backup/import_page.dart';
+import 'package:noteit/features/dev_tools/dev_page.dart';
+import 'package:noteit/features/home/core/providers.dart';
+import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
+import 'package:noteit/features/home/view/shared/icon_tray/icon_tray.dart';
+import 'package:noteit/features/local_sync/view/mdns/broadcast/host_broadcast.dart';
+import 'package:noteit/features/local_sync/view/mdns/searcher/host_searcher.dart';
+import 'package:noteit/features/local_sync/view/mdns/searcher/pin_dialog/pin_entry_dialog.dart';
+import 'package:noteit/features/local_sync/view/qr/qr_page.dart';
+import 'package:noteit/features/local_sync/view/qr/qr_scanner/qr_scanner_page.dart';
+import 'package:noteit/features/local_sync/view/role_selector_page.dart';
+import 'package:noteit/features/local_sync/view/synced_list.dart';
+import 'package:noteit/features/note_editor/screens/view/desktop_edit_page.dart';
+import 'package:noteit/features/note_editor/screens/view/details/detail_page.dart';
+import 'package:noteit/features/others/archive_page.dart';
+import 'package:noteit/features/others/trash_page.dart';
+import 'package:noteit/features/settings/view/default_settings_page.dart';
+import 'package:noteit/features/settings/view/settings_page.dart';
+import 'package:noteit/features/themes/view/theme_page.dart';
 
 class DesktopContentPanel extends ConsumerWidget {
   final NoteWithFolder? activeNoteWithFolder;
@@ -43,8 +45,6 @@ class DesktopContentPanel extends ConsumerWidget {
               color: Colors.transparent,
             ),
           ),
-          // backgroundColor: Colors.red,
-
           elevation: 0,
           scrolledUnderElevation: PlatformHelper.isDesktopScreen ? 0.0 : null,
           actions: [
@@ -84,65 +84,82 @@ class DesktopContentPanel extends ConsumerWidget {
   }
 
   Widget _buildRightPanelContent(RightPanelPageOptions view) {
-    return switch (view) {
-      RightPanelPageOptions.allNotes =>
-        activeNoteWithFolder != null
+    switch (view) {
+      case RightPanelPageOptions.allNotes:
+        return activeNoteWithFolder != null
             ? _PaddingWrapper(
                 key: ValueKey('editor_view_${activeNoteWithFolder!.note.uuid}'),
                 child: DesktopEditNotePage(key: ValueKey(activeNoteWithFolder!.note.uuid), existingNoteWithFolder: activeNoteWithFolder),
               )
             : const _HomepagePlaceholder(
                 key: ValueKey('editor_fallback'),
-              ),
-      RightPanelPageOptions.trash => const _PaddingWrapper(key: ValueKey('trash_view'), child: TrashPage()),
-      RightPanelPageOptions.settings => const _PaddingWrapper(key: ValueKey('settings_view'), child: SettingsPage()),
-      RightPanelPageOptions.localSync => const _PaddingWrapper(key: ValueKey('sync_view'), child: RoleSelectorPage()),
-      RightPanelPageOptions.themes => const _PaddingWrapper(key: ValueKey('theme_view'), child: ThemesPage()),
-      RightPanelPageOptions.devTools => const _PaddingWrapper(key: ValueKey('dev_view'), child: DevPage()),
-      RightPanelPageOptions.clientMode => const _PaddingWrapper(key: ValueKey('search_view'), child: HostSearcher()),
-      RightPanelPageOptions.hostMode => const _PaddingWrapper(
-        key: ValueKey('broadcast_view'),
-        child: HostBroadcastPage(),
-      ),
-      RightPanelPageOptions.syncedList => const _PaddingWrapper(
-        key: ValueKey('synced_devices_list_view'),
-        child: SyncedDevicesListView(),
-      ),
-      RightPanelPageOptions.noteDetails => _PaddingWrapper(
-        key: const ValueKey('note_details_view'),
-        child: NoteDetailsPage(),
-      ),
-      RightPanelPageOptions.export => const _PaddingWrapper(
-        key: ValueKey('export_view'),
-        child: ExportNotesPage(),
-      ),
-      RightPanelPageOptions.import => const _PaddingWrapper(
-        key: ValueKey('import_view'),
-        child: ImportNotesPage(),
-      ),
-      RightPanelPageOptions.qr => const _PaddingWrapper(
-        key: ValueKey('qr_view'),
-        child: QrCodePage(),
-      ),
-      RightPanelPageOptions.scan => const _PaddingWrapper(
-        key: ValueKey('scan_view'),
-        child: QrScannerPage(),
-      ),
-      RightPanelPageOptions.pin => const _PaddingWrapper(
-        key: ValueKey('pin_view'),
-        child: PinEntryDialog(),
-      ),
-
-      RightPanelPageOptions.archivePage => const _PaddingWrapper(
-        key: ValueKey('archive_view'),
-        child: ArchivePage(),
-      ),
-
-    };
+              );
+      case RightPanelPageOptions.trash:
+        return const _PaddingWrapper(key: ValueKey('trash_view'), child: TrashPage());
+      case RightPanelPageOptions.settings:
+        return const _PaddingWrapper(key: ValueKey('settings_view'), child: SettingsPage());
+      case RightPanelPageOptions.localSync:
+        return const _PaddingWrapper(key: ValueKey('sync_view'), child: RoleSelectorPage());
+      case RightPanelPageOptions.themes:
+        return const _PaddingWrapper(key: ValueKey('theme_view'), child: ThemesPage());
+      case RightPanelPageOptions.devTools:
+        return const _PaddingWrapper(key: ValueKey('dev_view'), child: DevPage());
+      case RightPanelPageOptions.clientMode:
+        return const _PaddingWrapper(key: ValueKey('search_view'), child: HostSearcher());
+      case RightPanelPageOptions.hostMode:
+        return const _PaddingWrapper(
+          key: ValueKey('broadcast_view'),
+          child: HostBroadcastPage(),
+        );
+      case RightPanelPageOptions.syncedList:
+        return const _PaddingWrapper(
+          key: ValueKey('synced_devices_list_view'),
+          child: SyncedDevicesListView(),
+        );
+      case RightPanelPageOptions.noteDetails:
+        return _PaddingWrapper(
+          key: const ValueKey('note_details_view'),
+          child: NoteDetailsPage(),
+        );
+      case RightPanelPageOptions.export:
+        return const _PaddingWrapper(
+          key: ValueKey('export_view'),
+          child: ExportNotesPage(),
+        );
+      case RightPanelPageOptions.import:
+        return const _PaddingWrapper(
+          key: ValueKey('import_view'),
+          child: ImportNotesPage(),
+        );
+      case RightPanelPageOptions.qr:
+        return const _PaddingWrapper(
+          key: ValueKey('qr_view'),
+          child: QrCodePage(),
+        );
+      case RightPanelPageOptions.scan:
+        return const _PaddingWrapper(
+          key: ValueKey('scan_view'),
+          child: QrScannerPage(),
+        );
+      case RightPanelPageOptions.pin:
+        return const _PaddingWrapper(
+          key: ValueKey('pin_view'),
+          child: PinEntryDialog(),
+        );
+      case RightPanelPageOptions.archivePage:
+        return const _PaddingWrapper(
+          key: ValueKey('archive_view'),
+          child: ArchivePage(),
+        );
+      case RightPanelPageOptions.defaultSettings:
+        return const _PaddingWrapper(
+          key: ValueKey('default_settings_view'),
+          child: DefaultSettingsPage(),
+        );
+    }
   }
 }
 
-/// A visual placeholder shown when no note is currently selected.
 /// A visual placeholder shown when no note is currently selected.
 class _HomepagePlaceholder extends StatelessWidget {
   const _HomepagePlaceholder({super.key});
@@ -180,8 +197,6 @@ class _HomepagePlaceholder extends StatelessWidget {
                   color: colorScheme.onSurfaceVariant,
                 ),
               ),
-
-              // FAB-like Icon Container
               Container(
                 margin: const EdgeInsets.symmetric(horizontal: 8),
                 padding: const EdgeInsets.all(6),
@@ -205,7 +220,6 @@ class _HomepagePlaceholder extends StatelessWidget {
                   color: colorScheme.onPrimaryContainer,
                 ),
               ),
-
               SelectableText(
                 'to create a new note.',
                 style: textTheme.bodyMedium?.copyWith(
@@ -229,8 +243,7 @@ class _PaddingWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      // padding: const EdgeInsets.all(16.0),
-      padding: const EdgeInsets.only(left: 16,right: 16,bottom: 16),
+      padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
       child: ClipRRect(borderRadius: const BorderRadius.all(Radius.circular(16.0)), child: child),
     );
   }

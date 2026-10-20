@@ -13,7 +13,7 @@ import '../../../../shared/note_card/core/note_action_controller.dart';
 import '../../../../shared/highlighting_text_field.dart';
 import '../../../../shared/snack_bar_manager.dart';
 import '../../../folders/core/providers.dart';
-import '../../../home/view/desktop/content_panel/core/navigator.dart';
+import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
 import '../../widgets/checklist_editor.dart';
 import '../../widgets/note_editor_options.dart';
 import '../../../lock/lock_manger/lock_manager.dart';

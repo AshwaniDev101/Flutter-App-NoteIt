@@ -7,7 +7,7 @@ import '../../core/config/app_env.dart';
 import '../../database/firebase/auth/firebase_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/util/logger.dart';
-import '../home/view/desktop/content_panel/core/navigator.dart';
+import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
 
 class SharedDrawerContent extends ConsumerWidget {
   final RightPanelPageOptions? selectedOption;

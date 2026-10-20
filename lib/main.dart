@@ -1,4 +1,3 @@
-
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -22,26 +21,40 @@ import 'core/theme/app_theme.dart';
 // Build drift db : dart run build_runner build -d
 // Drift database location Windows : appdata\app-name\my_notes_db.sqlite
 
-
+class _WindowSizeObserver extends WindowListener {
+  @override
+  void onWindowResized() async {
+    final size = await windowManager.getSize();
+    SharedPreferenceManager.instance.setWindowWidth(size.width);
+    SharedPreferenceManager.instance.setWindowHeight(size.height);
+  }
+}
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  await SharedPreferenceManager.init();
+
   if (PlatformHelper.isNativeDesktop) {
     // Remove the default windows form and add ability to add a custom one
     await windowManager.ensureInitialized();
-    WindowOptions windowOptions = const WindowOptions(
+
+    final savedWidth = SharedPreferenceManager.instance.windowWidth;
+    final savedHeight = SharedPreferenceManager.instance.windowHeight;
+
+    WindowOptions windowOptions = WindowOptions(
       titleBarStyle: TitleBarStyle.hidden, // Hides the default Windows frame
-      size: Size(1400, 900),
+      size: Size(savedWidth, savedHeight),
       center: true,
     );
+
+    windowManager.addListener(_WindowSizeObserver());
+
     await windowManager.waitUntilReadyToShow(windowOptions, () async {
       await windowManager.show();
       await windowManager.focus();
     });
   }
-
-  await SharedPreferenceManager.init();
 
   // Allow us to print app version in UI
   final packageInfo = await PackageInfo.fromPlatform();

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/util/platform_helper.dart';
-import '../features/home/view/desktop/content_panel/core/navigator.dart';
+import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
 import '../features/home/view/shared/desktop_close_button.dart';
 
 /// A centralized Scaffold wrapper that provides a consistent AppBar, 

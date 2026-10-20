@@ -11,7 +11,7 @@ import '../../database/drift/notes/notes_dao.dart';
 import '../lock/password_prompt_helper.dart';
 import '../../shared/app_scaffold.dart';
 import '../../shared/snack_bar_manager.dart';
-import '../home/view/desktop/content_panel/core/navigator.dart';
+import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
 import 'backup_utils.dart';
 
 enum ExportFormat { json, csv }

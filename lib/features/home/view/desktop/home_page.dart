@@ -8,13 +8,14 @@ import 'package:uuid/uuid.dart';
 
 import '../../../../database/drift/keybindings/keybindings_dao.dart';
 import '../../../../database/drift/notes/notes_dao.dart';
+import '../../../../database/shared_preference/shared_preference_manager.dart';
 import '../../../../database/sync/sync_orchestrator.dart';
 import '../../../folders/core/providers.dart';
 import '../../../keybinding/shortcut_config.dart';
-import '../../core/providers.dart';
+import 'package:noteit/features/home/core/providers.dart';
 import '../../viewmodel/viewmodel.dart';
 import 'list_panel.dart';
-import 'content_panel/content_panel.dart';
+import 'package:noteit/features/home/view/desktop/content_panel/content_panel.dart';
 
 class DesktopHomePanel extends ConsumerStatefulWidget {
   const DesktopHomePanel({super.key});
@@ -40,6 +41,7 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePanel> {
   @override
   void initState() {
     super.initState();
+    _listPanelWidth = SharedPreferenceManager.instance.listPanelWidth;
     _searchFocusNode.skipTraversal = true;
     _searchFocusNode.onKeyEvent = (FocusNode node, KeyEvent event) {
       if (event is KeyDownEvent) {
@@ -241,6 +243,9 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePanel> {
                                   if (_listPanelWidth < 250) _listPanelWidth = 250;
                                   if (_listPanelWidth > 600) _listPanelWidth = 600;
                                 });
+                              },
+                              onPanEnd: (_) {
+                                SharedPreferenceManager.instance.setListPanelWidth(_listPanelWidth);
                               },
                               child: Container(color: Colors.transparent),
                             ),

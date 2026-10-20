@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/util/platform_helper.dart';
 import '../../core/providers.dart';
-import '../desktop/content_panel/core/navigator.dart';
+import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
 
 /// Only visible when you're on the desktop right panel
 class DesktopCloseButton extends ConsumerWidget {

@@ -2,6 +2,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../shared/view_menu_button.dart';
+import '../drift/notes/notes_dao.dart';
 import '../sync/sync_engine.dart';
 
 enum SyncRole { undefine, host, client }
@@ -32,6 +34,10 @@ class SharedPreferenceManager {
   static const String _keyShowDynamicKeyHints = 'show_dynamic_key_hints';
   static const String _keyAppendShortcutToTooltips = 'append_shortcut_to_tooltips';
 
+  // Layout Keys
+  static const String _keyWindowWidth = 'window_width';
+  static const String _keyWindowHeight = 'window_height';
+  static const String _keyListPanelWidth = 'list_panel_width';
 
   // Key for keeping notes unlocked during session
   static const String _keyKeepUnlockedSession = 'keep_unlocked_session';
@@ -47,11 +53,115 @@ class SharedPreferenceManager {
     return await _prefs.setString(_keySyncEngine, engine.name);
   }
 
-  // --- View Type ---
+  // --- Legacy View Type ---
   int get viewType => _prefs.getInt(_keyViewType) ?? 0;
 
   Future<bool> setViewType(int value) async {
     return await _prefs.setInt(_keyViewType, value);
+  }
+
+  // --- Generic Page View Types ---
+  NoteViewType getPageViewType(String pageId, {NoteViewType fallback = NoteViewType.grid}) {
+    final savedName = _prefs.getString('page_view_$pageId');
+    if (savedName == null) {
+      return getDefaultPageViewType(pageId, fallback: fallback);
+    }
+    return NoteViewType.values.firstWhere(
+      (e) => e.name == savedName,
+      orElse: () => getDefaultPageViewType(pageId, fallback: fallback),
+    );
+  }
+
+  Future<bool> setPageViewType(String pageId, NoteViewType view) async {
+    return await _prefs.setString('page_view_$pageId', view.name);
+  }
+
+  NoteViewType getDefaultPageViewType(String pageId, {NoteViewType fallback = NoteViewType.grid}) {
+    final savedName = _prefs.getString('default_page_view_$pageId');
+    if (savedName == null) return fallback;
+    return NoteViewType.values.firstWhere((e) => e.name == savedName, orElse: () => fallback);
+  }
+
+  Future<bool> setDefaultPageViewType(String pageId, NoteViewType view) async {
+    return await _prefs.setString('default_page_view_$pageId', view.name);
+  }
+
+  // --- Generic Page Sort Options ---
+  NoteSortPreference getPageSortOption(String pageId, {NoteSortPreference fallback = NoteSortPreference.createdAt}) {
+    final savedName = _prefs.getString('page_sort_$pageId');
+    if (savedName == null) {
+      return getDefaultPageSortOption(pageId, fallback: fallback);
+    }
+    return NoteSortPreference.values.firstWhere(
+      (e) => e.name == savedName,
+      orElse: () => getDefaultPageSortOption(pageId, fallback: fallback),
+    );
+  }
+
+  Future<bool> setPageSortOption(String pageId, NoteSortPreference sort) async {
+    return await _prefs.setString('page_sort_$pageId', sort.name);
+  }
+
+  NoteSortPreference getDefaultPageSortOption(String pageId, {NoteSortPreference fallback = NoteSortPreference.createdAt}) {
+    final savedName = _prefs.getString('default_page_sort_$pageId');
+    if (savedName == null) return fallback;
+    return NoteSortPreference.values.firstWhere((e) => e.name == savedName, orElse: () => fallback);
+  }
+
+  Future<bool> setDefaultPageSortOption(String pageId, NoteSortPreference sort) async {
+    return await _prefs.setString('default_page_sort_$pageId', sort.name);
+  }
+
+  Future<void> resetPageViewsAndSortsToDefaults() async {
+    final keys = _prefs.getKeys();
+    for (final key in keys) {
+      if (key.startsWith('page_view_') || key.startsWith('page_sort_')) {
+        await _prefs.remove(key);
+      }
+    }
+  }
+
+  // --- Layout Dimensions ---
+  double get listPanelWidth => _prefs.getDouble(_keyListPanelWidth) ?? getDefaultListPanelWidth();
+
+  Future<bool> setListPanelWidth(double width) async {
+    return await _prefs.setDouble(_keyListPanelWidth, width);
+  }
+
+  double getDefaultListPanelWidth() {
+    return _prefs.getDouble('default_list_panel_width') ?? 340.0;
+  }
+
+  Future<bool> setDefaultListPanelWidth(double width) async {
+    return await _prefs.setDouble('default_list_panel_width', width);
+  }
+
+  double get windowWidth => _prefs.getDouble(_keyWindowWidth) ?? getDefaultWindowWidth();
+
+  Future<bool> setWindowWidth(double width) async {
+    return await _prefs.setDouble(_keyWindowWidth, width);
+  }
+
+  double getDefaultWindowWidth() {
+    return _prefs.getDouble('default_window_width') ?? 1400.0;
+  }
+
+  Future<bool> setDefaultWindowWidth(double width) async {
+    return await _prefs.setDouble('default_window_width', width);
+  }
+
+  double get windowHeight => _prefs.getDouble(_keyWindowHeight) ?? getDefaultWindowHeight();
+
+  Future<bool> setWindowHeight(double height) async {
+    return await _prefs.setDouble(_keyWindowHeight, height);
+  }
+
+  double getDefaultWindowHeight() {
+    return _prefs.getDouble('default_window_height') ?? 900.0;
+  }
+
+  Future<bool> setDefaultWindowHeight(double height) async {
+    return await _prefs.setDouble('default_window_height', height);
   }
 
   // --- Sync Time ---
@@ -140,7 +250,6 @@ class SharedPreferenceManager {
         break;
     }
   }
-
 
   // Defaults to true so users see the hints by default
   bool get showDynamicKeyHints => _prefs.getBool(_keyShowDynamicKeyHints) ?? true;

@@ -15,8 +15,10 @@ import '../../shared/sort_menu_button.dart';
 import '../../shared/view_menu_button.dart';
 import '../folders/view/folder_selector.dart';
 import '../home/core/note_tap_handler.dart';
-import '../home/core/providers.dart';
+import 'package:noteit/features/home/core/providers.dart';
 import '../home/view/shared/desktop_close_button.dart';
+
+import '../../database/shared_preference/shared_preference_manager.dart';
 
 final archivedNotesStreamProvider = StreamProvider.autoDispose<List<NoteWithFolder>>((ref) {
   return ref.watch(notesDaoProvider).watchArchivedNotes();
@@ -29,10 +31,13 @@ final archiveNoteSortPreferenceProvider = NotifierProvider<ArchiveNoteSortPrefer
 
 class ArchiveNoteSortPreferenceNotifier extends Notifier<NoteSortPreference> {
   @override
-  NoteSortPreference build() => NoteSortPreference.createdAt;
+  NoteSortPreference build() {
+    return SharedPreferenceManager.instance.getPageSortOption('archive');
+  }
 
   void updateSort(NoteSortPreference option) {
     state = option;
+    SharedPreferenceManager.instance.setPageSortOption('archive', option);
   }
 }
 
@@ -41,10 +46,13 @@ final archiveNoteViewTypeProvider = NotifierProvider<ArchiveNoteViewTypeNotifier
 
 class ArchiveNoteViewTypeNotifier extends Notifier<NoteViewType> {
   @override
-  NoteViewType build() => NoteViewType.grid;
+  NoteViewType build() {
+    return SharedPreferenceManager.instance.getPageViewType('archive');
+  }
 
   void updateView(NoteViewType view) {
     state = view;
+    SharedPreferenceManager.instance.setPageViewType('archive', view);
   }
 }
 

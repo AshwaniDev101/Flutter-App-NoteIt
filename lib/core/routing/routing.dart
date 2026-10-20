@@ -18,6 +18,7 @@ import '../../features/local_sync/view/qr/qr_scanner/qr_scanner_page.dart';
 import '../../features/local_sync/view/synced_list.dart';
 import '../../features/note_editor/screens/view/desktop_edit_page.dart';
 import '../../features/note_editor/screens/view/mobile_edit_page.dart';
+import '../../features/settings/view/default_settings_page.dart';
 import '../../features/settings/view/settings_page.dart';
 import '../../features/themes/view/theme_page.dart';
 import '../../features/others/trash_page.dart';
@@ -42,6 +43,7 @@ class AppRoutes {
   static const String syncedList = '/synced-list';
   static const String noteDetails = '/note-details';
   static const String archive = '/archive';
+  static const String defaultSettings = '/default-settings';
 }
 
 final routerProvider = Provider((ref) {
@@ -148,6 +150,7 @@ final routerProvider = Provider((ref) {
       GoRoute(path: AppRoutes.noteDetails, builder: (context, state) => const NoteDetailsPage()),
 
       GoRoute(path: AppRoutes.archive, builder: (context, state) => const ArchivePage()),
+      GoRoute(path: AppRoutes.defaultSettings, builder: (context, state) => const DefaultSettingsPage()),
 
 
 
