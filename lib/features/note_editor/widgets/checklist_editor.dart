@@ -72,7 +72,7 @@ class ChecklistTextController extends TextEditingController {
       }
       spans.add(TextSpan(
         text: text.substring(match.start, match.end),
-        style: style?.copyWith(backgroundColor: Colors.yellow.withOpacity(0.5), color: Colors.black) ??
+        style: style?.copyWith(backgroundColor: Colors.yellow.withValues(alpha: 0.5), color: Colors.black) ??
             const TextStyle(backgroundColor: Colors.yellow, color: Colors.black),
       ));
       currentIndex = match.end;
@@ -265,7 +265,7 @@ class _CheckListWidgetState extends State<CheckListWidget> {
       }
       spans.add(TextSpan(
         text: text.substring(match.start, match.end),
-        style: style.copyWith(backgroundColor: Colors.yellow.withOpacity(0.5), color: Colors.black),
+        style: style.copyWith(backgroundColor: Colors.yellow.withValues(alpha: 0.5), color: Colors.black),
       ));
       currentIndex = match.end;
     }

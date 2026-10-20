@@ -10,7 +10,7 @@ import 'package:noteit/features/home/viewmodel/viewmodel.dart';
 /// - Shows a clear (X) icon when search text is non-empty.
 /// - Configurable border radius (rounded pill for mobile, square/subtle for desktop).
 /// - Supports focus node and keyboard-driven focus highlights.
-class HomeSearchBar extends ConsumerWidget {
+class HomeSearchBar extends ConsumerStatefulWidget {
   final TextEditingController controller;
   final FocusNode? focusNode;
   final String hintText;
@@ -30,35 +30,52 @@ class HomeSearchBar extends ConsumerWidget {
     this.onKeyboardModeChanged,
   });
 
+  @override
+  ConsumerState<HomeSearchBar> createState() => _HomeSearchBarState();
+}
+
+class _HomeSearchBarState extends ConsumerState<HomeSearchBar> {
+  FocusNode? _internalFocusNode;
+
+  FocusNode get _effectiveFocusNode =>
+      widget.focusNode ?? (_internalFocusNode ??= FocusNode());
+
+  @override
+  void dispose() {
+    _internalFocusNode?.dispose();
+    super.dispose();
+  }
+
   /// Clears search text and resets search state providers.
-  void _clearSearch(WidgetRef ref) {
-    controller.clear();
+  void _clearSearch() {
+    widget.controller.clear();
     ref.read(searchQueryProvider.notifier).clear();
     ref.read(homeViewModelProvider.notifier).exitSearchMode();
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final homeState = ref.watch(homeViewModelProvider);
     final viewModel = ref.read(homeViewModelProvider.notifier);
     final colorScheme = Theme.of(context).colorScheme;
-    final effectiveBorderRadius = borderRadius ?? BorderRadius.circular(30);
+    final effectiveBorderRadius = widget.borderRadius ?? BorderRadius.circular(30);
+    final focusNode = _effectiveFocusNode;
 
-    // Wrap in AnimatedBuilder to actively listen to the TextField's focusNode
-    return AnimatedBuilder(
-      animation: focusNode ?? FocusNode(),
+    // Wrap in ListenableBuilder to actively listen to the TextField's focusNode
+    return ListenableBuilder(
+      listenable: focusNode,
       builder: (context, child) {
-
-        // =Check BOTH the text field's focus and the parent wrapper's focus
-        final isFocused = (focusNode?.hasFocus ?? false) || Focus.of(context).hasFocus;
+        // Check BOTH the text field's focus and the parent wrapper's focus safely
+        final parentFocused = Focus.maybeOf(context)?.hasFocus ?? false;
+        final isFocused = focusNode.hasFocus || parentFocused;
 
         return AnimatedContainer(
           duration: const Duration(milliseconds: 100),
           decoration: BoxDecoration(
             borderRadius: effectiveBorderRadius,
             border: Border.all(
-              color: (isFocused && isKeyboardDriven) ? colorScheme.primary : Colors.transparent,
-              width: (isFocused && isKeyboardDriven) ?2:0, // Keeps layout completely stable!
+              color: (isFocused && widget.isKeyboardDriven) ? colorScheme.primary : Colors.transparent,
+              width: (isFocused && widget.isKeyboardDriven) ? 2 : 0, // Keeps layout completely stable!
             ),
           ),
           // We pass the TextField as 'child' so it doesn't rebuild unnecessarily
@@ -67,24 +84,24 @@ class HomeSearchBar extends ConsumerWidget {
       },
       // Put your TextField in the 'child' parameter
       child: TextField(
-        controller: controller,
+        controller: widget.controller,
         focusNode: focusNode,
         decoration: InputDecoration(
           filled: true,
           fillColor: Theme.of(context).colorScheme.surfaceContainerLowest,
           isDense: true,
           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          hintText: hintText,
+          hintText: widget.hintText,
           suffixIcon: ValueListenableBuilder<TextEditingValue>(
-            valueListenable: controller,
+            valueListenable: widget.controller,
             builder: (context, value, child) {
               return value.text.isNotEmpty
                   ? ExcludeFocus(
-                child: IconButton(
-                  icon: const Icon(Icons.clear, size: 20),
-                  onPressed: () => _clearSearch(ref),
-                ),
-              )
+                      child: IconButton(
+                        icon: const Icon(Icons.clear, size: 20),
+                        onPressed: _clearSearch,
+                      ),
+                    )
                   : const SizedBox.shrink();
             },
           ),
@@ -100,16 +117,16 @@ class HomeSearchBar extends ConsumerWidget {
           focusedBorder: OutlineInputBorder(borderRadius: effectiveBorderRadius, borderSide: BorderSide.none),
         ),
         onTap: () {
-          if (onKeyboardModeChanged != null) {
-            onKeyboardModeChanged!(false);
+          if (widget.onKeyboardModeChanged != null) {
+            widget.onKeyboardModeChanged!(false);
           }
           if (!homeState.isSearchMode) viewModel.enterSearchMode();
-          if (onTap != null) onTap!();
+          if (widget.onTap != null) widget.onTap!();
         },
         onChanged: (value) {
           if (value.isNotEmpty && !homeState.isSearchMode) viewModel.enterSearchMode();
           if (value.isEmpty) {
-            _clearSearch(ref);
+            _clearSearch();
           } else {
             ref.read(searchQueryProvider.notifier).updateQuery(value);
           }

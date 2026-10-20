@@ -354,27 +354,27 @@ class _NoteCardState extends ConsumerState<NoteCard> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
+      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
           _buildTitleHeader(
             context,
             textStyle: Theme.of(context).textTheme.titleMedium,
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           _isLocked
               ? Align(
                   alignment: Alignment.centerLeft,
                   child: Icon(
                     Icons.lock_outlined,
-                    size: 20,
+                    size: 18,
                     color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                   ),
                 )
               : _buildNotePreview(context, maxLines: 2, overflow: TextOverflow.ellipsis),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           _buildMetadataRow(context),
         ],
       ),

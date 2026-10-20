@@ -79,7 +79,7 @@ class DesktopListPanel extends ConsumerWidget {
           },
           child: Builder(
             builder: (context) {
-              final isFocused = Focus.of(context).hasFocus;
+              final isFocused = Focus.maybeOf(context)?.hasFocus ?? false;
 
               return AnimatedContainer(
                 duration: const Duration(milliseconds: 50),

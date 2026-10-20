@@ -148,7 +148,7 @@ class _TrashPageState extends ConsumerState<TrashPage> {
       case NoteViewType.detailedList:
         return const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 1,
-          mainAxisExtent: 110,
+          mainAxisExtent: 125,
           mainAxisSpacing: 4,
           crossAxisSpacing: 4,
         );

@@ -503,7 +503,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
         FolderButton(
           selectedFolder: currentFolder,
           emptyLabel: 'none',
-          showContextMenus: false,
+          showContextMenus: true,
           onFolderSelected: (folder) async {
             final newFolderId = folder?.uuid;
 

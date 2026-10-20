@@ -44,7 +44,7 @@ class SelectModeAppBar extends ConsumerWidget implements PreferredSizeWidget {
         };
 
     return AppBar(
-      backgroundColor: Theme.of(context).colorScheme.primary,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
       foregroundColor: Colors.white,
       leading: IconButton(icon: const Icon(Icons.close), onPressed: handleClearSelection),
       title: Text('${noteIds.length} Selected', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white)),

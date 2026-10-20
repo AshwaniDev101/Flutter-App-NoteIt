@@ -35,15 +35,17 @@ class FolderButton extends ConsumerStatefulWidget {
 
 class _FolderButtonState extends ConsumerState<FolderButton> {
   final MenuController _menuController = MenuController();
+  bool _isHovering = false;
 
   @override
   Widget build(BuildContext context) {
     final Folder? activeFolder = widget.selectedFolder;
+    final colorScheme = Theme.of(context).colorScheme;
 
     final currentName = activeFolder?.name ?? widget.emptyLabel;
     final currentColor = activeFolder != null
         ? Colors.primaries[activeFolder.colorIndex % Colors.primaries.length]
-        : Theme.of(context).colorScheme.onSurfaceVariant;
+        : colorScheme.onSurfaceVariant;
 
     return MenuAnchor(
       controller: _menuController,
@@ -58,6 +60,7 @@ class _FolderButtonState extends ConsumerState<FolderButton> {
         return Material(
           color: Colors.transparent,
           child: InkWell(
+            onHover: (val) => setState(() => _isHovering = val),
             onTap: () {
               if (isOpen) {
                 controller.close();
@@ -65,46 +68,56 @@ class _FolderButtonState extends ConsumerState<FolderButton> {
                 controller.open();
               }
             },
-            borderRadius: BorderRadius.circular(8),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            borderRadius: BorderRadius.circular(10),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
+                  color: isOpen || _isHovering
+                      ? colorScheme.outlineVariant
+                      : colorScheme.outlineVariant.withValues(alpha: 0.4),
                 ),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(10),
                 color: isOpen
-                    ? Theme.of(context).colorScheme.surfaceContainerHighest
+                    ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.6)
+                    : _isHovering
+                    ? colorScheme.surfaceContainerLowest
                     : Colors.transparent,
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-
-                  // Only show the circle AND its spacing if a folder is selected
                   if (activeFolder != null) ...[
                     Container(
-                      width: 8,
-                      height: 8,
+                      width: 10,
+                      height: 10,
                       decoration: BoxDecoration(
                         color: currentColor,
                         shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: currentColor.withValues(alpha: 0.4),
+                            blurRadius: 4,
+                            offset: const Offset(0, 1),
+                          )
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 10),
                   ],
-                  const SizedBox(width: 8),
                   Text(
                     currentName,
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(
                       fontWeight: FontWeight.w600,
+                      color: isOpen ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
                     ),
                   ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: 6),
                   Icon(
-                    isOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+                    isOpen ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
                     size: 20,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    color: isOpen ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
                   ),
                 ],
               ),
@@ -116,20 +129,20 @@ class _FolderButtonState extends ConsumerState<FolderButton> {
         Padding(
           padding: const EdgeInsets.only(top: 8.0),
           child: Material(
-            color: Theme.of(context).colorScheme.surface,
-            elevation: 8,
-            shadowColor: Colors.black.withValues(alpha: 0.4),
+            color: Theme.of(context).colorScheme.surfaceContainerLowest,
+            elevation: 6,
+            shadowColor: Colors.black.withValues(alpha: 0.3),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12.0),
+              borderRadius: BorderRadius.circular(16.0),
               side: BorderSide(
-                color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.4),
+                color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.3),
                 width: 1,
               ),
             ),
             clipBehavior: Clip.antiAlias,
             child: SizedBox(
-              width: 240,
-              height: 500,
+              width: 280,
+              height: 480,
               child: FolderContainer(
                 selectedFolder: widget.selectedFolder,
                 emptyLabel: widget.emptyLabel,
@@ -193,7 +206,7 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
       children: [
         Icon(icon, size: 18, color: color),
         const SizedBox(width: 12),
-        Text(label, style: TextStyle(fontSize: 14, color: color)),
+        Text(label, style: TextStyle(fontSize: 14, color: color, fontWeight: FontWeight.w500)),
       ],
     );
   }
@@ -212,34 +225,37 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
     final selectedAction = await showMenu<String>(
       context: context,
       position: menuPosition,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      elevation: 6,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 8,
       constraints: const BoxConstraints(minWidth: 160),
       items: [
         PopupMenuItem(
           value: 'open',
-          height: 36,
+          height: 40,
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: _buildMenuItem(Icons.folder_open, 'Select'),
+          child: _buildMenuItem(Icons.folder_open_rounded, 'Select'),
         ),
         PopupMenuItem(
           value: 'pin',
-          height: 36,
+          height: 40,
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: _buildMenuItem(isPinned ? Icons.push_pin : Icons.push_pin_outlined, isPinned ? 'Unpin' : 'Pin'),
+          child: _buildMenuItem(
+            isPinned ? Icons.push_pin_rounded : Icons.push_pin_outlined,
+            isPinned ? 'Unpin' : 'Pin',
+          ),
         ),
         const PopupMenuDivider(height: 8),
         PopupMenuItem(
           value: 'update',
-          height: 36,
+          height: 40,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: _buildMenuItem(Icons.edit_outlined, 'Update'),
         ),
         PopupMenuItem(
           value: 'delete',
-          height: 36,
+          height: 40,
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: _buildMenuItem(Icons.delete_outline, 'Delete', color: errorColor),
+          child: _buildMenuItem(Icons.delete_outline_rounded, 'Delete', color: errorColor),
         ),
       ],
     );
@@ -277,7 +293,6 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
             colorIndex: result['colorIndex'],
           );
 
-          // If the updated folder was the selected one, bubble the updated folder up
           if (widget.selectedFolder?.uuid == folder.uuid) {
             final updatedFolder = (await dao.select(dao.folders).get()).firstWhere((f) => f.uuid == folder.uuid);
             widget.onFolderSelected(updatedFolder);
@@ -289,6 +304,7 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
         final confirm = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             title: const Text('Delete Folder?'),
             content: Text('Are you sure you want to delete "${folder.name}"?\nNotes inside will be kept safely.'),
             actions: [
@@ -300,6 +316,7 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
                 style: FilledButton.styleFrom(
                   backgroundColor: Theme.of(context).colorScheme.error,
                   foregroundColor: Theme.of(context).colorScheme.onError,
+                  elevation: 0,
                 ),
                 onPressed: () => Navigator.pop(context, true),
                 child: const Text('Delete'),
@@ -348,7 +365,7 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
         children: [
           // Header Row
           Padding(
-            padding: const EdgeInsets.only(left: 4.0, right: 4.0, bottom: 8.0),
+            padding: const EdgeInsets.only(left: 6.0, right: 2.0, bottom: 12.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -357,16 +374,23 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
                   style: textTheme.labelSmall?.copyWith(
                     fontWeight: FontWeight.w700,
                     letterSpacing: 1.2,
-                    color: colorScheme.onSurfaceVariant,
+                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
                   ),
                 ),
-                if (widget.showContextMenus) // Only allow creation if context menus are enabled
-                  IconButton(
-                    onPressed: () => _showCreateFolderDialog(context, ref),
-                    icon: const Icon(Icons.add, size: 18),
-                    tooltip: 'New Folder',
-                    visualDensity: VisualDensity.compact,
-                    color: colorScheme.onSurfaceVariant,
+                if (widget.showContextMenus)
+                  SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: IconButton(
+                      padding: EdgeInsets.zero,
+                      onPressed: () => _showCreateFolderDialog(context, ref),
+                      icon: const Icon(Icons.add_rounded, size: 20),
+                      tooltip: 'New Folder',
+                      color: colorScheme.onSurfaceVariant,
+                      style: IconButton.styleFrom(
+                        hoverColor: colorScheme.surfaceContainerHighest,
+                      ),
+                    ),
                   )
               ],
             ),
@@ -378,16 +402,12 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
             child: TextField(
               controller: _searchController,
               style: textTheme.bodyMedium,
-              onChanged: (value) {
-                setState(() {
-                  _folderSearchQuery = value;
-                });
-              },
+              onChanged: (value) => setState(() => _folderSearchQuery = value),
               decoration: InputDecoration(
                 filled: true,
-                fillColor: colorScheme.surfaceContainerLowest,
+                fillColor: colorScheme.surfaceContainerHigh.withValues(alpha: 0.5),
                 isDense: true,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 hintText: 'Search...',
                 suffixIcon: ValueListenableBuilder<TextEditingValue>(
                   valueListenable: _searchController,
@@ -395,25 +415,22 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
                     return value.text.isNotEmpty
                         ? ExcludeFocus(
                       child: IconButton(
-                        icon: const Icon(Icons.clear, size: 18),
+                        icon: const Icon(Icons.close_rounded, size: 16),
                         onPressed: _clearSearch,
                         visualDensity: VisualDensity.compact,
+                        padding: EdgeInsets.zero,
                       ),
                     )
                         : const SizedBox.shrink();
                   },
                 ),
-                prefixIcon: const Icon(Icons.search, size: 18),
+                prefixIcon: Icon(Icons.search_rounded, size: 18, color: colorScheme.onSurfaceVariant),
                 hintStyle: textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
+                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
                 ),
-                prefixIconConstraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                prefixIconConstraints: const BoxConstraints(minWidth: 36, minHeight: 36),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
-                  borderSide: BorderSide.none,
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
+                  borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
                 ),
               ),
@@ -424,7 +441,7 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
           // Handle the Reactive Stream Data
           Expanded(
             child: foldersAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
+              loading: () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
               error: (err, stack) => Center(child: Text('Error: $err')),
               data: (folders) {
                 if (folders.isEmpty && _folderSearchQuery.isEmpty) {
@@ -436,17 +453,17 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
                         children: [
                           Icon(
                             Icons.create_new_folder_outlined,
-                            size: 42,
-                            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                            size: 48,
+                            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 16),
                           Text(
                             widget.showContextMenus
                                 ? "No folders yet.\nPress + to create one."
                                 : "No folders available.",
                             textAlign: TextAlign.center,
                             style: textTheme.bodyMedium?.copyWith(
-                              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
                               height: 1.4,
                             ),
                           ),
@@ -456,7 +473,6 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
                   );
                 }
 
-                // Check against both "all notes" and whatever custom label was provided
                 final lowerQuery = _folderSearchQuery.toLowerCase();
                 final showEmptyOption = 'all notes'.contains(lowerQuery) ||
                     widget.emptyLabel.toLowerCase().contains(lowerQuery) ||
@@ -476,7 +492,8 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
                 }
 
                 return ListView(
-                  padding: const EdgeInsets.only(bottom: 8.0),
+                  padding: const EdgeInsets.only(bottom: 12.0),
+                  physics: const BouncingScrollPhysics(),
                   children: [
                     if (showEmptyOption)
                       Padding(
@@ -484,23 +501,31 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
                         child: Material(
                           color: Colors.transparent,
                           child: InkWell(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(10),
                             hoverColor: colorScheme.onSurface.withValues(alpha: 0.04),
                             onTap: () => widget.onFolderSelected(null),
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 150),
-                              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+                              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 10.0),
                               decoration: BoxDecoration(
-                                color: activeFolder == null ? colorScheme.secondaryContainer : Colors.transparent,
-                                borderRadius: BorderRadius.circular(8),
+                                color: activeFolder == null
+                                    ? colorScheme.secondaryContainer
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(10),
                               ),
                               child: Row(
                                 children: [
-                                  const SizedBox(
+                                  SizedBox(
                                     width: 32,
-                                    // child: Center(
-                                    //   child: Icon(Icons.all_inbox, size: 18),
-                                    // ),
+                                    child: Center(
+                                      child: Icon(
+                                        Icons.format_align_left,
+                                        size: 18,
+                                        color: activeFolder == null
+                                            ? colorScheme.onSecondaryContainer
+                                            : colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                                      ),
+                                    ),
                                   ),
                                   Expanded(
                                     child: Text(
@@ -517,6 +542,15 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
                               ),
                             ),
                           ),
+                        ),
+                      ),
+
+                    if (showEmptyOption && filteredFolders.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 12.0),
+                        child: Divider(
+                            height: 1,
+                            color: colorScheme.outlineVariant.withValues(alpha: 0.3)
                         ),
                       ),
 
@@ -583,24 +617,20 @@ class _FolderListItemState extends ConsumerState<FolderListItem> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(10),
           hoverColor: colorScheme.onSurface.withValues(alpha: 0.04),
           highlightColor: colorScheme.onSurface.withValues(alpha: 0.08),
           splashColor: colorScheme.onSurface.withValues(alpha: 0.12),
           onTap: widget.onSelect,
           onLongPress: widget.onContextMenu != null ? () => widget.onContextMenu!(null) : null,
           onSecondaryTapUp: widget.onContextMenu,
-          onHover: (hovering) {
-            setState(() {
-              _isHovering = hovering;
-            });
-          },
+          onHover: (hovering) => setState(() => _isHovering = hovering),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
             padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
             decoration: BoxDecoration(
               color: widget.isSelected ? colorScheme.secondaryContainer : Colors.transparent,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: LayoutBuilder(
               builder: (context, constraints) {
@@ -618,7 +648,7 @@ class _FolderListItemState extends ConsumerState<FolderListItem> {
                             ref.read(foldersDaoProvider).toggleFolderPinStatus(folderData.uuid);
                           },
                           icon: Icon(
-                            isPinned ? Icons.push_pin : Icons.push_pin_outlined,
+                            isPinned ? Icons.push_pin_rounded : Icons.push_pin_outlined,
                             size: 16,
                           ),
                           color: isPinned ? colorScheme.primary : colorScheme.onSurfaceVariant,
@@ -649,17 +679,25 @@ class _FolderListItemState extends ConsumerState<FolderListItem> {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                    // Badge for count
                     Flexible(
                       flex: 0,
-                      child: Padding(
-                        padding: const EdgeInsets.only(left: 8.0, right: 4.0),
+                      child: Container(
+                        margin: const EdgeInsets.only(left: 8.0, right: 4.0),
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
+                        decoration: BoxDecoration(
+                          color: widget.isSelected
+                              ? colorScheme.onSecondaryContainer.withValues(alpha: 0.1)
+                              : colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         child: Text(
                           noteCount,
-                          style: textTheme.labelMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
+                          style: textTheme.labelSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
                             color: widget.isSelected
-                                ? colorScheme.onSecondaryContainer.withValues(alpha: 0.8)
-                                : colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                                ? colorScheme.onSecondaryContainer
+                                : colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.clip,
@@ -716,15 +754,15 @@ class _FolderEditorDialogState extends State<FolderEditorDialog> {
     final textTheme = Theme.of(context).textTheme;
 
     return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-      contentPadding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+      contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
       title: Text(
         _isEditing ? 'Update Folder' : 'New Folder',
-        style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+        style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
       ),
       content: SizedBox(
-        width: 280,
+        width: 300,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -740,51 +778,54 @@ class _FolderEditorDialogState extends State<FolderEditorDialog> {
                 fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
                 hintText: 'Folder name...',
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             Text(
               "COLOR",
               style: textTheme.labelSmall?.copyWith(
                 fontWeight: FontWeight.w700,
                 letterSpacing: 1.2,
-                color: colorScheme.onSurfaceVariant,
+                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             Wrap(
-              spacing: 8,
-              runSpacing: 8,
+              spacing: 12,
+              runSpacing: 12,
               children: List.generate(Colors.primaries.length, (index) {
                 final color = Colors.primaries[index];
                 final isSelected = _selectedColorIndex == index;
 
                 return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _selectedColorIndex = index;
-                    });
-                  },
+                  onTap: () => setState(() => _selectedColorIndex = index),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 150),
-                    width: 28,
-                    height: 28,
+                    width: 32,
+                    height: 32,
                     decoration: BoxDecoration(
                       color: color,
                       shape: BoxShape.circle,
+                      boxShadow: isSelected ? [
+                        BoxShadow(
+                          color: color.withValues(alpha: 0.4),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        )
+                      ] : null,
                       border: isSelected
-                          ? Border.all(color: colorScheme.onSurface, width: 2)
-                          : Border.all(color: Colors.transparent, width: 2),
+                          ? Border.all(color: colorScheme.onSurface, width: 2.5)
+                          : Border.all(color: Colors.transparent, width: 2.5),
                     ),
                     child: isSelected
                         ? Icon(
                       Icons.check_rounded,
                       color: color.computeLuminance() > 0.5 ? Colors.black87 : Colors.white,
-                      size: 16,
+                      size: 18,
                     )
                         : null,
                   ),
@@ -794,11 +835,13 @@ class _FolderEditorDialogState extends State<FolderEditorDialog> {
           ],
         ),
       ),
-      actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      actionsPadding: const EdgeInsets.fromLTRB(16, 16, 24, 24),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+          style: TextButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          ),
           child: const Text('Cancel'),
         ),
         FilledButton(
@@ -810,8 +853,11 @@ class _FolderEditorDialogState extends State<FolderEditorDialog> {
               'colorIndex': _selectedColorIndex,
             });
           },
-          style: FilledButton.styleFrom(visualDensity: VisualDensity.compact),
-          child: Text(_isEditing ? 'Save' : 'Create'),
+          style: FilledButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            elevation: 0,
+          ),
+          child: Text(_isEditing ? 'Save' : 'Create', style: const TextStyle(fontWeight: FontWeight.w600)),
         ),
       ],
     );
