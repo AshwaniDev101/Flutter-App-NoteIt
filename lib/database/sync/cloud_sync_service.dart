@@ -2,64 +2,68 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/util/logger.dart';
 import 'package:noteit/database/sync/sync_orchestrator.dart';
-import '../drift/notes/notes_dao.dart';
 import '../firebase/firebase_database.dart';
 import '../shared_preference/shared_preference_manager.dart';
+import 'core/sync_entity_processor.dart';
+import 'entities/folder_sync_processor.dart';
+import 'entities/note_sync_processor.dart';
 
 final cloudSyncServiceProvider = Provider<CloudSyncService>((ref) {
-  return CloudSyncService(ref);
+  final folderProcessor = ref.watch(folderSyncProcessorProvider);
+  final noteProcessor = ref.watch(noteSyncProcessorProvider);
+  return CloudSyncService(ref, processors: [folderProcessor, noteProcessor]);
 });
 
 class CloudSyncService {
   final Ref ref;
-  StreamSubscription? _remoteSubscription;
+  final List<SyncEntityProcessor> processors;
+  final List<StreamSubscription> _remoteSubscriptions = [];
   bool _isSyncing = false;
 
-  CloudSyncService(this.ref);
+  CloudSyncService(this.ref, {required this.processors});
 
   void start() {
-    if (_remoteSubscription != null) return; // Already running
-    AppLogger.d("CloudSyncService: Starting Firebase sync engine...");
-    _startActiveSessionListener();
+    if (_remoteSubscriptions.isNotEmpty) return; // Already running
+    AppLogger.d("CloudSyncService: Starting Firebase sync engine across ${processors.length} entity processors...");
+    _startActiveSessionListeners();
     executeFullSync();
   }
 
   void stop() {
     AppLogger.d("CloudSyncService: Stopping Firebase sync engine...");
-    _remoteSubscription?.cancel();
-    _remoteSubscription = null;
+    for (final sub in _remoteSubscriptions) {
+      sub.cancel();
+    }
+    _remoteSubscriptions.clear();
   }
 
-  void _startActiveSessionListener() {
+  void _startActiveSessionListeners() {
     final firebaseDb = ref.read(noteFirebaseDatabaseProvider);
-    final notesDao = ref.read(notesDaoProvider);
     final prefs = ref.read(sharedPreferenceProvider);
 
     if (firebaseDb == null) return;
 
     final sessionStartTime = DateTime.now().toUtc().millisecondsSinceEpoch;
 
-    _remoteSubscription = firebaseDb
-        .watchForRemoteChanges(sessionStartTime)
-        .listen((newDocs) async {
-          if (newDocs.isEmpty) return;
+    for (final processor in processors) {
+      final sub = firebaseDb
+          .watchForRemoteChanges(processor.entityName, sessionStartTime)
+          .listen((newDocs) async {
+        if (newDocs.isEmpty) return;
 
-          AppLogger.d("CloudSyncService: Real-time remote changes detected!");
-          for (final doc in newDocs) {
-            // upsertNoteFromCloud now only needs the data map, since UUID is inside it!
-            await notesDao.upsertNoteFromCloud(doc.data()!);
-          }
-          await prefs.setLastSyncTime(
-            DateTime.now().toUtc().millisecondsSinceEpoch,
-          );
-        });
+        AppLogger.d("CloudSyncService: Real-time remote changes detected for '${processor.entityName}'!");
+        final items = newDocs.map((doc) => doc.data()!).toList();
+        await processor.processIncomingCloudBatch(items);
+        await prefs.setLastSyncTime(DateTime.now().toUtc().millisecondsSinceEpoch);
+      });
+      _remoteSubscriptions.add(sub);
+    }
   }
 
   Future<void> executeFullSync() async {
     if (_isSyncing) return;
 
     final firebaseDb = ref.read(noteFirebaseDatabaseProvider);
-    final notesDao = ref.read(notesDaoProvider);
     final prefs = ref.read(sharedPreferenceProvider);
 
     if (firebaseDb == null) return;
@@ -72,19 +76,30 @@ class CloudSyncService {
       final int lastSyncTime = prefs.lastSyncTime;
       final int newSyncTime = DateTime.now().toUtc().millisecondsSinceEpoch;
 
-      // --- PULL ---
-      final remoteChanges = await firebaseDb.pullChanges(lastSyncTime);
-      for (final doc in remoteChanges) {
-        await notesDao.upsertNoteFromCloud(doc.data());
+      // --- PULL (In processor dependency order: Folders -> Notes) ---
+      for (final processor in processors) {
+        final remoteDocs = await firebaseDb.pullChanges(processor.entityName, lastSyncTime);
+        if (remoteDocs.isNotEmpty) {
+          final items = remoteDocs.map((doc) => doc.data()).toList();
+          await processor.processIncomingCloudBatch(items);
+          AppLogger.d("CloudSyncService: Pulled ${items.length} '${processor.entityName}' items from Cloud.");
+        }
       }
 
-      // --- PUSH ---
-      final pendingNotes = await notesDao.getPendingCloudNotes();
-      if (pendingNotes.isNotEmpty) {
-        await firebaseDb.pushBatch(pendingNotes);
+      // --- PUSH (In processor dependency order: Folders -> Notes) ---
+      for (final processor in processors) {
+        final pendingItems = await processor.getPendingCloudChanges();
+        if (pendingItems.isNotEmpty) {
+          await firebaseDb.pushBatch(processor.entityName, pendingItems);
 
-        await notesDao.markAsCloudSynced(pendingNotes.map((n) => n.uuid));
-        AppLogger.d("CloudSyncService: Pushed ${pendingNotes.length} notes.");
+          final pushedUuids = pendingItems
+              .map((item) => item['uuid'] as String?)
+              .where((id) => id != null && id.isNotEmpty)
+              .cast<String>();
+
+          await processor.markAsCloudSynced(pushedUuids);
+          AppLogger.d("CloudSyncService: Pushed ${pendingItems.length} '${processor.entityName}' items to Cloud.");
+        }
       }
 
       // --- BOOKMARK ---

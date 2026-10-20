@@ -237,7 +237,12 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
   /// Helper to safely parse incoming network timestamps
   DateTime? _parseNetworkTimestamp(dynamic timestamp) {
     if (timestamp == null) return null;
-    return DateTime.fromMillisecondsSinceEpoch(timestamp as int, isUtc: true);
+    if (timestamp is int) {
+      return DateTime.fromMillisecondsSinceEpoch(timestamp, isUtc: true);
+    } else if (timestamp is String) {
+      return DateTime.tryParse(timestamp)?.toUtc();
+    }
+    return null;
   }
 
   /// MERGE: Upsert notes pulled down from Firebase OR Local Wi-Fi

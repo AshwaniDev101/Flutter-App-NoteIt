@@ -135,29 +135,68 @@ class FoldersDao extends DatabaseAccessor<LocalDatabase> with _$FoldersDaoMixin 
 
   DateTime? _parseNetworkTimestamp(dynamic timestamp) {
     if (timestamp == null) return null;
-    return DateTime.fromMillisecondsSinceEpoch(timestamp as int, isUtc: true);
+    if (timestamp is int) {
+      return DateTime.fromMillisecondsSinceEpoch(timestamp, isUtc: true);
+    } else if (timestamp is String) {
+      return DateTime.tryParse(timestamp)?.toUtc();
+    }
+    return null;
+  }
+
+  // =========================================================================
+  // SYNC HELPER METHODS
+  // =========================================================================
+
+  Future<List<Folder>> getPendingCloudFolders() {
+    return (select(folders)..where((t) => t.cloudSyncStatus.equals(0))).get();
+  }
+
+  Future<List<Folder>> getPendingLocalFolders() {
+    return (select(folders)..where((t) => t.localSyncStatus.equals(0))).get();
+  }
+
+  Future<void> markAsCloudSynced(Iterable<String> uuids) async {
+    if (uuids.isEmpty) return;
+    await (update(folders)..where((t) => t.uuid.isIn(uuids)))
+        .write(const FoldersCompanion(cloudSyncStatus: Value(1)));
+  }
+
+  Future<void> markAsLocalSynced(Iterable<String> uuids) async {
+    if (uuids.isEmpty) return;
+    await (update(folders)..where((t) => t.uuid.isIn(uuids)))
+        .write(const FoldersCompanion(localSyncStatus: Value(1)));
+  }
+
+  Future<void> upsertFolderFromLocal(Map<String, dynamic> incomingData) async {
+    await _upsertFolder(incomingData, isCloud: false);
   }
 
   Future<void> upsertFolderFromCloud(Map<String, dynamic> incomingData) async {
+    await _upsertFolder(incomingData, isCloud: true);
+  }
+
+  Future<void> _upsertFolder(Map<String, dynamic> incomingData, {required bool isCloud}) async {
     final incomingUuid = incomingData['uuid'] as String;
-    final incomingUpdatedAt = _parseNetworkTimestamp(incomingData['updatedAt'])!;
+    final incomingUpdatedAt = _parseNetworkTimestamp(incomingData['updatedAt']) ?? DateTime.now().toUtc();
 
     final companion = FoldersCompanion(
       uuid: Value(incomingUuid),
       name: Value(incomingData['name'] as String),
       colorIndex: Value(incomingData['colorIndex'] as int? ?? 0),
+      ownerUid: Value(incomingData['ownerUid'] as String?),
       creationPlatform: Value(incomingData['creationPlatform'] as String?),
       creationDevice: Value(incomingData['creationDevice'] as String?),
+      lastEditedPlatform: Value(incomingData['lastEditedPlatform'] as String?),
+      lastEditedDevice: Value(incomingData['lastEditedDevice'] as String?),
+      deletedPlatform: Value(incomingData['deletedPlatform'] as String?),
+      deletedDevice: Value(incomingData['deletedDevice'] as String?),
       deletedAt: Value(_parseNetworkTimestamp(incomingData['deletedAt'])),
-
-      // ADDED: Ensure pin state syncs
       pinnedAt: Value(_parseNetworkTimestamp(incomingData['pinnedAt'])),
-
       updatedAt: Value(incomingUpdatedAt),
-      createdAt: Value(_parseNetworkTimestamp(incomingData['createdAt'])!),
+      createdAt: Value(_parseNetworkTimestamp(incomingData['createdAt']) ?? DateTime.now().toUtc()),
       updateCounter: Value(incomingData['updateCounter'] as int? ?? 1),
-      cloudSyncStatus: const Value(1),
-      localSyncStatus: const Value(0),
+      cloudSyncStatus: Value(isCloud ? 1 : 0),
+      localSyncStatus: Value(isCloud ? 0 : 1),
     );
 
     final existingFolder = await (select(folders)..where((t) => t.uuid.equals(incomingUuid))).getSingleOrNull();

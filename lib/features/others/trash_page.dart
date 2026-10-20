@@ -224,11 +224,16 @@ class _TrashPageState extends ConsumerState<TrashPage> {
           type: SnackBarMessageType.info,
         );
 
-        final cloudIdsToDelete = await notesDao.emptyLocalTrash();
-        await foldersDao.emptyLocalFolderTrash();
+        final List<String> cloudNoteIdsToDelete = await notesDao.emptyLocalTrash();
+        final List<String> cloudFolderIdsToDelete = await foldersDao.emptyLocalFolderTrash();
 
-        if (firebaseDb != null && cloudIdsToDelete.isNotEmpty) {
-          await firebaseDb.deleteBatch(cloudIdsToDelete);
+        if (firebaseDb != null) {
+          if (cloudNoteIdsToDelete.isNotEmpty) {
+            await firebaseDb.deleteBatch('notes', cloudNoteIdsToDelete);
+          }
+          if (cloudFolderIdsToDelete.isNotEmpty) {
+            await firebaseDb.deleteBatch('folders', cloudFolderIdsToDelete);
+          }
         }
 
         if (mounted) {
@@ -318,13 +323,16 @@ class _TrashPageState extends ConsumerState<TrashPage> {
             await notesDao.deleteNote(uuid);
           }
           if (firebaseDb != null) {
-            await firebaseDb.deleteBatch(noteUuids);
+            await firebaseDb.deleteBatch('notes', noteUuids.toList());
           }
         }
 
         if (folderUuids != null && folderUuids.isNotEmpty) {
           for (final uuid in folderUuids) {
             await foldersDao.hardDeleteFolder(uuid);
+          }
+          if (firebaseDb != null) {
+            await firebaseDb.deleteBatch('folders', folderUuids.toList());
           }
         }
 
