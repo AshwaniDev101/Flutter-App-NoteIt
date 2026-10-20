@@ -82,6 +82,16 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
     return select(notes).watch();
   }
 
+  /// Stream the total count of active (non-deleted, non-archived) notes across all folders.
+  Stream<int> watchActiveNotesCount() {
+    final countExpression = notes.uuid.count();
+    final query = selectOnly(notes)
+      ..addColumns([countExpression])
+      ..where(notes.deletedAt.isNull() & notes.archivedAt.isNull());
+
+    return query.watchSingle().map((row) => row.read(countExpression) ?? 0);
+  }
+
   /// Watches active (non-deleted, non-archived) notes sorted directly by SQLite:
   /// 1. Pinned notes first (pinnedAt IS NOT NULL), sorted by pinnedAt timestamp descending.
   /// 2. Unpinned notes sorted according to [sortOption] (name, createdAt, or updatedAt).

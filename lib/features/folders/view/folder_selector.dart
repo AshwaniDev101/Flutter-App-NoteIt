@@ -5,10 +5,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../database/drift/folders/folders_dao.dart';
 import '../../../database/drift/local_database.dart';
+import '../../../database/drift/notes/notes_dao.dart';
 
 final activeFoldersStreamProvider = StreamProvider<List<FolderWithCount>>((ref) {
   final foldersDao = ref.watch(foldersDaoProvider);
   return foldersDao.watchActiveFoldersWithCounts();
+});
+
+final totalNotesCountStreamProvider = StreamProvider<int>((ref) {
+  final notesDao = ref.watch(notesDaoProvider);
+  return notesDao.watchActiveNotesCount();
 });
 
 /// Reusable folder selection button and dropdown.
@@ -20,6 +26,7 @@ class FolderButton extends ConsumerStatefulWidget {
   final ValueChanged<Folder?> onFolderSelected;
   final bool showContextMenus;
   final String emptyLabel;
+  final bool isShowTotalNoteCount;
 
   const FolderButton({
     super.key,
@@ -27,6 +34,7 @@ class FolderButton extends ConsumerStatefulWidget {
     required this.onFolderSelected,
     this.showContextMenus = true,
     this.emptyLabel = 'All Notes',
+    this.isShowTotalNoteCount = false,
   });
 
   @override
@@ -47,6 +55,19 @@ class _FolderButtonState extends ConsumerState<FolderButton> {
         ? Colors.primaries[activeFolder.colorIndex % Colors.primaries.length]
         : colorScheme.onSurfaceVariant;
 
+    final totalNotesCountAsync = ref.watch(totalNotesCountStreamProvider);
+    final allNoteCount = totalNotesCountAsync.value ?? 0;
+
+    final foldersAsync = ref.watch(activeFoldersStreamProvider);
+    int displayCount = allNoteCount;
+
+    if (activeFolder != null && foldersAsync.hasValue) {
+      final match = foldersAsync.value!.where((f) => f.folder.uuid == activeFolder.uuid).firstOrNull;
+      if (match != null) {
+        displayCount = match.noteCount;
+      }
+    }
+
     return MenuAnchor(
       controller: _menuController,
       style: const MenuStyle(
@@ -57,72 +78,94 @@ class _FolderButtonState extends ConsumerState<FolderButton> {
       builder: (BuildContext context, MenuController controller, Widget? child) {
         final isOpen = controller.isOpen;
 
-        return Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onHover: (val) => setState(() => _isHovering = val),
-            onTap: () {
-              if (isOpen) {
-                controller.close();
-              } else {
-                controller.open();
-              }
-            },
-            borderRadius: BorderRadius.circular(10),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: isOpen || _isHovering
-                      ? colorScheme.outlineVariant
-                      : colorScheme.outlineVariant.withValues(alpha: 0.4),
-                ),
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onHover: (val) => setState(() => _isHovering = val),
+                onTap: () {
+                  if (isOpen) {
+                    controller.close();
+                  } else {
+                    controller.open();
+                  }
+                },
                 borderRadius: BorderRadius.circular(10),
-                color: isOpen
-                    ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.6)
-                    : _isHovering
-                    ? colorScheme.surfaceContainerLowest
-                    : Colors.transparent,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (activeFolder != null) ...[
-                    Container(
-                      width: 10,
-                      height: 10,
-                      decoration: BoxDecoration(
-                        color: currentColor,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: currentColor.withValues(alpha: 0.4),
-                            blurRadius: 4,
-                            offset: const Offset(0, 1),
-                          )
-                        ],
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: isOpen || _isHovering
+                          ? colorScheme.outlineVariant
+                          : colorScheme.outlineVariant.withValues(alpha: 0.4),
+                    ),
+                    borderRadius: BorderRadius.circular(10),
+                    color: isOpen
+                        ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.6)
+                        : _isHovering
+                        ? colorScheme.surfaceContainerLowest
+                        : Colors.transparent,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (activeFolder != null) ...[
+                        Container(
+                          width: 10,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            color: currentColor,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: currentColor.withValues(alpha: 0.4),
+                                blurRadius: 4,
+                                offset: const Offset(0, 1),
+                              )
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                      ],
+                      Text(
+                        currentName,
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: isOpen ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                  ],
-                  Text(
-                    currentName,
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: isOpen ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
-                    ),
+                      const SizedBox(width: 6),
+                      Icon(
+                        isOpen ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+                        size: 20,
+                        color: isOpen ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 6),
-                  Icon(
-                    isOpen ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
-                    size: 20,
-                    color: isOpen ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
-                  ),
-                ],
+                ),
               ),
             ),
-          ),
+            if (widget.isShowTotalNoteCount) ...[
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '$displayCount',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ],
+          ],
         );
       },
       menuChildren: [
@@ -355,6 +398,8 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
     final textTheme = Theme.of(context).textTheme;
     final colorScheme = Theme.of(context).colorScheme;
     final foldersAsync = ref.watch(activeFoldersStreamProvider);
+    final totalNotesCountAsync = ref.watch(totalNotesCountStreamProvider);
+    final allNoteCount = totalNotesCountAsync.value ?? 0;
     final activeFolder = widget.selectedFolder;
 
     return Padding(
@@ -535,6 +580,31 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
                                         color: activeFolder == null
                                             ? colorScheme.onSecondaryContainer
                                             : colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ),
+                                  // Badge for count
+                                  Flexible(
+                                    flex: 0,
+                                    child: Container(
+                                      margin: const EdgeInsets.only(left: 8.0, right: 4.0),
+                                      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
+                                      decoration: BoxDecoration(
+                                        color: activeFolder == null
+                                            ? colorScheme.onSecondaryContainer.withValues(alpha: 0.1)
+                                            : colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        '$allNoteCount',
+                                        style: textTheme.labelSmall?.copyWith(
+                                          fontWeight: FontWeight.w700,
+                                          color: activeFolder == null
+                                              ? colorScheme.onSecondaryContainer
+                                              : colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.clip,
                                       ),
                                     ),
                                   ),

@@ -1,9 +1,8 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../shared/app_scaffold.dart';
 import '../../../shared/snack_bar_manager.dart';
 import '../lock_manger/lock_manager.dart';
+import 'widgets/lock_dialog_shell.dart';
 
 class UpdatePasswordPage extends ConsumerStatefulWidget {
   const UpdatePasswordPage({super.key});
@@ -134,160 +133,135 @@ class _UpdatePasswordPageState extends ConsumerState<UpdatePasswordPage> {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    return AppScaffold(
-      backgroundColor: Colors.black.withValues(alpha: 0.25),
-      body: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => Navigator.pop(context),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-          child: Center(
-            child: GestureDetector(
-              onTap: () {}, // Prevent tap inside card from dismissing
-              child: Container(
-                width: 360,
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      blurRadius: 20,
-                      color: Colors.black.withValues(alpha: 0.15),
-                    ),
-                  ],
+    return LockDialogShell(
+      width: 360,
+      padding: const EdgeInsets.all(24),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.lock_reset_rounded,
+              size: 36,
+              color: colorScheme.primary,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              "Update Master Password",
+              style: textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Current Password Field
+            TextField(
+              controller: _currentPassController,
+              obscureText: _obscureCurrent,
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: 'Current Password',
+                filled: true,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
                 ),
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.lock_reset_rounded,
-                        size: 36,
-                        color: colorScheme.primary,
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        "Update Master Password",
-                        style: textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Current Password Field
-                      TextField(
-                        controller: _currentPassController,
-                        obscureText: _obscureCurrent,
-                        autofocus: true,
-                        decoration: InputDecoration(
-                          hintText: 'Current Password',
-                          filled: true,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscureCurrent
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                              color: Colors.grey,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _obscureCurrent = !_obscureCurrent;
-                              });
-                            },
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-
-                      // New Password Field
-                      TextField(
-                        controller: _newPassController,
-                        obscureText: _obscureNew,
-                        decoration: InputDecoration(
-                          hintText: 'New Password',
-                          filled: true,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscureNew
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                              color: Colors.grey,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _obscureNew = !_obscureNew;
-                              });
-                            },
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-
-                      // Confirm Password Field
-                      TextField(
-                        controller: _confirmPassController,
-                        obscureText: _obscureConfirm,
-                        decoration: InputDecoration(
-                          hintText: 'Confirm New Password',
-                          filled: true,
-                          errorText: _errorMessage,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscureConfirm
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                              color: Colors.grey,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _obscureConfirm = !_obscureConfirm;
-                              });
-                            },
-                          ),
-                        ),
-                        onSubmitted: (_) => _updatePassword(),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Actions
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: FilledButton(
-                          onPressed: _updatePassword,
-                          child: const Text('Update Password'),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      SizedBox(
-                        width: double.infinity,
-                        child: TextButton(
-                          style: TextButton.styleFrom(
-                            foregroundColor: colorScheme.error,
-                          ),
-                          onPressed: _removePassword,
-                          child: const Text('Remove Master Password'),
-                        ),
-                      ),
-                    ],
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscureCurrent
+                        ? Icons.visibility_off
+                        : Icons.visibility,
+                    color: Colors.grey,
                   ),
+                  onPressed: () {
+                    setState(() {
+                      _obscureCurrent = !_obscureCurrent;
+                    });
+                  },
                 ),
               ),
             ),
-          ),
+            const SizedBox(height: 12),
+
+            // New Password Field
+            TextField(
+              controller: _newPassController,
+              obscureText: _obscureNew,
+              decoration: InputDecoration(
+                hintText: 'New Password',
+                filled: true,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscureNew
+                        ? Icons.visibility_off
+                        : Icons.visibility,
+                    color: Colors.grey,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _obscureNew = !_obscureNew;
+                    });
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Confirm Password Field
+            TextField(
+              controller: _confirmPassController,
+              obscureText: _obscureConfirm,
+              decoration: InputDecoration(
+                hintText: 'Confirm New Password',
+                filled: true,
+                errorText: _errorMessage,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscureConfirm
+                        ? Icons.visibility_off
+                        : Icons.visibility,
+                    color: Colors.grey,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _obscureConfirm = !_obscureConfirm;
+                    });
+                  },
+                ),
+              ),
+              onSubmitted: (_) => _updatePassword(),
+            ),
+            const SizedBox(height: 24),
+
+            // Actions
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: FilledButton(
+                onPressed: _updatePassword,
+                child: const Text('Update Password'),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: TextButton(
+                style: TextButton.styleFrom(
+                  foregroundColor: colorScheme.error,
+                ),
+                onPressed: _removePassword,
+                child: const Text('Remove Master Password'),
+              ),
+            ),
+          ],
         ),
       ),
     );

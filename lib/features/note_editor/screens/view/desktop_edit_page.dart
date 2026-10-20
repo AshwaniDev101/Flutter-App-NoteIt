@@ -489,13 +489,6 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
   // ===========================================================================
 
   Widget _buildTopMetaRow(Folder? currentFolder) {
-    // final foldersAsync = ref.watch(activeFoldersStreamProvider);
-    //
-    // Folder? currentFolder;
-    // if (_currentNoteWithFolder?.note.folderId != null && foldersAsync.hasValue) {
-    //   final match = foldersAsync.value!.where((f) => f.folder.uuid == _currentNoteWithFolder!.note.folderId).firstOrNull;
-    //   currentFolder = match?.folder;
-    // }
 
     return Row(
       children: [

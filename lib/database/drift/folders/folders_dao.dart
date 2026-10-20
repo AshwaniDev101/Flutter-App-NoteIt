@@ -85,7 +85,7 @@ class FoldersDao extends DatabaseAccessor<LocalDatabase> with _$FoldersDaoMixin 
     final query = select(folders).join([
       leftOuterJoin(
         notes,
-        notes.folderId.equalsExp(folders.uuid) & notes.deletedAt.isNull(),
+        notes.folderId.equalsExp(folders.uuid) & notes.deletedAt.isNull() & notes.archivedAt.isNull(),
       ),
     ]);
 

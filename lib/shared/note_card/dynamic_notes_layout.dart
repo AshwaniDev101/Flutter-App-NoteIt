@@ -13,6 +13,8 @@ import 'core/note_action_controller.dart';
 import 'note_card.dart';
 import '../../../features/home/core/providers.dart';
 import '../../../features/home/viewmodel/viewmodel.dart';
+import '../../../features/lock/lock_manger/lock_manager.dart';
+import '../../../features/lock/password_prompt_helper.dart';
 
 class DynamicNotesLayout extends ConsumerWidget {
   final bool isSelectMode;
@@ -98,10 +100,10 @@ class DynamicNotesLayout extends ConsumerWidget {
           }
 
           if (isCurrentlySelected) {
-            _handleBatchAction(ref, option, noteIds.toList());
+            _handleBatchAction(context, ref, option, noteIds.toList());
           }
           else {
-            _handleBatchAction(ref, option, [currentNoteWithFolder.note.uuid]);
+            _handleBatchAction(context, ref, option, [currentNoteWithFolder.note.uuid]);
           }
         },
       );
@@ -128,7 +130,7 @@ class DynamicNotesLayout extends ConsumerWidget {
     );
   }
 
-  void _handleBatchAction(WidgetRef ref, NoteContextMenuOption option, List<String> targetUuids) async {
+  void _handleBatchAction(BuildContext context, WidgetRef ref, NoteContextMenuOption option, List<String> targetUuids) async {
     ref.read(homeViewModelProvider.notifier).clearSelection();
     final actionsController = ref.read(noteActionsControllerProvider);
     final deviceInfo = await ref.read(deviceInfoProvider.future);
@@ -150,7 +152,13 @@ class DynamicNotesLayout extends ConsumerWidget {
         await actionsController.archiveNotes(targetUuids);
         break;
       case NoteContextMenuOption.lock:
-        await actionsController.lockNotes(targetUuids);
+        final lockNotifier = ref.read(lockManagerProvider.notifier);
+        if (!lockNotifier.hasMasterPassword) {
+          await PasswordPromptHelper.showMasterPasswordManagement(context, ref);
+        }
+        if (ref.read(lockManagerProvider.notifier).hasMasterPassword) {
+          await actionsController.lockNotes(targetUuids);
+        }
         break;
       case NoteContextMenuOption.duplicate:
         await actionsController.duplicateNotes(targetUuids, platform);

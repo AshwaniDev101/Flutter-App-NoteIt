@@ -185,6 +185,7 @@ class DesktopListPanel extends ConsumerWidget {
                     selectedFolder: ref.watch(activeFolderProvider),
                     emptyLabel: 'All Notes',
                     showContextMenus: true,
+                    isShowTotalNoteCount: true,
                     onFolderSelected: (folder) {
                       if (folder == null) {
                         ref.read(activeFolderProvider.notifier).clear();

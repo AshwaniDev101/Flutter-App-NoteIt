@@ -14,6 +14,40 @@ class PasswordPromptHelper {
     WidgetRef ref,
     NoteWithFolder noteWithFolder,
   ) async {
+    final lockManager = ref.read(lockManagerProvider.notifier);
+
+    // If no master password is set, require the user to set up and confirm a password
+    if (!lockManager.hasMasterPassword) {
+      final String? newPassword = await showGeneralDialog<String>(
+        context: context,
+        barrierDismissible: true,
+        barrierLabel: 'Dismiss Password Dialog',
+        barrierColor: Colors.black45,
+        transitionDuration: const Duration(milliseconds: 200),
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            const SetupPasswordPage(),
+        transitionBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+      );
+
+      if (newPassword != null &&
+          newPassword.isNotEmpty &&
+          context.mounted) {
+        await lockManager.setupMasterPassword(newPassword);
+        SnackBarManager.show(
+          msg: 'Master Password Created!',
+          type: SnackBarMessageType.acknowledgment,
+        );
+        return lockManager.verifyAndSessionUnlock(
+          noteWithFolder.note.uuid,
+          newPassword,
+        );
+      }
+      return false;
+    }
+
+    // Master password is set, prompt for verification
     final String? enteredPassword = await showGeneralDialog<String>(
       context: context,
       barrierDismissible: true,
@@ -30,16 +64,6 @@ class PasswordPromptHelper {
     if (enteredPassword != null &&
         enteredPassword.isNotEmpty &&
         context.mounted) {
-      final lockManager = ref.read(lockManagerProvider.notifier);
-
-      if (!lockManager.hasMasterPassword) {
-        await lockManager.setupMasterPassword(enteredPassword);
-        SnackBarManager.show(
-          msg: 'New Master Password Set!',
-          type: SnackBarMessageType.acknowledgment,
-        );
-      }
-
       final success = lockManager.verifyAndSessionUnlock(
         noteWithFolder.note.uuid,
         enteredPassword,
@@ -58,11 +82,44 @@ class PasswordPromptHelper {
     return false;
   }
 
-
   static Future<bool> promptAndVerifyForExport(
-      BuildContext context,
-      WidgetRef ref,
-      ) async {
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final lockManager = ref.read(lockManagerProvider.notifier);
+
+    // If no master password is set, require the user to set up and confirm a password
+    if (!lockManager.hasMasterPassword) {
+      final String? newPassword = await showGeneralDialog<String>(
+        context: context,
+        barrierDismissible: true,
+        barrierLabel: 'Dismiss Password Dialog',
+        barrierColor: Colors.black45,
+        transitionDuration: const Duration(milliseconds: 200),
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            const SetupPasswordPage(),
+        transitionBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+      );
+
+      if (newPassword != null &&
+          newPassword.isNotEmpty &&
+          context.mounted) {
+        await lockManager.setupMasterPassword(newPassword);
+        SnackBarManager.show(
+          msg: 'Master Password Created!',
+          type: SnackBarMessageType.acknowledgment,
+        );
+        return lockManager.verifyAndSessionUnlock(
+          'global_export_session',
+          newPassword,
+        );
+      }
+      return false;
+    }
+
+    // Master password is set, prompt for verification
     final String? enteredPassword = await showGeneralDialog<String>(
       context: context,
       barrierDismissible: true,
@@ -70,7 +127,7 @@ class PasswordPromptHelper {
       barrierColor: Colors.black45,
       transitionDuration: const Duration(milliseconds: 200),
       pageBuilder: (context, animation, secondaryAnimation) =>
-      const MasterPasswordPage(),
+          const MasterPasswordPage(),
       transitionBuilder: (context, animation, secondaryAnimation, child) {
         return FadeTransition(opacity: animation, child: child);
       },
@@ -79,18 +136,6 @@ class PasswordPromptHelper {
     if (enteredPassword != null &&
         enteredPassword.isNotEmpty &&
         context.mounted) {
-      final lockManager = ref.read(lockManagerProvider.notifier);
-
-      if (!lockManager.hasMasterPassword) {
-        await lockManager.setupMasterPassword(enteredPassword);
-        SnackBarManager.show(
-          msg: 'New Master Password Set!',
-          type: SnackBarMessageType.acknowledgment,
-        );
-      }
-
-      // We use a dummy UUID string here because we just want to verify
-      // the password, not unlock a specific note's UI session.
       final success = lockManager.verifyAndSessionUnlock(
         'global_export_session',
         enteredPassword,
