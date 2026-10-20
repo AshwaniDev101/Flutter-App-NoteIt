@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../core/helpers/time_helper.dart';
 import '../../../core/util/logger.dart';
 import '../folders/folders_table.dart';
 import '../local_database.dart';
@@ -235,15 +236,7 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
   }
 
   /// Helper to safely parse incoming network timestamps
-  DateTime? _parseNetworkTimestamp(dynamic timestamp) {
-    if (timestamp == null) return null;
-    if (timestamp is int) {
-      return DateTime.fromMillisecondsSinceEpoch(timestamp, isUtc: true);
-    } else if (timestamp is String) {
-      return DateTime.tryParse(timestamp)?.toUtc();
-    }
-    return null;
-  }
+  DateTime? _parseNetworkTimestamp(dynamic timestamp) => TimeHelper.parseToUtcDateTime(timestamp);
 
   /// MERGE: Upsert notes pulled down from Firebase OR Local Wi-Fi
   Future<void> upsertNoteFromCloud(Map<String, dynamic> incomingData) async {

@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../core/helpers/time_helper.dart';
 import '../local_database.dart';
 import 'folders_table.dart';
 import '../notes/notes_table.dart';
@@ -133,15 +134,7 @@ class FoldersDao extends DatabaseAccessor<LocalDatabase> with _$FoldersDaoMixin 
     });
   }
 
-  DateTime? _parseNetworkTimestamp(dynamic timestamp) {
-    if (timestamp == null) return null;
-    if (timestamp is int) {
-      return DateTime.fromMillisecondsSinceEpoch(timestamp, isUtc: true);
-    } else if (timestamp is String) {
-      return DateTime.tryParse(timestamp)?.toUtc();
-    }
-    return null;
-  }
+  DateTime? _parseNetworkTimestamp(dynamic timestamp) => TimeHelper.parseToUtcDateTime(timestamp);
 
   // =========================================================================
   // SYNC HELPER METHODS

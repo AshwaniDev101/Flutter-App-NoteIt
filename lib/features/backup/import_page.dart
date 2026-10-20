@@ -7,11 +7,11 @@ import 'package:file_picker/file_picker.dart';
 
 import '../../core/util/logger.dart';
 import '../../database/drift/folders/folders_dao.dart';
-import '../../database/drift/local_database.dart';
 import '../../database/drift/notes/notes_dao.dart';
 import '../../shared/app_scaffold.dart';
 import '../../shared/snack_bar_manager.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
+import 'backup_service.dart';
 import 'backup_utils.dart';
 
 class ImportNotesPage extends ConsumerStatefulWidget {
@@ -99,7 +99,6 @@ class _ImportNotesPageState extends ConsumerState<ImportNotesPage> {
 
       final fileString = utf8.decode(bytes);
 
-      final notesDao = ref.read(notesDaoProvider);
       final foldersDao = ref.read(foldersDaoProvider);
 
       List<Map<String, dynamic>> rawFolderMaps = [];
@@ -194,73 +193,24 @@ class _ImportNotesPageState extends ConsumerState<ImportNotesPage> {
         _statusMessage = 'Restoring ${rawNoteMaps.length} notes and ${rawFolderMaps.length} folders...';
       });
 
-      // Apply Duplicate Remapping if user checked option
-      if (_importAsDuplicates) {
-        BackupUtils.prepareForDuplicateImport(
-          folderMaps: rawFolderMaps,
-          noteMaps: rawNoteMaps,
-        );
-      }
+      final result = await ref.read(backupServiceProvider).executeImport(
+        rawFolderMaps: rawFolderMaps,
+        rawNoteMaps: rawNoteMaps,
+        useFreshTimestamp: _useFreshTimestamp,
+        importAsDuplicates: _importAsDuplicates,
+      );
 
-      // Apply Fresh Timestamps if user checked option
-      if (_useFreshTimestamp) {
-        BackupUtils.applyFreshTimestamps(
-          folderMaps: rawFolderMaps,
-          noteMaps: rawNoteMaps,
-        );
-      }
-
-      // Sanitize & construct drift objects
-      List<Folder> parsedFolders = [];
-      List<Note> parsedNotes = [];
-      int failedFoldersCount = 0;
-      int failedNotesCount = 0;
-
-      for (var fMap in rawFolderMaps) {
-        try {
-          parsedFolders.add(BackupUtils.sanitizeFolder(fMap));
-        } catch (e) {
-          AppLogger.w("ImportNotesPage: Failed to parse folder: $e");
-          failedFoldersCount++;
-        }
-      }
-
-      for (var nMap in rawNoteMaps) {
-        try {
-          parsedNotes.add(BackupUtils.sanitizeNote(nMap));
-        } catch (e) {
-          AppLogger.w("ImportNotesPage: Failed to parse note: $e");
-          failedNotesCount++;
-        }
-      }
-
-      if (parsedFolders.isEmpty && parsedNotes.isEmpty) {
-        throw Exception("Failed to parse data. Data format might be incompatible.");
-      }
-
-      // Import into database via DAOs
-      if (parsedFolders.isNotEmpty) {
-        await foldersDao.importFolders(parsedFolders);
-      }
-
-      if (parsedNotes.isNotEmpty) {
-        await notesDao.importNotes(parsedNotes);
-      }
-
-      final int totalFailed = failedFoldersCount + failedNotesCount;
-      final String successMsg = totalFailed > 0
-          ? 'Imported ${parsedNotes.length} notes & ${parsedFolders.length} folders ($totalFailed items failed).'
-          : 'Successfully restored ${parsedNotes.length} notes & ${parsedFolders.length} folders!';
+      final String successMsg = 'Successfully restored ${result.importedNotes} notes & ${result.importedFolders} folders!';
 
       setState(() {
         _isImporting = false;
-        _isError = totalFailed > 0;
+        _isError = false;
         _statusMessage = successMsg;
       });
 
       SnackBarManager.show(
         msg: successMsg,
-        type: totalFailed > 0 ? SnackBarMessageType.suggestion : SnackBarMessageType.acknowledgment,
+        type: SnackBarMessageType.acknowledgment,
       );
     } catch (e, st) {
       AppLogger.e('ImportNotesPage: Failed to process import', error: e, stack: st);

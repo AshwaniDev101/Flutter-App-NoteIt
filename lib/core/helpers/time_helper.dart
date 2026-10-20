@@ -126,6 +126,38 @@ class TimeHelper {
     return result;
   }
 
+  /// Safely converts various date/timestamp formats (int epoch ms, double, String ISO, DateTime) into UTC DateTime
+  static DateTime? parseToUtcDateTime(dynamic input) {
+    if (input == null) return null;
+    if (input is DateTime) return input.toUtc();
+    if (input is int) {
+      return DateTime.fromMillisecondsSinceEpoch(input, isUtc: true);
+    }
+    if (input is double) {
+      return DateTime.fromMillisecondsSinceEpoch(input.toInt(), isUtc: true);
+    }
+
+    final str = input.toString().trim();
+    if (str.isEmpty || str == 'null') return null;
+
+    final intVal = int.tryParse(str);
+    if (intVal != null && intVal > 100000000) {
+      return DateTime.fromMillisecondsSinceEpoch(intVal, isUtc: true);
+    }
+
+    try {
+      return DateTime.parse(str).toUtc();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Safely converts various date/timestamp formats into ISO 8601 String
+  static String? parseToIso8601String(dynamic input) {
+    final dt = parseToUtcDateTime(input);
+    return dt?.toIso8601String();
+  }
+
   /// Prevents Dart from rolling over dates (e.g. Jan 31 + 1 month -> Mar 2).
   /// Instead, clamps to the last valid day of the target month (e.g., Feb 28 or 29).
   static int _clampDay(int year, int month, int targetDay) {

@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:noteit/features/local_sync/view/role_selector_page.dart';
@@ -46,39 +47,37 @@ class AppRoutes {
   static const String defaultSettings = '/default-settings';
 }
 
+GoRoute _adaptiveRoute({
+  required String path,
+  required Widget Function(GoRouterState state) mobile,
+  required Widget Function(GoRouterState state) desktop,
+}) {
+  return GoRoute(
+    path: path,
+    builder: (context, state) => PlatformHelper.isDesktopScreen
+        ? desktop(state)
+        : mobile(state),
+  );
+}
+
 final routerProvider = Provider((ref) {
   return GoRouter(
     initialLocation: AppRoutes.home,
-    // initialLocation: AppRoutes.backup,
     routes: <RouteBase>[
-      GoRoute(
+      _adaptiveRoute(
         path: AppRoutes.home,
-        builder: (context, state) {
-          if (PlatformHelper.isDesktopScreen) {
-            return DesktopHomePanel();
-          } else {
-            return MobileHomePage();
-          }
-        },
+        mobile: (_) => MobileHomePage(),
+        desktop: (_) => DesktopHomePanel(),
       ),
-      GoRoute(
+      _adaptiveRoute(
         path: AppRoutes.edit,
-        builder: (context, state) {
-          final noteWithFolder = state.extra as NoteWithFolder?;
-
-          if (PlatformHelper.isDesktopScreen) {
-            return DesktopEditNotePage(existingNoteWithFolder: noteWithFolder);
-          } else {
-            return MobileEditNotePage(existingNoteWithFolder: noteWithFolder);
-          }
-        },
+        mobile: (state) => MobileEditNotePage(existingNoteWithFolder: state.extra as NoteWithFolder?),
+        desktop: (state) => DesktopEditNotePage(existingNoteWithFolder: state.extra as NoteWithFolder?),
       ),
 
       GoRoute(
         path: AppRoutes.themes,
-        builder: (context, state) {
-          return ThemesPage();
-        },
+        builder: (context, state) => ThemesPage(),
       ),
 
       GoRoute(

@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 
 import 'package:noteit/core/util/logger.dart';
 import 'package:noteit/database/drift/local_database.dart';
+import 'package:noteit/database/firebase/firebase_database.dart';
 import 'package:noteit/database/sync/sync_orchestrator.dart';
 import 'package:noteit/features/home/core/providers.dart';
 
@@ -143,5 +144,56 @@ class NoteActionsController {
     AppLogger.d('NoteActionsController: Permanently deleted notes ($uuids)');
     ref.read(syncOrchestratorProvider).triggerSync();
     _clearActiveNoteIfAffected(uuids);
+  }
+
+  /// Empties local notes and folders trash, and purges corresponding Firestore entries if online.
+  Future<void> emptyLocalAndCloudTrash() async {
+    final cloudNoteIdsToDelete = await db.notesDao.emptyLocalTrash();
+    final cloudFolderIdsToDelete = await db.foldersDao.emptyLocalFolderTrash();
+
+    final firebaseDb = ref.read(noteFirebaseDatabaseProvider);
+    if (firebaseDb != null) {
+      if (cloudNoteIdsToDelete.isNotEmpty) {
+        await firebaseDb.deleteBatch('notes', cloudNoteIdsToDelete);
+      }
+      if (cloudFolderIdsToDelete.isNotEmpty) {
+        await firebaseDb.deleteBatch('folders', cloudFolderIdsToDelete);
+      }
+    }
+
+    AppLogger.d('NoteActionsController: Emptied local and cloud trash');
+    ref.read(syncOrchestratorProvider).triggerSync();
+  }
+
+  /// Permanently deletes selected notes and folders.
+  Future<void> hardDeleteSelection({
+    Iterable<String>? noteUuids,
+    Iterable<String>? folderUuids,
+  }) async {
+    final notesList = noteUuids?.toList() ?? [];
+    final foldersList = folderUuids?.toList() ?? [];
+
+    if (notesList.isNotEmpty) {
+      await db.notesDao.hardDeleteNotesBatch(notesList);
+    }
+    if (foldersList.isNotEmpty) {
+      for (final uuid in foldersList) {
+        await db.foldersDao.hardDeleteFolder(uuid);
+      }
+    }
+
+    final firebaseDb = ref.read(noteFirebaseDatabaseProvider);
+    if (firebaseDb != null) {
+      if (notesList.isNotEmpty) {
+        await firebaseDb.deleteBatch('notes', notesList);
+      }
+      if (foldersList.isNotEmpty) {
+        await firebaseDb.deleteBatch('folders', foldersList);
+      }
+    }
+
+    AppLogger.d('NoteActionsController: Hard deleted ${notesList.length} notes and ${foldersList.length} folders');
+    ref.read(syncOrchestratorProvider).triggerSync();
+    _clearActiveNoteIfAffected(notesList);
   }
 }

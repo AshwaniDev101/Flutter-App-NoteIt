@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:uuid/uuid.dart';
+import '../../core/helpers/time_helper.dart';
 import '../../database/drift/local_database.dart';
 
 class BackupPreviewResult {
@@ -22,36 +23,10 @@ class BackupPreviewResult {
 
 class BackupUtils {
   /// Safely converts various date/timestamp formats (int epoch ms, String, DateTime) into UTC DateTime
-  static DateTime? parseToDateTime(dynamic input) {
-    if (input == null) return null;
-    if (input is DateTime) return input.toUtc();
-    if (input is int) {
-      return DateTime.fromMillisecondsSinceEpoch(input, isUtc: true);
-    }
-    if (input is double) {
-      return DateTime.fromMillisecondsSinceEpoch(input.toInt(), isUtc: true);
-    }
-
-    final str = input.toString().trim();
-    if (str.isEmpty || str == 'null') return null;
-
-    final intVal = int.tryParse(str);
-    if (intVal != null && intVal > 100000000) {
-      return DateTime.fromMillisecondsSinceEpoch(intVal, isUtc: true);
-    }
-
-    try {
-      return DateTime.parse(str).toUtc();
-    } catch (_) {
-      return null;
-    }
-  }
+  static DateTime? parseToDateTime(dynamic input) => TimeHelper.parseToUtcDateTime(input);
 
   /// Safely converts various date/timestamp formats into ISO 8601 String for Drift serializer
-  static String? parseToIso8601String(dynamic input) {
-    final dt = parseToDateTime(input);
-    return dt?.toIso8601String();
-  }
+  static String? parseToIso8601String(dynamic input) => TimeHelper.parseToIso8601String(input);
 
   /// Inspects raw backup file content and returns structured preview info
   static BackupPreviewResult inspectBackupFile(String fileString, String fileExtension) {

@@ -12,7 +12,7 @@ import '../lock/password_prompt_helper.dart';
 import '../../shared/app_scaffold.dart';
 import '../../shared/snack_bar_manager.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
-import 'backup_utils.dart';
+import 'backup_service.dart';
 
 enum ExportFormat { json, csv }
 enum ExportScope { all, notesOnly, foldersOnly }
@@ -55,27 +55,14 @@ class _ExportNotesPageState extends ConsumerState<ExportNotesPage> {
     });
 
     try {
-      final notesDao = ref.read(notesDaoProvider);
-      final foldersDao = ref.read(foldersDaoProvider);
+      final backupService = ref.read(backupServiceProvider);
+      final result = await backupService.generateBackup(
+        format: _selectedFormat,
+        scope: _selectedScope,
+        includeLockedNotes: _includeLockedNotes,
+      );
 
-      final allNotes = await notesDao.getAllNotes();
-      final allFolders = await foldersDao.getAllFolders();
-
-      // Filter non-deleted folders
-      final activeFolders = _selectedScope == ExportScope.notesOnly
-          ? <Folder>[]
-          : allFolders.where((f) => f.deletedAt == null).toList();
-
-      // Filter notes (exclude deleted, check locked status)
-      final notesToExport = _selectedScope == ExportScope.foldersOnly
-          ? <Note>[]
-          : allNotes.where((note) {
-              if (note.deletedAt != null) return false;
-              if (note.lockedAt != null && !_includeLockedNotes) return false;
-              return true;
-            }).toList();
-
-      if (notesToExport.isEmpty && activeFolders.isEmpty) {
+      if (result.content.isEmpty) {
         if (mounted) {
           SnackBarManager.show(
             msg: 'No data available to export based on selected scope.',
@@ -85,80 +72,9 @@ class _ExportNotesPageState extends ConsumerState<ExportNotesPage> {
         return;
       }
 
-      final folderNameMap = <String, String>{
-        for (var f in allFolders) f.uuid: f.name,
-      };
-
-      String fileContent = '';
-      String extension = '';
-
-      if (_selectedFormat == ExportFormat.json) {
-        final Map<String, dynamic> exportPayload = {
-          'version': 1,
-          'appName': 'NoteIt',
-          'exportedAt': DateTime.now().toUtc().toIso8601String(),
-          'folders': activeFolders.map((f) => f.toJson()).toList(),
-          'notes': notesToExport.map((n) => n.toJson()).toList(),
-        };
-
-        fileContent = const JsonEncoder.withIndent('  ').convert(exportPayload);
-        extension = 'json';
-      } else if (_selectedFormat == ExportFormat.csv) {
-        if (_selectedScope == ExportScope.foldersOnly) {
-          final List<String> folderHeaders = [
-            'uuid',
-            'name',
-            'colorIndex',
-            'pinnedAt',
-            'createdAt',
-            'updatedAt',
-          ];
-
-          final List<Map<String, dynamic>> folderRows = activeFolders.map((f) => f.toJson()).toList();
-          fileContent = BackupUtils.encodeCsv(folderHeaders, folderRows);
-        } else {
-          final List<String> csvHeaders = [
-            'uuid',
-            'title',
-            'content',
-            'color',
-            'folderId',
-            'folderName',
-            'tags',
-            'pinnedAt',
-            'archivedAt',
-            'lockedAt',
-            'createdAt',
-            'updatedAt',
-          ];
-
-          final List<Map<String, dynamic>> csvRows = notesToExport.map((note) {
-            final noteMap = note.toJson();
-            return {
-              'uuid': noteMap['uuid'],
-              'title': noteMap['title'],
-              'content': noteMap['content'],
-              'color': noteMap['color'],
-              'folderId': noteMap['folderId'],
-              'folderName': note.folderId != null ? folderNameMap[note.folderId] : '',
-              'tags': noteMap['tags'],
-              'pinnedAt': noteMap['pinnedAt'],
-              'archivedAt': noteMap['archivedAt'],
-              'lockedAt': noteMap['lockedAt'],
-              'createdAt': noteMap['createdAt'],
-              'updatedAt': noteMap['updatedAt'],
-            };
-          }).toList();
-
-          fileContent = BackupUtils.encodeCsv(csvHeaders, csvRows);
-        }
-        extension = 'csv';
-      }
-
-      Uint8List fileBytes = Uint8List.fromList(utf8.encode(fileContent));
-
+      Uint8List fileBytes = Uint8List.fromList(utf8.encode(result.content));
       final dateStr = DateTime.now().toIso8601String().split('T').first.replaceAll('-', '');
-      final defaultFileName = 'noteit_backup_$dateStr.$extension';
+      final defaultFileName = 'noteit_backup_$dateStr.${result.extension}';
 
       Uri? outputFile = await FilePicker.saveFile(
         dialogTitle: 'Save Backup File',
@@ -171,11 +87,11 @@ class _ExportNotesPageState extends ConsumerState<ExportNotesPage> {
         return;
       }
 
-      AppLogger.d('ExportNotesPage: Exported ${notesToExport.length} notes and ${activeFolders.length} folders to $outputFile');
+      AppLogger.d('ExportNotesPage: Exported ${result.notesCount} notes and ${result.foldersCount} folders to $outputFile');
 
       if (mounted) {
         SnackBarManager.show(
-          msg: 'Exported ${notesToExport.length} notes & ${activeFolders.length} folders successfully!',
+          msg: 'Exported ${result.notesCount} notes & ${result.foldersCount} folders successfully!',
           type: SnackBarMessageType.acknowledgment,
         );
       }
@@ -285,26 +201,28 @@ class _ExportNotesPageState extends ConsumerState<ExportNotesPage> {
                       ),
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
-                        child: RadioGroup<ExportFormat>(
-                          groupValue: _selectedFormat,
-                          onChanged: (val) {
-                            if (val != null) setState(() => _selectedFormat = val);
-                          },
-                          child: Column(
-                            children: const [
-                              RadioListTile<ExportFormat>(
-                                title: Text('JSON (.json)', style: TextStyle(fontWeight: FontWeight.w600)),
-                                subtitle: Text('Full structural backup containing notes, folders, timestamps, tags, and metadata. Recommended.'),
-                                value: ExportFormat.json,
-                              ),
-                              Divider(height: 1),
-                              RadioListTile<ExportFormat>(
-                                title: Text('CSV (.csv)', style: TextStyle(fontWeight: FontWeight.w600)),
-                                subtitle: Text('Tabular format containing notes and folder information. Best for viewing in Excel or Google Sheets.'),
-                                value: ExportFormat.csv,
-                              ),
-                            ],
-                          ),
+                        child: Column(
+                          children: [
+                            RadioListTile<ExportFormat>(
+                              title: const Text('JSON (.json)', style: TextStyle(fontWeight: FontWeight.w600)),
+                              subtitle: const Text('Full structural backup containing notes, folders, timestamps, tags, and metadata. Recommended.'),
+                              value: ExportFormat.json,
+                              groupValue: _selectedFormat,
+                              onChanged: (val) {
+                                if (val != null) setState(() => _selectedFormat = val);
+                              },
+                            ),
+                            const Divider(height: 1),
+                            RadioListTile<ExportFormat>(
+                              title: const Text('CSV (.csv)', style: TextStyle(fontWeight: FontWeight.w600)),
+                              subtitle: const Text('Tabular format containing notes and folder information. Best for viewing in Excel or Google Sheets.'),
+                              value: ExportFormat.csv,
+                              groupValue: _selectedFormat,
+                              onChanged: (val) {
+                                if (val != null) setState(() => _selectedFormat = val);
+                              },
+                            ),
+                          ],
                         ),
                       ),
                     ),

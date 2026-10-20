@@ -6,9 +6,9 @@ import '../../core/util/platform_helper.dart';
 import '../../database/drift/folders/folders_dao.dart';
 import '../../database/drift/local_database.dart';
 import '../../database/drift/notes/notes_dao.dart';
-import '../../database/firebase/firebase_database.dart';
 import '../../database/sync/sync_orchestrator.dart';
 import '../../shared/app_scaffold.dart';
+import '../../shared/note_card/core/note_action_controller.dart';
 import '../../shared/note_card/folder_trash_card.dart';
 import '../../shared/note_card/note_card.dart';
 import '../../shared/snack_bar_manager.dart';
@@ -214,27 +214,13 @@ class _TrashPageState extends ConsumerState<TrashPage> {
     );
 
     if (confirmed == true && mounted) {
-      final notesDao = ref.read(notesDaoProvider);
-      final foldersDao = ref.read(foldersDaoProvider);
-      final firebaseDb = ref.read(noteFirebaseDatabaseProvider);
-
       try {
         SnackBarManager.show(
           msg: 'Emptying trash...',
           type: SnackBarMessageType.info,
         );
 
-        final List<String> cloudNoteIdsToDelete = await notesDao.emptyLocalTrash();
-        final List<String> cloudFolderIdsToDelete = await foldersDao.emptyLocalFolderTrash();
-
-        if (firebaseDb != null) {
-          if (cloudNoteIdsToDelete.isNotEmpty) {
-            await firebaseDb.deleteBatch('notes', cloudNoteIdsToDelete);
-          }
-          if (cloudFolderIdsToDelete.isNotEmpty) {
-            await firebaseDb.deleteBatch('folders', cloudFolderIdsToDelete);
-          }
-        }
+        await ref.read(noteActionsControllerProvider).emptyLocalAndCloudTrash();
 
         if (mounted) {
           SnackBarManager.show(
@@ -313,28 +299,11 @@ class _TrashPageState extends ConsumerState<TrashPage> {
     );
 
     if (confirmed == true && mounted) {
-      final notesDao = ref.read(notesDaoProvider);
-      final foldersDao = ref.read(foldersDaoProvider);
-      final firebaseDb = ref.read(noteFirebaseDatabaseProvider);
-
       try {
-        if (noteUuids != null && noteUuids.isNotEmpty) {
-          for (final uuid in noteUuids) {
-            await notesDao.deleteNote(uuid);
-          }
-          if (firebaseDb != null) {
-            await firebaseDb.deleteBatch('notes', noteUuids.toList());
-          }
-        }
-
-        if (folderUuids != null && folderUuids.isNotEmpty) {
-          for (final uuid in folderUuids) {
-            await foldersDao.hardDeleteFolder(uuid);
-          }
-          if (firebaseDb != null) {
-            await firebaseDb.deleteBatch('folders', folderUuids.toList());
-          }
-        }
+        await ref.read(noteActionsControllerProvider).hardDeleteSelection(
+          noteUuids: noteUuids,
+          folderUuids: folderUuids,
+        );
 
         setState(() {
           if (noteUuids != null) selectedNoteIds.removeAll(noteUuids);
