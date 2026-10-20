@@ -131,18 +131,41 @@ class NoteViewTypeNotifier extends Notifier<NoteViewType> {
 
 
 /// RIGHT PANEL VIEW
-final desktopRightPanelViewProvider = NotifierProvider<DesktopRightPanelViewNotifier, RightPanelPageOptions>(
+final desktopRightPanelViewProvider = NotifierProvider<DesktopRightPanelViewNotifier, List<RightPanelPageOptions>>(
   DesktopRightPanelViewNotifier.new,
 );
-class DesktopRightPanelViewNotifier extends Notifier<RightPanelPageOptions> {
+
+class DesktopRightPanelViewNotifier extends Notifier<List<RightPanelPageOptions>> {
   @override
-  RightPanelPageOptions build() {
-    return RightPanelPageOptions.allNotes;
+  List<RightPanelPageOptions> build() {
+    return [RightPanelPageOptions.allNotes];
   }
 
-  // Method to update the state
+  RightPanelPageOptions get currentView => state.isEmpty ? RightPanelPageOptions.allNotes : state.last;
+
+  bool get canPop => state.length > 1;
+
+  /// Sets/replaces the entire view stack with a single view (defaults to resetting)
   void setView(RightPanelPageOptions view) {
-    state = view;
+    resetView(view);
+  }
+
+  /// Pushes a new view onto the history stack if different from current view
+  void pushView(RightPanelPageOptions view) {
+    if (currentView == view) return;
+    state = [...state, view];
+  }
+
+  /// Pops the top view from the history stack if possible
+  void popView() {
+    if (canPop) {
+      state = state.sublist(0, state.length - 1);
+    }
+  }
+
+  /// Resets the history stack back to a root option (defaults to allNotes)
+  void resetView([RightPanelPageOptions root = RightPanelPageOptions.allNotes]) {
+    state = [root];
   }
 }
 

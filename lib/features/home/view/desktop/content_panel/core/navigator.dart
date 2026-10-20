@@ -26,7 +26,7 @@ class DrawerNavigationController {
     switch (option) {
       case RightPanelPageOptions.allNotes:
         if (PlatformHelper.isDesktopScreen) {
-          ref.read(desktopRightPanelViewProvider.notifier).setView(option);
+          ref.read(desktopRightPanelViewProvider.notifier).pushView(option);
         }
         break;
 
@@ -48,6 +48,10 @@ class DrawerNavigationController {
 
       case RightPanelPageOptions.devTools:
         _handlePlatformRouting(context, option, AppRoutes.dev);
+        break;
+
+      case RightPanelPageOptions.archivePage:
+        _handlePlatformRouting(context, option, AppRoutes.archive);
         break;
 
       case RightPanelPageOptions.clientMode:
@@ -85,12 +89,20 @@ class DrawerNavigationController {
       case RightPanelPageOptions.pin:
         _handlePlatformRouting(context, option, AppRoutes.pin);
         break;
-      case RightPanelPageOptions.archivePage:
-        _handlePlatformRouting(context, option, AppRoutes.archive);
-        break;
+
       case RightPanelPageOptions.defaultSettings:
         _handlePlatformRouting(context, option, AppRoutes.defaultSettings);
         break;
+    }
+  }
+
+  void pop(BuildContext context) {
+    if (PlatformHelper.isDesktopScreen) {
+      ref.read(desktopRightPanelViewProvider.notifier).popView();
+    } else {
+      if (context.canPop()) {
+        context.pop();
+      }
     }
   }
 
@@ -101,7 +113,7 @@ class DrawerNavigationController {
     String mobileRoute,
   ) {
     if (PlatformHelper.isDesktopScreen) {
-      ref.read(desktopRightPanelViewProvider.notifier).setView(option);
+      ref.read(desktopRightPanelViewProvider.notifier).pushView(option);
     } else {
       context.push(mobileRoute);
     }

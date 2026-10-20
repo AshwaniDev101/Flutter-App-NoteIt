@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -32,53 +33,61 @@ class DesktopContentPanel extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final currentView = ref.watch(desktopRightPanelViewProvider);
+    final viewStack = ref.watch(desktopRightPanelViewProvider);
+    final currentView = viewStack.isEmpty ? RightPanelPageOptions.allNotes : viewStack.last;
 
-    return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(kToolbarHeight),
-        child: AppBar(
-          // Move DragToMoveArea to the background layer
-          flexibleSpace: DragToMoveArea(
-            child: Container(
-              // The container must have a color (even transparent) to register mouse hits
-              color: Colors.transparent,
-            ),
-          ),
-          elevation: 0,
-          scrolledUnderElevation: PlatformHelper.isDesktopScreen ? 0.0 : null,
-          actions: [
-            IconTray(),
-            const SizedBox(width: 8),
-            IconButton(icon: const Icon(Icons.minimize, size: 16), onPressed: () => windowManager.minimize()),
-            IconButton(
-              icon: const Icon(Icons.crop_square, size: 16),
-              onPressed: () async {
-                if (await windowManager.isMaximized()) {
-                  windowManager.unmaximize();
-                } else {
-                  windowManager.maximize();
-                }
-              },
-            ),
-            IconButton(icon: const Icon(Icons.close, size: 16), onPressed: () => windowManager.close()),
-            const SizedBox(width: 8),
-          ],
-        ),
-      ),
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 200),
-        reverseDuration: const Duration(milliseconds: 150),
-        switchInCurve: Curves.easeOutCubic,
-        switchOutCurve: Curves.easeIn,
-        transitionBuilder: (Widget child, Animation<double> animation) {
-          final scaleAnimation = Tween<double>(begin: 0.96, end: 1.0).animate(animation);
-          return FadeTransition(
-            opacity: animation,
-            child: ScaleTransition(scale: scaleAnimation, child: child),
-          );
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.arrowLeft, alt: true): () {
+          ref.read(desktopRightPanelViewProvider.notifier).popView();
         },
-        child: _buildRightPanelContent(currentView),
+      },
+      child: Scaffold(
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(kToolbarHeight),
+          child: AppBar(
+            // Move DragToMoveArea to the background layer
+            flexibleSpace: DragToMoveArea(
+              child: Container(
+                // The container must have a color (even transparent) to register mouse hits
+                color: Colors.transparent,
+              ),
+            ),
+            elevation: 0,
+            scrolledUnderElevation: PlatformHelper.isDesktopScreen ? 0.0 : null,
+            actions: [
+              IconTray(),
+              const SizedBox(width: 8),
+              IconButton(icon: const Icon(Icons.minimize, size: 16), onPressed: () => windowManager.minimize()),
+              IconButton(
+                icon: const Icon(Icons.crop_square, size: 16),
+                onPressed: () async {
+                  if (await windowManager.isMaximized()) {
+                    windowManager.unmaximize();
+                  } else {
+                    windowManager.maximize();
+                  }
+                },
+              ),
+              IconButton(icon: const Icon(Icons.close, size: 16), onPressed: () => windowManager.close()),
+              const SizedBox(width: 8),
+            ],
+          ),
+        ),
+        body: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          reverseDuration: const Duration(milliseconds: 150),
+          switchInCurve: Curves.easeOutCubic,
+          switchOutCurve: Curves.easeIn,
+          transitionBuilder: (Widget child, Animation<double> animation) {
+            final scaleAnimation = Tween<double>(begin: 0.96, end: 1.0).animate(animation);
+            return FadeTransition(
+              opacity: animation,
+              child: ScaleTransition(scale: scaleAnimation, child: child),
+            );
+          },
+          child: _buildRightPanelContent(currentView),
+        ),
       ),
     );
   }
