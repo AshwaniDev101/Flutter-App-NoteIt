@@ -145,3 +145,25 @@ class DesktopRightPanelViewNotifier extends Notifier<RightPanelPageOptions> {
     state = view;
   }
 }
+
+/// MIDDLE PANEL WIDTH FOR DESKTOP
+final listPanelWidthProvider = NotifierProvider<ListPanelWidthNotifier, double>(
+  ListPanelWidthNotifier.new,
+);
+
+class ListPanelWidthNotifier extends Notifier<double> {
+  @override
+  double build() {
+    return SharedPreferenceManager.instance.listPanelWidth;
+  }
+
+  void updateWidth(double width) {
+    state = width;
+  }
+
+  void saveWidth([double? width]) {
+    final target = width ?? state;
+    state = target;
+    SharedPreferenceManager.instance.setListPanelWidth(target);
+  }
+}

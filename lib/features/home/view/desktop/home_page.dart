@@ -8,7 +8,6 @@ import 'package:uuid/uuid.dart';
 
 import '../../../../database/drift/keybindings/keybindings_dao.dart';
 import '../../../../database/drift/notes/notes_dao.dart';
-import '../../../../database/shared_preference/shared_preference_manager.dart';
 import '../../../../database/sync/sync_orchestrator.dart';
 import '../../../folders/core/providers.dart';
 import '../../../keybinding/shortcut_config.dart';
@@ -28,9 +27,6 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePanel> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
 
-  /// Tracks the current width of the middle panel. Modified by the draggable divider.
-  double _listPanelWidth = 340.0;
-
   // For helping close the drawer when user click on the invisible barrier on top of the right panel
   final GlobalKey<ScaffoldState> _leftScaffoldKey = GlobalKey<ScaffoldState>();
   bool _isDrawerOpen = false;
@@ -41,7 +37,6 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePanel> {
   @override
   void initState() {
     super.initState();
-    _listPanelWidth = SharedPreferenceManager.instance.listPanelWidth;
     _searchFocusNode.skipTraversal = true;
     _searchFocusNode.onKeyEvent = (FocusNode node, KeyEvent event) {
       if (event is KeyDownEvent) {
@@ -148,6 +143,7 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePanel> {
     final homeState = ref.watch(homeViewModelProvider);
     final viewModel = ref.read(homeViewModelProvider.notifier);
     final NoteWithFolder? activeNoteWithFolder = ref.watch(activeNoteProvider);
+    final listPanelWidth = ref.watch(listPanelWidthProvider);
 
     ref.watch(syncOrchestratorProvider);
     final shortcutsAsync = ref.watch(keybindingsProvider);
@@ -206,7 +202,7 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePanel> {
 
                             // Middle Panel
                             SizedBox(
-                              width: _listPanelWidth,
+                              width: listPanelWidth,
                               child: DesktopListPanel(
                                 scaffoldKey: _leftScaffoldKey,
                                 onDrawerChanged: (isOpen) => setState(() => _isDrawerOpen = isOpen),
@@ -229,7 +225,7 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePanel> {
 
                         // Middle Panel Divider
                         Positioned(
-                          left: _listPanelWidth - 6, // Removed _currentLeftWidth
+                          left: listPanelWidth - 6, // Removed _currentLeftWidth
                           width: 13,
                           top: 0,
                           bottom: 0,
@@ -238,14 +234,14 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePanel> {
                             child: GestureDetector(
                               behavior: HitTestBehavior.opaque,
                               onPanUpdate: (details) {
-                                setState(() {
-                                  _listPanelWidth += details.delta.dx;
-                                  if (_listPanelWidth < 250) _listPanelWidth = 250;
-                                  if (_listPanelWidth > 600) _listPanelWidth = 600;
-                                });
+                                double newWidth = listPanelWidth + details.delta.dx;
+                                if (newWidth < 250) newWidth = 250;
+                                if (newWidth < 250) newWidth = 250;
+                                if (newWidth > 600) newWidth = 600;
+                                ref.read(listPanelWidthProvider.notifier).updateWidth(newWidth);
                               },
                               onPanEnd: (_) {
-                                SharedPreferenceManager.instance.setListPanelWidth(_listPanelWidth);
+                                ref.read(listPanelWidthProvider.notifier).saveWidth();
                               },
                               child: Container(color: Colors.transparent),
                             ),
@@ -276,7 +272,7 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePanel> {
                         // Invisible barrier over Right Panel
                         if (_isDrawerOpen)
                           Positioned(
-                            left: _listPanelWidth + 1,
+                            left: listPanelWidth + 1,
                             top: 0,
                             bottom: 0,
                             right: 0,

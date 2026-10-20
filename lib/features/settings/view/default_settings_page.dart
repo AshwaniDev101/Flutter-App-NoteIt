@@ -202,6 +202,7 @@ class _DefaultSettingsPageState extends ConsumerState<DefaultSettingsPage> {
                               onChanged: (value) async {
                                 setState(() => _defaultListPanelWidth = value);
                                 await SharedPreferenceManager.instance.setDefaultListPanelWidth(value);
+                                ref.read(listPanelWidthProvider.notifier).saveWidth(value);
                               },
                             ),
                             Align(
@@ -213,6 +214,7 @@ class _DefaultSettingsPageState extends ConsumerState<DefaultSettingsPage> {
                                   final currentWidth = SharedPreferenceManager.instance.listPanelWidth;
                                   setState(() => _defaultListPanelWidth = currentWidth);
                                   await SharedPreferenceManager.instance.setDefaultListPanelWidth(currentWidth);
+                                  ref.read(listPanelWidthProvider.notifier).saveWidth(currentWidth);
                                   if (context.mounted) {
                                     SnackBarManager.show(msg: 'Set default panel width to ${currentWidth.round()}px');
                                   }
@@ -227,7 +229,7 @@ class _DefaultSettingsPageState extends ConsumerState<DefaultSettingsPage> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  'Default Window Size',
+                                  'Current Window Size',
                                   style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w500),
                                 ),
                                 Text(
@@ -242,7 +244,7 @@ class _DefaultSettingsPageState extends ConsumerState<DefaultSettingsPage> {
                                 Expanded(
                                   child: OutlinedButton.icon(
                                     icon: const Icon(Icons.aspect_ratio),
-                                    label: const Text('Set to Current Window Size'),
+                                    label: const Text('Set as Default Window Size'),
                                     onPressed: () async {
                                       final size = await windowManager.getSize();
                                       _applyWindowSizePreset(size.width, size.height, '${size.width.round()}x${size.height.round()}');
@@ -270,7 +272,7 @@ class _DefaultSettingsPageState extends ConsumerState<DefaultSettingsPage> {
                                     final screenSize = MediaQuery.of(context).size;
                                     final width = screenSize.width > 0 ? screenSize.width : 1920.0;
                                     final height = screenSize.height > 0 ? screenSize.height : 1080.0;
-                                    _applyWindowSizePreset(width, height, 'Fullscreen (${width.round()}x${height.round()})');
+                                    await _applyWindowSizePreset(width, height, 'Fullscreen', isFullscreen: true);
                                   },
                                 ),
                                 _buildWindowSizePresetChip(
@@ -376,15 +378,32 @@ class _DefaultSettingsPageState extends ConsumerState<DefaultSettingsPage> {
     );
   }
 
-  Future<void> _applyWindowSizePreset(double width, double height, String label) async {
+  Future<void> _applyWindowSizePreset(double width, double height, String label, {bool isFullscreen = false}) async {
     setState(() {
       _defaultWindowWidth = width;
       _defaultWindowHeight = height;
     });
     await SharedPreferenceManager.instance.setDefaultWindowWidth(width);
     await SharedPreferenceManager.instance.setDefaultWindowHeight(height);
+    await SharedPreferenceManager.instance.setWindowWidth(width);
+    await SharedPreferenceManager.instance.setWindowHeight(height);
+
+    if (PlatformHelper.isNativeDesktop) {
+      if (isFullscreen) {
+        if (!await windowManager.isMaximized()) {
+          await windowManager.maximize();
+        }
+      } else {
+        if (await windowManager.isMaximized()) {
+          await windowManager.unmaximize();
+        }
+        await windowManager.setSize(Size(width, height));
+        await windowManager.center();
+      }
+    }
+
     if (mounted) {
-      SnackBarManager.show(msg: 'Set default window size to $label');
+      SnackBarManager.show(msg: 'Window resized to $label');
     }
   }
 
