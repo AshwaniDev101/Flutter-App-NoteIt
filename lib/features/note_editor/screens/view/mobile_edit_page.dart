@@ -267,6 +267,14 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
                     break;
 
                   case NoteEditorOption.archive:
+                    if (_isNewNote) {
+                      SnackBarManager.show(msg: 'Please save the note first', type: SnackBarMessageType.error);
+                      return;
+                    }
+                    _hasTriggeredFinalSave = true;
+                    final targetUuid = widget.existingNoteWithFolder!.note.uuid;
+                    await ref.read(noteActionsControllerProvider).archiveNotes([targetUuid]);
+                    if (mounted) context.pop();
                     break;
                   case NoteEditorOption.find:
                     if (_isFind) {

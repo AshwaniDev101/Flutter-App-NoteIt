@@ -11,6 +11,7 @@ import 'package:noteit/database/sync/sync_orchestrator.dart';
 
 // Features
 import 'package:noteit/features/note_editor/screens/view/desktop_edit_page.dart';
+import 'package:noteit/shared/note_card/core/note_action_controller.dart';
 
 /// Represents the UI state for the note editor.
 ///
@@ -131,11 +132,13 @@ class EditNoteViewModel extends Notifier<EditNoteState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      await ref.read(notesDaoProvider).lockNote(uuid, isLocked: isLocked);
-      AppLogger.d('EditNoteViewModel: Locked note $uuid (isLocked:$isLocked)');
-
-      // Fire background sync via Orchestrator
-      ref.read(syncOrchestratorProvider).triggerSync();
+      if (isLocked) {
+        await ref.read(noteActionsControllerProvider).lockNotes([uuid]);
+      } else {
+        await ref.read(notesDaoProvider).lockNote(uuid, isLocked: false);
+        AppLogger.d('EditNoteViewModel: Unlocked note $uuid');
+        ref.read(syncOrchestratorProvider).triggerSync();
+      }
 
       state = state.copyWith(isLoading: false);
     } catch (e, st) {
@@ -151,15 +154,10 @@ class EditNoteViewModel extends Notifier<EditNoteState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      await ref.read(notesDaoProvider).softDeleteNotes(
+      await ref.read(noteActionsControllerProvider).deleteNotes(
         [uuid],
-        platform: PlatformHelper.name,
+        PlatformHelper.name,
       );
-
-      AppLogger.d('EditNoteViewModel: Soft deleted note ($uuid)');
-
-      // Fire background sync via Orchestrator
-      ref.read(syncOrchestratorProvider).triggerSync();
 
       state = state.copyWith(isLoading: false);
     } catch (e, st) {

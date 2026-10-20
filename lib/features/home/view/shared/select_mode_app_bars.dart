@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../../database/sync/sync_orchestrator.dart';
 import '../../../../core/util/platform_helper.dart';
-import '../../../../database/drift/notes/notes_dao.dart';
+import '../../../../shared/note_card/core/note_action_controller.dart';
 import '../../core/providers.dart';
 
 import '../../viewmodel/viewmodel.dart';
@@ -65,12 +64,11 @@ class SelectModeAppBar extends ConsumerWidget implements PreferredSizeWidget {
         IconButton(
           icon: const Icon(Icons.delete_outline),
           onPressed: () async {
-            final noteDao = ref.read(notesDaoProvider);
+            final actionsController = ref.read(noteActionsControllerProvider);
 
-            // Soft-delete selected notes and sync
-            await noteDao.softDeleteNotes(noteIds, platform: PlatformHelper.name);
+            // Soft-delete selected notes, sync, log, and update active note state
+            await actionsController.deleteNotes(noteIds.toList(), PlatformHelper.name);
 
-            ref.read(syncOrchestratorProvider).triggerSync();
             handleClearSelection();
           },
         ),
