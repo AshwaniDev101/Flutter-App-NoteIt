@@ -252,7 +252,8 @@ class _PaddingWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
+      // 12 because of the divider is 4x
+      padding: const EdgeInsets.only(left: 12, right: 16, bottom: 16),
       child: ClipRRect(borderRadius: const BorderRadius.all(Radius.circular(16.0)), child: child),
     );
   }

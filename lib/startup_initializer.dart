@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/database/drift/synced_devices/synced_devices_dao.dart';
 import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
+import 'package:noteit/database/sync/sync_engine.dart';
 import 'package:noteit/features/local_sync/provider/sync_session_provider.dart';
 import 'package:noteit/shared/snack_bar_manager.dart';
 
@@ -30,13 +31,20 @@ class StartupInitializer extends Notifier<void> {
       _lifecycleListener.dispose();
     });
 
-    _evaluateSyncState();
+    Future.microtask(() => _evaluateSyncState());
   }
 
   void _evaluateSyncState() async {
     AppLogger.d('StartupInitializer: Evaluating Sync State...');
 
     final spp = ref.read(sharedPreferenceProvider);
+    final engine = spp.currentEngine;
+
+    if (engine != SyncEngine.local) {
+      AppLogger.d('StartupInitializer: SyncEngine is $engine (not local). Skipping local sync startup.');
+      return;
+    }
+
     final syncRole = spp.syncRole;
 
     switch (syncRole) {
@@ -126,7 +134,12 @@ class StartupInitializer extends Notifier<void> {
   void onAppPaused() {
     AppLogger.d('StartupInitializer: App went to the background');
 
-    final syncRole = ref.read(sharedPreferenceProvider).syncRole;
+    final spp = ref.read(sharedPreferenceProvider);
+    if (spp.currentEngine != SyncEngine.local) {
+      return;
+    }
+
+    final syncRole = spp.syncRole;
 
     if (syncRole == SyncRole.host) {
       // Stop the server and unregister mDNS immediately
@@ -141,7 +154,12 @@ class StartupInitializer extends Notifier<void> {
   void onAppResumed() {
     AppLogger.d('StartupInitializer: App came back to the foreground');
 
-    final syncRole = ref.read(sharedPreferenceProvider).syncRole;
+    final spp = ref.read(sharedPreferenceProvider);
+    if (spp.currentEngine != SyncEngine.local) {
+      return;
+    }
+
+    final syncRole = spp.syncRole;
 
     if (syncRole == SyncRole.host) {
       // HOST LOGIC

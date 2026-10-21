@@ -4,14 +4,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in_all_platforms/google_sign_in_all_platforms.dart';
 import 'package:noteit/core/util/platform_helper.dart';
 import 'package:noteit/core/secrets/app_secrets.dart';
+import 'auth_repository.dart';
 
-// Provides the FirebaseAuth instance
 // Provides the FirebaseAuth instance
 final firebaseAuthProvider = Provider<FirebaseAuth>((ref) {
   return FirebaseAuth.instance;
 });
 
-//  Listens to login/logout events automatically
+// Provides the AuthRepository instance
+final authRepositoryProvider = Provider<AuthRepository>((ref) {
+  return AuthRepository(ref);
+});
+
+// Listens to login/logout events automatically
 final authStateProvider = StreamProvider<User?>((ref) {
   return ref.watch(firebaseAuthProvider).authStateChanges();
 });

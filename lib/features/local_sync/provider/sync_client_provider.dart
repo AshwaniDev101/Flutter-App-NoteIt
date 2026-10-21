@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/database/sync/sync_engine.dart';
 import 'package:noteit/features/local_sync/provider/sync_server_provider.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
@@ -94,7 +95,8 @@ class SyncClientNotifier extends Notifier<WebSocketChannel?> {
 
       AppLogger.d('SyncClientNotifier: Connection Confirmed!');
 
-      // Client role set at the moment the connection is successful!
+      // Ensure SyncEngine is set to local and SyncRole is client when connection succeeds
+      ref.read(syncEngineProvider.notifier).setEngine(SyncEngine.local);
       ref.read(sharedPreferenceProvider).setSyncRole(SyncRole.client);
 
       await ref.read(syncedDevicesDaoProvider).upsertDeviceAsHost(

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/database/sync/sync_engine.dart';
 import 'package:noteit/features/local_sync/provider/sync_client_provider.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
@@ -86,6 +87,7 @@ class SyncServerNotifier extends Notifier<HttpServer?> {
 
     state = server;
 
+    ref.read(syncEngineProvider.notifier).setEngine(SyncEngine.local);
     ref.read(sharedPreferenceProvider).setSyncRole(SyncRole.host);
     return state!.port;
   }

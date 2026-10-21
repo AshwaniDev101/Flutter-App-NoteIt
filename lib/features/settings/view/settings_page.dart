@@ -102,12 +102,16 @@ class SettingsPage extends ConsumerWidget {
                               ),
                             ],
                             selected: {currentEngine},
-                            onSelectionChanged: (Set<SyncEngine> newSelection) {
+                            onSelectionChanged: (Set<SyncEngine> newSelection) async {
                               final selectedMode = newSelection.first;
 
-                              ref.read(syncEngineProvider.notifier).setEngine(selectedMode);
+                              final bool success = await ref
+                                  .read(syncEngineProvider.notifier)
+                                  .requestEngineChange(selectedMode);
 
-                              ref.read(syncOrchestratorProvider).triggerSync();
+                              if (success) {
+                                ref.read(syncOrchestratorProvider).triggerSync();
+                              }
                             },
                           ),
                         ],

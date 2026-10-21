@@ -1,12 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_sign_in_all_platforms/google_sign_in_all_platforms.dart';
 
 import '../../core/config/app_env.dart';
 import '../../database/firebase/auth/firebase_provider.dart';
 import '../../core/theme/app_theme.dart';
-import '../../core/util/logger.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
 
 class SharedDrawerContent extends ConsumerWidget {
@@ -20,24 +18,6 @@ class SharedDrawerContent extends ConsumerWidget {
     required this.onOptionSelected,
     required this.onClose,
   });
-
-  Future<void> _signInWithGoogle(WidgetRef ref) async {
-    try {
-      final googleSignIn = ref.read(googleSignInProvider);
-      final GoogleSignInCredentials? credentials = await googleSignIn.signInOnline();
-
-      if (credentials == null) return;
-
-      final AuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: credentials.accessToken,
-        idToken: credentials.idToken,
-      );
-
-      await FirebaseAuth.instance.signInWithCredential(credential);
-    } catch (e, st) {
-      AppLogger.e('SharedDrawerContent: Google Sign-In failed', error: e, stack: st);
-    }
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -161,9 +141,7 @@ class SharedDrawerContent extends ConsumerWidget {
                   backgroundColor: colorScheme.surfaceContainerHighest,
                   foregroundColor: colorScheme.onSurfaceVariant,
                   onTap: () async {
-                    final googleSignIn = ref.read(googleSignInProvider);
-                    await googleSignIn.signOut();
-                    await FirebaseAuth.instance.signOut();
+                    await ref.read(authRepositoryProvider).signOut();
                     onClose();
                   },
                 );
@@ -175,7 +153,7 @@ class SharedDrawerContent extends ConsumerWidget {
                   backgroundColor: colorScheme.primaryContainer,
                   foregroundColor: Colors.white,
                   onTap: () async {
-                    await _signInWithGoogle(ref);
+                    await ref.read(authRepositoryProvider).signInWithGoogle();
                     onClose();
                   },
                 );

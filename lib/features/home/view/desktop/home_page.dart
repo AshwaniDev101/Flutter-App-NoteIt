@@ -179,26 +179,6 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePanel> {
                       children: [
                         Row(
                           children: [
-                            //  Static/Animated Left Panel (Snaps between 240px and 64px)
-                            // AnimatedContainer(
-                            //   duration: const Duration(milliseconds: 200),
-                            //   curve: Curves.easeInOut,
-                            //   width: _currentLeftWidth,
-                            //   child: LeftDrawer(
-                            //     isExpanded: _isLeftPanelExpanded,
-                            //     onToggle: () => setState(() => _isLeftPanelExpanded = !_isLeftPanelExpanded),
-                            //     scaffoldKey: _leftScaffoldKey,
-                            //     onDrawerChanged: (isOpen) => setState(() => _isDrawerOpen = isOpen),
-                            //     searchController: _searchController,
-                            //     searchFocusNode: _searchFocusNode,
-                            //     activeNoteId: activeNote?.uuid,
-                            //     isKeyboardDriven: _isKeyboardDriven,
-                            //     onAddNote: _addNote,
-                            //     onNoteTap: _handleNoteTap,
-                            //     onKeyboardModeChanged: (mode) => setState(() => _isKeyboardDriven = mode),
-                            //   ),
-                            // ),
-                            // VerticalDivider(width: 1, thickness: 1,color: Colors.transparent,),
 
                             // Middle Panel
                             SizedBox(

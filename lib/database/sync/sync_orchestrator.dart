@@ -1,6 +1,11 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
 import 'package:noteit/database/sync/sync_engine.dart';
+import 'package:noteit/features/local_sync/auto_connect/mdns_broadcast.dart';
+import 'package:noteit/features/local_sync/auto_connect/mdns_searcher.dart';
+import 'package:noteit/features/local_sync/provider/sync_client_provider.dart';
+import 'package:noteit/features/local_sync/provider/sync_server_provider.dart';
 import '../firebase/auth/firebase_provider.dart';
 import '../../core/util/logger.dart';
 import 'cloud_sync_service.dart';
@@ -34,6 +39,11 @@ class SyncOrchestrator with WidgetsBindingObserver {
   void init() {
     WidgetsBinding.instance.addObserver(this);
 
+    // Initial state evaluation scheduled safely after provider build completes
+    Future.microtask(() {
+      _evaluateState();
+    });
+
     // Listen for Engine Mode Swaps (Cloud vs Local vs Offline)
     ref.listen(syncEngineProvider, (previous, next) {
       _evaluateState();
@@ -45,23 +55,32 @@ class SyncOrchestrator with WidgetsBindingObserver {
     });
   }
 
+  void _stopAllLocalSyncServices() {
+    AppLogger.d("SyncOrchestrator: Stopping all Local Wi-Fi Sync services...");
+    ref.read(localSyncServiceProvider.notifier).stop();
+    ref.read(syncServerProvider.notifier).stopHosting();
+    ref.read(mdnsBroadcastProvider.notifier).stopBroadcasting();
+    ref.read(mdnsSearcherProvider.notifier).stopScan();
+    ref.read(syncClientProvider.notifier).disconnect();
+    ref.read(sharedPreferenceProvider).setSyncRole(SyncRole.undefine);
+  }
+
   // The Master Switchboard: Turns background listeners on or off
   void _evaluateState() {
     final engine = ref.read(syncEngineProvider);
     final user = ref.read(authStateProvider).value;
 
     final cloudWorker = ref.read(cloudSyncServiceProvider);
-    final localWorker = ref.read(localSyncServiceProvider.notifier);
 
     if (engine == SyncEngine.cloud && user != null) {
-      localWorker.stop();
+      _stopAllLocalSyncServices();
       cloudWorker.start();
     } else if (engine == SyncEngine.local) {
       cloudWorker.stop();
     } else {
       // Offline mode, or user logged out
       cloudWorker.stop();
-      localWorker.stop();
+      _stopAllLocalSyncServices();
     }
   }
 

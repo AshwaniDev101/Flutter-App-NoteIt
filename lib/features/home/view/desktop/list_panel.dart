@@ -135,7 +135,7 @@ class DesktopListPanel extends ConsumerWidget {
 
       // Body holding the search bar and the actual note list
       body: Padding(
-        padding: const EdgeInsets.only(left: 16, bottom: 16),// 8px from left+right side of the grid,
+        padding: const EdgeInsets.only(left: 12, bottom: 16),// 8px from left+right side of the grid,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -196,8 +196,6 @@ class DesktopListPanel extends ConsumerWidget {
                   ),
                   Spacer(),
 
-                  // IconButton(onPressed: (){}, icon: Icon(CupertinoIcons.sort_down)),
-                  // IconButton(onPressed: (){}, icon: Icon(Icons.grid_view)),
                   SortMenuButton(
                     icon: Icon(CupertinoIcons.sort_down,color: Theme.of(context).colorScheme.primary),
                     currentSortSelection: _getCurrentSortAction(currentSort),
