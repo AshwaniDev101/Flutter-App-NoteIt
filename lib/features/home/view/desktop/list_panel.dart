@@ -17,9 +17,9 @@ import '../../../keybinding/smart_action_widget.dart';
 import '../../core/db_sorting_filtering.dart';
 import '../../core/providers.dart';
 import '../../viewmodel/viewmodel.dart';
-import '../shared/select_mode_app_bars.dart';
+import '../../../../shared/app_search_bar.dart';
 import '../../../../shared/note_card/dynamic_notes_layout.dart';
-import '../shared/home_search_bar.dart';
+import '../shared/select_mode_app_bars.dart';
 
 class DesktopListPanel extends ConsumerWidget {
   final TextEditingController searchController;
@@ -52,6 +52,7 @@ class DesktopListPanel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final homeState = ref.watch(homeViewModelProvider);
+    final viewModel = ref.read(homeViewModelProvider.notifier);
     final colorScheme = Theme.of(context).colorScheme;
 
     final currentSort = ref.watch(homeNoteSortPreferenceProvider);
@@ -159,13 +160,31 @@ class DesktopListPanel extends ConsumerWidget {
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 4),
                         // This is to compensate for the card 4px padding
-                        child: HomeSearchBar(
+                        child: AppSearchBar(
                           controller: searchController,
                           focusNode: searchFocusNode,
                           hintText: 'Search...',
+                          fillColor: colorScheme.surfaceContainerLow,
                           borderRadius: BorderRadius.circular(8),
                           isKeyboardDriven: isKeyboardDriven,
                           onKeyboardModeChanged: onKeyboardModeChanged,
+                          onTap: () {
+                            if (!homeState.isSearchMode) viewModel.enterSearchMode();
+                          },
+                          onClear: () {
+                            searchController.clear();
+                            ref.read(searchQueryProvider.notifier).clear();
+                            viewModel.exitSearchMode();
+                          },
+                          onChanged: (value) {
+                            if (value.isNotEmpty && !homeState.isSearchMode) viewModel.enterSearchMode();
+                            if (value.isEmpty) {
+                              ref.read(searchQueryProvider.notifier).clear();
+                              viewModel.exitSearchMode();
+                            } else {
+                              ref.read(searchQueryProvider.notifier).updateQuery(value);
+                            }
+                          },
                         ),
                       ),
                     ),

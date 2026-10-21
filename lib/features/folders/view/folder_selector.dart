@@ -452,8 +452,7 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
             child: AppSearchBar(
               controller: _searchController,
               hintText: 'Search...',
-              borderRadius: BorderRadius.circular(12),
-              fillColor: colorScheme.surfaceContainerHigh.withValues(alpha: 0.5),
+              fillColor: colorScheme.surfaceContainerLow,
               onChanged: (value) => setState(() => _folderSearchQuery = value),
               onClear: _clearSearch,
             ),

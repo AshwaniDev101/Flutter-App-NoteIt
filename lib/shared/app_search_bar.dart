@@ -33,7 +33,7 @@ class AppSearchBar extends StatefulWidget {
     this.onClear,
     this.onSubmitted,
     this.onTap,
-    this.borderRadius,
+    this.borderRadius = const BorderRadius.all(Radius.circular(8)),
     this.isKeyboardDriven = false,
     this.onKeyboardModeChanged,
     this.autofocus = false,

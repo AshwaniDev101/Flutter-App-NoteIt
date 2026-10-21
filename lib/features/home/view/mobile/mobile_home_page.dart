@@ -18,7 +18,7 @@ import '../../../folders/view/folder_selector.dart';
 import '../../core/db_sorting_filtering.dart';
 import '../../core/note_tap_handler.dart';
 import '../../core/providers.dart';
-import '../shared/home_search_bar.dart';
+import '../../../../shared/app_search_bar.dart';
 
 class MobileHomePage extends ConsumerStatefulWidget {
   const MobileHomePage({super.key});
@@ -83,9 +83,27 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
               child: Row(
                 children: [
                   Expanded(
-                    child: HomeSearchBar(
+                    child: AppSearchBar(
                       controller: _searchController,
                       hintText: 'Search notes...',
+                      borderRadius: BorderRadius.circular(30),
+                      onTap: () {
+                        if (!homeState.isSearchMode) viewModel.enterSearchMode();
+                      },
+                      onClear: () {
+                        _searchController.clear();
+                        ref.read(searchQueryProvider.notifier).clear();
+                        viewModel.exitSearchMode();
+                      },
+                      onChanged: (value) {
+                        if (value.isNotEmpty && !homeState.isSearchMode) viewModel.enterSearchMode();
+                        if (value.isEmpty) {
+                          ref.read(searchQueryProvider.notifier).clear();
+                          viewModel.exitSearchMode();
+                        } else {
+                          ref.read(searchQueryProvider.notifier).updateQuery(value);
+                        }
+                      },
                     ),
                   ),
                   const SizedBox(width: 8),

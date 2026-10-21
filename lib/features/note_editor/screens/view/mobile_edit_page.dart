@@ -15,6 +15,7 @@ import '../../../../shared/snack_bar_manager.dart';
 import '../../../folders/core/providers.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
 import '../../widgets/checklist_editor.dart';
+import '../../widgets/folder_option_menu.dart';
 import '../../widgets/note_editor_options.dart';
 import '../../../lock/lock_manger/lock_manager.dart';
 import '../../../lock/view/setup_password_page.dart';
@@ -413,6 +414,7 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
   }
 
   Widget _buildMetaDataRow({required double padding}) {
+    final currentFolder = widget.existingNoteWithFolder?.folder;
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: padding, vertical: 8.0),
       child: Row(
@@ -431,6 +433,18 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
                 fontWeight: FontWeight.bold,
               ),
             ),
+          ),
+          const SizedBox(width: 8),
+          FolderOptionMenu(
+            selectedFolder: currentFolder,
+            emptyLabel: 'none',
+            onFolderSelected: (folder) async {
+              final newFolderId = folder?.uuid;
+              if (widget.existingNoteWithFolder?.note.folderId == newFolderId) return;
+              if (!_isNewNote && widget.existingNoteWithFolder != null) {
+                await ref.read(notesDaoProvider).updateNoteFolder(widget.existingNoteWithFolder!.note.uuid, newFolderId);
+              }
+            },
           ),
           const Spacer(),
           if (_isLocked) ...[

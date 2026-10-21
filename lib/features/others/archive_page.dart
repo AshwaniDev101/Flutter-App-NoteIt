@@ -277,6 +277,42 @@ class _ArchivePageState extends ConsumerState<ArchivePage> {
       );
     }
 
+    // Render the Search Bar directly inside the AppBar
+    if (_isSearching) {
+      final isMobile = PlatformHelper.isMobileScreen;
+
+      return AppBar(
+        backgroundColor: colorScheme.surfaceContainerLowest,
+        title: Align(
+          alignment: Alignment.centerRight,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: isMobile ? double.infinity : 360),
+            child: AppSearchBar(
+              controller: _searchController,
+              focusNode: _searchFocusNode,
+              hintText: 'Search archived notes...',
+              fillColor: colorScheme.surfaceContainerLow,
+              onChanged: (_) => setState(() {}),
+              onClear: () => setState(() {}),
+            ),
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search_off),
+            tooltip: 'Close search',
+            onPressed: () {
+              setState(() {
+                _isSearching = false;
+                _searchController.clear();
+              });
+            },
+          ),
+          const DesktopCloseButton(),
+        ],
+      );
+    }
+
     return AppBar(
       title: const Text('Archive'),
       backgroundColor: colorScheme.surfaceContainerLowest,
@@ -314,43 +350,6 @@ class _ArchivePageState extends ConsumerState<ArchivePage> {
       appBar: _buildAppBar(archivedNotesState.value ?? []),
       body: Column(
         children: [
-          // Search Field Row
-          if (_isSearching)
-            Align(
-              alignment: Alignment.topRight,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 400),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: AppSearchBar(
-                          controller: _searchController,
-                          focusNode: _searchFocusNode,
-                          hintText: 'Search archived notes...',
-                          onChanged: (_) => setState(() {}),
-                          onClear: () => setState(() {}),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      IconButton(
-                        icon: const Icon(Icons.search_off),
-                        tooltip: 'Close Search',
-                        onPressed: () {
-                          setState(() {
-                            _isSearching = false;
-                            _searchController.clear();
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-          // Control Bar Row: FolderButton + SortMenuButton + ViewMenuButton
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
             child: Row(
@@ -427,7 +426,7 @@ class _ArchivePageState extends ConsumerState<ArchivePage> {
                   final queryLower = searchQuery.toLowerCase();
                   filteredNotes = filteredNotes.where((noteWithFolder) {
                     return noteWithFolder.note.title.toLowerCase().contains(queryLower) ||
-                        noteWithFolder.note.content.toLowerCase().contains(searchQuery);
+                        noteWithFolder.note.content.toLowerCase().contains(queryLower);
                   }).toList();
                 }
 

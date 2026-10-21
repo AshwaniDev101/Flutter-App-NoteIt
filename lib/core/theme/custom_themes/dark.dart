@@ -50,11 +50,10 @@ ThemeData get _darkThemeData => ThemeData(
     // BACKGROUND & SURFACE COLORS (The Canvas)
 
     // ==== Surface levels ====
-    // surfaceContainerHighest :Color(0xFF1B1E27),
+    surfaceContainerHighest :Color(0xFF1B1E27),
     surfaceContainerHigh :Color(0xFF1B1E27), // * Used for card backgrounds Folder menu
     surfaceContainer: Color(0xFF22263A),
     surfaceContainerLow: Color(0xFF1A1D2D), // * Used for card backgrounds
-
     surfaceContainerLowest: Color(0xFF151724),
     surface: Color(0xFF0F111A), // * Used for Bottom Layer (Deep indigo-black)
     // The vast majority of your app's background space (Scaffold backgrounds).

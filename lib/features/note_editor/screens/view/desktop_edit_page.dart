@@ -17,6 +17,7 @@ import '../../../../shared/highlighting_text_field.dart';
 import '../../../../shared/snack_bar_manager.dart';
 import '../../../folders/view/folder_selector.dart';
 import '../../widgets/checklist_editor.dart';
+import '../../widgets/folder_option_menu.dart';
 import '../../../home/core/providers.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
 import '../../widgets/note_editor_options.dart';
@@ -493,10 +494,9 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
     return Row(
       children: [
         const SizedBox(width: 8),
-        FolderButton(
+        FolderOptionMenu(
           selectedFolder: currentFolder,
           emptyLabel: 'none',
-          showContextMenus: true,
           onFolderSelected: (folder) async {
             final newFolderId = folder?.uuid;
 
