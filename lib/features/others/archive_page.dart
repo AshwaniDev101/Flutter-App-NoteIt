@@ -8,6 +8,7 @@ import '../../database/drift/local_database.dart';
 import '../../database/drift/notes/notes_dao.dart';
 import '../../database/sync/sync_orchestrator.dart';
 import '../../shared/app_scaffold.dart';
+import '../../shared/app_search_bar.dart';
 import '../../shared/note_card/core/note_action_controller.dart';
 import '../../shared/note_card/note_card.dart';
 import '../../shared/snack_bar_manager.dart';
@@ -324,33 +325,17 @@ class _ArchivePageState extends ConsumerState<ArchivePage> {
                   child: Row(
                     children: [
                       Expanded(
-                        child: TextField(
+                        child: AppSearchBar(
                           controller: _searchController,
                           focusNode: _searchFocusNode,
+                          hintText: 'Search archived notes...',
                           onChanged: (_) => setState(() {}),
-                          decoration: InputDecoration(
-                            hintText: 'Search archived notes...',
-                            prefixIcon: const Icon(Icons.search, size: 20),
-                            suffixIcon: _searchController.text.isNotEmpty
-                                ? IconButton(
-                                    icon: const Icon(Icons.clear, size: 18),
-                                    onPressed: () {
-                                      _searchController.clear();
-                                      setState(() {});
-                                    },
-                                  )
-                                : null,
-                            isDense: true,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
+                          onClear: () => setState(() {}),
                         ),
                       ),
                       const SizedBox(width: 8),
                       IconButton(
-                        icon: const Icon(Icons.close),
+                        icon: const Icon(Icons.search_off),
                         tooltip: 'Close Search',
                         onPressed: () {
                           setState(() {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/util/platform_helper.dart';
+import '../../../../shared/app_search_bar.dart';
 import '../../../../shared/note_card/core/note_action_controller.dart';
 import '../../core/providers.dart';
 
@@ -91,23 +92,13 @@ class SearchModeAppBar extends ConsumerWidget implements PreferredSizeWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return AppBar(
       leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: onExitSearchMode),
-      title: TextField(
+      title: AppSearchBar.appBar(
         controller: searchController,
+        hintText: 'Search notes...',
         autofocus: true,
-        textInputAction: TextInputAction.search,
-        decoration: const InputDecoration(hintText: 'Search notes...', border: InputBorder.none),
         onChanged: (value) => ref.read(searchQueryProvider.notifier).updateQuery(value),
+        onClear: () => ref.read(searchQueryProvider.notifier).clear(),
       ),
-      actions: [
-        if (ref.watch(searchQueryProvider).isNotEmpty)
-          IconButton(
-            icon: const Icon(Icons.close),
-            onPressed: () {
-              searchController.clear();
-              ref.read(searchQueryProvider.notifier).clear();
-            },
-          ),
-      ],
     );
   }
 }

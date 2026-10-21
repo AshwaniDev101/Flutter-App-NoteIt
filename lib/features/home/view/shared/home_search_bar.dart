@@ -2,15 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/features/home/core/providers.dart';
 import 'package:noteit/features/home/viewmodel/viewmodel.dart';
+import 'package:noteit/shared/app_search_bar.dart';
 
 /// Centralized Search Bar widget for Home pages (both mobile and desktop).
 ///
-/// Features:
-/// - Connects to [searchQueryProvider] and [homeViewModelProvider] automatically.
-/// - Shows a clear (X) icon when search text is non-empty.
-/// - Configurable border radius (rounded pill for mobile, square/subtle for desktop).
-/// - Supports focus node and keyboard-driven focus highlights.
-class HomeSearchBar extends ConsumerStatefulWidget {
+/// Wraps [AppSearchBar] with Riverpod state management connected to
+/// [searchQueryProvider] and [homeViewModelProvider].
+class HomeSearchBar extends ConsumerWidget {
   final TextEditingController controller;
   final FocusNode? focusNode;
   final String hintText;
@@ -31,107 +29,36 @@ class HomeSearchBar extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<HomeSearchBar> createState() => _HomeSearchBarState();
-}
-
-class _HomeSearchBarState extends ConsumerState<HomeSearchBar> {
-  FocusNode? _internalFocusNode;
-
-  FocusNode get _effectiveFocusNode =>
-      widget.focusNode ?? (_internalFocusNode ??= FocusNode());
-
-  @override
-  void dispose() {
-    _internalFocusNode?.dispose();
-    super.dispose();
-  }
-
-  /// Clears search text and resets search state providers.
-  void _clearSearch() {
-    widget.controller.clear();
-    ref.read(searchQueryProvider.notifier).clear();
-    ref.read(homeViewModelProvider.notifier).exitSearchMode();
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final homeState = ref.watch(homeViewModelProvider);
     final viewModel = ref.read(homeViewModelProvider.notifier);
-    final colorScheme = Theme.of(context).colorScheme;
-    final effectiveBorderRadius = widget.borderRadius ?? BorderRadius.circular(30);
-    final focusNode = _effectiveFocusNode;
 
-    // Wrap in ListenableBuilder to actively listen to the TextField's focusNode
-    return ListenableBuilder(
-      listenable: focusNode,
-      builder: (context, child) {
-        // Check BOTH the text field's focus and the parent wrapper's focus safely
-        final parentFocused = Focus.maybeOf(context)?.hasFocus ?? false;
-        final isFocused = focusNode.hasFocus || parentFocused;
+    void clearSearch() {
+      controller.clear();
+      ref.read(searchQueryProvider.notifier).clear();
+      ref.read(homeViewModelProvider.notifier).exitSearchMode();
+    }
 
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 100),
-          decoration: BoxDecoration(
-            borderRadius: effectiveBorderRadius,
-            border: Border.all(
-              color: (isFocused && widget.isKeyboardDriven) ? colorScheme.primary : Colors.transparent,
-              width: (isFocused && widget.isKeyboardDriven) ? 2 : 0, // Keeps layout completely stable!
-            ),
-          ),
-          // We pass the TextField as 'child' so it doesn't rebuild unnecessarily
-          child: child,
-        );
+    return AppSearchBar(
+      controller: controller,
+      focusNode: focusNode,
+      hintText: hintText,
+      borderRadius: borderRadius ?? BorderRadius.circular(30),
+      isKeyboardDriven: isKeyboardDriven,
+      onKeyboardModeChanged: onKeyboardModeChanged,
+      onTap: () {
+        if (!homeState.isSearchMode) viewModel.enterSearchMode();
+        onTap?.call();
       },
-      // Put your TextField in the 'child' parameter
-      child: TextField(
-        controller: widget.controller,
-        focusNode: focusNode,
-        decoration: InputDecoration(
-          filled: true,
-          fillColor: Theme.of(context).colorScheme.surfaceContainerLowest,
-          isDense: true,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          hintText: widget.hintText,
-          suffixIcon: ValueListenableBuilder<TextEditingValue>(
-            valueListenable: widget.controller,
-            builder: (context, value, child) {
-              return value.text.isNotEmpty
-                  ? ExcludeFocus(
-                      child: IconButton(
-                        icon: const Icon(Icons.clear, size: 20),
-                        onPressed: _clearSearch,
-                      ),
-                    )
-                  : const SizedBox.shrink();
-            },
-          ),
-          prefixIcon: const Icon(Icons.search, size: 18),
-          hintStyle: Theme.of(context)
-              .textTheme
-              .bodyMedium
-              ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-          prefixIconConstraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-
-          // Disable internal borders so our AnimatedContainer handles it
-          border: OutlineInputBorder(borderRadius: effectiveBorderRadius, borderSide: BorderSide.none),
-          focusedBorder: OutlineInputBorder(borderRadius: effectiveBorderRadius, borderSide: BorderSide.none),
-        ),
-        onTap: () {
-          if (widget.onKeyboardModeChanged != null) {
-            widget.onKeyboardModeChanged!(false);
-          }
-          if (!homeState.isSearchMode) viewModel.enterSearchMode();
-          if (widget.onTap != null) widget.onTap!();
-        },
-        onChanged: (value) {
-          if (value.isNotEmpty && !homeState.isSearchMode) viewModel.enterSearchMode();
-          if (value.isEmpty) {
-            _clearSearch();
-          } else {
-            ref.read(searchQueryProvider.notifier).updateQuery(value);
-          }
-        },
-      ),
+      onClear: clearSearch,
+      onChanged: (value) {
+        if (value.isNotEmpty && !homeState.isSearchMode) viewModel.enterSearchMode();
+        if (value.isEmpty) {
+          clearSearch();
+        } else {
+          ref.read(searchQueryProvider.notifier).updateQuery(value);
+        }
+      },
     );
   }
 }

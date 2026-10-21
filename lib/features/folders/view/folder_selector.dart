@@ -4,6 +4,8 @@ export 'widgets/folder_list_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../shared/app_search_bar.dart';
+
 import '../../../database/drift/folders/folders_dao.dart';
 import '../../../database/drift/local_database.dart';
 import '../../../database/drift/notes/notes_dao.dart';
@@ -447,41 +449,13 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
           // Search Bar
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4.0),
-            child: TextField(
+            child: AppSearchBar(
               controller: _searchController,
-              style: textTheme.bodyMedium,
+              hintText: 'Search...',
+              borderRadius: BorderRadius.circular(12),
+              fillColor: colorScheme.surfaceContainerHigh.withValues(alpha: 0.5),
               onChanged: (value) => setState(() => _folderSearchQuery = value),
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: colorScheme.surfaceContainerHigh.withValues(alpha: 0.5),
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                hintText: 'Search...',
-                suffixIcon: ValueListenableBuilder<TextEditingValue>(
-                  valueListenable: _searchController,
-                  builder: (context, value, child) {
-                    return value.text.isNotEmpty
-                        ? ExcludeFocus(
-                      child: IconButton(
-                        icon: const Icon(Icons.close_rounded, size: 16),
-                        onPressed: _clearSearch,
-                        visualDensity: VisualDensity.compact,
-                        padding: EdgeInsets.zero,
-                      ),
-                    )
-                        : const SizedBox.shrink();
-                  },
-                ),
-                prefixIcon: Icon(Icons.search_rounded, size: 18, color: colorScheme.onSurfaceVariant),
-                hintStyle: textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
-                ),
-                prefixIconConstraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-              ),
+              onClear: _clearSearch,
             ),
           ),
           const SizedBox(height: 12),
