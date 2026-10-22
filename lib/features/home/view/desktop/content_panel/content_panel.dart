@@ -34,7 +34,7 @@ class DesktopContentPanel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final viewStack = ref.watch(desktopRightPanelViewProvider);
-    final currentView = viewStack.isEmpty ? RightPanelPageOptions.allNotes : viewStack.last;
+    final currentView = viewStack.isEmpty ? RightPanelPageOptions.noteEditor : viewStack.last;
 
     return CallbackShortcuts(
       bindings: {
@@ -94,7 +94,6 @@ class DesktopContentPanel extends ConsumerWidget {
 
   Widget _buildRightPanelContent(RightPanelPageOptions view) {
     switch (view) {
-      case RightPanelPageOptions.allNotes:
       case RightPanelPageOptions.noteEditor:
         return activeNoteWithFolder != null
             ? _PaddingWrapper(

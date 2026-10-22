@@ -7,7 +7,7 @@ import 'shared_drawer_content.dart';
 class AppDrawer extends ConsumerWidget {
   final RightPanelPageOptions? selectedOption;
 
-  const AppDrawer({super.key, this.selectedOption = RightPanelPageOptions.allNotes});
+  const AppDrawer({super.key, this.selectedOption = RightPanelPageOptions.noteEditor});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

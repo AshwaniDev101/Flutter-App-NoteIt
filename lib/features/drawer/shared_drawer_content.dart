@@ -58,9 +58,9 @@ class SharedDrawerContent extends ConsumerWidget {
               children: [
                 const _SectionHeader(title: 'WORKSPACE'),
                 // _CompactDrawerTile(
-                //   option: RightPanelPageOptions.allNotes,
-                //   isSelected: selectedOption == RightPanelPageOptions.allNotes,
-                //   onTap: () => onOptionSelected(RightPanelPageOptions.allNotes),
+                //   option: RightPanelPageOptions.noteEditor,
+                //   isSelected: selectedOption == RightPanelPageOptions.noteEditor,
+                //   onTap: () => onOptionSelected(RightPanelPageOptions.noteEditor),
                 // ),
                 _CompactDrawerTile(
                   option: RightPanelPageOptions.trash,

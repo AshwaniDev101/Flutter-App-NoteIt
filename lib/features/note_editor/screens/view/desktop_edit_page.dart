@@ -333,11 +333,8 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
 
   void _handleCloseNote() {
     ref.read(activeNoteProvider.notifier).clear();
-    if (ref.read(desktopRightPanelViewProvider.notifier).canPop) {
-      ref.read(desktopRightPanelViewProvider.notifier).popView();
-    } else if (context.canPop()) {
-      context.pop();
-    }
+    ref.read(desktopRightPanelViewProvider.notifier).setView(RightPanelPageOptions.noteEditor);
+    if (context.canPop()) context.pop();
   }
 
   // ===========================================================================

@@ -138,10 +138,10 @@ final desktopRightPanelViewProvider = NotifierProvider<DesktopRightPanelViewNoti
 class DesktopRightPanelViewNotifier extends Notifier<List<RightPanelPageOptions>> {
   @override
   List<RightPanelPageOptions> build() {
-    return [RightPanelPageOptions.allNotes];
+    return [RightPanelPageOptions.noteEditor];
   }
 
-  RightPanelPageOptions get currentView => state.isEmpty ? RightPanelPageOptions.allNotes : state.last;
+  RightPanelPageOptions get currentView => state.isEmpty ? RightPanelPageOptions.noteEditor : state.last;
 
   bool get canPop => state.length > 1;
 
@@ -163,8 +163,8 @@ class DesktopRightPanelViewNotifier extends Notifier<List<RightPanelPageOptions>
     }
   }
 
-  /// Resets the history stack back to a root option (defaults to allNotes)
-  void resetView([RightPanelPageOptions root = RightPanelPageOptions.allNotes]) {
+  /// Resets the history stack back to a root option (defaults to noteEditor)
+  void resetView([RightPanelPageOptions root = RightPanelPageOptions.noteEditor]) {
     state = [root];
   }
 }

@@ -15,7 +15,7 @@ import 'package:noteit/features/lock/password_prompt_helper.dart';
 /// 1. Security verification for locked notes (prompting master password if not yet unlocked in current session).
 /// 2. Adaptive cross-platform navigation:
 ///    - Mobile: Pushes `AppRoutes.edit` route onto navigation stack.
-///    - Desktop: Updates `activeNoteProvider` and switches right panel view to `RightPanelPageOptions.allNotes`.
+///    - Desktop: Updates `activeNoteProvider` and switches right panel view to `RightPanelPageOptions.noteEditor`.
 class NoteTapHandler {
   /// Opens the given [noteWithFolder], verifying master password lock if necessary.
   static Future<void> openNote(BuildContext context, WidgetRef ref, NoteWithFolder noteWithFolder) async {
@@ -36,8 +36,8 @@ class NoteTapHandler {
 
       ref.read(activeNoteProvider.notifier).setNote(noteWithFolder);
 
-      if (currentView == RightPanelPageOptions.allNotes) {
-        rightPanelNotifier.setView(RightPanelPageOptions.allNotes);
+      if (currentView == RightPanelPageOptions.noteEditor) {
+        rightPanelNotifier.setView(RightPanelPageOptions.noteEditor);
       } else {
         rightPanelNotifier.pushView(RightPanelPageOptions.noteEditor);
       }

@@ -26,7 +26,7 @@ class DesktopCloseButton extends ConsumerWidget {
         tooltip: 'Close',
         onPressed: onPressed ??
             () {
-              ref.read(desktopRightPanelViewProvider.notifier).setView(RightPanelPageOptions.allNotes);
+              ref.read(desktopRightPanelViewProvider.notifier).setView(RightPanelPageOptions.noteEditor);
             },
       ),
     );

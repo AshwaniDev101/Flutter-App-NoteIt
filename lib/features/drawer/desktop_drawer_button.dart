@@ -9,7 +9,7 @@ class DrawerMenuButton extends ConsumerStatefulWidget {
 
   const DrawerMenuButton({
     super.key,
-    this.selectedOption = RightPanelPageOptions.allNotes,
+    this.selectedOption = RightPanelPageOptions.noteEditor,
   });
 
   @override

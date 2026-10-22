@@ -7,7 +7,7 @@ import 'package:noteit/core/util/platform_helper.dart';
 import 'package:noteit/features/home/core/providers.dart';
 
 // To Navigate to Any page use
-// ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.allNotes);
+// ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.noteEditor);
 
 final drawerNavigationProvider = Provider((ref) {
   return DrawerNavigationController(ref);
@@ -24,7 +24,7 @@ class DrawerNavigationController {
 
     // The compiler will force you to update this switch if you ever add new enums!
     switch (option) {
-      case RightPanelPageOptions.allNotes:
+      case RightPanelPageOptions.noteEditor:
         if (PlatformHelper.isDesktopScreen) {
           ref.read(desktopRightPanelViewProvider.notifier).pushView(option);
         }
@@ -93,10 +93,6 @@ class DrawerNavigationController {
       case RightPanelPageOptions.defaultSettings:
         _handlePlatformRouting(context, option, AppRoutes.defaultSettings);
         break;
-
-      case RightPanelPageOptions.noteEditor:
-        _handlePlatformRouting(context, option, AppRoutes.edit);
-        break;
     }
   }
 
@@ -125,7 +121,7 @@ class DrawerNavigationController {
 }
 
 enum RightPanelPageOptions {
-  allNotes('All Notes', 'View, search, and manage all your saved notes', Icons.grid_view_rounded),
+  noteEditor('All Notes', 'View, search, and manage all your saved notes', Icons.grid_view_rounded),
   trash('Trash', 'Recover deleted items or empty the recycle bin', Icons.delete_outline_rounded),
   themes('Themes', 'Personalize your colors, background, and appearance', Icons.palette_outlined),
   localSync('Local Sync', 'Connect and synchronize across your local network', Icons.phonelink_outlined),
@@ -141,8 +137,7 @@ enum RightPanelPageOptions {
   scan('Scan QR Code', 'Scan a host QR code to join', Icons.qr_code_scanner_outlined),
   pin('Pairing PIN', 'Enter PIN to pair with device', Icons.pin_outlined),
   archivePage('Archive', 'Archive Notes to reduce clutter', Icons.archive_outlined),
-  defaultSettings('Default Layout', 'Configure default views, sort options, and window layout', Icons.tune_outlined),
-  noteEditor('Note Editor', 'Edit and view note content', Icons.edit_note_rounded);
+  defaultSettings('Default Layout', 'Configure default views, sort options, and window layout', Icons.tune_outlined);
 
   final String label;
   final String description;

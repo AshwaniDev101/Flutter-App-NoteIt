@@ -132,7 +132,7 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePanel> {
       folder: activeFolder,
     );
 
-    ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.allNotes);
+    ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.noteEditor);
 
     // Pass the wrapper to the provider
     ref.read(activeNoteProvider.notifier).setNote(emptyNoteWithFolder);
