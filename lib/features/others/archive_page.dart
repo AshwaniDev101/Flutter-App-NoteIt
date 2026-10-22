@@ -6,6 +6,7 @@ import '../../core/util/device_info.dart';
 import '../../core/util/platform_helper.dart';
 import '../../database/drift/local_database.dart';
 import '../../database/drift/notes/notes_dao.dart';
+import '../../database/shared_preference/shared_preference_manager.dart';
 import '../../database/sync/sync_orchestrator.dart';
 import '../../shared/app_scaffold.dart';
 import '../../shared/app_search_bar.dart';
@@ -14,12 +15,14 @@ import '../../shared/note_card/note_card.dart';
 import '../../shared/snack_bar_manager.dart';
 import '../../shared/sort_menu_button.dart';
 import '../../shared/view_menu_button.dart';
-import '../note_editor/widgets/folder_option_menu.dart';
 import '../home/core/note_tap_handler.dart';
-import 'package:noteit/features/home/core/providers.dart';
+import '../home/core/providers.dart';
 import '../home/view/shared/desktop_close_button.dart';
+import '../note_editor/widgets/folder_option_menu.dart';
 
-import '../../database/shared_preference/shared_preference_manager.dart';
+// ==========================================
+// PROVIDERS & NOTIFIERS
+// ==========================================
 
 final archivedNotesStreamProvider = StreamProvider.autoDispose<List<NoteWithFolder>>((ref) {
   return ref.watch(notesDaoProvider).watchArchivedNotes();
@@ -43,7 +46,9 @@ class ArchiveNoteSortPreferenceNotifier extends Notifier<NoteSortPreference> {
 }
 
 /// Dedicated View Type Provider for Archive Page
-final archiveNoteViewTypeProvider = NotifierProvider<ArchiveNoteViewTypeNotifier, NoteViewType>(ArchiveNoteViewTypeNotifier.new);
+final archiveNoteViewTypeProvider = NotifierProvider<ArchiveNoteViewTypeNotifier, NoteViewType>(
+  ArchiveNoteViewTypeNotifier.new,
+);
 
 class ArchiveNoteViewTypeNotifier extends Notifier<NoteViewType> {
   @override
@@ -62,6 +67,10 @@ final archivePlatformFilterProvider = NotifierProvider<PlatformFilterNotifier, F
   PlatformFilterNotifier.new,
 );
 
+// ==========================================
+// ARCHIVE PAGE WIDGET
+// ==========================================
+
 class ArchivePage extends ConsumerStatefulWidget {
   const ArchivePage({super.key});
 
@@ -69,9 +78,10 @@ class ArchivePage extends ConsumerStatefulWidget {
   ConsumerState<ArchivePage> createState() => _ArchivePageState();
 }
 
-class _ArchivePageState extends ConsumerState<ArchivePage> {
+class _ArchivePageState extends ConsumerState<ArchivePage> with WidgetsBindingObserver {
   bool isSelectMode = false;
   bool _isSearching = false;
+  bool _wasKeyboardOpen = false;
   Folder? _selectedFolder;
 
   late final TextEditingController _searchController;
@@ -82,15 +92,45 @@ class _ArchivePageState extends ConsumerState<ArchivePage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _searchController = TextEditingController();
     _searchFocusNode = FocusNode();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeMetrics() {
+    super.didChangeMetrics();
+    final bottomInset = WidgetsBinding.instance.platformDispatcher.views.first.viewInsets.bottom;
+    final isKeyboardOpen = bottomInset > 0;
+
+    if (_wasKeyboardOpen && !isKeyboardOpen) {
+      if (_isSearching && PlatformHelper.isMobileScreen && mounted) {
+        setState(() {
+          _isSearching = false;
+          _searchController.clear();
+        });
+      }
+    }
+    _wasKeyboardOpen = isKeyboardOpen;
+  }
+
+  // ------------------------------------------
+  // SELECTION & ACTIONS HELPERS
+  // ------------------------------------------
+
+  void _clearSelection() {
+    setState(() {
+      isSelectMode = false;
+      noteIds.clear();
+    });
   }
 
   void _toggleSelection(String uuid) {
@@ -215,265 +255,239 @@ class _ArchivePageState extends ConsumerState<ArchivePage> {
     }
   }
 
-  PreferredSizeWidget _buildAppBar(List<NoteWithFolder> currentNotesWithFolder) {
-    final colorScheme = Theme.of(context).colorScheme;
+  // ------------------------------------------
+  // FILTERING & SORTING PROCESSORS
+  // ------------------------------------------
 
-    if (isSelectMode) {
-      final isAllSelected =
-          currentNotesWithFolder.isNotEmpty && noteIds.length == currentNotesWithFolder.length;
+  List<NoteWithFolder> _getFilteredNotes({
+    required List<NoteWithFolder> notes,
+    required FilterPlatformOptions platformFilter,
+    required String searchQueryLower,
+    required NoteSortPreference currentSort,
+  }) {
+    var filtered = _selectedFolder == null
+        ? notes
+        : notes.where((nwf) => nwf.note.folderId == _selectedFolder!.uuid).toList();
 
-      return AppBar(
-        foregroundColor: Colors.white,
-        leading: IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: () => setState(() {
-            isSelectMode = false;
-            noteIds.clear();
-          }),
-        ),
-        title: Text(
-          '${noteIds.length} Selected',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white),
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 8.0,
-              vertical: 10.0,
-            ),
-            child: OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.white,
-                side: const BorderSide(color: Colors.white, width: 1.5),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-              ),
-              onPressed: () {
-                setState(() {
-                  if (isAllSelected) {
-                    noteIds.clear();
-                    isSelectMode = false;
-                  } else {
-                    noteIds.addAll(currentNotesWithFolder.map((noteWithFolder) => noteWithFolder.note.uuid));
-                  }
-                });
-              },
-              child: Text(isAllSelected ? 'Deselect All' : 'Select All'),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.unarchive),
-            tooltip: 'Unarchive Selected',
-            onPressed: () => _unarchiveNotes(noteIds.toList()),
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete_outline),
-            tooltip: 'Delete Selected',
-            onPressed: () => _deleteNotes(noteIds.toList()),
-          ),
-        ],
-      );
+    if (platformFilter != FilterPlatformOptions.all) {
+      final targetPlatform = platformFilter == FilterPlatformOptions.android ? 'android' : 'windows';
+      filtered = filtered.where((nwf) {
+        return nwf.note.creationPlatform?.toLowerCase() == targetPlatform;
+      }).toList();
     }
 
-    // Render the Search Bar directly inside the AppBar
-    if (_isSearching) {
-      final isMobile = PlatformHelper.isMobileScreen;
+    if (searchQueryLower.isNotEmpty) {
+      filtered = filtered.where((nwf) {
+        return nwf.note.title.toLowerCase().contains(searchQueryLower) ||
+            nwf.note.content.toLowerCase().contains(searchQueryLower);
+      }).toList();
+    }
 
-      return AppBar(
-        backgroundColor: colorScheme.surfaceContainerLowest,
-        title: Align(
-          alignment: Alignment.centerRight,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: isMobile ? double.infinity : 360),
-            child: AppSearchBar(
-              controller: _searchController,
-              focusNode: _searchFocusNode,
-              hintText: 'Search archived notes...',
-              fillColor: colorScheme.surfaceContainerLow,
-              onChanged: (_) => setState(() {}),
-              onClear: () => setState(() {}),
+    filtered.sort((a, b) {
+      switch (currentSort) {
+        case NoteSortPreference.name:
+          return a.note.title.toLowerCase().compareTo(b.note.title.toLowerCase());
+        case NoteSortPreference.createdAt:
+          return b.note.createdAt.compareTo(a.note.createdAt);
+        case NoteSortPreference.updatedAt:
+          return b.note.updatedAt.compareTo(a.note.updatedAt);
+      }
+    });
+
+    return filtered;
+  }
+
+  // ------------------------------------------
+  // APP BAR BUILDERS WITH ANIMATION
+  // ------------------------------------------
+
+  PreferredSizeWidget _buildAppBar(List<NoteWithFolder> currentNotesWithFolder) {
+    return PreferredSize(
+      preferredSize: const Size.fromHeight(kToolbarHeight),
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 250),
+        switchInCurve: Curves.easeOutCubic,
+        switchOutCurve: Curves.easeInCubic,
+        transitionBuilder: (child, animation) {
+          return FadeTransition(
+            opacity: animation,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0, -0.2),
+                end: Offset.zero,
+              ).animate(animation),
+              child: child,
             ),
-          ),
+          );
+        },
+        child: KeyedSubtree(
+          key: ValueKey<bool>(isSelectMode),
+          child: isSelectMode
+              ? _buildSelectionAppBar(currentNotesWithFolder)
+              : _buildStandardAppBar(),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search_off),
-            tooltip: 'Close search',
+      ),
+    );
+  }
+
+  PreferredSizeWidget _buildSelectionAppBar(List<NoteWithFolder> currentNotesWithFolder) {
+    final isAllSelected =
+        currentNotesWithFolder.isNotEmpty && noteIds.length == currentNotesWithFolder.length;
+
+    return AppBar(
+      foregroundColor: Colors.white,
+      leading: IconButton(
+        icon: const Icon(Icons.close),
+        onPressed: _clearSelection,
+      ),
+      title: Text(
+        '${noteIds.length} Selected',
+        style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white),
+      ),
+      actions: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 10.0),
+          child: OutlinedButton(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.white,
+              side: const BorderSide(color: Colors.white, width: 1.5),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+            ),
             onPressed: () {
               setState(() {
-                _isSearching = false;
-                _searchController.clear();
+                if (isAllSelected) {
+                  _clearSelection();
+                } else {
+                  noteIds.addAll(currentNotesWithFolder.map((noteWithFolder) => noteWithFolder.note.uuid));
+                }
               });
             },
+            child: Text(isAllSelected ? 'Deselect All' : 'Select All'),
           ),
-          const DesktopCloseButton(),
-        ],
-      );
-    }
+        ),
+        IconButton(
+          icon: const Icon(Icons.unarchive),
+          tooltip: 'Unarchive Selected',
+          onPressed: () => _unarchiveNotes(noteIds.toList()),
+        ),
+        IconButton(
+          icon: const Icon(Icons.delete_outline),
+          tooltip: 'Delete Selected',
+          onPressed: () => _deleteNotes(noteIds.toList()),
+        ),
+      ],
+    );
+  }
+
+  PreferredSizeWidget _buildStandardAppBar() {
+    final colorScheme = Theme.of(context).colorScheme;
 
     return AppBar(
       title: const Text('Archive'),
       backgroundColor: colorScheme.surfaceContainerLowest,
       centerTitle: true,
-      actions: [
-        if (!_isSearching)
-          IconButton(
-            icon: const Icon(Icons.search),
-            tooltip: 'Search Archive',
-            onPressed: () {
-              setState(() {
-                _isSearching = true;
-              });
-              Future.delayed(const Duration(milliseconds: 50), () {
-                _searchFocusNode.requestFocus();
-              });
-            },
-          ),
-        const SizedBox(width: 8),
+      actions: const [
         DesktopCloseButton(),
       ],
     );
   }
 
+  // ------------------------------------------
+  // MAIN BUILD METHOD
+  // ------------------------------------------
+
   @override
   Widget build(BuildContext context) {
     final archivedNotesState = ref.watch(archivedNotesStreamProvider);
     final searchQuery = _searchController.text.trim();
+    final searchQueryLower = searchQuery.toLowerCase();
+
+    final currentNotes = archivedNotesState.value ?? [];
 
     final currentSort = ref.watch(archiveNoteSortPreferenceProvider);
     final currentView = ref.watch(archiveNoteViewTypeProvider);
     final platformFilter = ref.watch(archivePlatformFilterProvider);
 
     return AppScaffold(
-      appBar: _buildAppBar(archivedNotesState.value ?? []),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
-            child: Row(
-              children: [
-                FolderOptionMenu(
-                  selectedFolder: _selectedFolder,
-                  emptyLabel: 'All Folders',
-                  onFolderSelected: (folder) {
-                    setState(() {
-                      _selectedFolder = folder;
-                    });
-                  },
-                ),
-                const Spacer(),
-                SortMenuButton(
-                  icon: Icon(CupertinoIcons.sort_down, color: Theme.of(context).colorScheme.primary),
-                  currentSortSelection: _getCurrentSortAction(currentSort),
-                  currentPlatformSelection: _getCurrentPlatformAction(platformFilter),
-                  onSelected: (HomeMenuAction action) {
-                    switch (action) {
-                      case HomeMenuAction.sortCreated:
-                        ref.read(archiveNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.createdAt);
-                        break;
-                      case HomeMenuAction.sortName:
-                        ref.read(archiveNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.name);
-                        break;
-                      case HomeMenuAction.sortUpdated:
-                        ref.read(archiveNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.updatedAt);
-                        break;
-                      case HomeMenuAction.filterAll:
-                        ref.read(archivePlatformFilterProvider.notifier).setFilter(FilterPlatformOptions.all);
-                        break;
-                      case HomeMenuAction.filterPhone:
-                        ref.read(archivePlatformFilterProvider.notifier).toggleFilter(FilterPlatformOptions.android);
-                        break;
-                      case HomeMenuAction.filterWindows:
-                        ref.read(archivePlatformFilterProvider.notifier).toggleFilter(FilterPlatformOptions.windows);
-                        break;
-                    }
-                  },
-                ),
-                ViewMenuButton(
-                  icon: Icon(Icons.grid_view, color: Theme.of(context).colorScheme.primary),
-                  currentView: currentView,
-                  onViewSelected: (NoteViewType selectedView) {
-                    ref.read(archiveNoteViewTypeProvider.notifier).updateView(selectedView);
-                  },
-                ),
-              ],
-            ),
-          ),
+      appBar: _buildAppBar(currentNotes),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 3.0),
+        child: Column(
+          children: [
+            // Top control bar for Desktop
+            if (PlatformHelper.isDesktopScreen) _buildControlBarContent(),
 
-          Expanded(
-            child: archivedNotesState.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, stack) => Center(child: Text('Error: $error')),
-              data: (notes) {
-                // Apply Folder Filter
-                var filteredNotes = _selectedFolder == null
-                    ? notes
-                    : notes.where((nwf) => nwf.note.folderId == _selectedFolder!.uuid).toList();
-
-                // Apply Platform Filter
-                if (platformFilter != FilterPlatformOptions.all) {
-                  final targetPlatform = platformFilter == FilterPlatformOptions.android ? 'android' : 'windows';
-                  filteredNotes = filteredNotes.where((nwf) {
-                    return nwf.note.creationPlatform?.toLowerCase() == targetPlatform;
-                  }).toList();
-                }
-
-                // Apply Text Search
-                if (searchQuery.isNotEmpty) {
-                  final queryLower = searchQuery.toLowerCase();
-                  filteredNotes = filteredNotes.where((noteWithFolder) {
-                    return noteWithFolder.note.title.toLowerCase().contains(queryLower) ||
-                        noteWithFolder.note.content.toLowerCase().contains(queryLower);
-                  }).toList();
-                }
-
-                // Apply Sorting
-                filteredNotes.sort((a, b) {
-                  switch (currentSort) {
-                    case NoteSortPreference.name:
-                      return a.note.title.toLowerCase().compareTo(b.note.title.toLowerCase());
-                    case NoteSortPreference.createdAt:
-                      return b.note.createdAt.compareTo(a.note.createdAt);
-                    case NoteSortPreference.updatedAt:
-                      return b.note.updatedAt.compareTo(a.note.updatedAt);
-                  }
-                });
-
-                if (filteredNotes.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.archive_outlined,
-                          size: 64,
-                          color: Theme.of(context).colorScheme.outlineVariant,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          notes.isEmpty
-                              ? 'Your archive is empty.'
-                              : 'No matching archived notes found.',
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              ),
-                        ),
-                      ],
-                    ),
+            // Content Area
+            Expanded(
+              child: archivedNotesState.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (error, _) => Center(child: Text('Error: $error')),
+                data: (notes) {
+                  final filteredNotes = _getFilteredNotes(
+                    notes: notes,
+                    platformFilter: platformFilter,
+                    searchQueryLower: searchQueryLower,
+                    currentSort: currentSort,
                   );
-                }
 
-                return GridView.builder(
-                  padding: const EdgeInsets.all(8.0),
-                  gridDelegate: _getGridDelegate(currentView),
-                  itemCount: filteredNotes.length,
-                  itemBuilder: (context, index) {
-                    final NoteWithFolder noteWithFolder = filteredNotes[index];
-                    final isSelected = noteIds.contains(noteWithFolder.note.uuid);
+                  return _buildContentArea(
+                    filteredNotes: filteredNotes,
+                    isArchiveEmpty: notes.isEmpty,
+                    currentView: currentView,
+                    searchQuery: searchQuery,
+                  );
+                },
+              ),
+            ),
 
-                    return NoteCard(
+            // Bottom control bar for Mobile
+            if (PlatformHelper.isMobileScreen)
+              BottomAppBar(
+                elevation: 8.0,
+                child: _buildControlBarContent(),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ------------------------------------------
+  // SUB-VIEW BUILDERS
+  // ------------------------------------------
+
+  Widget _buildContentArea({
+    required List<NoteWithFolder> filteredNotes,
+    required bool isArchiveEmpty,
+    required NoteViewType currentView,
+    required String searchQuery,
+  }) {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 280),
+      switchInCurve: Curves.easeOut,
+      switchOutCurve: Curves.easeIn,
+      child: filteredNotes.isEmpty
+          ? KeyedSubtree(
+              key: const ValueKey('empty_archive_view'),
+              child: _buildEmptyState(isArchiveEmpty: isArchiveEmpty),
+            )
+          : KeyedSubtree(
+              key: const ValueKey('archive_grid_view'),
+              child: GridView.builder(
+                padding: const EdgeInsets.all(8.0),
+                physics: const BouncingScrollPhysics(),
+                gridDelegate: _getGridDelegate(currentView),
+                itemCount: filteredNotes.length,
+                itemBuilder: (context, index) {
+                  final noteWithFolder = filteredNotes[index];
+                  final isSelected = noteIds.contains(noteWithFolder.note.uuid);
+
+                  return AnimatedScale(
+                    scale: isSelected ? 0.97 : 1.0,
+                    duration: const Duration(milliseconds: 150),
+                    curve: Curves.easeInOut,
+                    child: NoteCard(
                       key: ValueKey(noteWithFolder.note.uuid),
                       noteWithFolder: noteWithFolder,
                       viewType: currentView,
@@ -494,40 +508,190 @@ class _ArchivePageState extends ConsumerState<ArchivePage> {
                       onLongPress: () {
                         if (!isSelectMode) {
                           setState(() => isSelectMode = true);
-                          _toggleSelection(noteWithFolder.note.uuid);
                         }
+                        _toggleSelection(noteWithFolder.note.uuid);
                       },
                       onContextMenuAction: (option) {
-                        if (option == NoteContextMenuOption.select) {
-                          if (!isSelectMode) {
-                            setState(() => isSelectMode = true);
-                          }
-                          if (!isSelected) {
-                            _toggleSelection(noteWithFolder.note.uuid);
-                          }
-                          return;
-                        }
+                        switch (option) {
+                          case NoteContextMenuOption.select:
+                            if (!isSelectMode) setState(() => isSelectMode = true);
+                            if (!isSelected) _toggleSelection(noteWithFolder.note.uuid);
+                            break;
 
-                        if (option == NoteContextMenuOption.unarchive) {
-                          final targetUuids = isSelected ? noteIds.toList() : [noteWithFolder.note.uuid];
-                          _unarchiveNotes(targetUuids);
-                          return;
-                        }
+                          case NoteContextMenuOption.unarchive:
+                            final targetUuids = isSelected ? noteIds.toList() : [noteWithFolder.note.uuid];
+                            _unarchiveNotes(targetUuids);
+                            break;
 
-                        if (option == NoteContextMenuOption.delete) {
-                          final targetUuids = isSelected ? noteIds.toList() : [noteWithFolder.note.uuid];
-                          _deleteNotes(targetUuids);
-                          return;
+                          case NoteContextMenuOption.delete:
+                            final targetUuids = isSelected ? noteIds.toList() : [noteWithFolder.note.uuid];
+                            _deleteNotes(targetUuids);
+                            break;
+
+                          default:
+                            break;
                         }
                       },
-                    );
-                  },
-                );
-              },
+                    ),
+                  );
+                },
+              ),
+            ),
+    );
+  }
+
+  Widget _buildEmptyState({required bool isArchiveEmpty}) {
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.archive_outlined,
+            size: 64,
+            color: colorScheme.outlineVariant,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            isArchiveEmpty ? 'Your archive is empty.' : 'No matching archived notes found.',
+            style: textTheme.bodyLarge?.copyWith(
+              color: colorScheme.onSurfaceVariant,
             ),
           ),
         ],
       ),
+    );
+  }
+
+  // ------------------------------------------
+  // CONTROL BAR & MENU CONTROLS
+  // ------------------------------------------
+
+  Widget _buildControlBarContent() {
+    final currentSort = ref.watch(archiveNoteSortPreferenceProvider);
+    final currentView = ref.watch(archiveNoteViewTypeProvider);
+    final platformFilter = ref.watch(archivePlatformFilterProvider);
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return AnimatedCrossFade(
+      duration: const Duration(milliseconds: 220),
+      firstCurve: Curves.easeOutCubic,
+      secondCurve: Curves.easeOutCubic,
+      sizeCurve: Curves.easeOutCubic,
+      crossFadeState: _isSearching ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+      firstChild: Row(
+        key: const ValueKey('standard_control_bar'),
+        children: [
+          _folderOptionMenu(),
+          const Spacer(),
+          _sortMenuButton(currentSort, platformFilter),
+          _viewMenuButton(currentView),
+          IconButton(
+            icon: const Icon(Icons.search),
+            tooltip: 'Search Archive',
+            onPressed: () {
+              setState(() {
+                _isSearching = true;
+              });
+              Future.delayed(const Duration(milliseconds: 50), () {
+                _searchFocusNode.requestFocus();
+              });
+            },
+          ),
+        ],
+      ),
+      secondChild: Row(
+        key: const ValueKey('searching_control_bar'),
+        children: [
+          if (PlatformHelper.isDesktopScreen) ...[
+            _folderOptionMenu(),
+            const Spacer(),
+            _sortMenuButton(currentSort, platformFilter),
+            _viewMenuButton(currentView),
+            const SizedBox(width: 8),
+          ],
+          Expanded(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: PlatformHelper.isMobileScreen ? double.infinity : 320,
+              ),
+              child: AppSearchBar(
+                controller: _searchController,
+                focusNode: _searchFocusNode,
+                hintText: 'Search archive...',
+                fillColor: colorScheme.surfaceContainerLow,
+                onChanged: (_) => setState(() {}),
+                onClear: () => setState(() {}),
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
+          IconButton(
+            icon: const Icon(Icons.search_off),
+            tooltip: 'Close search',
+            onPressed: () {
+              setState(() {
+                _isSearching = false;
+                _searchController.clear();
+              });
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _folderOptionMenu() {
+    return FolderOptionMenu(
+      selectedFolder: _selectedFolder,
+      emptyLabel: 'All Folders',
+      onFolderSelected: (folder) {
+        setState(() {
+          _selectedFolder = folder;
+        });
+      },
+    );
+  }
+
+  Widget _sortMenuButton(NoteSortPreference currentSort, FilterPlatformOptions platformFilter) {
+    return SortMenuButton(
+      icon: Icon(CupertinoIcons.sort_down, color: Theme.of(context).colorScheme.primary),
+      currentSortSelection: _getCurrentSortAction(currentSort),
+      currentPlatformSelection: _getCurrentPlatformAction(platformFilter),
+      onSelected: (HomeMenuAction action) {
+        switch (action) {
+          case HomeMenuAction.sortCreated:
+            ref.read(archiveNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.createdAt);
+            break;
+          case HomeMenuAction.sortName:
+            ref.read(archiveNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.name);
+            break;
+          case HomeMenuAction.sortUpdated:
+            ref.read(archiveNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.updatedAt);
+            break;
+          case HomeMenuAction.filterAll:
+            ref.read(archivePlatformFilterProvider.notifier).setFilter(FilterPlatformOptions.all);
+            break;
+          case HomeMenuAction.filterPhone:
+            ref.read(archivePlatformFilterProvider.notifier).toggleFilter(FilterPlatformOptions.android);
+            break;
+          case HomeMenuAction.filterWindows:
+            ref.read(archivePlatformFilterProvider.notifier).toggleFilter(FilterPlatformOptions.windows);
+            break;
+        }
+      },
+    );
+  }
+
+  Widget _viewMenuButton(NoteViewType currentView) {
+    return ViewMenuButton(
+      icon: Icon(Icons.grid_view, color: Theme.of(context).colorScheme.primary),
+      currentView: currentView,
+      onViewSelected: (NoteViewType selectedView) {
+        ref.read(archiveNoteViewTypeProvider.notifier).updateView(selectedView);
+      },
     );
   }
 }
