@@ -31,9 +31,16 @@ class NoteTapHandler {
     if (!context.mounted) return;
 
     if (isDesktop) {
-      // Desktop: Switch right panel to editor and select the note
-      ref.read(desktopRightPanelViewProvider.notifier).setView(RightPanelPageOptions.allNotes);
+      final rightPanelNotifier = ref.read(desktopRightPanelViewProvider.notifier);
+      final currentView = rightPanelNotifier.currentView;
+
       ref.read(activeNoteProvider.notifier).setNote(noteWithFolder);
+
+      if (currentView == RightPanelPageOptions.allNotes) {
+        rightPanelNotifier.setView(RightPanelPageOptions.allNotes);
+      } else {
+        rightPanelNotifier.pushView(RightPanelPageOptions.noteEditor);
+      }
     } else {
       // Mobile: Push edit page route with note parameter
       context.push(AppRoutes.edit, extra: noteWithFolder);

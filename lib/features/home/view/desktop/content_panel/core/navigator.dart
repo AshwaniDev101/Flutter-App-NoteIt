@@ -93,6 +93,10 @@ class DrawerNavigationController {
       case RightPanelPageOptions.defaultSettings:
         _handlePlatformRouting(context, option, AppRoutes.defaultSettings);
         break;
+
+      case RightPanelPageOptions.noteEditor:
+        _handlePlatformRouting(context, option, AppRoutes.edit);
+        break;
     }
   }
 
@@ -137,7 +141,8 @@ enum RightPanelPageOptions {
   scan('Scan QR Code', 'Scan a host QR code to join', Icons.qr_code_scanner_outlined),
   pin('Pairing PIN', 'Enter PIN to pair with device', Icons.pin_outlined),
   archivePage('Archive', 'Archive Notes to reduce clutter', Icons.archive_outlined),
-  defaultSettings('Default Layout', 'Configure default views, sort options, and window layout', Icons.tune_outlined);
+  defaultSettings('Default Layout', 'Configure default views, sort options, and window layout', Icons.tune_outlined),
+  noteEditor('Note Editor', 'Edit and view note content', Icons.edit_note_rounded);
 
   final String label;
   final String description;

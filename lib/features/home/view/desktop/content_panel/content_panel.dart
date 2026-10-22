@@ -95,6 +95,7 @@ class DesktopContentPanel extends ConsumerWidget {
   Widget _buildRightPanelContent(RightPanelPageOptions view) {
     switch (view) {
       case RightPanelPageOptions.allNotes:
+      case RightPanelPageOptions.noteEditor:
         return activeNoteWithFolder != null
             ? _PaddingWrapper(
                 key: ValueKey('editor_view_${activeNoteWithFolder!.note.uuid}'),
