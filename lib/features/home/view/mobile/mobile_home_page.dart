@@ -1,15 +1,15 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:noteit/core/routing/routing.dart';
-import 'package:noteit/database/drift/notes/notes_dao.dart';
 import 'package:noteit/features/home/view/shared/icon_tray/icon_tray.dart';
 import 'package:noteit/features/home/view/shared/select_mode_app_bars.dart';
-import 'package:noteit/features/home/viewmodel/viewmodel.dart';
-import 'package:noteit/shared/note_card/dynamic_notes_layout.dart';
 
+import '../../../../core/routing/routing.dart';
+import '../../../../database/drift/notes/notes_dao.dart';
 import '../../../../database/sync/sync_orchestrator.dart';
+import '../../../../shared/app_search_bar.dart';
+import '../../../../shared/note_card/dynamic_notes_layout.dart';
 import '../../../../shared/sort_menu_button.dart';
 import '../../../../shared/view_menu_button.dart';
 import '../../../drawer/mobile_app_drawer.dart';
@@ -18,7 +18,11 @@ import '../../../folders/view/folder_selector.dart';
 import '../../core/db_sorting_filtering.dart';
 import '../../core/note_tap_handler.dart';
 import '../../core/providers.dart';
-import '../../../../shared/app_search_bar.dart';
+import '../../viewmodel/viewmodel.dart';
+
+// ==========================================
+// MOBILE HOME PAGE
+// ==========================================
 
 class MobileHomePage extends ConsumerStatefulWidget {
   const MobileHomePage({super.key});
@@ -27,28 +31,75 @@ class MobileHomePage extends ConsumerStatefulWidget {
   ConsumerState<MobileHomePage> createState() => _MobileHomePageState();
 }
 
-class _MobileHomePageState extends ConsumerState<MobileHomePage> {
-  final TextEditingController _searchController = TextEditingController();
+class _MobileHomePageState extends ConsumerState<MobileHomePage> with WidgetsBindingObserver {
+  late final TextEditingController _searchController;
+  late final FocusNode _searchFocusNode;
+  bool _wasKeyboardOpen = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _searchController = TextEditingController();
+    _searchFocusNode = FocusNode();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(syncOrchestratorProvider).triggerSync();
     });
-
-    // _searchController.addListener(() => setState(() {}));
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeMetrics() {
+    super.didChangeMetrics();
+    final bottomInset = WidgetsBinding.instance.platformDispatcher.views.first.viewInsets.bottom;
+    final isKeyboardOpen = bottomInset > 0;
+
+    if (_wasKeyboardOpen && !isKeyboardOpen) {
+      final homeState = ref.read(homeViewModelProvider);
+      if (homeState.isSearchMode && mounted) {
+        _searchController.clear();
+        ref.read(searchQueryProvider.notifier).clear();
+        ref.read(homeViewModelProvider.notifier).exitSearchMode();
+      }
+    }
+    _wasKeyboardOpen = isKeyboardOpen;
   }
 
   void _handleNoteTap(NoteWithFolder noteWithFolder) {
     NoteTapHandler.openNote(context, ref, noteWithFolder);
   }
+
+  // ------------------------------------------
+  // APP BAR BUILDERS
+  // ------------------------------------------
+
+  PreferredSizeWidget _buildAppBar(HomePageState state) {
+    if (state.isSelectMode) {
+      return SelectModeAppBar(
+        noteIds: state.selectedNoteIds,
+      );
+    }
+
+    return AppBar(
+      elevation: 0,
+      actions: const [
+        IconTray(),
+        SizedBox(width: 8),
+      ],
+    );
+  }
+
+  // ------------------------------------------
+  // MAIN BUILD METHOD
+  // ------------------------------------------
 
   @override
   Widget build(BuildContext context) {
@@ -58,10 +109,6 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
     // Watched solely to keep the sync manager alive in the widget tree.
     ref.watch(syncOrchestratorProvider);
 
-    final currentSort = ref.watch(homeNoteSortPreferenceProvider);
-    final currentView = ref.watch(homeNoteViewTypeProvider);
-    final platformFilter = ref.watch(homePlatformFilterProvider);
-
     return PopScope(
       canPop: !homeState.isSelectMode,
       onPopInvokedWithResult: (bool didPop, Object? result) {
@@ -70,63 +117,138 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
       child: Scaffold(
         drawer: const AppDrawer(),
         appBar: _buildAppBar(homeState),
-        floatingActionButton: FloatingActionButton(
+        floatingActionButton: _MobileFAB(
           onPressed: () => context.push(AppRoutes.edit),
-          elevation: 3,
-          child: const Icon(Icons.edit),
         ),
-        body: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
-              child: Row(
+        bottomNavigationBar: _MobileBottomControlBar(
+          homeState: homeState,
+          viewModel: viewModel,
+          searchController: _searchController,
+          searchFocusNode: _searchFocusNode,
+        ),
+        body: DynamicNotesLayout(
+          isSelectMode: homeState.isSelectMode,
+          noteIds: homeState.selectedNoteIds,
+          activeNoteId: null,
+          onToggleSelection: viewModel.toggleSelection,
+          onEnableSelectMode: viewModel.enableSelectMode,
+          onNoteTap: _handleNoteTap,
+        ),
+      ),
+    );
+  }
+}
+
+// ==========================================
+// ISOLATED SUB-WIDGETS (HIGH PERFORMANCE)
+// ==========================================
+
+class _MobileFAB extends StatelessWidget {
+  final VoidCallback onPressed;
+
+  const _MobileFAB({required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    final isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
+
+    if (isKeyboardVisible) return const SizedBox.shrink();
+
+    return FloatingActionButton(
+      onPressed: onPressed,
+      elevation: 3,
+      child: const Icon(Icons.edit),
+    );
+  }
+}
+
+class _MobileBottomControlBar extends ConsumerWidget {
+  final HomePageState homeState;
+  final HomeViewModel viewModel;
+  final TextEditingController searchController;
+  final FocusNode searchFocusNode;
+
+  const _MobileBottomControlBar({
+    required this.homeState,
+    required this.viewModel,
+    required this.searchController,
+    required this.searchFocusNode,
+  });
+
+  HomeMenuAction _getCurrentSortAction(NoteSortPreference currentSort) {
+    switch (currentSort) {
+      case NoteSortPreference.createdAt:
+        return HomeMenuAction.sortCreated;
+      case NoteSortPreference.name:
+        return HomeMenuAction.sortName;
+      case NoteSortPreference.updatedAt:
+        return HomeMenuAction.sortUpdated;
+    }
+  }
+
+  HomeMenuAction _getCurrentPlatformAction(FilterPlatformOptions platformFilter) {
+    switch (platformFilter) {
+      case FilterPlatformOptions.all:
+        return HomeMenuAction.filterAll;
+      case FilterPlatformOptions.android:
+        return HomeMenuAction.filterPhone;
+      case FilterPlatformOptions.windows:
+        return HomeMenuAction.filterWindows;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottomInset),
+      child: BottomAppBar(
+        elevation: 8.0,
+        child: homeState.isSearchMode
+            ? Row(
+                key: const ValueKey('searching_control_bar'),
                 children: [
                   Expanded(
                     child: AppSearchBar(
-                      controller: _searchController,
+                      controller: searchController,
+                      focusNode: searchFocusNode,
                       hintText: 'Search notes...',
-                      borderRadius: BorderRadius.circular(30),
-                      onTap: () {
-                        if (!homeState.isSearchMode) viewModel.enterSearchMode();
-                      },
-                      onClear: () {
-                        _searchController.clear();
-                        ref.read(searchQueryProvider.notifier).clear();
-                        viewModel.exitSearchMode();
-                      },
+                      fillColor: colorScheme.surfaceContainerLow,
                       onChanged: (value) {
-                        if (value.isNotEmpty && !homeState.isSearchMode) viewModel.enterSearchMode();
                         if (value.isEmpty) {
                           ref.read(searchQueryProvider.notifier).clear();
-                          viewModel.exitSearchMode();
                         } else {
                           ref.read(searchQueryProvider.notifier).updateQuery(value);
                         }
                       },
+                      onClear: () {
+                        searchController.clear();
+                        ref.read(searchQueryProvider.notifier).clear();
+                      },
                     ),
                   ),
-                  const SizedBox(width: 8),
-
-                  // const SortViewButton(),
-
-                  // SortFilterOptionMenu(),
-                  // _buildFilterMenu(
-                  //   currentSortOption,
-                  //   currentPlatformFilter,
-                  //   colorScheme,
-                  // ),
+                  const SizedBox(width: 4),
+                  IconButton(
+                    icon: const Icon(Icons.search_off),
+                    tooltip: 'Close search',
+                    onPressed: () {
+                      searchController.clear();
+                      ref.read(searchQueryProvider.notifier).clear();
+                      viewModel.exitSearchMode();
+                    },
+                  ),
                 ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4), // This is to compensate for the card 4px padding
-              child: Row(
+              )
+            : Row(
+                key: const ValueKey('standard_control_bar'),
                 children: [
                   FolderButton(
                     selectedFolder: ref.watch(activeFolderProvider),
                     emptyLabel: 'All Notes',
                     showContextMenus: true,
+                    isShowTotalNoteCount: true,
                     onFolderSelected: (folder) {
                       if (folder == null) {
                         ref.read(activeFolderProvider.notifier).clear();
@@ -135,16 +257,12 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
                       }
                     },
                   ),
-                  Spacer(),
-
-                  // IconButton(onPressed: (){}, icon: Icon(CupertinoIcons.sort_down)),
-                  // IconButton(onPressed: (){}, icon: Icon(Icons.grid_view)),
+                  const Spacer(),
                   SortMenuButton(
-                    icon: Icon(CupertinoIcons.sort_down,color: Theme.of(context).colorScheme.primary),
-                    currentSortSelection: _getCurrentSortAction(currentSort),
-                    currentPlatformSelection: _getCurrentPlatformAction(platformFilter),
+                    icon: Icon(CupertinoIcons.sort_down, color: colorScheme.primary),
+                    currentSortSelection: _getCurrentSortAction(ref.watch(homeNoteSortPreferenceProvider)),
+                    currentPlatformSelection: _getCurrentPlatformAction(ref.watch(homePlatformFilterProvider)),
                     onSelected: (HomeMenuAction action) {
-                      // Route the UI action to the correct Riverpod provider
                       switch (action) {
                         case HomeMenuAction.sortCreated:
                           ref.read(homeNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.createdAt);
@@ -167,85 +285,24 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> {
                       }
                     },
                   ),
-
                   ViewMenuButton(
-                    icon: Icon(Icons.grid_view,color: Theme.of(context).colorScheme.primary),
-                    currentView: currentView,
+                    icon: Icon(Icons.grid_view, color: colorScheme.primary),
+                    currentView: ref.watch(homeNoteViewTypeProvider),
                     onViewSelected: (NoteViewType selectedView) {
                       ref.read(homeNoteViewTypeProvider.notifier).updateView(selectedView);
                     },
                   ),
-
-                  // IconButton(onPressed: (){}, icon: HugeIcon(
-                  //   icon: HugeIcons.strokeRoundedHome01,
-                  // ))
+                  IconButton(
+                    icon: const Icon(Icons.search),
+                    tooltip: 'Search Notes',
+                    onPressed: () {
+                      viewModel.enterSearchMode();
+                      searchFocusNode.requestFocus();
+                    },
+                  ),
                 ],
               ),
-            ),
-            Expanded(
-              child: DynamicNotesLayout(
-                isSelectMode: homeState.isSelectMode,
-                noteIds: homeState.selectedNoteIds,
-                activeNoteId: null,
-                onToggleSelection: viewModel.toggleSelection,
-                onEnableSelectMode: viewModel.enableSelectMode,
-                onNoteTap: _handleNoteTap,
-              ),
-              // child: NotesGridView(
-              //   isSelectMode: homeState.isSelectMode,
-              //   noteIds: homeState.selectedNoteIds,
-              //   // NotesGridView expects a Set<String>
-              //   activeNoteId: null,
-              //   onToggleSelection: viewModel.toggleSelection,
-              //   onEnableSelectMode: viewModel.enableSelectMode,
-              //   onPromptPassword: (ctx, note) => PasswordPromptHelper.promptAndVerify(ctx, ref, note),
-              //   onNoteTap: _handleNoteTap,
-              // ),
-            ),
-          ],
-        ),
       ),
     );
-  }
-
-  PreferredSizeWidget _buildAppBar(HomePageState state) {
-    if (state.isSelectMode) {
-      return SelectModeAppBar(
-        noteIds: state.selectedNoteIds,
-      );
-    }
-    return AppBar(
-      // leading: DrawerMenuButton(),
-      // title: const Text('Notes'),
-      elevation: 0,
-      // centerTitle: true,
-      actions: const [
-        IconTray(),
-        SizedBox(width: 8),
-      ],
-    );
-  }
-
-  // Helper method to map your internal NoteSortPreference back to the UI Enum (HomeMenuAction)
-  HomeMenuAction _getCurrentSortAction(NoteSortPreference currentSort) {
-    switch (currentSort) {
-      case NoteSortPreference.createdAt:
-        return HomeMenuAction.sortCreated;
-      case NoteSortPreference.name:
-        return HomeMenuAction.sortName;
-      case NoteSortPreference.updatedAt:
-        return HomeMenuAction.sortUpdated;
-    }
-  }
-
-  HomeMenuAction _getCurrentPlatformAction(FilterPlatformOptions platformFilter) {
-    switch (platformFilter) {
-      case FilterPlatformOptions.all:
-        return HomeMenuAction.filterAll;
-      case FilterPlatformOptions.android:
-        return HomeMenuAction.filterPhone;
-      case FilterPlatformOptions.windows:
-        return HomeMenuAction.filterWindows;
-    }
   }
 }
