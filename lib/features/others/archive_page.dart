@@ -14,7 +14,7 @@ import '../../shared/note_card/note_card.dart';
 import '../../shared/snack_bar_manager.dart';
 import '../../shared/sort_menu_button.dart';
 import '../../shared/view_menu_button.dart';
-import '../folders/view/folder_selector.dart';
+import '../note_editor/widgets/folder_option_menu.dart';
 import '../home/core/note_tap_handler.dart';
 import 'package:noteit/features/home/core/providers.dart';
 import '../home/view/shared/desktop_close_button.dart';
@@ -354,10 +354,9 @@ class _ArchivePageState extends ConsumerState<ArchivePage> {
             padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
             child: Row(
               children: [
-                FolderButton(
+                FolderOptionMenu(
                   selectedFolder: _selectedFolder,
                   emptyLabel: 'All Folders',
-                  showContextMenus: true,
                   onFolderSelected: (folder) {
                     setState(() {
                       _selectedFolder = folder;

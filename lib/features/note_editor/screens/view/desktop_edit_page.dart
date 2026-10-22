@@ -15,7 +15,6 @@ import '../../../../shared/app_scaffold.dart';
 import '../../../../shared/note_card/core/note_action_controller.dart';
 import '../../../../shared/highlighting_text_field.dart';
 import '../../../../shared/snack_bar_manager.dart';
-import '../../../folders/view/folder_selector.dart';
 import '../../widgets/checklist_editor.dart';
 import '../../widgets/folder_option_menu.dart';
 import '../../../home/core/providers.dart';

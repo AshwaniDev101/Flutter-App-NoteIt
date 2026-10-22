@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/features/folders/view/folder_selector.dart';
+import 'package:noteit/shared/app_bottom_sheet.dart';
 import 'package:noteit/shared/app_search_bar.dart';
 
 /// A dropdown selector widget for choosing a folder for a note.
@@ -30,8 +31,28 @@ class _FolderOptionMenuState extends ConsumerState<FolderOptionMenu> {
   final MenuController _menuController = MenuController();
   bool _isHovering = false;
 
-  @override
-  Widget build(BuildContext context) {
+  void _showMobileBottomSheet(BuildContext context) {
+    Folder? localSelectedFolder = widget.selectedFolder;
+
+    showAppBottomSheet(
+      context: context,
+      heightFactor: 0.5,
+      builder: (context, setModalState) {
+        return _FolderOptionMenuContent(
+          selectedFolder: localSelectedFolder,
+          emptyLabel: widget.emptyLabel,
+          onFolderSelected: (folder) {
+            widget.onFolderSelected(folder);
+            setModalState(() {
+              localSelectedFolder = folder;
+            });
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildTriggerButton(BuildContext context, {required bool isOpen, required VoidCallback onTap}) {
     final Folder? activeFolder = widget.selectedFolder;
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
@@ -41,6 +62,89 @@ class _FolderOptionMenuState extends ConsumerState<FolderOptionMenu> {
         ? Colors.primaries[activeFolder.colorIndex % Colors.primaries.length]
         : colorScheme.onSurfaceVariant;
 
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onHover: (val) => setState(() => _isHovering = val),
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: isOpen || _isHovering
+                  ? colorScheme.outlineVariant
+                  : colorScheme.outlineVariant.withValues(alpha: 0.4),
+            ),
+            borderRadius: BorderRadius.circular(10),
+            color: isOpen
+                ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.6)
+                : _isHovering
+                    ? colorScheme.surfaceContainerLowest
+                    : Colors.transparent,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (activeFolder != null) ...[
+                Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: currentColor,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: currentColor.withValues(alpha: 0.4),
+                        blurRadius: 4,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ] else ...[
+                Icon(
+                  Icons.folder_outlined,
+                  size: 16,
+                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                ),
+                const SizedBox(width: 6),
+              ],
+              Text(
+                currentName,
+                style: textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: isOpen ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Icon(
+                isOpen ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+                size: 18,
+                color: isOpen ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isMobile = MediaQuery.sizeOf(context).width < 600;
+
+    if (isMobile) {
+      return _buildTriggerButton(
+        context,
+        isOpen: false,
+        onTap: () => _showMobileBottomSheet(context),
+      );
+    }
+
     return MenuAnchor(
       controller: _menuController,
       style: const MenuStyle(
@@ -49,81 +153,16 @@ class _FolderOptionMenuState extends ConsumerState<FolderOptionMenu> {
         elevation: WidgetStatePropertyAll(0),
       ),
       builder: (BuildContext context, MenuController controller, Widget? child) {
-        final isOpen = controller.isOpen;
-
-        return Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onHover: (val) => setState(() => _isHovering = val),
-            onTap: () {
-              if (isOpen) {
-                controller.close();
-              } else {
-                controller.open();
-              }
-            },
-            borderRadius: BorderRadius.circular(10),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: isOpen || _isHovering
-                      ? colorScheme.outlineVariant
-                      : colorScheme.outlineVariant.withValues(alpha: 0.4),
-                ),
-                borderRadius: BorderRadius.circular(10),
-                color: isOpen
-                    ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.6)
-                    : _isHovering
-                        ? colorScheme.surfaceContainerLowest
-                        : Colors.transparent,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (activeFolder != null) ...[
-                    Container(
-                      width: 10,
-                      height: 10,
-                      decoration: BoxDecoration(
-                        color: currentColor,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: currentColor.withValues(alpha: 0.4),
-                            blurRadius: 4,
-                            offset: const Offset(0, 1),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                  ] else ...[
-                    Icon(
-                      Icons.folder_outlined,
-                      size: 16,
-                      color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
-                    ),
-                    const SizedBox(width: 6),
-                  ],
-                  Text(
-                    currentName,
-                    style: textTheme.labelLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: isOpen ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Icon(
-                    isOpen ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
-                    size: 18,
-                    color: isOpen ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
-                  ),
-                ],
-              ),
-            ),
-          ),
+        return _buildTriggerButton(
+          context,
+          isOpen: controller.isOpen,
+          onTap: () {
+            if (controller.isOpen) {
+              controller.close();
+            } else {
+              controller.open();
+            }
+          },
         );
       },
       menuChildren: [
@@ -260,10 +299,10 @@ class _FolderOptionMenuContentState extends ConsumerState<_FolderOptionMenuConte
                   children: [
                     // "None" / Clear option
                     if (showEmptyOption) ...[
-                      _FolderOptionTile(
+                      AppMenuTile(
                         label: widget.emptyLabel,
                         isSelected: activeFolder == null,
-                        leadingWidget: Icon(
+                        leading: Icon(
                           Icons.format_align_left_rounded,
                           size: 18,
                           color: activeFolder == null
@@ -288,10 +327,10 @@ class _FolderOptionMenuContentState extends ConsumerState<_FolderOptionMenuConte
                       final folderColor = Colors.primaries[folder.colorIndex % Colors.primaries.length];
                       final isSelected = activeFolder?.uuid == folder.uuid;
 
-                      return _FolderOptionTile(
+                      return AppMenuTile(
                         label: folder.name,
                         isSelected: isSelected,
-                        leadingWidget: Container(
+                        leading: Container(
                           width: 12,
                           height: 12,
                           decoration: BoxDecoration(
@@ -315,68 +354,6 @@ class _FolderOptionMenuContentState extends ConsumerState<_FolderOptionMenuConte
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _FolderOptionTile extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final Widget leadingWidget;
-  final VoidCallback onTap;
-
-  const _FolderOptionTile({
-    required this.label,
-    required this.isSelected,
-    required this.leadingWidget,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
-        hoverColor: colorScheme.onSurface.withValues(alpha: 0.05),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          decoration: BoxDecoration(
-            color: isSelected ? colorScheme.secondaryContainer.withValues(alpha: 0.6) : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Row(
-            children: [
-              SizedBox(
-                width: 24,
-                child: Center(child: leadingWidget),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  label,
-                  style: textTheme.bodyMedium?.copyWith(
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                    color: isSelected ? colorScheme.onSecondaryContainer : colorScheme.onSurface,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              if (isSelected)
-                Icon(
-                  Icons.check_rounded,
-                  size: 18,
-                  color: colorScheme.primary,
-                ),
-            ],
-          ),
-        ),
       ),
     );
   }

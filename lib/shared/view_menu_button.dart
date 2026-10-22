@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'app_bottom_sheet.dart';
 
 // ==========================================
 // ENUMS
@@ -14,18 +15,17 @@ enum NoteViewType {
 
   const NoteViewType(this.label, this.icon);
 }
+
 class ViewMenuButton extends StatefulWidget {
   final Icon icon;
   final NoteViewType currentView;
   final ValueChanged<NoteViewType> onViewSelected;
-
 
   const ViewMenuButton({
     super.key,
     required this.icon,
     required this.currentView,
     required this.onViewSelected,
-
   });
 
   @override
@@ -35,8 +35,44 @@ class ViewMenuButton extends StatefulWidget {
 class _ViewMenuButtonState extends State<ViewMenuButton> {
   final MenuController _menuController = MenuController();
 
+  void _showMobileBottomSheet(BuildContext context) {
+    showAppBottomSheet(
+      context: context,
+      builder: (context, setModalState) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+              child: Text(
+                'View Layout',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+            ),
+            const Divider(indent: 16, endIndent: 16),
+            ...NoteViewType.values.map(
+              (view) => _buildViewTile(context, view, onTap: setModalState),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.sizeOf(context).width < 600;
+
+    if (isMobile) {
+      return IconButton(
+        icon: widget.icon,
+        onPressed: () => _showMobileBottomSheet(context),
+      );
+    }
+
     return MenuAnchor(
       controller: _menuController,
       style: const MenuStyle(
@@ -53,7 +89,7 @@ class _ViewMenuButtonState extends State<ViewMenuButton> {
               controller.open();
             }
           },
-          icon: widget.icon //Icon(Icons.view_comfortable_rounded, color: Theme.of(context).colorScheme.primary),
+          icon: widget.icon,
         );
       },
       menuChildren: [
@@ -62,37 +98,35 @@ class _ViewMenuButtonState extends State<ViewMenuButton> {
           elevation: 2,
           margin: const EdgeInsets.all(4.0),
           child: SizedBox(
-            width: 200,
-            // REPLACE ListView with Padding + Column
+            width: 220,
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: Column(
-                mainAxisSize: MainAxisSize.min, // This prevents the size error
+                mainAxisSize: MainAxisSize.min,
                 children: NoteViewType.values.map((view) {
-                  final isSelected = view == widget.currentView;
-                  final colorScheme = Theme.of(context).colorScheme;
-
-                  return ListTile(
-                    dense: true,
-                    leading: Icon(view.icon, color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant),
-                    title: Text(
-                      view.label,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                        color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    onTap: () {
-                      widget.onViewSelected(view);
-                      _menuController.close();
-                    },
-                  );
+                  return _buildViewTile(context, view);
                 }).toList(),
               ),
             ),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildViewTile(BuildContext context, NoteViewType view, {StateSetter? onTap}) {
+    final isSelected = view == widget.currentView;
+
+    return AppMenuTile(
+      label: view.label,
+      icon: view.icon,
+      isSelected: isSelected,
+      onTap: () {
+        widget.onViewSelected(view);
+        if (onTap != null) {
+          onTap(() {});
+        }
+      },
     );
   }
 }

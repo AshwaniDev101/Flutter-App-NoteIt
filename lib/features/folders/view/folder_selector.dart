@@ -4,6 +4,7 @@ export 'widgets/folder_list_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../shared/app_bottom_sheet.dart';
 import '../../../shared/app_search_bar.dart';
 
 import '../../../database/drift/folders/folders_dao.dart';
@@ -50,8 +51,29 @@ class _FolderButtonState extends ConsumerState<FolderButton> {
   final MenuController _menuController = MenuController();
   bool _isHovering = false;
 
-  @override
-  Widget build(BuildContext context) {
+  void _showMobileBottomSheet(BuildContext context) {
+    Folder? localSelectedFolder = widget.selectedFolder;
+
+    showAppBottomSheet(
+      context: context,
+      heightFactor: 0.5,
+      builder: (context, setModalState) {
+        return FolderContainer(
+          selectedFolder: localSelectedFolder,
+          emptyLabel: widget.emptyLabel,
+          showContextMenus: widget.showContextMenus,
+          onFolderSelected: (folder) {
+            widget.onFolderSelected(folder);
+            setModalState(() {
+              localSelectedFolder = folder;
+            });
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildTriggerButton(BuildContext context, {required bool isOpen, required VoidCallback onTap}) {
     final Folder? activeFolder = widget.selectedFolder;
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -73,6 +95,103 @@ class _FolderButtonState extends ConsumerState<FolderButton> {
       }
     }
 
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onHover: (val) => setState(() => _isHovering = val),
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(10),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: isOpen || _isHovering
+                      ? colorScheme.outlineVariant
+                      : colorScheme.outlineVariant.withValues(alpha: 0.4),
+                ),
+                borderRadius: BorderRadius.circular(10),
+                color: isOpen
+                    ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.6)
+                    : _isHovering
+                    ? colorScheme.surfaceContainerLowest
+                    : Colors.transparent,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (activeFolder != null) ...[
+                    Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: currentColor,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: currentColor.withValues(alpha: 0.4),
+                            blurRadius: 4,
+                            offset: const Offset(0, 1),
+                          )
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                  ],
+                  Text(
+                    currentName,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: isOpen ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Icon(
+                    isOpen ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+                    size: 20,
+                    color: isOpen ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        if (widget.isShowTotalNoteCount) ...[
+          const SizedBox(width: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              '$displayCount',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isMobile = MediaQuery.sizeOf(context).width < 600;
+
+    if (isMobile) {
+      return _buildTriggerButton(
+        context,
+        isOpen: false,
+        onTap: () => _showMobileBottomSheet(context),
+      );
+    }
+
     return MenuAnchor(
       controller: _menuController,
       style: const MenuStyle(
@@ -81,96 +200,16 @@ class _FolderButtonState extends ConsumerState<FolderButton> {
         elevation: WidgetStatePropertyAll(0),
       ),
       builder: (BuildContext context, MenuController controller, Widget? child) {
-        final isOpen = controller.isOpen;
-
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onHover: (val) => setState(() => _isHovering = val),
-                onTap: () {
-                  if (isOpen) {
-                    controller.close();
-                  } else {
-                    controller.open();
-                  }
-                },
-                borderRadius: BorderRadius.circular(10),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: isOpen || _isHovering
-                          ? colorScheme.outlineVariant
-                          : colorScheme.outlineVariant.withValues(alpha: 0.4),
-                    ),
-                    borderRadius: BorderRadius.circular(10),
-                    color: isOpen
-                        ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.6)
-                        : _isHovering
-                        ? colorScheme.surfaceContainerLowest
-                        : Colors.transparent,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (activeFolder != null) ...[
-                        Container(
-                          width: 10,
-                          height: 10,
-                          decoration: BoxDecoration(
-                            color: currentColor,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: currentColor.withValues(alpha: 0.4),
-                                blurRadius: 4,
-                                offset: const Offset(0, 1),
-                              )
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                      ],
-                      Text(
-                        currentName,
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: isOpen ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Icon(
-                        isOpen ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
-                        size: 20,
-                        color: isOpen ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            if (widget.isShowTotalNoteCount) ...[
-              const SizedBox(width: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  '$displayCount',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
-            ],
-          ],
+        return _buildTriggerButton(
+          context,
+          isOpen: controller.isOpen,
+          onTap: () {
+            if (controller.isOpen) {
+              controller.close();
+            } else {
+              controller.open();
+            }
+          },
         );
       },
       menuChildren: [
@@ -413,53 +452,20 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
         mainAxisSize: MainAxisSize.max,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Header Row
+          // Header Label
           Padding(
-            padding: const EdgeInsets.only(left: 6.0, right: 2.0, bottom: 12.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  "FOLDERS",
-                  style: textTheme.labelSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.2,
-                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
-                  ),
-                ),
-                if (widget.showContextMenus)
-                  SizedBox(
-                    width: 28,
-                    height: 28,
-                    child: IconButton(
-                      padding: EdgeInsets.zero,
-                      onPressed: () => _showCreateFolderDialog(context, ref),
-                      icon: const Icon(Icons.add_rounded, size: 20),
-                      tooltip: 'New Folder',
-                      color: colorScheme.onSurfaceVariant,
-                      style: IconButton.styleFrom(
-                        hoverColor: colorScheme.surfaceContainerHighest,
-                      ),
-                    ),
-                  )
-              ],
+            padding: const EdgeInsets.only(left: 6.0, right: 2.0, bottom: 8.0),
+            child: Text(
+              "Folders Filter",
+              style: textTheme.labelSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.2,
+                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+              ),
             ),
           ),
 
-          // Search Bar
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4.0),
-            child: AppSearchBar(
-              controller: _searchController,
-              hintText: 'Search...',
-              fillColor: colorScheme.surfaceContainerLow,
-              onChanged: (value) => setState(() => _folderSearchQuery = value),
-              onClear: _clearSearch,
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Handle the Reactive Stream Data
+          // Folders List (Middle)
           Expanded(
             child: foldersAsync.when(
               loading: () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
@@ -513,7 +519,7 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
                 }
 
                 return ListView(
-                  padding: const EdgeInsets.only(bottom: 12.0),
+                  padding: const EdgeInsets.only(bottom: 8.0),
                   physics: const BouncingScrollPhysics(),
                   children: [
                     if (showEmptyOption)
@@ -617,6 +623,44 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
                   ],
                 );
               },
+            ),
+          ),
+
+          // Bottom Bar: Search Bar + Add Folder Button on the right
+          Padding(
+            padding: const EdgeInsets.only(left: 4.0, right: 4.0, top: 8.0, bottom: 8.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: AppSearchBar(
+                    controller: _searchController,
+                    hintText: 'Search...',
+                    fillColor: colorScheme.surfaceContainerLow,
+                    onChanged: (value) => setState(() => _folderSearchQuery = value),
+                    onClear: _clearSearch,
+                  ),
+                ),
+                if (widget.showContextMenus) ...[
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    width: 40,
+                    height: 40,
+                    child: IconButton(
+                      padding: EdgeInsets.zero,
+                      onPressed: () => _showCreateFolderDialog(context, ref),
+                      icon: const Icon(Icons.add_rounded, size: 22),
+                      tooltip: 'New Folder',
+                      style: IconButton.styleFrom(
+                        backgroundColor: colorScheme.surfaceContainerHighest,
+                        foregroundColor: colorScheme.onSurfaceVariant,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
         ],

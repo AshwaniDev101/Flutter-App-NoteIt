@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'app_bottom_sheet.dart';
 
 enum HomeMenuAction {
   sortCreated('by created time', Icons.calendar_month_outlined),
@@ -35,8 +36,50 @@ class SortMenuButton extends StatefulWidget {
 class _SortMenuButtonState extends State<SortMenuButton> {
   final MenuController _menuController = MenuController();
 
+  void _showMobileBottomSheet(BuildContext context) {
+    showAppBottomSheet(
+      context: context,
+      builder: (context, setModalState) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+              child: Text(
+                'Sort & Filter',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+            ),
+            const Divider(indent: 16, endIndent: 16),
+            _buildSectionHeader(context, 'SORT BY'),
+            _buildActionTile(context, HomeMenuAction.sortCreated, onTap: setModalState),
+            _buildActionTile(context, HomeMenuAction.sortName, onTap: setModalState),
+            _buildActionTile(context, HomeMenuAction.sortUpdated, onTap: setModalState),
+            const SizedBox(height: 8),
+            _buildSectionHeader(context, 'FILTER BY DEVICE'),
+            _buildActionTile(context, HomeMenuAction.filterAll, onTap: setModalState),
+            _buildActionTile(context, HomeMenuAction.filterPhone, onTap: setModalState),
+            _buildActionTile(context, HomeMenuAction.filterWindows, onTap: setModalState),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.sizeOf(context).width < 600;
+
+    if (isMobile) {
+      return IconButton(
+        icon: widget.icon,
+        onPressed: () => _showMobileBottomSheet(context),
+      );
+    }
+
     return MenuAnchor(
       controller: _menuController,
       style: const MenuStyle(
@@ -67,11 +110,14 @@ class _SortMenuButtonState extends State<SortMenuButton> {
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  _buildSectionHeader(context, 'SORT BY'),
                   _buildActionTile(context, HomeMenuAction.sortCreated),
                   _buildActionTile(context, HomeMenuAction.sortName),
                   _buildActionTile(context, HomeMenuAction.sortUpdated),
-                  const Divider(),
+                  const Divider(indent: 12, endIndent: 12),
+                  _buildSectionHeader(context, 'FILTER BY DEVICE'),
                   _buildActionTile(context, HomeMenuAction.filterAll),
                   _buildActionTile(context, HomeMenuAction.filterPhone),
                   _buildActionTile(context, HomeMenuAction.filterWindows),
@@ -84,27 +130,34 @@ class _SortMenuButtonState extends State<SortMenuButton> {
     );
   }
 
-  Widget _buildActionTile(BuildContext context, HomeMenuAction action) {
+  Widget _buildSectionHeader(BuildContext context, String title) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+      child: Text(
+        title,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: colorScheme.primary,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.0,
+            ),
+      ),
+    );
+  }
+
+  Widget _buildActionTile(BuildContext context, HomeMenuAction action, {StateSetter? onTap}) {
     final isSelected = (action == widget.currentSortSelection) ||
         (action == widget.currentPlatformSelection);
-    final colorScheme = Theme.of(context).colorScheme;
 
-    return ListTile(
-      dense: true,
-      leading: action.icon != null
-          ? Icon(action.icon, color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant)
-          : null,
-      title: Text(
-        action.label,
-        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-          color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
-        ),
-      ),
-      trailing: isSelected ? Icon(Icons.check, size: 18, color: colorScheme.primary) : null,
+    return AppMenuTile(
+      label: action.label,
+      icon: action.icon,
+      isSelected: isSelected,
       onTap: () {
         widget.onSelected(action);
-        _menuController.close();
+        if (onTap != null) {
+          onTap(() {});
+        }
       },
     );
   }
