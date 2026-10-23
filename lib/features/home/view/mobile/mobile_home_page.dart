@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:noteit/features/home/view/shared/icon_tray/icon_tray.dart';
-import 'package:noteit/features/home/view/shared/select_mode_app_bars.dart';
+import 'package:noteit/features/home/view/shared/select_search_app_bars.dart';
 
 import '../../../../core/routing/routing.dart';
 import '../../../../database/drift/notes/notes_dao.dart';
@@ -83,7 +83,7 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> with WidgetsBin
 
   PreferredSizeWidget _buildAppBar(HomePageState state) {
     if (state.isSelectMode) {
-      return SelectModeAppBar(
+      return TopSelectModeAppBar(
         noteIds: state.selectedNoteIds,
       );
     }
@@ -96,6 +96,24 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> with WidgetsBin
       ],
     );
   }
+
+
+  Widget _buildBottomAppBar(HomePageState homeState, HomeViewModel homeViewModel) {
+    if (homeState.isSelectMode) {
+      return BottomSelectModeAppBar();
+    }
+
+    return _MobileBottomControlBar(
+      homeState: homeState,
+      viewModel: homeViewModel,
+      searchController: _searchController,
+      searchFocusNode: _searchFocusNode,
+    );
+  }
+
+
+
+
 
   // ------------------------------------------
   // MAIN BUILD METHOD
@@ -120,12 +138,13 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> with WidgetsBin
         floatingActionButton: _MobileFAB(
           onPressed: () => context.push(AppRoutes.edit),
         ),
-        bottomNavigationBar: _MobileBottomControlBar(
-          homeState: homeState,
-          viewModel: viewModel,
-          searchController: _searchController,
-          searchFocusNode: _searchFocusNode,
-        ),
+        bottomNavigationBar: _buildBottomAppBar(homeState, viewModel),
+        // bottomNavigationBar: _MobileBottomControlBar(
+        //   homeState: homeState,
+        //   viewModel: viewModel,
+        //   searchController: _searchController,
+        //   searchFocusNode: _searchFocusNode,
+        // ),
         body: DynamicNotesLayout(
           isSelectMode: homeState.isSelectMode,
           noteIds: homeState.selectedNoteIds,

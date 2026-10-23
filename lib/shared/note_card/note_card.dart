@@ -11,36 +11,9 @@ import 'package:noteit/database/drift/notes/notes_dao.dart';
 import 'package:noteit/features/home/core/providers.dart';
 import 'package:noteit/features/lock/lock_manger/lock_manager.dart';
 import 'package:noteit/shared/highlighted_text.dart';
+import 'package:noteit/shared/core/note_action.dart';
 import 'package:noteit/shared/note_card/widgets/lock_overlay.dart';
 import 'package:noteit/shared/view_menu_button.dart';
-
-/// Available actions in a note's context menu.
-enum NoteContextMenuOption {
-  // Common
-  select('Select', Icons.check_circle_outline),
-  pin('Pin', Icons.push_pin_outlined),
-  unpin('Unpin', CupertinoIcons.pin_slash),
-  lock('Lock', Icons.lock_outline),
-  reminder('Remind me', Icons.notifications_none_outlined),
-  moveTo('Move to...', Icons.drive_file_move_outlined),
-  duplicate('Duplicate', Icons.copy_outlined),
-  openNewWindow('Open in new window', Icons.open_in_new_outlined),
-
-  // Filing
-  archive('Archive', Icons.archive_outlined),
-  unarchive('Unarchive', Icons.unarchive_outlined),
-
-  // Destructive
-  restore('Restore', Icons.restore),
-  delete('Delete', Icons.delete_outline, isDestructive: true),
-  deleteForever('Delete Forever', Icons.delete_forever, isDestructive: true);
-
-  final String label;
-  final IconData icon;
-  final bool isDestructive;
-
-  const NoteContextMenuOption(this.label, this.icon, {this.isDestructive = false});
-}
 
 /// A card widget displaying a note summary across list and grid layouts.
 class NoteCard extends ConsumerStatefulWidget {
@@ -49,19 +22,19 @@ class NoteCard extends ConsumerStatefulWidget {
   final String searchQuery;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
-  final void Function(NoteContextMenuOption)? onContextMenuAction;
-  final List<NoteContextMenuOption> contextMenuOptions;
+  final void Function(NoteAction)? onContextMenuAction;
+  final List<NoteAction> contextMenuOptions;
 
-  static const List<NoteContextMenuOption> defaultContextMenuOptions = [
-    NoteContextMenuOption.select,
-    NoteContextMenuOption.pin,
-    NoteContextMenuOption.lock,
-    NoteContextMenuOption.reminder,
-    NoteContextMenuOption.moveTo,
-    NoteContextMenuOption.duplicate,
-    NoteContextMenuOption.openNewWindow,
-    NoteContextMenuOption.archive,
-    NoteContextMenuOption.delete,
+  static const List<NoteAction> defaultContextMenuOptions = [
+    NoteAction.select,
+    NoteAction.pin,
+    NoteAction.lock,
+    NoteAction.reminder,
+    NoteAction.moveTo,
+    NoteAction.duplicate,
+    NoteAction.openNewWindow,
+    NoteAction.archive,
+    NoteAction.delete,
   ];
 
   final NoteViewType? viewType;
@@ -135,13 +108,13 @@ class _NoteCardState extends ConsumerState<NoteCard> {
     final errorColor = theme.colorScheme.error;
 
     return widget.contextMenuOptions
-        .where((option) => !(option == NoteContextMenuOption.select && widget.isSelected))
+        .where((option) => !(option == NoteAction.select && widget.isSelected))
         .map((option) {
       var effectiveOption = option;
-      if (option == NoteContextMenuOption.pin && _isPinned) {
-        effectiveOption = NoteContextMenuOption.unpin;
-      } else if (option == NoteContextMenuOption.unpin && !_isPinned) {
-        effectiveOption = NoteContextMenuOption.pin;
+      if (option == NoteAction.pin && _isPinned) {
+        effectiveOption = NoteAction.unpin;
+      } else if (option == NoteAction.unpin && !_isPinned) {
+        effectiveOption = NoteAction.pin;
       }
 
       final color = effectiveOption.isDestructive ? errorColor : null;

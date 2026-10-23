@@ -19,7 +19,7 @@ import '../../core/providers.dart';
 import '../../viewmodel/viewmodel.dart';
 import '../../../../shared/app_search_bar.dart';
 import '../../../../shared/note_card/dynamic_notes_layout.dart';
-import '../shared/select_mode_app_bars.dart';
+import '../shared/select_search_app_bars.dart';
 
 class DesktopListPanel extends ConsumerWidget {
   final TextEditingController searchController;
@@ -109,7 +109,7 @@ class DesktopListPanel extends ConsumerWidget {
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(kToolbarHeight),
         child: homeState.isSelectMode
-            ? DragToMoveArea(child: SelectModeAppBar(noteIds: homeState.selectedNoteIds))
+            ? DragToMoveArea(child: TopSelectModeAppBar(noteIds: homeState.selectedNoteIds))
             : AppBar(
                 flexibleSpace: DragToMoveArea(child: Container(color: Colors.transparent)),
                 backgroundColor: Colors.transparent,

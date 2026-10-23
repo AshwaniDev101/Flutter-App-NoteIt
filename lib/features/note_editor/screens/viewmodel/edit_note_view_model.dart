@@ -11,7 +11,7 @@ import 'package:noteit/database/sync/sync_orchestrator.dart';
 
 // Features
 import 'package:noteit/features/note_editor/screens/view/desktop_edit_page.dart';
-import 'package:noteit/shared/note_card/core/note_action_controller.dart';
+import 'package:noteit/shared/core/note_action_controller.dart';
 
 /// Represents the UI state for the note editor.
 ///

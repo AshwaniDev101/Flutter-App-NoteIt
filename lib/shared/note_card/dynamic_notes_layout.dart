@@ -4,12 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/util/device_info.dart';
 import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/database/drift/notes/notes_dao.dart';
+import 'package:noteit/shared/core/note_action.dart';
 
 import '../../../core/util/platform_helper.dart';
 import '../../../../../database/sync/sync_orchestrator.dart';
 import '../../features/folders/core/providers.dart';
 import '../view_menu_button.dart';
-import 'core/note_action_controller.dart';
+import '../core/note_action_controller.dart';
 import 'note_card.dart';
 import '../../../features/home/core/providers.dart';
 import '../../../features/home/viewmodel/viewmodel.dart';
@@ -91,7 +92,7 @@ class DynamicNotesLayout extends ConsumerWidget {
         },
 
         onContextMenuAction: (option) {
-          if (option == NoteContextMenuOption.select) {
+          if (option == NoteAction.select) {
             if (!isSelectMode) onEnableSelectMode();
             if (!isCurrentlySelected) {
               onToggleSelection(currentNoteWithFolder.note.uuid);
@@ -130,28 +131,28 @@ class DynamicNotesLayout extends ConsumerWidget {
     );
   }
 
-  void _handleBatchAction(BuildContext context, WidgetRef ref, NoteContextMenuOption option, List<String> targetUuids) async {
+  void _handleBatchAction(BuildContext context, WidgetRef ref, NoteAction option, List<String> targetUuids) async {
     ref.read(homeViewModelProvider.notifier).clearSelection();
     final actionsController = ref.read(noteActionsControllerProvider);
     final deviceInfo = await ref.read(deviceInfoProvider.future);
     final String platform = deviceInfo.extractPlatform;
 
     switch (option) {
-      case NoteContextMenuOption.select:
+      case NoteAction.select:
         throw AssertionError('Select action should be intercepted before reaching here.');
-      case NoteContextMenuOption.delete:
+      case NoteAction.delete:
         await actionsController.deleteNotes(targetUuids, platform);
         break;
-      case NoteContextMenuOption.pin:
+      case NoteAction.pin:
         await actionsController.pinNotes(targetUuids);
         break;
-      case NoteContextMenuOption.unpin:
+      case NoteAction.unpin:
         await actionsController.unpinNotes(targetUuids);
         break;
-      case NoteContextMenuOption.archive:
+      case NoteAction.archive:
         await actionsController.archiveNotes(targetUuids);
         break;
-      case NoteContextMenuOption.lock:
+      case NoteAction.lock:
         final lockNotifier = ref.read(lockManagerProvider.notifier);
         if (!lockNotifier.hasMasterPassword) {
           await PasswordPromptHelper.showMasterPasswordManagement(context, ref);
@@ -160,23 +161,25 @@ class DynamicNotesLayout extends ConsumerWidget {
           await actionsController.lockNotes(targetUuids);
         }
         break;
-      case NoteContextMenuOption.duplicate:
+      case NoteAction.duplicate:
         await actionsController.duplicateNotes(targetUuids, platform);
         break;
-      case NoteContextMenuOption.moveTo:
+      case NoteAction.moveTo:
         break;
-      case NoteContextMenuOption.reminder:
+      case NoteAction.reminder:
         break;
-      case NoteContextMenuOption.openNewWindow:
+      case NoteAction.openNewWindow:
         break;
-      case NoteContextMenuOption.unarchive:
+      case NoteAction.unarchive:
         await actionsController.unarchiveNotes(targetUuids);
         break;
-      case NoteContextMenuOption.restore:
+      case NoteAction.restore:
         await actionsController.restoreNotes(targetUuids);
         break;
-      case NoteContextMenuOption.deleteForever:
+      case NoteAction.deleteForever:
         await actionsController.deleteForever(targetUuids);
+        break;
+      default:
         break;
     }
   }

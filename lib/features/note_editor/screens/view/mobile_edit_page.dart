@@ -9,7 +9,7 @@ import 'package:noteit/database/drift/notes/notes_dao.dart';
 import 'package:noteit/features/note_editor/screens/view/desktop_edit_page.dart';
 
 import '../../../../shared/find_replace.dart';
-import '../../../../shared/note_card/core/note_action_controller.dart';
+import '../../../../shared/core/note_action_controller.dart';
 import '../../../../shared/highlighting_text_field.dart';
 import '../../../../shared/snack_bar_manager.dart';
 import '../../../folders/core/providers.dart';
@@ -17,6 +17,7 @@ import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.d
 import '../../widgets/checklist_editor.dart';
 import '../../widgets/folder_option_menu.dart';
 import '../../widgets/note_editor_options.dart';
+import 'package:noteit/shared/core/note_action.dart';
 import '../../../lock/lock_manger/lock_manager.dart';
 import '../../../lock/view/setup_password_page.dart';
 import '../viewmodel/edit_note_view_model.dart';
@@ -231,12 +232,12 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
             NoteEditorOptionButton(
               isLocked: _isLocked,
               isPinned: _isPinned,
-              onPressed: (NoteEditorOption option) async {
+              onPressed: (NoteAction option) async {
                 switch (option) {
-                  case NoteEditorOption.delete:
+                  case NoteAction.delete:
                     _handleDeleteNote();
                     break;
-                  case NoteEditorOption.pin:
+                  case NoteAction.pin:
                     if (_isNewNote) {
                       SnackBarManager.show(msg: 'Please save the note first', type: SnackBarMessageType.error);
                       return;
@@ -250,11 +251,11 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
                       });
                     }
                     break;
-                  case NoteEditorOption.lock:
+                  case NoteAction.lock:
                     _handleLockToggle();
                     break;
                 // --- Toggle Logic ---
-                  case NoteEditorOption.checklist:
+                  case NoteAction.checklist:
                     setState(() {
                       if (_contentVersion != ContentVersion.checklist) {
                         _contentVersion = ContentVersion.checklist;
@@ -267,7 +268,7 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
                     });
                     break;
 
-                  case NoteEditorOption.archive:
+                  case NoteAction.archive:
                     if (_isNewNote) {
                       SnackBarManager.show(msg: 'Please save the note first', type: SnackBarMessageType.error);
                       return;
@@ -277,7 +278,7 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
                     await ref.read(noteActionsControllerProvider).archiveNotes([targetUuid]);
                     if (mounted) context.pop();
                     break;
-                  case NoteEditorOption.find:
+                  case NoteAction.find:
                     if (_isFind) {
                       _contentController.searchQuery = '';
                     }
@@ -285,10 +286,12 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
                       _isFind = !_isFind;
                     });
                     break;
-                  case NoteEditorOption.reminder:
+                  case NoteAction.reminder:
                     break;
-                  case NoteEditorOption.info:
+                  case NoteAction.info:
                     ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.noteDetails);
+                    break;
+                  default:
                     break;
                 }
               },

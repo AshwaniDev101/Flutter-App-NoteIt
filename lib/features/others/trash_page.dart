@@ -10,9 +10,10 @@ import '../../database/shared_preference/shared_preference_manager.dart';
 import '../../database/sync/sync_orchestrator.dart';
 import '../../shared/app_scaffold.dart';
 import '../../shared/app_search_bar.dart';
-import '../../shared/note_card/core/note_action_controller.dart';
+import '../../shared/core/note_action_controller.dart';
 import '../../shared/note_card/folder_trash_card.dart';
 import '../../shared/note_card/note_card.dart';
+import 'package:noteit/shared/core/note_action.dart';
 import '../../shared/snack_bar_manager.dart';
 import '../../shared/sort_menu_button.dart';
 import '../../shared/view_menu_button.dart';
@@ -726,17 +727,17 @@ class _TrashPageState extends ConsumerState<TrashPage> with WidgetsBindingObserv
         },
         onContextMenuAction: (option) {
           switch (option) {
-            case NoteContextMenuOption.select:
+            case NoteAction.select:
               if (!isSelectMode) setState(() => isSelectMode = true);
               if (!isSelected) _toggleFolderSelection(folder.uuid);
               break;
 
-            case NoteContextMenuOption.restore:
+            case NoteAction.restore:
               final targetUuids = isSelected ? selectedFolderIds.toList() : [folder.uuid];
               _restoreItems(folderUuids: targetUuids);
               break;
 
-            case NoteContextMenuOption.deleteForever:
+            case NoteAction.deleteForever:
               final targetUuids = isSelected ? selectedFolderIds.toList() : [folder.uuid];
               _handleDeleteItems(folderUuids: targetUuids);
               break;
@@ -811,9 +812,9 @@ class _TrashPageState extends ConsumerState<TrashPage> with WidgetsBindingObserv
         searchQuery: searchQuery,
         isSelected: isSelected,
         contextMenuOptions: const [
-          NoteContextMenuOption.select,
-          NoteContextMenuOption.restore,
-          NoteContextMenuOption.deleteForever,
+          NoteAction.select,
+          NoteAction.restore,
+          NoteAction.deleteForever,
         ],
         onTap: () {
           if (isSelectMode) {
@@ -828,17 +829,17 @@ class _TrashPageState extends ConsumerState<TrashPage> with WidgetsBindingObserv
         },
         onContextMenuAction: (option) {
           switch (option) {
-            case NoteContextMenuOption.select:
+            case NoteAction.select:
               if (!isSelectMode) setState(() => isSelectMode = true);
               if (!isSelected) _toggleNoteSelection(uuid);
               break;
 
-            case NoteContextMenuOption.restore:
+            case NoteAction.restore:
               final targetUuids = isSelected ? selectedNoteIds.toList() : [uuid];
               _restoreItems(noteUuids: targetUuids);
               break;
 
-            case NoteContextMenuOption.deleteForever:
+            case NoteAction.deleteForever:
               final targetUuids = isSelected ? selectedNoteIds.toList() : [uuid];
               _handleDeleteItems(noteUuids: targetUuids);
               break;

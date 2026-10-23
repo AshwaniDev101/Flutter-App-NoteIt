@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:noteit/shared/core/note_action.dart';
 import '../../database/drift/local_database.dart';
-import 'note_card.dart';
 
 class FolderTrashCard extends StatefulWidget {
   final Folder folder;
   final bool isSelected;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
-  final void Function(NoteContextMenuOption)? onContextMenuAction;
+  final void Function(NoteAction)? onContextMenuAction;
 
   const FolderTrashCard({
     super.key,
@@ -41,17 +41,17 @@ class _FolderTrashCardState extends State<FolderTrashCard> {
       menuChildren: [
         MenuItemButton(
           leadingIcon: const Icon(Icons.restore),
-          onPressed: () => widget.onContextMenuAction?.call(NoteContextMenuOption.restore),
+          onPressed: () => widget.onContextMenuAction?.call(NoteAction.restore),
           child: const Text('Restore'),
         ),
         MenuItemButton(
           leadingIcon: Icon(Icons.delete_forever, color: colorScheme.error),
-          onPressed: () => widget.onContextMenuAction?.call(NoteContextMenuOption.deleteForever),
+          onPressed: () => widget.onContextMenuAction?.call(NoteAction.deleteForever),
           child: Text('Delete Forever', style: TextStyle(color: colorScheme.error)),
         ),
         MenuItemButton(
           leadingIcon: const Icon(Icons.check_circle_outline),
-          onPressed: () => widget.onContextMenuAction?.call(NoteContextMenuOption.select),
+          onPressed: () => widget.onContextMenuAction?.call(NoteAction.select),
           child: const Text('Select'),
         ),
       ],

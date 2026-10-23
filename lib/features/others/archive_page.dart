@@ -10,8 +10,9 @@ import '../../database/shared_preference/shared_preference_manager.dart';
 import '../../database/sync/sync_orchestrator.dart';
 import '../../shared/app_scaffold.dart';
 import '../../shared/app_search_bar.dart';
-import '../../shared/note_card/core/note_action_controller.dart';
+import '../../shared/core/note_action_controller.dart';
 import '../../shared/note_card/note_card.dart';
+import '../../shared/core/note_action.dart';
 import '../../shared/snack_bar_manager.dart';
 import '../../shared/sort_menu_button.dart';
 import '../../shared/view_menu_button.dart';
@@ -494,9 +495,9 @@ class _ArchivePageState extends ConsumerState<ArchivePage> with WidgetsBindingOb
                       searchQuery: searchQuery,
                       isSelected: isSelected,
                       contextMenuOptions: const [
-                        NoteContextMenuOption.select,
-                        NoteContextMenuOption.unarchive,
-                        NoteContextMenuOption.delete,
+                        NoteAction.select,
+                        NoteAction.unarchive,
+                        NoteAction.delete,
                       ],
                       onTap: () {
                         if (isSelectMode) {
@@ -513,17 +514,17 @@ class _ArchivePageState extends ConsumerState<ArchivePage> with WidgetsBindingOb
                       },
                       onContextMenuAction: (option) {
                         switch (option) {
-                          case NoteContextMenuOption.select:
+                          case NoteAction.select:
                             if (!isSelectMode) setState(() => isSelectMode = true);
                             if (!isSelected) _toggleSelection(noteWithFolder.note.uuid);
                             break;
 
-                          case NoteContextMenuOption.unarchive:
+                          case NoteAction.unarchive:
                             final targetUuids = isSelected ? noteIds.toList() : [noteWithFolder.note.uuid];
                             _unarchiveNotes(targetUuids);
                             break;
 
-                          case NoteContextMenuOption.delete:
+                          case NoteAction.delete:
                             final targetUuids = isSelected ? noteIds.toList() : [noteWithFolder.note.uuid];
                             _deleteNotes(targetUuids);
                             break;

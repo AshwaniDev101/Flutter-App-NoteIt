@@ -12,7 +12,7 @@ import 'package:noteit/database/drift/notes/notes_dao.dart';
 
 import '../../../../shared/find_replace.dart';
 import '../../../../shared/app_scaffold.dart';
-import '../../../../shared/note_card/core/note_action_controller.dart';
+import '../../../../shared/core/note_action_controller.dart';
 import '../../../../shared/highlighting_text_field.dart';
 import '../../../../shared/snack_bar_manager.dart';
 import '../../widgets/checklist_editor.dart';
@@ -20,6 +20,7 @@ import '../../widgets/folder_option_menu.dart';
 import '../../../home/core/providers.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
 import '../../widgets/note_editor_options.dart';
+import 'package:noteit/shared/core/note_action.dart';
 import '../../../lock/lock_manger/lock_manager.dart';
 import '../../../lock/view/setup_password_page.dart';
 import '../viewmodel/edit_note_view_model.dart';
@@ -386,8 +387,8 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
                 isLocked: _isLocked,
                 isPinned: _currentNoteWithFolder?.note.pinnedAt != null,
                 isChecklist: _contentVersion == ContentVersion.checklist,
-                onPressed: (NoteEditorOption option) async {
-                  if (_isNewNote && option != NoteEditorOption.info) {
+                onPressed: (NoteAction option) async {
+                  if (_isNewNote && option != NoteAction.info) {
                     SnackBarManager.show(msg: 'Please save the note first', type: SnackBarMessageType.error);
                     return;
                   }
@@ -397,12 +398,12 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
                   final deviceInfo = await ref.read(deviceInfoProvider.future);
 
                   switch (option) {
-                    case NoteEditorOption.delete:
+                    case NoteAction.delete:
                       _isDeleted = true;
                       await actionsController.deleteNotes([targetUuid], deviceInfo.extractPlatform);
                       _handleCloseNote();
                       break;
-                    case NoteEditorOption.pin:
+                    case NoteAction.pin:
                       await actionsController.togglePinNotes([targetUuid]);
                       try {
                         final updatedNote = await ref.read(notesDaoProvider).getNoteById(targetUuid);
@@ -411,18 +412,18 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
                       } catch (_) {}
                       if (mounted) setState(() {});
                       break;
-                    case NoteEditorOption.lock:
+                    case NoteAction.lock:
                       _handleLockToggle();
                       break;
-                    case NoteEditorOption.archive:
+                    case NoteAction.archive:
                       await actionsController.archiveNotes([targetUuid]);
                       _handleCloseNote();
                       break;
-                    case NoteEditorOption.info:
+                    case NoteAction.info:
                       if (!context.mounted) return;
                       ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.noteDetails);
                       break;
-                    case NoteEditorOption.checklist:
+                    case NoteAction.checklist:
                       setState(() {
                         if (_contentVersion != ContentVersion.checklist) {
                           _contentVersion = ContentVersion.checklist;
@@ -436,7 +437,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
                         }
                       });
                       break;
-                    case NoteEditorOption.find:
+                    case NoteAction.find:
                       if (_isFind) {
                         _highlightedContentController.searchQuery = '';
                       }
@@ -444,8 +445,10 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
                         _isFind = !_isFind;
                       });
                       break;
-                    case NoteEditorOption.reminder:
+                    case NoteAction.reminder:
                       // TODO: UI Action - Open DatePicker
+                      break;
+                    default:
                       break;
                   }
                 },
