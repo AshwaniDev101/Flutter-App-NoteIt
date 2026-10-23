@@ -173,7 +173,7 @@ class _FolderButtonState extends ConsumerState<FolderButton> {
             ),
             child: Text(
               '$displayCount',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
                 color: colorScheme.onSurfaceVariant,
               ),
@@ -461,7 +461,7 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
             padding: const EdgeInsets.only(left: 6.0, right: 2.0, bottom: 8.0),
             child: Text(
               "Folders Filter",
-              style: textTheme.labelSmall?.copyWith(
+              style: textTheme.labelMedium?.copyWith(
                 fontWeight: FontWeight.w700,
                 letterSpacing: 1.2,
                 color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),

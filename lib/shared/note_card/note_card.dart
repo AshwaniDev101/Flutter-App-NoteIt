@@ -429,7 +429,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
       return const SizedBox.shrink();
     }
 
-    final textTheme = Theme.of(context).textTheme.bodyMedium;
+    final textTheme = Theme.of(context).textTheme.bodyMedium!.copyWith(color:Theme.of(context).colorScheme.onSurfaceVariant);
 
     if (_note.contentVersion == 2) {
       try {

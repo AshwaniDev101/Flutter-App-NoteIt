@@ -76,6 +76,7 @@ class _SortMenuButtonState extends State<SortMenuButton> {
     if (isMobile) {
       return IconButton(
         icon: widget.icon,
+        iconSize: widget.icon.size,
         onPressed: () => _showMobileBottomSheet(context),
       );
     }
@@ -97,6 +98,7 @@ class _SortMenuButtonState extends State<SortMenuButton> {
             }
           },
           icon: widget.icon,
+          iconSize: widget.icon.size,
         );
       },
       menuChildren: [

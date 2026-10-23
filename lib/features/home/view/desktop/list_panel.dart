@@ -10,6 +10,7 @@ import 'package:noteit/database/drift/notes/notes_dao.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../../../../database/drift/keybindings/keybindings_dao.dart';
+import '../../../../shared/app_bars/top_select_mode_appbar.dart';
 import '../../../../shared/sort_menu_button.dart';
 import '../../../../shared/view_menu_button.dart';
 import '../../../drawer/desktop_drawer_button.dart';
@@ -21,7 +22,7 @@ import '../../core/providers.dart';
 import '../../viewmodel/viewmodel.dart';
 import '../../../../shared/app_search_bar.dart';
 import '../../../../shared/note_card/dynamic_notes_layout.dart';
-import '../shared/select_search_app_bars.dart';
+import '../../../../shared/app_bars/bottom_select_mode_appbar.dart';
 
 class DesktopListPanel extends ConsumerWidget {
   final TextEditingController searchController;
@@ -223,7 +224,7 @@ class DesktopListPanel extends ConsumerWidget {
                           const SizedBox(width: 8),
 
                           SortMenuButton(
-                            icon: Icon(CupertinoIcons.sort_down, color: Theme.of(context).colorScheme.primary),
+                            icon: Icon(CupertinoIcons.sort_down, color: Theme.of(context).colorScheme.onSurfaceVariant),
                             currentSortSelection: _getCurrentSortAction(currentSort),
                             currentPlatformSelection: _getCurrentPlatformAction(platformFilter),
                             onSelected: (HomeMenuAction action) {
@@ -251,7 +252,7 @@ class DesktopListPanel extends ConsumerWidget {
                           ),
 
                           ViewMenuButton(
-                            icon: Icon(Icons.grid_view, color: Theme.of(context).colorScheme.primary),
+                            icon: Icon(Icons.grid_view, color: Theme.of(context).colorScheme.onSurfaceVariant),
                             currentView: currentView,
                             onViewSelected: (NoteViewType selectedView) {
                               ref.read(homeNoteViewTypeProvider.notifier).updateView(selectedView);

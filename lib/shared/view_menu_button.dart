@@ -69,6 +69,7 @@ class _ViewMenuButtonState extends State<ViewMenuButton> {
     if (isMobile) {
       return IconButton(
         icon: widget.icon,
+        iconSize: widget.icon.size,
         onPressed: () => _showMobileBottomSheet(context),
       );
     }
@@ -90,6 +91,7 @@ class _ViewMenuButtonState extends State<ViewMenuButton> {
             }
           },
           icon: widget.icon,
+          iconSize: widget.icon.size,
         );
       },
       menuChildren: [

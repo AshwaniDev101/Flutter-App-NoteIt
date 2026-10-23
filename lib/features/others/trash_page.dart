@@ -8,6 +8,7 @@ import '../../database/drift/local_database.dart';
 import '../../database/drift/notes/notes_dao.dart';
 import '../../database/shared_preference/shared_preference_manager.dart';
 import '../../database/sync/sync_orchestrator.dart';
+import '../../shared/app_bars/top_select_mode_appbar.dart';
 import '../../shared/app_scaffold.dart';
 import '../../shared/app_search_bar.dart';
 import '../../shared/core/note_action_controller.dart';
@@ -19,7 +20,7 @@ import '../../shared/sort_menu_button.dart';
 import '../../shared/view_menu_button.dart';
 import '../home/core/providers.dart';
 import '../home/view/shared/desktop_close_button.dart';
-import '../home/view/shared/select_search_app_bars.dart';
+import '../../shared/app_bars/bottom_select_mode_appbar.dart';
 import '../note_editor/widgets/folder_option_menu.dart';
 
 // ==========================================
