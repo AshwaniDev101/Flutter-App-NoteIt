@@ -141,11 +141,15 @@ class _FolderButtonState extends ConsumerState<FolderButton> {
                     ),
                     const SizedBox(width: 10),
                   ],
-                  Text(
-                    currentName,
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: isOpen ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
+                  Flexible(
+                    child: Text(
+                      currentName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: isOpen ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 6),

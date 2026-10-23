@@ -8,6 +8,9 @@ import 'package:noteit/database/drift/notes/notes_dao.dart';
 
 import 'package:noteit/features/note_editor/screens/view/desktop_edit_page.dart';
 
+import 'package:window_manager/window_manager.dart';
+
+import '../../../../core/util/platform_helper.dart';
 import '../../../../shared/find_replace.dart';
 import '../../../../shared/core/note_action_controller.dart';
 import '../../../../shared/highlighting_text_field.dart';
@@ -224,6 +227,14 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
       child: Scaffold(
         backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
         appBar: AppBar(
+          flexibleSpace: PlatformHelper.isNativeDesktop
+              ? DragToMoveArea(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    child: const SizedBox.expand(),
+                  ),
+                )
+              : null,
           automaticallyImplyLeading: false,
           leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: _handleMobileBack),
           titleSpacing: 0,
@@ -275,8 +286,9 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
                     }
                     _hasTriggeredFinalSave = true;
                     final targetUuid = widget.existingNoteWithFolder!.note.uuid;
+                    final router = GoRouter.of(context);
                     await ref.read(noteActionsControllerProvider).archiveNotes([targetUuid]);
-                    if (mounted) context.pop();
+                    if (context.mounted) router.pop();
                     break;
                   case NoteAction.find:
                     if (_isFind) {
@@ -296,6 +308,28 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
                 }
               },
             ),
+            if (PlatformHelper.isNativeDesktop) ...[
+              const SizedBox(width: 4),
+              IconButton(
+                icon: const Icon(Icons.minimize, size: 16),
+                onPressed: () => windowManager.minimize(),
+              ),
+              IconButton(
+                icon: const Icon(Icons.crop_square, size: 16),
+                onPressed: () async {
+                  if (await windowManager.isMaximized()) {
+                    windowManager.unmaximize();
+                  } else {
+                    windowManager.maximize();
+                  }
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.close, size: 16),
+                onPressed: () => windowManager.close(),
+              ),
+            ],
+            const SizedBox(width: 8),
           ],
         ),
         body: SafeArea(

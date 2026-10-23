@@ -299,6 +299,14 @@ class _DefaultSettingsPageState extends ConsumerState<DefaultSettingsPage> {
                                     _applyWindowSizePreset(1024, 700, 'Compact Size (1024x700)');
                                   },
                                 ),
+                                _buildWindowSizePresetChip(
+                                  label: 'Mobile Size',
+                                  subtitle: '420 x 800',
+                                  icon: Icons.smartphone_rounded,
+                                  onSelected: () {
+                                    _applyWindowSizePreset(420, 800, 'Mobile Size (420x800)');
+                                  },
+                                ),
                               ],
                             ),
                           ],

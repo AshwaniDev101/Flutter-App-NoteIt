@@ -19,7 +19,7 @@ import 'package:noteit/features/lock/password_prompt_helper.dart';
 class NoteTapHandler {
   /// Opens the given [noteWithFolder], verifying master password lock if necessary.
   static Future<void> openNote(BuildContext context, WidgetRef ref, NoteWithFolder noteWithFolder) async {
-    final isDesktop = PlatformHelper.isDesktopScreen;
+    final isWide = PlatformHelper.isWideLayout(context);
     final isSessionUnlocked = ref.read(lockManagerProvider).sessionUnlockedNoteIds.contains(noteWithFolder.note.uuid);
 
     // If note is locked and hasn't been unlocked during this session, prompt for password
@@ -30,7 +30,7 @@ class NoteTapHandler {
 
     if (!context.mounted) return;
 
-    if (isDesktop) {
+    if (isWide) {
       final rightPanelNotifier = ref.read(desktopRightPanelViewProvider.notifier);
       final currentView = rightPanelNotifier.currentView;
 

@@ -493,9 +493,10 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
   // ===========================================================================
 
   Widget _buildTopMetaRow(Folder? currentFolder) {
-
-    return Row(
-      children: [
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
         const SizedBox(width: 8),
         FolderOptionMenu(
           selectedFolder: currentFolder,
@@ -580,8 +581,9 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
         const SizedBox(width: 16),
         _buildNewLabel(),
       ],
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildNewLabel() {
     if (!_isNewNote) {

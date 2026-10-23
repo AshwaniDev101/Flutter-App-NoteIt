@@ -1,6 +1,15 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 
 class PlatformHelper {
+  /// Breakpoint width (in logical pixels) for multi-pane layout vs single-pane mobile layout.
+  static const double desktopBreakpoint = 650.0;
+
+  /// Returns true if the screen/window width is wide enough for a multi-pane layout.
+  static bool isWideLayout(BuildContext context) {
+    return MediaQuery.sizeOf(context).width >= desktopBreakpoint;
+  }
+
   /// Returns true if running on a native Android or iOS device (excluding web)
   static bool get isMobileScreen {
     if (kIsWeb) return false;

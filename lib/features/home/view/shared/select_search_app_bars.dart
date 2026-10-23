@@ -23,6 +23,8 @@ class TopSelectModeAppBar extends ConsumerWidget implements PreferredSizeWidget 
   final VoidCallback? onSelectAll;
   final List<NoteAction> noteActions;
   final void Function(NoteAction)? onActionSelected;
+  final Color? backgroundColor;
+  final Color? foregroundColor;
 
   const TopSelectModeAppBar({
     super.key,
@@ -31,6 +33,8 @@ class TopSelectModeAppBar extends ConsumerWidget implements PreferredSizeWidget 
     this.onSelectAll,
     this.noteActions = const [],
     this.onActionSelected,
+    this.backgroundColor,
+    this.foregroundColor,
   });
 
   @override
@@ -122,8 +126,11 @@ class TopSelectModeAppBar extends ConsumerWidget implements PreferredSizeWidget 
     }
 
     return AppBar(
-      backgroundColor: colorScheme.surfaceContainerLow,
-      foregroundColor: colorScheme.onSurface,
+      // backgroundColor: colorScheme.surfaceContainerLow,
+      // foregroundColor: colorScheme.onSurface,
+
+      backgroundColor: colorScheme.secondaryContainer,
+      foregroundColor: colorScheme.onSecondaryContainer,
       leading: IconButton(
         icon: const Icon(Icons.close),
         onPressed: handleClearSelection,

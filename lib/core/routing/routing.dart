@@ -54,7 +54,7 @@ GoRoute _adaptiveRoute({
 }) {
   return GoRoute(
     path: path,
-    builder: (context, state) => PlatformHelper.isDesktopScreen
+    builder: (context, state) => PlatformHelper.isWideLayout(context)
         ? desktop(state)
         : mobile(state),
   );

@@ -7,7 +7,7 @@ import '../../database/firebase/auth/firebase_provider.dart';
 import '../../core/theme/app_theme.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
 
-class SharedDrawerContent extends ConsumerWidget {
+class SharedDrawerContent extends ConsumerStatefulWidget {
   final RightPanelPageOptions? selectedOption;
   final void Function(RightPanelPageOptions) onOptionSelected;
   final VoidCallback onClose;
@@ -20,11 +20,23 @@ class SharedDrawerContent extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SharedDrawerContent> createState() => _SharedDrawerContentState();
+}
+
+class _SharedDrawerContentState extends ConsumerState<SharedDrawerContent> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDarkMode = theme.brightness == Brightness.dark;
-
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -50,75 +62,81 @@ class SharedDrawerContent extends ConsumerWidget {
 
         // --- Scrollable Navigation ---
         Flexible(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const _SectionHeader(title: 'WORKSPACE'),
-                // _CompactDrawerTile(
-                //   option: RightPanelPageOptions.noteEditor,
-                //   isSelected: selectedOption == RightPanelPageOptions.noteEditor,
-                //   onTap: () => onOptionSelected(RightPanelPageOptions.noteEditor),
-                // ),
-                _CompactDrawerTile(
-                  option: RightPanelPageOptions.trash,
-                  isSelected: selectedOption == RightPanelPageOptions.trash,
-                  onTap: () => onOptionSelected(RightPanelPageOptions.trash),
-                ),
-
-                const SizedBox(height: 16),
-
-                const _SectionHeader(title: 'SYSTEM'),
-                _CompactDrawerTile(
-                  option: RightPanelPageOptions.localSync,
-                  isSelected: selectedOption == RightPanelPageOptions.localSync,
-                  onTap: () => onOptionSelected(RightPanelPageOptions.localSync),
-                ),
-                _CompactDrawerTile(
-                  option: RightPanelPageOptions.themes,
-                  isSelected: selectedOption == RightPanelPageOptions.themes,
-                  onTap: () => onOptionSelected(RightPanelPageOptions.themes),
-                ),
-                _CompactDrawerTile(
-                  option: RightPanelPageOptions.settings,
-                  isSelected: selectedOption == RightPanelPageOptions.settings,
-                  onTap: () => onOptionSelected(RightPanelPageOptions.settings),
-                ),
-                _CompactDrawerTile(
-                  option: RightPanelPageOptions.devTools,
-                  isSelected: selectedOption == RightPanelPageOptions.devTools,
-                  onTap: () => onOptionSelected(RightPanelPageOptions.devTools),
-                ),
-
-                _CompactDrawerTile(
-                  option: RightPanelPageOptions.archivePage,
-                  isSelected: selectedOption == RightPanelPageOptions.archivePage,
-                  onTap: () => onOptionSelected(RightPanelPageOptions.archivePage),
-                ),
-
-                const SizedBox(height: 8),
-                Padding(
-                  padding: const EdgeInsets.only(left: 12.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SelectableText(
-                        "version: ${AppEnv.version}",
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
-                      ),
-                      const SizedBox(height: 4),
-                      SelectableText(
-                        "build number: ${AppEnv.buildNumber}",
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
-                      ),
-                    ],
+          child: Scrollbar(
+            controller: _scrollController,
+            thumbVisibility: true,
+            interactive: true,
+            child: SingleChildScrollView(
+              controller: _scrollController,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const _SectionHeader(title: 'WORKSPACE'),
+                  // _CompactDrawerTile(
+                  //   option: RightPanelPageOptions.noteEditor,
+                  //   isSelected: widget.selectedOption == RightPanelPageOptions.noteEditor,
+                  //   onTap: () => widget.onOptionSelected(RightPanelPageOptions.noteEditor),
+                  // ),
+                  _CompactDrawerTile(
+                    option: RightPanelPageOptions.trash,
+                    isSelected: widget.selectedOption == RightPanelPageOptions.trash,
+                    onTap: () => widget.onOptionSelected(RightPanelPageOptions.trash),
                   ),
-                ),
-                const SizedBox(height: 8),
 
-              ],
+                  const SizedBox(height: 16),
+
+                  const _SectionHeader(title: 'SYSTEM'),
+                  _CompactDrawerTile(
+                    option: RightPanelPageOptions.localSync,
+                    isSelected: widget.selectedOption == RightPanelPageOptions.localSync,
+                    onTap: () => widget.onOptionSelected(RightPanelPageOptions.localSync),
+                  ),
+                  _CompactDrawerTile(
+                    option: RightPanelPageOptions.themes,
+                    isSelected: widget.selectedOption == RightPanelPageOptions.themes,
+                    onTap: () => widget.onOptionSelected(RightPanelPageOptions.themes),
+                  ),
+                  _CompactDrawerTile(
+                    option: RightPanelPageOptions.settings,
+                    isSelected: widget.selectedOption == RightPanelPageOptions.settings,
+                    onTap: () => widget.onOptionSelected(RightPanelPageOptions.settings),
+                  ),
+                  _CompactDrawerTile(
+                    option: RightPanelPageOptions.devTools,
+                    isSelected: widget.selectedOption == RightPanelPageOptions.devTools,
+                    onTap: () => widget.onOptionSelected(RightPanelPageOptions.devTools),
+                  ),
+
+                  _CompactDrawerTile(
+                    option: RightPanelPageOptions.archivePage,
+                    isSelected: widget.selectedOption == RightPanelPageOptions.archivePage,
+                    onTap: () => widget.onOptionSelected(RightPanelPageOptions.archivePage),
+                  ),
+
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 12.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SelectableText(
+                          "version: ${AppEnv.version}",
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                        ),
+                        const SizedBox(height: 4),
+                        SelectableText(
+                          "build number: ${AppEnv.buildNumber}",
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                ],
+              ),
             ),
           ),
         ),
@@ -142,7 +160,7 @@ class SharedDrawerContent extends ConsumerWidget {
                   foregroundColor: colorScheme.onSurfaceVariant,
                   onTap: () async {
                     await ref.read(authRepositoryProvider).signOut();
-                    onClose();
+                    widget.onClose();
                   },
                 );
               } else {
@@ -154,7 +172,7 @@ class SharedDrawerContent extends ConsumerWidget {
                   foregroundColor: Colors.white,
                   onTap: () async {
                     await ref.read(authRepositoryProvider).signInWithGoogle();
-                    onClose();
+                    widget.onClose();
                   },
                 );
               }

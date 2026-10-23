@@ -5,7 +5,10 @@ import 'package:go_router/go_router.dart';
 import 'package:noteit/features/home/view/shared/icon_tray/icon_tray.dart';
 import 'package:noteit/features/home/view/shared/select_search_app_bars.dart';
 
+import 'package:window_manager/window_manager.dart';
+
 import '../../../../core/routing/routing.dart';
+import '../../../../core/util/platform_helper.dart';
 import '../../../../database/drift/notes/notes_dao.dart';
 import '../../../../database/sync/sync_orchestrator.dart';
 import '../../../../shared/app_search_bar.dart';
@@ -83,14 +86,49 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> with WidgetsBin
 
   PreferredSizeWidget _buildAppBar(HomePageState state) {
     if (state.isSelectMode) {
-      return const TopSelectModeAppBar();
+      return PlatformHelper.isNativeDesktop
+          ? PreferredSize(
+              preferredSize: const Size.fromHeight(kToolbarHeight),
+              child: const DragToMoveArea(child: TopSelectModeAppBar()),
+            )
+          : const TopSelectModeAppBar();
     }
 
     return AppBar(
+      flexibleSpace: PlatformHelper.isNativeDesktop
+          ? DragToMoveArea(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                child: const SizedBox.expand(),
+              ),
+            )
+          : null,
       elevation: 0,
-      actions: const [
-        IconTray(),
-        SizedBox(width: 8),
+      scrolledUnderElevation: PlatformHelper.isNativeDesktop ? 0.0 : null,
+      actions: [
+        const IconTray(),
+        if (PlatformHelper.isNativeDesktop) ...[
+          const SizedBox(width: 4),
+          IconButton(
+            icon: const Icon(Icons.minimize, size: 16),
+            onPressed: () => windowManager.minimize(),
+          ),
+          IconButton(
+            icon: const Icon(Icons.crop_square, size: 16),
+            onPressed: () async {
+              if (await windowManager.isMaximized()) {
+                windowManager.unmaximize();
+              } else {
+                windowManager.maximize();
+              }
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.close, size: 16),
+            onPressed: () => windowManager.close(),
+          ),
+        ],
+        const SizedBox(width: 8),
       ],
     );
   }

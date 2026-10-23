@@ -124,7 +124,12 @@ class DesktopListPanel extends ConsumerWidget {
                 child: homeState.isSelectMode
                     ? const DragToMoveArea(child: TopSelectModeAppBar())
                     : AppBar(
-                        flexibleSpace: DragToMoveArea(child: Container(color: Colors.transparent)),
+                        flexibleSpace: DragToMoveArea(
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            child: const SizedBox.expand(),
+                          ),
+                        ),
                         backgroundColor: Colors.transparent,
                         leading: const DrawerMenuButton(),
                         elevation: 0,
@@ -197,20 +202,25 @@ class DesktopListPanel extends ConsumerWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 4),
                       child: Row(
                         children: [
-                          FolderButton(
-                            selectedFolder: ref.watch(activeFolderProvider),
-                            emptyLabel: 'All Notes',
-                            showContextMenus: true,
-                            isShowTotalNoteCount: true,
-                            onFolderSelected: (folder) {
-                              if (folder == null) {
-                                ref.read(activeFolderProvider.notifier).clear();
-                              } else {
-                                ref.read(activeFolderProvider.notifier).setFolder(folder);
-                              }
-                            },
+                          Expanded(
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: FolderButton(
+                                selectedFolder: ref.watch(activeFolderProvider),
+                                emptyLabel: 'All Notes',
+                                showContextMenus: true,
+                                isShowTotalNoteCount: true,
+                                onFolderSelected: (folder) {
+                                  if (folder == null) {
+                                    ref.read(activeFolderProvider.notifier).clear();
+                                  } else {
+                                    ref.read(activeFolderProvider.notifier).setFolder(folder);
+                                  }
+                                },
+                              ),
+                            ),
                           ),
-                          const Spacer(),
+                          const SizedBox(width: 8),
 
                           SortMenuButton(
                             icon: Icon(CupertinoIcons.sort_down, color: Theme.of(context).colorScheme.primary),

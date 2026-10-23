@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:window_manager/window_manager.dart';
+
 import '../core/util/platform_helper.dart';
 import 'package:noteit/features/home/core/providers.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
@@ -88,6 +90,14 @@ class AppScaffold extends ConsumerWidget {
       }
 
       effectiveAppBar = AppBar(
+        flexibleSpace: PlatformHelper.isNativeDesktop
+            ? DragToMoveArea(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  child: const SizedBox.expand(),
+                ),
+              )
+            : null,
         title: title,
         leading: effectiveLeading,
         centerTitle: centerTitle,

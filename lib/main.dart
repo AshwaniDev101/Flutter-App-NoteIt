@@ -42,15 +42,19 @@ Future<void> main() async {
     final savedWidth = SharedPreferenceManager.instance.windowWidth;
     final savedHeight = SharedPreferenceManager.instance.windowHeight;
 
+    const minWindowSize = Size(360, 500);
+
     WindowOptions windowOptions = WindowOptions(
       titleBarStyle: TitleBarStyle.hidden, // Hides the default Windows frame
       size: Size(savedWidth, savedHeight),
+      minimumSize: minWindowSize,
       center: true,
     );
 
     windowManager.addListener(_WindowSizeObserver());
 
     await windowManager.waitUntilReadyToShow(windowOptions, () async {
+      await windowManager.setMinimumSize(minWindowSize);
       await windowManager.show();
       await windowManager.focus();
     });
