@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/database/drift/notes/notes_dao.dart';
-import 'package:noteit/shared/snack_bar_manager.dart';
+import 'package:noteit/shared/overlays/snack_bar_manager.dart';
 
 import 'lock_manger/lock_manager.dart';
 import 'view/master_password_page.dart';

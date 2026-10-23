@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/theme/app_theme.dart';
 
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
-import '../../../shared/app_scaffold.dart';
+import '../../../shared/overlays/app_scaffold.dart';
 
 class ThemesPage extends ConsumerWidget {
   const ThemesPage({super.key});

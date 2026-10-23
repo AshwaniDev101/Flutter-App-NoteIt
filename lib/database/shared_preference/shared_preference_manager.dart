@@ -2,7 +2,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../shared/view_menu_button.dart';
+import '../../shared/menus/view_menu_button.dart';
 import '../drift/notes/notes_dao.dart';
 import '../sync/sync_engine.dart';
 

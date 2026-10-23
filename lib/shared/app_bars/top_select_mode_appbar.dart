@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:noteit/shared/core/note_action.dart';
 import '../../core/util/platform_helper.dart';
-import '../core/note_action_controller.dart';
 import '../../features/lock/lock_manger/lock_manager.dart';
 import '../../features/lock/password_prompt_helper.dart';
 import '../../features/home/core/providers.dart';
 
 import '../../features/home/viewmodel/viewmodel.dart';
+import '../note_card/core/note_action.dart';
+import '../note_card/core/note_action_controller.dart';
 
 /// App Bar displayed when selection mode is active on Home screens.
 ///

@@ -4,14 +4,14 @@ import 'package:window_manager/window_manager.dart';
 
 import '../../../core/util/platform_helper.dart';
 import '../../../database/shared_preference/shared_preference_manager.dart';
-import '../../../shared/app_scaffold.dart';
-import '../../../shared/snack_bar_manager.dart';
-import '../../../shared/view_menu_button.dart';
+import '../../../shared/overlays/app_scaffold.dart';
+import '../../../shared/overlays/snack_bar_manager.dart';
+import '../../../shared/menus/view_menu_button.dart';
 import '../../home/core/db_sorting_filtering.dart';
 import 'package:noteit/features/home/core/providers.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
-import '../../others/archive_page.dart';
-import '../../others/trash_page.dart';
+import '../../archive/providers/archive_providers.dart';
+import '../../trash/providers/trash_providers.dart';
 
 class DefaultSettingsPage extends ConsumerStatefulWidget {
   const DefaultSettingsPage({super.key});

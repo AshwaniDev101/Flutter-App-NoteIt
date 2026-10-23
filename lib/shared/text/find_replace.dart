@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+
+import '../overlays/snack_bar_manager.dart';
 import 'highlighting_text_field.dart';
-import 'snack_bar_manager.dart';
 
 class FindReplaceWidget extends StatefulWidget {
   final HighlightingTextField contentController;

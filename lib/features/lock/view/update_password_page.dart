@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../shared/snack_bar_manager.dart';
+import '../../../shared/overlays/snack_bar_manager.dart';
 import '../lock_manger/lock_manager.dart';
 import 'widgets/lock_dialog_shell.dart';
 

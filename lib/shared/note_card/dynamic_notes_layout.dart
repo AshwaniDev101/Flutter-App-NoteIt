@@ -4,13 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/util/device_info.dart';
 import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/database/drift/notes/notes_dao.dart';
-import 'package:noteit/shared/core/note_action.dart';
 
 import '../../../core/util/platform_helper.dart';
 import '../../../../../database/sync/sync_orchestrator.dart';
 import '../../features/folders/core/providers.dart';
-import '../view_menu_button.dart';
-import '../core/note_action_controller.dart';
+import '../menus/view_menu_button.dart';
+import 'core/note_action.dart';
+import 'core/note_action_controller.dart';
 import 'note_card.dart';
 import '../../../features/home/core/providers.dart';
 import '../../../features/home/viewmodel/viewmodel.dart';
@@ -154,7 +154,9 @@ class DynamicNotesLayout extends ConsumerWidget {
         break;
       case NoteAction.lock:
         final lockNotifier = ref.read(lockManagerProvider.notifier);
+
         if (!lockNotifier.hasMasterPassword) {
+          if (!context.mounted) return;
           await PasswordPromptHelper.showMasterPasswordManagement(context, ref);
         }
         if (ref.read(lockManagerProvider.notifier).hasMasterPassword) {

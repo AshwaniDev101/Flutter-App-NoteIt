@@ -7,9 +7,9 @@ import '../../features/folders/view/folder_selector.dart';
 import '../../features/home/core/db_sorting_filtering.dart';
 import '../../features/home/core/providers.dart';
 import '../../features/home/viewmodel/viewmodel.dart';
-import '../app_search_bar.dart';
-import '../sort_menu_button.dart';
-import '../view_menu_button.dart';
+import 'app_search_bar.dart';
+import '../menus/sort_menu_button.dart';
+import '../menus/view_menu_button.dart';
 
 class MobileBottomControlBar extends ConsumerWidget {
   final HomePageState homeState;

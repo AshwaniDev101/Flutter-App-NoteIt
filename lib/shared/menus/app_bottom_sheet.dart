@@ -1,50 +1,54 @@
 import 'package:flutter/material.dart';
 
-/// Standardized Material 3 bottom sheet for mobile views across NoteIt.
-Future<T?> showAppBottomSheet<T>({
-  required BuildContext context,
-  required Widget Function(BuildContext context, StateSetter setModalState) builder,
-  double? heightFactor,
-}) {
-  return showModalBottomSheet<T>(
-    context: context,
-    showDragHandle: true,
-    useSafeArea: true,
-    isScrollControlled: true,
-    backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-    ),
-    builder: (BuildContext bottomSheetContext) {
-      return StatefulBuilder(
-        builder: (BuildContext context, StateSetter setModalState) {
-          final bottomPadding = MediaQuery.of(bottomSheetContext).viewInsets.bottom;
-          final content = Padding(
-            padding: EdgeInsets.only(bottom: bottomPadding),
-            child: builder(context, setModalState),
-          );
+class AppBottomSheet {
+  AppBottomSheet._();
 
-          if (heightFactor != null) {
+  /// Standardized Material 3 bottom sheet for mobile views across NoteIt.
+  static Future<T?> show<T>({
+    required BuildContext context,
+    required Widget Function(BuildContext context, StateSetter setModalState) builder,
+    double? heightFactor,
+  }) {
+    return showModalBottomSheet<T>(
+      context: context,
+      showDragHandle: true,
+      useSafeArea: true,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (BuildContext bottomSheetContext) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            final bottomPadding = MediaQuery.of(bottomSheetContext).viewInsets.bottom;
+            final content = Padding(
+              padding: EdgeInsets.only(bottom: bottomPadding),
+              child: builder(context, setModalState),
+            );
+
+            if (heightFactor != null) {
+              return SafeArea(
+                child: SizedBox(
+                  height: MediaQuery.sizeOf(bottomSheetContext).height * heightFactor,
+                  child: content,
+                ),
+              );
+            }
+
             return SafeArea(
-              child: SizedBox(
-                height: MediaQuery.sizeOf(bottomSheetContext).height * heightFactor,
-                child: content,
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 16.0),
+                  child: content,
+                ),
               ),
             );
-          }
-
-          return SafeArea(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 16.0),
-                child: content,
-              ),
-            ),
-          );
-        },
-      );
-    },
-  );
+          },
+        );
+      },
+    );
+  }
 }
 
 /// Reusable styled list tile for popup menus and bottom sheets.

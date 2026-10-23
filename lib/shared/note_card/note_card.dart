@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:flutter/cupertino.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -10,10 +10,11 @@ import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/database/drift/notes/notes_dao.dart';
 import 'package:noteit/features/home/core/providers.dart';
 import 'package:noteit/features/lock/lock_manger/lock_manager.dart';
-import 'package:noteit/shared/highlighted_text.dart';
-import 'package:noteit/shared/core/note_action.dart';
 import 'package:noteit/shared/note_card/widgets/lock_overlay.dart';
-import 'package:noteit/shared/view_menu_button.dart';
+import 'package:noteit/shared/menus/view_menu_button.dart';
+
+import '../text/highlighted_text.dart';
+import 'core/note_action.dart';
 
 /// A card widget displaying a note summary across list and grid layouts.
 class NoteCard extends ConsumerStatefulWidget {

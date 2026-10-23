@@ -1,6 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import '../../../../shared/app_scaffold.dart';
+import '../../../../shared/overlays/app_scaffold.dart';
 
 /// Glassmorphism shell wrapper for lock dialog views.
 class LockDialogShell extends StatelessWidget {

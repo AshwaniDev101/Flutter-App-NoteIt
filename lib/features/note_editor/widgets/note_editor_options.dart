@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:noteit/shared/core/note_action.dart';
+
+import '../../../shared/note_card/core/note_action.dart';
+
 
 class NoteEditorOptionButton extends StatefulWidget {
   final void Function(NoteAction) onPressed;

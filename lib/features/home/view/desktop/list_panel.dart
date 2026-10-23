@@ -11,8 +11,8 @@ import 'package:window_manager/window_manager.dart';
 
 import '../../../../database/drift/keybindings/keybindings_dao.dart';
 import '../../../../shared/app_bars/top_select_mode_appbar.dart';
-import '../../../../shared/sort_menu_button.dart';
-import '../../../../shared/view_menu_button.dart';
+import '../../../../shared/menus/sort_menu_button.dart';
+import '../../../../shared/menus/view_menu_button.dart';
 import '../../../drawer/desktop_drawer_button.dart';
 import '../../../folders/core/providers.dart';
 import '../../../folders/view/folder_selector.dart';
@@ -20,7 +20,7 @@ import '../../../keybinding/smart_action_widget.dart';
 import '../../core/db_sorting_filtering.dart';
 import '../../core/providers.dart';
 import '../../viewmodel/viewmodel.dart';
-import '../../../../shared/app_search_bar.dart';
+import '../../../../shared/app_bars/app_search_bar.dart';
 import '../../../../shared/note_card/dynamic_notes_layout.dart';
 import '../../../../shared/app_bars/bottom_select_mode_appbar.dart';
 

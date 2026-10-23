@@ -11,16 +11,17 @@ import 'package:noteit/features/note_editor/screens/view/desktop_edit_page.dart'
 import 'package:window_manager/window_manager.dart';
 
 import '../../../../core/util/platform_helper.dart';
-import '../../../../shared/find_replace.dart';
-import '../../../../shared/core/note_action_controller.dart';
-import '../../../../shared/highlighting_text_field.dart';
-import '../../../../shared/snack_bar_manager.dart';
+import '../../../../shared/text/find_replace.dart';
+import '../../../../shared/note_card/core/note_action.dart';
+import '../../../../shared/note_card/core/note_action_controller.dart';
+import '../../../../shared/overlays/snack_bar_manager.dart';
+import '../../../../shared/text/highlighting_text_field.dart';
 import '../../../folders/core/providers.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
 import '../../widgets/checklist_editor.dart';
 import '../../widgets/folder_option_menu.dart';
 import '../../widgets/note_editor_options.dart';
-import 'package:noteit/shared/core/note_action.dart';
+
 import '../../../lock/lock_manger/lock_manager.dart';
 import '../../../lock/view/setup_password_page.dart';
 import '../viewmodel/edit_note_view_model.dart';

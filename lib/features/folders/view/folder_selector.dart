@@ -4,12 +4,12 @@ export 'widgets/folder_list_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../shared/app_bottom_sheet.dart';
-import '../../../shared/app_search_bar.dart';
+import '../../../shared/app_bars/app_search_bar.dart';
 
 import '../../../database/drift/folders/folders_dao.dart';
 import '../../../database/drift/local_database.dart';
 import '../../../database/drift/notes/notes_dao.dart';
+import '../../../shared/menus/app_bottom_sheet.dart';
 import 'dialogs/folder_dialogs.dart';
 import 'widgets/folder_list_item.dart';
 
@@ -54,7 +54,7 @@ class _FolderButtonState extends ConsumerState<FolderButton> {
   void _showMobileBottomSheet(BuildContext context) {
     Folder? localSelectedFolder = widget.selectedFolder;
 
-    showAppBottomSheet(
+    AppBottomSheet.show(
       context: context,
       heightFactor: 0.5,
       builder: (context, setModalState) {

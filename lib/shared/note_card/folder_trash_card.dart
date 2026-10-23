@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:noteit/shared/core/note_action.dart';
 import '../../database/drift/local_database.dart';
+import 'core/note_action.dart';
 
 class FolderTrashCard extends StatefulWidget {
   final Folder folder;

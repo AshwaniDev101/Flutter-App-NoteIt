@@ -37,7 +37,7 @@ class _SortMenuButtonState extends State<SortMenuButton> {
   final MenuController _menuController = MenuController();
 
   void _showMobileBottomSheet(BuildContext context) {
-    showAppBottomSheet(
+    AppBottomSheet.show(
       context: context,
       builder: (context, setModalState) {
         return Column(

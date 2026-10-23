@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
 import 'package:noteit/features/lock/lock_manger/lock_manager.dart';
-import 'package:noteit/shared/app_scaffold.dart';
-import 'package:noteit/shared/snack_bar_manager.dart';
+import 'package:noteit/shared/overlays/app_scaffold.dart';
+import 'package:noteit/shared/overlays/snack_bar_manager.dart';
 
 class DevPage extends ConsumerWidget {
   const DevPage({super.key});

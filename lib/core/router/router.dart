@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:noteit/features/local_sync/view/role_selector_page.dart';
 import 'package:noteit/features/note_editor/screens/view/details/detail_page.dart';
-import 'package:noteit/features/others/archive_page.dart';
+import 'package:noteit/features/archive/view/archive_page.dart';
 
 import '../../database/drift/notes/notes_dao.dart';
 import '../../features/backup/export_page.dart';
@@ -22,7 +22,7 @@ import '../../features/note_editor/screens/view/mobile_edit_page.dart';
 import '../../features/settings/view/default_settings_page.dart';
 import '../../features/settings/view/settings_page.dart';
 import '../../features/themes/view/theme_page.dart';
-import '../../features/others/trash_page.dart';
+import '../../features/trash/view/trash_page.dart';
 import '../util/platform_helper.dart';
 
 class AppRoutes {

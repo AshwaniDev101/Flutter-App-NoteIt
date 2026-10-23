@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/features/folders/view/folder_selector.dart';
-import 'package:noteit/shared/app_bottom_sheet.dart';
-import 'package:noteit/shared/app_search_bar.dart';
+import 'package:noteit/shared/menus/app_bottom_sheet.dart';
+import 'package:noteit/shared/app_bars/app_search_bar.dart';
 
 /// A dropdown selector widget for choosing a folder for a note.
 ///
@@ -34,7 +34,7 @@ class _FolderOptionMenuState extends ConsumerState<FolderOptionMenu> {
   void _showMobileBottomSheet(BuildContext context) {
     Folder? localSelectedFolder = widget.selectedFolder;
 
-    showAppBottomSheet(
+    AppBottomSheet.show(
       context: context,
       heightFactor: 0.5,
       builder: (context, setModalState) {

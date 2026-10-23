@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../database/drift/synced_devices/synced_devices_dao.dart';
-import '../../../shared/snack_bar_manager.dart';
+import '../../../shared/overlays/snack_bar_manager.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
-import '../../../shared/app_scaffold.dart';
+import '../../../shared/overlays/app_scaffold.dart';
 
 class SyncedDevicesListView extends ConsumerWidget {
   const SyncedDevicesListView({super.key});

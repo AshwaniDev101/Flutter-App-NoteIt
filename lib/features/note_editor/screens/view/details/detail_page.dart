@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../database/drift/notes/notes_dao.dart';
 import '../../../../home/core/providers.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
-import '../../../../../shared/app_scaffold.dart';
+import '../../../../../shared/overlays/app_scaffold.dart';
 
 class NoteDetailsPage extends ConsumerWidget {
   const NoteDetailsPage({super.key});

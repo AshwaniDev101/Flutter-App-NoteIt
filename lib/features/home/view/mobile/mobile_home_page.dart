@@ -6,7 +6,7 @@ import 'package:noteit/shared/app_bars/bottom_select_mode_appbar.dart';
 
 import 'package:window_manager/window_manager.dart';
 
-import '../../../../core/routing/routing.dart';
+import '../../../../core/router/router.dart';
 import '../../../../core/util/platform_helper.dart';
 import '../../../../database/drift/notes/notes_dao.dart';
 import '../../../../database/sync/sync_orchestrator.dart';

@@ -2,73 +2,25 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/util/device_info.dart';
-import '../../core/util/platform_helper.dart';
-import '../../database/drift/local_database.dart';
-import '../../database/drift/notes/notes_dao.dart';
-import '../../database/shared_preference/shared_preference_manager.dart';
-import '../../database/sync/sync_orchestrator.dart';
-import '../../shared/app_bars/top_select_mode_appbar.dart';
-import '../../shared/app_scaffold.dart';
-import '../../shared/app_search_bar.dart';
-import '../../shared/core/note_action_controller.dart';
-import '../../shared/note_card/note_card.dart';
-import '../../shared/core/note_action.dart';
-import '../../shared/snack_bar_manager.dart';
-import '../../shared/sort_menu_button.dart';
-import '../../shared/view_menu_button.dart';
-import '../home/core/note_tap_handler.dart';
-import '../home/core/providers.dart';
-import '../home/view/shared/desktop_close_button.dart';
-import '../../shared/app_bars/bottom_select_mode_appbar.dart';
-import '../note_editor/widgets/folder_option_menu.dart';
-
-// ==========================================
-// PROVIDERS & NOTIFIERS
-// ==========================================
-
-final archivedNotesStreamProvider = StreamProvider.autoDispose<List<NoteWithFolder>>((ref) {
-  return ref.watch(notesDaoProvider).watchArchivedNotes();
-});
-
-/// Dedicated Sort Preference Provider for Archive Page
-final archiveNoteSortPreferenceProvider = NotifierProvider<ArchiveNoteSortPreferenceNotifier, NoteSortPreference>(() {
-  return ArchiveNoteSortPreferenceNotifier();
-});
-
-class ArchiveNoteSortPreferenceNotifier extends Notifier<NoteSortPreference> {
-  @override
-  NoteSortPreference build() {
-    return SharedPreferenceManager.instance.getPageSortOption('archive');
-  }
-
-  void updateSort(NoteSortPreference option) {
-    state = option;
-    SharedPreferenceManager.instance.setPageSortOption('archive', option);
-  }
-}
-
-/// Dedicated View Type Provider for Archive Page
-final archiveNoteViewTypeProvider = NotifierProvider<ArchiveNoteViewTypeNotifier, NoteViewType>(
-  ArchiveNoteViewTypeNotifier.new,
-);
-
-class ArchiveNoteViewTypeNotifier extends Notifier<NoteViewType> {
-  @override
-  NoteViewType build() {
-    return SharedPreferenceManager.instance.getPageViewType('archive');
-  }
-
-  void updateView(NoteViewType view) {
-    state = view;
-    SharedPreferenceManager.instance.setPageViewType('archive', view);
-  }
-}
-
-/// Dedicated Platform Filter Provider for Archive Page
-final archivePlatformFilterProvider = NotifierProvider<PlatformFilterNotifier, FilterPlatformOptions>(
-  PlatformFilterNotifier.new,
-);
+import '../../../core/util/device_info.dart';
+import '../../../core/util/platform_helper.dart';
+import '../../../database/drift/local_database.dart';
+import '../../../database/shared_preference/shared_preference_manager.dart';
+import '../../../database/sync/sync_orchestrator.dart';
+import '../../../shared/app_bars/app_search_bar.dart';
+import '../../../shared/app_bars/top_select_mode_appbar.dart';
+import '../../../shared/menus/sort_menu_button.dart';
+import '../../../shared/menus/view_menu_button.dart';
+import '../../../shared/note_card/core/note_action.dart';
+import '../../../shared/note_card/core/note_action_controller.dart';
+import '../../../shared/note_card/note_card.dart';
+import '../../../shared/overlays/app_scaffold.dart';
+import '../../../shared/overlays/snack_bar_manager.dart';
+import '../../home/core/note_tap_handler.dart';
+import '../../home/core/providers.dart';
+import '../../home/view/shared/desktop_close_button.dart';
+import '../../note_editor/widgets/folder_option_menu.dart';
+import '../providers/archive_providers.dart';
 
 // ==========================================
 // ARCHIVE PAGE WIDGET
@@ -398,7 +350,6 @@ class _ArchivePageState extends ConsumerState<ArchivePage> with WidgetsBindingOb
     final searchQueryLower = searchQuery.toLowerCase();
 
     final currentNotes = archivedNotesState.value ?? [];
-
     final currentSort = ref.watch(archiveNoteSortPreferenceProvider);
     final currentView = ref.watch(archiveNoteViewTypeProvider);
     final platformFilter = ref.watch(archivePlatformFilterProvider);

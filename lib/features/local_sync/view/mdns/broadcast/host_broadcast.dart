@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
-import '../../../../../shared/app_scaffold.dart';
+import '../../../../../shared/overlays/app_scaffold.dart';
 import '../../../provider/sync_session_provider.dart';
 
 class HostBroadcastPage extends ConsumerWidget {

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../provider/sync_session_provider.dart';
-import '../../../../shared/app_scaffold.dart';
+import '../../../../shared/overlays/app_scaffold.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
 
 

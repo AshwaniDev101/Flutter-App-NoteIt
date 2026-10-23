@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/features/home/core/db_sorting_filtering.dart';
 import '../../../database/drift/notes/notes_dao.dart';
 import '../../../database/shared_preference/shared_preference_manager.dart';
-import '../../../shared/view_menu_button.dart';
+import '../../../shared/menus/view_menu_button.dart';
 import '../../folders/core/providers.dart';
 import '../../lock/lock_manger/lock_manager.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
