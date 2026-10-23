@@ -190,3 +190,38 @@ class ListPanelWidthNotifier extends Notifier<double> {
     SharedPreferenceManager.instance.setListPanelWidth(target);
   }
 }
+
+/// RIGHT PANEL SELECTION MODE STATE (Used to dim/blur DesktopListPanel)
+class RightPanelSelectionState {
+  final bool isSelecting;
+  final void Function()? onClearSelection;
+
+  const RightPanelSelectionState({
+    this.isSelecting = false,
+    this.onClearSelection,
+  });
+}
+
+final rightPanelSelectionProvider =
+    NotifierProvider<RightPanelSelectionNotifier, RightPanelSelectionState>(
+  RightPanelSelectionNotifier.new,
+);
+
+class RightPanelSelectionNotifier extends Notifier<RightPanelSelectionState> {
+  @override
+  RightPanelSelectionState build() => const RightPanelSelectionState();
+
+  void enterSelection({required void Function() onClear}) {
+    state = RightPanelSelectionState(
+      isSelecting: true,
+      onClearSelection: onClear,
+    );
+  }
+
+  void exitSelection() {
+    state = const RightPanelSelectionState(
+      isSelecting: false,
+      onClearSelection: null,
+    );
+  }
+}

@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/providers.dart';
+
 class HomePageState {
   final bool isSelectMode;
   final bool isSearchMode;
@@ -39,6 +41,9 @@ class HomeViewModel extends Notifier<HomePageState> {
         isSelectMode: keepsSelectionMode,
       );
     } else {
+      if (!state.isSelectMode) {
+        ref.read(activeNoteProvider.notifier).clear();
+      }
       currentSet.add(uuid);
       state = state.copyWith(selectedNoteIds: currentSet, isSelectMode: true);
     }
@@ -51,6 +56,11 @@ class HomeViewModel extends Notifier<HomePageState> {
     if (isAllSelected) {
       clearSelection();
     } else {
+
+      // Remove any note that was previously selected
+      if (!state.isSelectMode) {
+        ref.read(activeNoteProvider.notifier).clear();
+      }
       state = state.copyWith(
         isSelectMode: true,
         selectedNoteIds: Set<String>.from(allNoteUuids),
@@ -59,6 +69,8 @@ class HomeViewModel extends Notifier<HomePageState> {
   }
 
   void enableSelectMode() {
+    // Remove any note that was previously selected
+    ref.read(activeNoteProvider.notifier).clear();
     state = state.copyWith(isSelectMode: true);
   }
 

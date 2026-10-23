@@ -83,9 +83,7 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> with WidgetsBin
 
   PreferredSizeWidget _buildAppBar(HomePageState state) {
     if (state.isSelectMode) {
-      return TopSelectModeAppBar(
-        noteIds: state.selectedNoteIds,
-      );
+      return const TopSelectModeAppBar();
     }
 
     return AppBar(
@@ -135,9 +133,10 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> with WidgetsBin
       child: Scaffold(
         drawer: const AppDrawer(),
         appBar: _buildAppBar(homeState),
-        floatingActionButton: _MobileFAB(
+        // Remove the floating action button in select mode
+        floatingActionButton: homeState.isSelectMode==false?_MobileFAB(
           onPressed: () => context.push(AppRoutes.edit),
-        ),
+        ):null,
         bottomNavigationBar: _buildBottomAppBar(homeState, viewModel),
         // bottomNavigationBar: _MobileBottomControlBar(
         //   homeState: homeState,

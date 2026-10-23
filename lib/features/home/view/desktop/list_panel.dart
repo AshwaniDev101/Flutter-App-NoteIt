@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -59,224 +61,241 @@ class DesktopListPanel extends ConsumerWidget {
     final currentView = ref.watch(homeNoteViewTypeProvider);
     final platformFilter = ref.watch(homePlatformFilterProvider);
 
-    // final versionString = "v${AppEnv.version}-${AppEnv.buildNumber}";
+    final rightPanelSelection = ref.watch(rightPanelSelectionProvider);
+    final isRightPanelSelecting = rightPanelSelection.isSelecting;
 
-    return Scaffold(
-      // for closing the drawer on right panel click
-      key: scaffoldKey,
-      onDrawerChanged: onDrawerChanged,
+    return Stack(
+      children: [
+        AbsorbPointer(
+          absorbing: isRightPanelSelecting,
+          child: ExcludeFocus(
+            excluding: isRightPanelSelecting,
+            child: Scaffold(
+              // for closing the drawer on right panel click
+              key: scaffoldKey,
+              onDrawerChanged: onDrawerChanged,
 
-      floatingActionButton: FocusTraversalOrder(
-        order: const NumericFocusOrder(3),
-        child: Focus(
-          canRequestFocus: true,
-          onKeyEvent: (node, event) {
-            if (event is KeyDownEvent &&
-                (event.logicalKey == LogicalKeyboardKey.enter || event.logicalKey == LogicalKeyboardKey.space)) {
-              onAddNote();
-              return KeyEventResult.handled;
-            }
-            return KeyEventResult.ignored;
-          },
-          child: Builder(
-            builder: (context) {
-              final isFocused = Focus.maybeOf(context)?.hasFocus ?? false;
-
-              return AnimatedContainer(
-                duration: const Duration(milliseconds: 50),
-                padding: const EdgeInsets.all(3),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: (isFocused && isKeyboardDriven) ? colorScheme.primary : Colors.transparent,
-                    width: (isFocused && isKeyboardDriven) ? 0 : 2,
-                  ),
-                ),
-                child: SmartActionWidget(
-                  action: AppActions.newNote,
-                  baseTooltip: 'New Note',
-                  child: ExcludeFocus(
-                    child: FloatingActionButton(onPressed: onAddNote, elevation: 3, child: const Icon(Icons.edit)),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ),
-
-      // Top App Bar for the left panel
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(kToolbarHeight),
-        child: homeState.isSelectMode
-            ? DragToMoveArea(child: TopSelectModeAppBar(noteIds: homeState.selectedNoteIds))
-            : AppBar(
-                flexibleSpace: DragToMoveArea(child: Container(color: Colors.transparent)),
-                backgroundColor: Colors.transparent,
-                // Ensures clicks pass through to the drag area
-
-                // title:
-                leading: const DrawerMenuButton(),
-                // title: Text(
-                //   'Note-It',
-                //   style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                // ),
-                elevation: 0,
-                scrolledUnderElevation: PlatformHelper.isDesktopScreen ? 0.0 : null,
-                // actions: [
-                //   SelectableText(
-                //     versionString,
-                //     style: Theme.of(context).textTheme.labelLarge?.copyWith(color: colorScheme.onSurfaceVariant),
-                //   ),
-                //   const SizedBox(width: 16),
-                // ],
-                iconTheme: IconThemeData(color: Theme.of(context).colorScheme.primary),
-              ),
-      ),
-
-      // Body holding the search bar and the actual note list
-      body: Padding(
-        padding: const EdgeInsets.only(left: 12, bottom: 16),// 8px from left+right side of the grid,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Search
-            Row(
-              children: [
-                Expanded(
-                  child: FocusTraversalOrder(
-                    order: const NumericFocusOrder(1),
-                    child: Focus(
-                      canRequestFocus: true,
-                      onKeyEvent: (node, event) {
-                        if (event is KeyDownEvent) {
-                          if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-                            node.nextFocus(); // Still lets you press down arrow to go to notes
+              // removes the floating action button in selection mode
+              floatingActionButton: homeState.isSelectMode == false
+                  ? FocusTraversalOrder(
+                      order: const NumericFocusOrder(3),
+                      child: Focus(
+                        canRequestFocus: true,
+                        onKeyEvent: (node, event) {
+                          if (event is KeyDownEvent &&
+                              (event.logicalKey == LogicalKeyboardKey.enter ||
+                                  event.logicalKey == LogicalKeyboardKey.space)) {
+                            onAddNote();
                             return KeyEventResult.handled;
                           }
-                        }
-                        return KeyEventResult.ignored;
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        // This is to compensate for the card 4px padding
-                        child: AppSearchBar(
-                          controller: searchController,
-                          focusNode: searchFocusNode,
-                          hintText: 'Search...',
-                          fillColor: colorScheme.surfaceContainerLow,
-                          borderRadius: BorderRadius.circular(8),
-                          isKeyboardDriven: isKeyboardDriven,
-                          onKeyboardModeChanged: onKeyboardModeChanged,
-                          onTap: () {
-                            if (!homeState.isSearchMode) viewModel.enterSearchMode();
-                          },
-                          onClear: () {
-                            searchController.clear();
-                            ref.read(searchQueryProvider.notifier).clear();
-                            viewModel.exitSearchMode();
-                          },
-                          onChanged: (value) {
-                            if (value.isNotEmpty && !homeState.isSearchMode) viewModel.enterSearchMode();
-                            if (value.isEmpty) {
-                              ref.read(searchQueryProvider.notifier).clear();
-                              viewModel.exitSearchMode();
-                            } else {
-                              ref.read(searchQueryProvider.notifier).updateQuery(value);
-                            }
+                          return KeyEventResult.ignored;
+                        },
+                        child: Builder(
+                          builder: (context) {
+                            final isFocused = Focus.maybeOf(context)?.hasFocus ?? false;
+
+                            return AnimatedContainer(
+                              duration: const Duration(milliseconds: 50),
+                              padding: const EdgeInsets.all(3),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: (isFocused && isKeyboardDriven) ? colorScheme.primary : Colors.transparent,
+                                  width: (isFocused && isKeyboardDriven) ? 0 : 2,
+                                ),
+                              ),
+                              child: SmartActionWidget(
+                                action: AppActions.newNote,
+                                baseTooltip: 'New Note',
+                                child: ExcludeFocus(
+                                  child: FloatingActionButton(onPressed: onAddNote, elevation: 3, child: const Icon(Icons.edit)),
+                                ),
+                              ),
+                            );
                           },
                         ),
+                      ),
+                    )
+                  : null,
+
+              // Top App Bar for the left panel
+              appBar: PreferredSize(
+                preferredSize: const Size.fromHeight(kToolbarHeight),
+                child: homeState.isSelectMode
+                    ? const DragToMoveArea(child: TopSelectModeAppBar())
+                    : AppBar(
+                        flexibleSpace: DragToMoveArea(child: Container(color: Colors.transparent)),
+                        backgroundColor: Colors.transparent,
+                        leading: const DrawerMenuButton(),
+                        elevation: 0,
+                        scrolledUnderElevation: PlatformHelper.isDesktopScreen ? 0.0 : null,
+                        iconTheme: IconThemeData(color: Theme.of(context).colorScheme.primary),
+                      ),
+              ),
+
+              // Body holding the search bar and the actual note list
+              body: Padding(
+                padding: const EdgeInsets.only(left: 12, bottom: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Search
+                    Row(
+                      children: [
+                        Expanded(
+                          child: FocusTraversalOrder(
+                            order: const NumericFocusOrder(1),
+                            child: Focus(
+                              canRequestFocus: true,
+                              onKeyEvent: (node, event) {
+                                if (event is KeyDownEvent) {
+                                  if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                                    node.nextFocus();
+                                    return KeyEventResult.handled;
+                                  }
+                                }
+                                return KeyEventResult.ignored;
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 4),
+                                child: AppSearchBar(
+                                  controller: searchController,
+                                  focusNode: searchFocusNode,
+                                  hintText: 'Search...',
+                                  fillColor: colorScheme.surfaceContainerLow,
+                                  borderRadius: BorderRadius.circular(8),
+                                  isKeyboardDriven: isKeyboardDriven,
+                                  onKeyboardModeChanged: onKeyboardModeChanged,
+                                  onTap: () {
+                                    if (!homeState.isSearchMode) viewModel.enterSearchMode();
+                                  },
+                                  onClear: () {
+                                    searchController.clear();
+                                    ref.read(searchQueryProvider.notifier).clear();
+                                    viewModel.exitSearchMode();
+                                  },
+                                  onChanged: (value) {
+                                    if (value.isNotEmpty && !homeState.isSearchMode) viewModel.enterSearchMode();
+                                    if (value.isEmpty) {
+                                      ref.read(searchQueryProvider.notifier).clear();
+                                      viewModel.exitSearchMode();
+                                    } else {
+                                      ref.read(searchQueryProvider.notifier).updateQuery(value);
+                                    }
+                                  },
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    // Folder Selector & Filter Row
+                    const SizedBox(height: 8),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Row(
+                        children: [
+                          FolderButton(
+                            selectedFolder: ref.watch(activeFolderProvider),
+                            emptyLabel: 'All Notes',
+                            showContextMenus: true,
+                            isShowTotalNoteCount: true,
+                            onFolderSelected: (folder) {
+                              if (folder == null) {
+                                ref.read(activeFolderProvider.notifier).clear();
+                              } else {
+                                ref.read(activeFolderProvider.notifier).setFolder(folder);
+                              }
+                            },
+                          ),
+                          const Spacer(),
+
+                          SortMenuButton(
+                            icon: Icon(CupertinoIcons.sort_down, color: Theme.of(context).colorScheme.primary),
+                            currentSortSelection: _getCurrentSortAction(currentSort),
+                            currentPlatformSelection: _getCurrentPlatformAction(platformFilter),
+                            onSelected: (HomeMenuAction action) {
+                              switch (action) {
+                                case HomeMenuAction.sortCreated:
+                                  ref.read(homeNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.createdAt);
+                                  break;
+                                case HomeMenuAction.sortName:
+                                  ref.read(homeNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.name);
+                                  break;
+                                case HomeMenuAction.sortUpdated:
+                                  ref.read(homeNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.updatedAt);
+                                  break;
+                                case HomeMenuAction.filterAll:
+                                  ref.read(homePlatformFilterProvider.notifier).setFilter(FilterPlatformOptions.all);
+                                  break;
+                                case HomeMenuAction.filterPhone:
+                                  ref.read(homePlatformFilterProvider.notifier).toggleFilter(FilterPlatformOptions.android);
+                                  break;
+                                case HomeMenuAction.filterWindows:
+                                  ref.read(homePlatformFilterProvider.notifier).toggleFilter(FilterPlatformOptions.windows);
+                                  break;
+                              }
+                            },
+                          ),
+
+                          ViewMenuButton(
+                            icon: Icon(Icons.grid_view, color: Theme.of(context).colorScheme.primary),
+                            currentView: currentView,
+                            onViewSelected: (NoteViewType selectedView) {
+                              ref.read(homeNoteViewTypeProvider.notifier).updateView(selectedView);
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Notes Layout
+                    const SizedBox(height: 4),
+                    Expanded(
+                      child: FocusTraversalOrder(
+                        order: const NumericFocusOrder(2),
+                        child: DynamicNotesLayout(
+                          isSelectMode: homeState.isSelectMode,
+                          noteIds: homeState.selectedNoteIds,
+                          activeNoteId: activeNoteId,
+                          onToggleSelection: ref.read(homeViewModelProvider.notifier).toggleSelection,
+                          onEnableSelectMode: ref.read(homeViewModelProvider.notifier).enableSelectMode,
+                          onNoteTap: onNoteTap,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        if (isRightPanelSelecting)
+          Positioned.fill(
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  rightPanelSelection.onClearSelection?.call();
+                },
+                child: Tooltip(
+                  message: 'Click to exit selection mode',
+                  child: ClipRect(
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+                      child: Container(
+                        color: colorScheme.surface.withValues(alpha: 0.4),
                       ),
                     ),
                   ),
                 ),
-              ],
-            ),
-
-
-            // Folder Selector & Filter Row
-            SizedBox(height: 8,),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4), // This is to compensate for the card 4px padding
-              child: Row(
-                children: [
-                  FolderButton(
-                    selectedFolder: ref.watch(activeFolderProvider),
-                    emptyLabel: 'All Notes',
-                    showContextMenus: true,
-                    isShowTotalNoteCount: true,
-                    onFolderSelected: (folder) {
-                      if (folder == null) {
-                        ref.read(activeFolderProvider.notifier).clear();
-                      } else {
-                        ref.read(activeFolderProvider.notifier).setFolder(folder);
-                      }
-                    },
-                  ),
-                  Spacer(),
-
-                  SortMenuButton(
-                    icon: Icon(CupertinoIcons.sort_down,color: Theme.of(context).colorScheme.primary),
-                    currentSortSelection: _getCurrentSortAction(currentSort),
-                    currentPlatformSelection: _getCurrentPlatformAction(platformFilter),
-                    onSelected: (HomeMenuAction action) {
-                      // Route the UI action to the correct Riverpod provider
-                      switch (action) {
-                        case HomeMenuAction.sortCreated:
-                          ref.read(homeNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.createdAt);
-                          break;
-                        case HomeMenuAction.sortName:
-                          ref.read(homeNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.name);
-                          break;
-                        case HomeMenuAction.sortUpdated:
-                          ref.read(homeNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.updatedAt);
-                          break;
-                        case HomeMenuAction.filterAll:
-                          ref.read(homePlatformFilterProvider.notifier).setFilter(FilterPlatformOptions.all);
-                          break;
-                        case HomeMenuAction.filterPhone:
-                          ref.read(homePlatformFilterProvider.notifier).toggleFilter(FilterPlatformOptions.android);
-                          break;
-                        case HomeMenuAction.filterWindows:
-                          ref.read(homePlatformFilterProvider.notifier).toggleFilter(FilterPlatformOptions.windows);
-                          break;
-                      }
-                    },
-                  ),
-
-                  ViewMenuButton(
-                    icon: Icon(Icons.grid_view,color: Theme.of(context).colorScheme.primary),
-                    currentView: currentView,
-                    onViewSelected: (NoteViewType selectedView) {
-                      ref.read(homeNoteViewTypeProvider.notifier).updateView(selectedView);
-                    },
-                  ),
-
-                  // IconButton(onPressed: (){}, icon: HugeIcon(
-                  //   icon: HugeIcons.strokeRoundedHome01,
-                  // ))
-                ],
               ),
             ),
-
-            // Notes Layout
-            SizedBox(height: 4,), // Notes have 4x already on top
-            Expanded(
-              child: FocusTraversalOrder(
-                order: const NumericFocusOrder(2),
-                child: DynamicNotesLayout(
-                  isSelectMode: homeState.isSelectMode,
-                  noteIds: homeState.selectedNoteIds,
-                  activeNoteId: activeNoteId,
-                  onToggleSelection: ref.read(homeViewModelProvider.notifier).toggleSelection,
-                  onEnableSelectMode: ref.read(homeViewModelProvider.notifier).enableSelectMode,
-                  onNoteTap: onNoteTap,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
+      ],
     );
   }
 

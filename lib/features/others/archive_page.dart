@@ -19,6 +19,7 @@ import '../../shared/view_menu_button.dart';
 import '../home/core/note_tap_handler.dart';
 import '../home/core/providers.dart';
 import '../home/view/shared/desktop_close_button.dart';
+import '../home/view/shared/select_search_app_bars.dart';
 import '../note_editor/widgets/folder_option_menu.dart';
 
 // ==========================================
@@ -100,6 +101,9 @@ class _ArchivePageState extends ConsumerState<ArchivePage> with WidgetsBindingOb
 
   @override
   void dispose() {
+    if (isSelectMode) {
+      ref.read(rightPanelSelectionProvider.notifier).exitSelection();
+    }
     WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
     _searchFocusNode.dispose();
@@ -128,6 +132,7 @@ class _ArchivePageState extends ConsumerState<ArchivePage> with WidgetsBindingOb
   // ------------------------------------------
 
   void _clearSelection() {
+    ref.read(rightPanelSelectionProvider.notifier).exitSelection();
     setState(() {
       isSelectMode = false;
       noteIds.clear();
@@ -138,8 +143,15 @@ class _ArchivePageState extends ConsumerState<ArchivePage> with WidgetsBindingOb
     setState(() {
       if (noteIds.contains(uuid)) {
         noteIds.remove(uuid);
-        if (noteIds.isEmpty) isSelectMode = false;
+        if (noteIds.isEmpty) {
+          isSelectMode = false;
+          ref.read(rightPanelSelectionProvider.notifier).exitSelection();
+        }
       } else {
+        if (!isSelectMode || !ref.read(rightPanelSelectionProvider).isSelecting) {
+          isSelectMode = true;
+          ref.read(rightPanelSelectionProvider.notifier).enterSelection(onClear: _clearSelection);
+        }
         noteIds.add(uuid);
       }
     });
@@ -332,52 +344,32 @@ class _ArchivePageState extends ConsumerState<ArchivePage> with WidgetsBindingOb
   }
 
   PreferredSizeWidget _buildSelectionAppBar(List<NoteWithFolder> currentNotesWithFolder) {
-    final isAllSelected =
-        currentNotesWithFolder.isNotEmpty && noteIds.length == currentNotesWithFolder.length;
-
-    return AppBar(
-      foregroundColor: Colors.white,
-      leading: IconButton(
-        icon: const Icon(Icons.close),
-        onPressed: _clearSelection,
-      ),
-      title: Text(
-        '${noteIds.length} Selected',
-        style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white),
-      ),
-      actions: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 10.0),
-          child: OutlinedButton(
-            style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.white,
-              side: const BorderSide(color: Colors.white, width: 1.5),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-            ),
-            onPressed: () {
-              setState(() {
-                if (isAllSelected) {
-                  _clearSelection();
-                } else {
-                  noteIds.addAll(currentNotesWithFolder.map((noteWithFolder) => noteWithFolder.note.uuid));
-                }
-              });
-            },
-            child: Text(isAllSelected ? 'Deselect All' : 'Select All'),
-          ),
-        ),
-        IconButton(
-          icon: const Icon(Icons.unarchive),
-          tooltip: 'Unarchive Selected',
-          onPressed: () => _unarchiveNotes(noteIds.toList()),
-        ),
-        IconButton(
-          icon: const Icon(Icons.delete_outline),
-          tooltip: 'Delete Selected',
-          onPressed: () => _deleteNotes(noteIds.toList()),
-        ),
+    return TopSelectModeAppBar(
+      selectedCount: noteIds.length,
+      onClearSelection: _clearSelection,
+      onSelectAll: () {
+        setState(() {
+          final isAllSelected =
+              currentNotesWithFolder.isNotEmpty && noteIds.length == currentNotesWithFolder.length;
+          if (isAllSelected) {
+            _clearSelection();
+          } else {
+            noteIds.addAll(currentNotesWithFolder.map((nwf) => nwf.note.uuid));
+          }
+        });
+      },
+      noteActions: const [
+        NoteAction.unarchive,
+        NoteAction.delete,
       ],
+      onActionSelected: (action) {
+        final targetUuids = noteIds.toList();
+        if (action == NoteAction.unarchive) {
+          _unarchiveNotes(targetUuids);
+        } else if (action == NoteAction.delete) {
+          _deleteNotes(targetUuids);
+        }
+      },
     );
   }
 
@@ -443,7 +435,7 @@ class _ArchivePageState extends ConsumerState<ArchivePage> with WidgetsBindingOb
             ),
 
             // Bottom control bar for Mobile
-            if (PlatformHelper.isMobileScreen)
+            if (PlatformHelper.isMobileScreen && !isSelectMode)
               BottomAppBar(
                 elevation: 8.0,
                 child: _buildControlBarContent(),

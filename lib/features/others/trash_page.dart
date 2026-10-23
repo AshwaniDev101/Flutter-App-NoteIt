@@ -19,6 +19,7 @@ import '../../shared/sort_menu_button.dart';
 import '../../shared/view_menu_button.dart';
 import '../home/core/providers.dart';
 import '../home/view/shared/desktop_close_button.dart';
+import '../home/view/shared/select_search_app_bars.dart';
 import '../note_editor/widgets/folder_option_menu.dart';
 
 // ==========================================
@@ -107,6 +108,9 @@ class _TrashPageState extends ConsumerState<TrashPage> with WidgetsBindingObserv
 
   @override
   void dispose() {
+    if (isSelectMode) {
+      ref.read(rightPanelSelectionProvider.notifier).exitSelection();
+    }
     WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
     _searchFocusNode.dispose();
@@ -135,6 +139,7 @@ class _TrashPageState extends ConsumerState<TrashPage> with WidgetsBindingObserv
   // ------------------------------------------
 
   void _clearSelection() {
+    ref.read(rightPanelSelectionProvider.notifier).exitSelection();
     setState(() {
       isSelectMode = false;
       selectedNoteIds.clear();
@@ -147,9 +152,16 @@ class _TrashPageState extends ConsumerState<TrashPage> with WidgetsBindingObserv
       if (selectedNoteIds.contains(uuid)) {
         selectedNoteIds.remove(uuid);
       } else {
+        if (!isSelectMode || !ref.read(rightPanelSelectionProvider).isSelecting) {
+          ref.read(rightPanelSelectionProvider.notifier).enterSelection(onClear: _clearSelection);
+        }
         selectedNoteIds.add(uuid);
       }
-      isSelectMode = selectedNoteIds.isNotEmpty || selectedFolderIds.isNotEmpty;
+      final shouldBeSelectMode = selectedNoteIds.isNotEmpty || selectedFolderIds.isNotEmpty;
+      if (!shouldBeSelectMode && isSelectMode) {
+        ref.read(rightPanelSelectionProvider.notifier).exitSelection();
+      }
+      isSelectMode = shouldBeSelectMode;
     });
   }
 
@@ -158,9 +170,16 @@ class _TrashPageState extends ConsumerState<TrashPage> with WidgetsBindingObserv
       if (selectedFolderIds.contains(uuid)) {
         selectedFolderIds.remove(uuid);
       } else {
+        if (!isSelectMode || !ref.read(rightPanelSelectionProvider).isSelecting) {
+          ref.read(rightPanelSelectionProvider.notifier).enterSelection(onClear: _clearSelection);
+        }
         selectedFolderIds.add(uuid);
       }
-      isSelectMode = selectedNoteIds.isNotEmpty || selectedFolderIds.isNotEmpty;
+      final shouldBeSelectMode = selectedNoteIds.isNotEmpty || selectedFolderIds.isNotEmpty;
+      if (!shouldBeSelectMode && isSelectMode) {
+        ref.read(rightPanelSelectionProvider.notifier).exitSelection();
+      }
+      isSelectMode = shouldBeSelectMode;
     });
   }
 
@@ -460,56 +479,35 @@ class _TrashPageState extends ConsumerState<TrashPage> with WidgetsBindingObserv
   }
 
   PreferredSizeWidget _buildSelectionAppBar(List<NoteWithFolder> currentNotes, List<Folder> currentFolders) {
-    final totalSelected = selectedNoteIds.length + selectedFolderIds.length;
-    final totalItems = currentNotes.length + currentFolders.length;
-    final isAllSelected = totalItems > 0 && totalSelected == totalItems;
+    final combinedSelected = {...selectedNoteIds, ...selectedFolderIds};
 
-    return AppBar(
-      foregroundColor: Colors.white,
-      leading: IconButton(
-        icon: const Icon(Icons.close),
-        onPressed: _clearSelection,
-      ),
-      title: Text(
-        '$totalSelected Selected',
-        style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white),
-      ),
-      actions: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 10.0),
-          child: OutlinedButton(
-            style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.white,
-              side: const BorderSide(color: Colors.white, width: 1.5),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-            ),
-            onPressed: () {
-              setState(() {
-                if (isAllSelected) {
-                  _clearSelection();
-                } else {
-                  selectedNoteIds.addAll(currentNotes.map((n) => n.note.uuid));
-                  selectedFolderIds.addAll(currentFolders.map((f) => f.uuid));
-                }
-              });
-            },
-            child: Text(isAllSelected ? 'Deselect All' : 'Select All'),
-          ),
-        ),
-        IconButton(
-          icon: const Icon(Icons.restore),
-          tooltip: 'Restore Selected',
-          onPressed: () =>
-              _restoreItems(noteUuids: selectedNoteIds.toList(), folderUuids: selectedFolderIds.toList()),
-        ),
-        IconButton(
-          icon: const Icon(Icons.delete_forever),
-          tooltip: 'Delete Selected',
-          onPressed: () =>
-              _handleDeleteItems(noteUuids: selectedNoteIds.toList(), folderUuids: selectedFolderIds.toList()),
-        ),
+    return TopSelectModeAppBar(
+      selectedCount: combinedSelected.length,
+      onClearSelection: _clearSelection,
+      onSelectAll: () {
+        setState(() {
+          final isAllSelected = currentNotes.isNotEmpty &&
+              selectedNoteIds.length == currentNotes.length &&
+              selectedFolderIds.length == currentFolders.length;
+          if (isAllSelected) {
+            _clearSelection();
+          } else {
+            selectedNoteIds.addAll(currentNotes.map((n) => n.note.uuid));
+            selectedFolderIds.addAll(currentFolders.map((f) => f.uuid));
+          }
+        });
+      },
+      noteActions: const [
+        NoteAction.restore,
+        NoteAction.deleteForever,
       ],
+      onActionSelected: (action) {
+        if (action == NoteAction.restore) {
+          _restoreItems(noteUuids: selectedNoteIds.toList(), folderUuids: selectedFolderIds.toList());
+        } else if (action == NoteAction.deleteForever) {
+          _handleDeleteItems(noteUuids: selectedNoteIds.toList(), folderUuids: selectedFolderIds.toList());
+        }
+      },
     );
   }
 
@@ -600,7 +598,7 @@ class _TrashPageState extends ConsumerState<TrashPage> with WidgetsBindingObserv
             ),
 
             // Bottom control bar for Mobile
-            if (PlatformHelper.isMobileScreen)
+            if (PlatformHelper.isMobileScreen && !isSelectMode)
               BottomAppBar(
                 elevation: 8.0,
                 child: _buildControlBarContent(),
