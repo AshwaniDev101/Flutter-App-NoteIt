@@ -656,7 +656,6 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
                       tooltip: 'New Folder',
                       style: IconButton.styleFrom(
                         backgroundColor: colorScheme.surfaceContainerHighest,
-                        foregroundColor: colorScheme.onSurfaceVariant,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),

@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'app_bottom_sheet.dart';
 
@@ -16,14 +17,14 @@ enum HomeMenuAction {
 }
 
 class SortMenuButton extends StatefulWidget {
-  final Icon icon;
+  final IconData icon;
   final HomeMenuAction currentSortSelection;
   final HomeMenuAction currentPlatformSelection;
   final ValueChanged<HomeMenuAction> onSelected;
 
   const SortMenuButton({
     super.key,
-    required this.icon,
+    this.icon = CupertinoIcons.sort_down,
     required this.currentSortSelection,
     this.currentPlatformSelection = HomeMenuAction.filterAll,
     required this.onSelected,
@@ -75,8 +76,7 @@ class _SortMenuButtonState extends State<SortMenuButton> {
 
     if (isMobile) {
       return IconButton(
-        icon: widget.icon,
-        iconSize: widget.icon.size,
+        icon: Icon(widget.icon),
         onPressed: () => _showMobileBottomSheet(context),
       );
     }
@@ -97,8 +97,7 @@ class _SortMenuButtonState extends State<SortMenuButton> {
               controller.open();
             }
           },
-          icon: widget.icon,
-          iconSize: widget.icon.size,
+          icon: Icon(widget.icon),
         );
       },
       menuChildren: [

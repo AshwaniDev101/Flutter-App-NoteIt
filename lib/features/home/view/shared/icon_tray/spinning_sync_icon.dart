@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 
 class SpinningSyncIcon extends StatefulWidget {
   final bool isSyncing;
-  final Color color;
+  final Color? color;
 
   const SpinningSyncIcon({
     super.key,
     required this.isSyncing,
-    required this.color,
+    this.color,
   });
 
   @override

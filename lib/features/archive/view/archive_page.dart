@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/util/device_info.dart';
 import '../../../core/util/platform_helper.dart';
 import '../../../database/drift/local_database.dart';
-import '../../../database/shared_preference/shared_preference_manager.dart';
+import '../../../database/drift/notes/notes_dao.dart';
 import '../../../database/sync/sync_orchestrator.dart';
 import '../../../shared/app_bars/app_search_bar.dart';
 import '../../../shared/app_bars/top_select_mode_appbar.dart';
@@ -602,7 +602,7 @@ class _ArchivePageState extends ConsumerState<ArchivePage> with WidgetsBindingOb
 
   Widget _sortMenuButton(NoteSortPreference currentSort, FilterPlatformOptions platformFilter) {
     return SortMenuButton(
-      icon: Icon(CupertinoIcons.sort_down, color: Theme.of(context).colorScheme.primary),
+      icon: CupertinoIcons.sort_down,
       currentSortSelection: _getCurrentSortAction(currentSort),
       currentPlatformSelection: _getCurrentPlatformAction(platformFilter),
       onSelected: (HomeMenuAction action) {
@@ -632,7 +632,7 @@ class _ArchivePageState extends ConsumerState<ArchivePage> with WidgetsBindingOb
 
   Widget _viewMenuButton(NoteViewType currentView) {
     return ViewMenuButton(
-      icon: Icon(Icons.grid_view, color: Theme.of(context).colorScheme.primary),
+      icon: Icons.grid_view,
       currentView: currentView,
       onViewSelected: (NoteViewType selectedView) {
         ref.read(archiveNoteViewTypeProvider.notifier).updateView(selectedView);

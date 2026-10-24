@@ -18,13 +18,13 @@ enum NoteViewType {
 }
 
 class ViewMenuButton extends StatefulWidget {
-  final Icon icon;
+  final IconData icon;
   final NoteViewType currentView;
   final ValueChanged<NoteViewType> onViewSelected;
 
   const ViewMenuButton({
     super.key,
-    required this.icon,
+    this.icon = Icons.grid_view,
     required this.currentView,
     required this.onViewSelected,
   });
@@ -69,8 +69,7 @@ class _ViewMenuButtonState extends State<ViewMenuButton> {
 
     if (isMobile) {
       return IconButton(
-        icon: widget.icon,
-        iconSize: widget.icon.size,
+        icon: Icon(widget.icon),
         onPressed: () => _showMobileBottomSheet(context),
       );
     }
@@ -91,8 +90,7 @@ class _ViewMenuButtonState extends State<ViewMenuButton> {
               controller.open();
             }
           },
-          icon: widget.icon,
-          iconSize: widget.icon.size,
+          icon: Icon(widget.icon),
         );
       },
       menuChildren: [

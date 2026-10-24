@@ -17,12 +17,10 @@ class DesktopCloseButton extends ConsumerWidget {
       return const SizedBox.shrink();
     }
 
-    final colorSchema = Theme.of(context).colorScheme;
-
     return Padding(
       padding: const EdgeInsets.only(right: 16.0),
       child: IconButton(
-        icon: Icon(Icons.close, color: colorSchema.primary),
+        icon: const Icon(Icons.close),
         tooltip: 'Close',
         onPressed: onPressed ??
             () {

@@ -335,7 +335,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
         children: [
           _buildTitleHeader(
             context,
-            textStyle: Theme.of(context).textTheme.titleMedium,
+            textStyle: Theme.of(context).textTheme.titleSmall,
           ),
           const SizedBox(height: 4),
           _isLocked
@@ -363,7 +363,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
         children: [
           _buildTitleHeader(
             context,
-            textStyle: Theme.of(context).textTheme.titleMedium,
+            textStyle: Theme.of(context).textTheme.titleSmall,
           ),
           const SizedBox(height: 4),
           Expanded(
@@ -390,7 +390,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
         children: [
           _buildTitleHeader(
             context,
-            textStyle: Theme.of(context).textTheme.titleMedium,
+            textStyle: Theme.of(context).textTheme.titleSmall,
           ),
           const SizedBox(height: 4),
           Expanded(
@@ -464,7 +464,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
       maxLines: maxLines,
       overflow: overflow,
       normalStyle: textTheme,
-      highlightStyle: textTheme?.copyWith(
+      highlightStyle: textTheme.copyWith(
         backgroundColor: Theme.of(context).colorScheme.primaryContainer,
         color: Theme.of(context).colorScheme.onPrimaryContainer,
       ),

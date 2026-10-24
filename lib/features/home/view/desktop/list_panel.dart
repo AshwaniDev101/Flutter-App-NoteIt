@@ -22,7 +22,6 @@ import '../../core/providers.dart';
 import '../../viewmodel/viewmodel.dart';
 import '../../../../shared/app_bars/app_search_bar.dart';
 import '../../../../shared/note_card/dynamic_notes_layout.dart';
-import '../../../../shared/app_bars/bottom_select_mode_appbar.dart';
 
 class DesktopListPanel extends ConsumerWidget {
   final TextEditingController searchController;
@@ -224,7 +223,7 @@ class DesktopListPanel extends ConsumerWidget {
                           const SizedBox(width: 8),
 
                           SortMenuButton(
-                            icon: Icon(CupertinoIcons.sort_down, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                            icon: CupertinoIcons.sort_down,
                             currentSortSelection: _getCurrentSortAction(currentSort),
                             currentPlatformSelection: _getCurrentPlatformAction(platformFilter),
                             onSelected: (HomeMenuAction action) {
@@ -252,7 +251,7 @@ class DesktopListPanel extends ConsumerWidget {
                           ),
 
                           ViewMenuButton(
-                            icon: Icon(Icons.grid_view, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                            icon: Icons.grid_view,
                             currentView: currentView,
                             onViewSelected: (NoteViewType selectedView) {
                               ref.read(homeNoteViewTypeProvider.notifier).updateView(selectedView);

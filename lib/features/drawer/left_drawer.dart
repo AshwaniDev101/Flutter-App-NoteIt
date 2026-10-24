@@ -83,11 +83,9 @@ class LeftDrawer extends ConsumerWidget {
         // New Note Button
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
-          child: FilledButton(
+          child: FilledButton.tonal(
             onPressed: onAddNote,
             style: FilledButton.styleFrom(
-              backgroundColor: colorScheme.primaryContainer,
-              foregroundColor: colorScheme.onPrimaryContainer,
               padding: EdgeInsets.symmetric(
                   horizontal: isExpanded ? 10.0 : 0.0, vertical: 14.0),
               shape: RoundedRectangleBorder(

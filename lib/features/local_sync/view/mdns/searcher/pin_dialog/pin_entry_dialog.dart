@@ -93,7 +93,7 @@ class _PinEntryDialogState extends State<PinEntryDialog> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: _submitPin,
-                child: Text('Connect', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Theme.of(context).colorScheme.onPrimary)),
+                child: Text('Connect', style: Theme.of(context).textTheme.titleMedium),
               ),
             ],
           ),

@@ -7,7 +7,6 @@ import 'package:file_picker/file_picker.dart';
 
 import '../../core/util/logger.dart';
 import '../../database/drift/folders/folders_dao.dart';
-import '../../database/drift/notes/notes_dao.dart';
 import '../../shared/overlays/app_scaffold.dart';
 import '../../shared/overlays/snack_bar_manager.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
@@ -462,7 +461,6 @@ class _ImportNotesPageState extends ConsumerState<ImportNotesPage> {
                   label: Text(
                     _isImporting ? 'Processing Backup...' : 'Restore Notes & Folders',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onPrimary,
                           fontWeight: FontWeight.bold,
                         ),
                   ),

@@ -49,7 +49,7 @@ class _DrawerMenuButtonState extends ConsumerState<DrawerMenuButton> {
               controller.open();
             }
           },
-          icon: Icon(Icons.menu,color: Theme.of(context).colorScheme.onSurfaceVariant,),
+          icon: const Icon(Icons.menu),
         );
       },
       menuChildren: [

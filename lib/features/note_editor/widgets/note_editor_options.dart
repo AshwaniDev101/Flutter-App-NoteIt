@@ -39,7 +39,7 @@ class _NoteEditorOptionButtonState extends State<NoteEditorOptionButton> {
 
   @override
   Widget build(BuildContext context) {
-    final colorSchema = Theme.of(context).colorScheme;
+    // final colorSchema = Theme.of(context).colorScheme;
     return MenuAnchor(
       controller: _menuController,
       style: const MenuStyle(
@@ -49,6 +49,7 @@ class _NoteEditorOptionButtonState extends State<NoteEditorOptionButton> {
       ),
       builder: (BuildContext context, MenuController controller, Widget? child) {
         return IconButton(
+          tooltip: "Option Menu",
           onPressed: () {
             if (controller.isOpen) {
               controller.close();
@@ -56,7 +57,7 @@ class _NoteEditorOptionButtonState extends State<NoteEditorOptionButton> {
               controller.open();
             }
           },
-          icon: Icon(Icons.segment, color: colorSchema.primary),
+          icon: const Icon(Icons.segment),
         );
       },
       menuChildren: [
@@ -151,7 +152,7 @@ class NoteEditorOptionMenu extends StatelessWidget {
               children: [
                 icon,
                 const SizedBox(height: 4),
-                Text(name, style: Theme.of(context).textTheme.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
+                Text(name, style: Theme.of(context).textTheme.bodySmall, maxLines: 2, overflow: TextOverflow.ellipsis),
               ],
             ),
           ),

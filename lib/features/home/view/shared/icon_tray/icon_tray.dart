@@ -29,7 +29,7 @@ class IconTray extends ConsumerWidget {
 
         // Sync Trigger & Spinner
         IconButton(
-          icon: SpinningSyncIcon(isSyncing: isSyncing, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          icon: SpinningSyncIcon(isSyncing: isSyncing),
           tooltip: 'Sync Notes',
           onPressed: () {
             ref.read(syncOrchestratorProvider).triggerSync();

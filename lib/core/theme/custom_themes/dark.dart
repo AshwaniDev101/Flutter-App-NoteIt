@@ -4,6 +4,52 @@ ThemeData get _darkThemeData => ThemeData(
   useMaterial3: true,
   brightness: Brightness.dark,
   textTheme: AppTypography.textTheme,
+
+
+  textButtonTheme: TextButtonThemeData(
+    style: TextButton.styleFrom(
+      // Uses 'primary' so text buttons stand out as actionable text
+      foregroundColor: const Color(0xFFA6ACFF),
+      // Optional: Add a subtle padding or shape if needed globally
+      // padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+    ),
+  ),
+
+  iconButtonTheme: IconButtonThemeData(
+    style: IconButton.styleFrom(
+      // Uses 'onSurfaceVariant' for a subtle default icon color that isn't too distracting
+      foregroundColor: const Color(0xFF8F95B2),
+      // Optional: Use 'surfaceContainerHighest' for a subtle background hover/focus state
+      // hoverColor: const Color(0xFF1B1E27),
+    ),
+  ),
+
+  filledButtonTheme: FilledButtonThemeData(
+    style: FilledButton.styleFrom(
+      backgroundColor: const Color(0xFFA6ACFF),
+      foregroundColor: const Color(0xFF131853),
+    ),
+  ),
+
+  outlinedButtonTheme: OutlinedButtonThemeData(
+    style: OutlinedButton.styleFrom(
+      foregroundColor: const Color(0xFFA6ACFF),
+      side: const BorderSide(color: Color(0xFF757B9A)),
+    ),
+  ),
+
+  elevatedButtonTheme: ElevatedButtonThemeData(
+    style: ElevatedButton.styleFrom(
+      backgroundColor: const Color(0xFF22263A),
+      foregroundColor: const Color(0xFFA6ACFF),
+    ),
+  ),
+
+  floatingActionButtonTheme: const FloatingActionButtonThemeData(
+    backgroundColor: Color(0xFF323B7C),
+    foregroundColor: Color(0xFFCACDF5),
+  ),
+
   colorScheme: const ColorScheme(
     brightness: Brightness.dark,
 

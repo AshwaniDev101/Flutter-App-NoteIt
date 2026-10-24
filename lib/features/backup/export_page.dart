@@ -327,7 +327,6 @@ class _ExportNotesPageState extends ConsumerState<ExportNotesPage> {
                         label: Text(
                           'Generate Export File',
                           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                color: Theme.of(context).colorScheme.onPrimary,
                                 fontWeight: FontWeight.bold,
                               ),
                         ),

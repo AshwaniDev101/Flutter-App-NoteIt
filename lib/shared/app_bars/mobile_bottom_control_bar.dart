@@ -110,7 +110,7 @@ class MobileBottomControlBar extends ConsumerWidget {
                   ),
                   const Spacer(),
                   SortMenuButton(
-                    icon: Icon(CupertinoIcons.sort_down,size: 28, color: colorScheme.primary),
+                    icon: CupertinoIcons.sort_down,
                     currentSortSelection: _getCurrentSortAction(ref.watch(homeNoteSortPreferenceProvider)),
                     currentPlatformSelection: _getCurrentPlatformAction(ref.watch(homePlatformFilterProvider)),
                     onSelected: (HomeMenuAction action) {
@@ -137,7 +137,7 @@ class MobileBottomControlBar extends ConsumerWidget {
                     },
                   ),
                   ViewMenuButton(
-                    icon: Icon(Icons.grid_view, size: 28, color: colorScheme.primary),
+                    icon: Icons.grid_view,
                     currentView: ref.watch(homeNoteViewTypeProvider),
                     onViewSelected: (NoteViewType selectedView) {
                       ref.read(homeNoteViewTypeProvider.notifier).updateView(selectedView);
