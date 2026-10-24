@@ -35,7 +35,7 @@ class LockOverlayWidget extends ConsumerWidget {
       child: Center(
         child: Icon(
           Icons.lock_outline_rounded,
-          size: 28,
+          size: 40,
           color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
       ),

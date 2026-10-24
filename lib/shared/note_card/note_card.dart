@@ -173,7 +173,8 @@ class _NoteCardState extends ConsumerState<NoteCard> {
 
   Widget _buildCardWrapper({required Widget child, required Color? accentColor}) {
     final colorScheme = Theme.of(context).colorScheme;
-    final content = _buildWithCornerAccent(child: child, accentColor: accentColor, size: 14);
+    // final content = _buildWithCornerAccent(child: child, accentColor: accentColor, size: 14);
+    final content = child;
 
     return Card(
       margin: const EdgeInsets.all(4.0),
@@ -210,7 +211,8 @@ class _NoteCardState extends ConsumerState<NoteCard> {
       backgroundColor = colorScheme.surface;
     }
 
-    final content = _buildWithCornerAccent(child: child, accentColor: accentColor, size: 10);
+    // final content = _buildWithCornerAccent(child: child, accentColor: accentColor, size: 10);
+    final content = child;
 
     return Material(
       color: backgroundColor,
@@ -269,21 +271,35 @@ class _NoteCardState extends ConsumerState<NoteCard> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Expanded(
-          child: Text(
-            TimeHelper.formatTimeAgo(_note.updatedAt),
-            style: textStyle ?? Theme.of(context).textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
+
+
+        if(_folder!=null)
+          _getFolderLabel(),
+
+      Spacer(),
+
+      Text(
+          TimeHelper.formatTimeAgo(_note.updatedAt),
+          style: textStyle ?? Theme.of(context).textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
-        if (platform != null) ...[
-          const SizedBox(width: 8),
-          Tooltip(
-            message: _note.deletedPlatform != null ? 'Deleted on $platform' : 'Created on $platform',
-            child: _getPlatformIcon(platform, colorScheme),
-          ),
-        ],
+
+        // Expanded(
+        //   child: Text(
+        //     TimeHelper.formatTimeAgo(_note.updatedAt),
+        //     style: textStyle ?? Theme.of(context).textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
+        //     maxLines: 1,
+        //     overflow: TextOverflow.ellipsis,
+        //   ),
+        // ),
+        // if (platform != null) ...[
+        //   const SizedBox(width: 8),
+        //   Tooltip(
+        //     message: _note.deletedPlatform != null ? 'Deleted on $platform' : 'Created on $platform',
+        //     child: _getPlatformIcon(platform, colorScheme),
+        //   ),
+        // ],
       ],
     );
   }
@@ -349,7 +365,15 @@ class _NoteCardState extends ConsumerState<NoteCard> {
                 )
               : _buildNotePreview(context, maxLines: 2, overflow: TextOverflow.ellipsis),
           const SizedBox(height: 4),
-          _buildMetadataRow(context),
+          if (PlatformHelper.isDesktopScreen || PlatformHelper.isMobileScreen) ...[
+            const SizedBox(height: 4),
+            _buildMetadataRow(
+              context,
+              textStyle: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -377,6 +401,15 @@ class _NoteCardState extends ConsumerState<NoteCard> {
               ],
             ),
           ),
+          if (PlatformHelper.isDesktopScreen || PlatformHelper.isMobileScreen) ...[
+            const SizedBox(height: 4),
+            _buildMetadataRow(
+              context,
+              textStyle: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -404,7 +437,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
               ],
             ),
           ),
-          if (PlatformHelper.isDesktopScreen) ...[
+          if (PlatformHelper.isDesktopScreen || PlatformHelper.isMobileScreen) ...[
             const SizedBox(height: 4),
             _buildMetadataRow(
               context,
@@ -484,6 +517,30 @@ class _NoteCardState extends ConsumerState<NoteCard> {
       default:
         return Icon(Icons.computer, size: 14, color: iconColor);
     }
+  }
+
+
+  Widget _getFolderLabel()
+  {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
+      decoration: BoxDecoration(
+        color: _folderAccentColor?.withValues(alpha: 0.2) ?? Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8.0),
+        border: Border.all(
+          color: _folderAccentColor?.withValues(alpha: 0.5) ?? Colors.transparent,
+        ),
+      ),
+      child: Text(
+        _folder!.name,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: _folderAccentColor ?? Theme.of(context).colorScheme.onSurfaceVariant,
+          fontWeight: FontWeight.w600,
+        ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
   }
 }
 

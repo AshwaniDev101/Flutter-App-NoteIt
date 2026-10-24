@@ -230,85 +230,18 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
         appBar: AppBar(
           flexibleSpace: PlatformHelper.isNativeDesktop
               ? DragToMoveArea(
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    child: const SizedBox.expand(),
-                  ),
-                )
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              child: const SizedBox.expand(),
+            ),
+          )
               : null,
           automaticallyImplyLeading: false,
           leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: _handleMobileBack),
           titleSpacing: 0,
-          title: _buildTitleField(),
-          actions: [
-            NoteEditorOptionButton(
-              isLocked: _isLocked,
-              isPinned: _isPinned,
-              onPressed: (NoteAction option) async {
-                switch (option) {
-                  case NoteAction.delete:
-                    _handleDeleteNote();
-                    break;
-                  case NoteAction.pin:
-                    if (_isNewNote) {
-                      SnackBarManager.show(msg: 'Please save the note first', type: SnackBarMessageType.error);
-                      return;
-                    }
-                    final targetUuid = widget.existingNoteWithFolder!.note.uuid;
-                    final actionsController = ref.read(noteActionsControllerProvider);
-                    await actionsController.togglePinNotes([targetUuid]);
-                    if (mounted) {
-                      setState(() {
-                        _isPinned = !_isPinned;
-                      });
-                    }
-                    break;
-                  case NoteAction.lock:
-                    _handleLockToggle();
-                    break;
-                // --- Toggle Logic ---
-                  case NoteAction.checklist:
-                    setState(() {
-                      if (_contentVersion != ContentVersion.checklist) {
-                        _contentVersion = ContentVersion.checklist;
-                        _currentChecklist = _convertTextToChecklist(_contentController.text);
-                        _contentController.text = jsonEncode(_currentChecklist.map((e) => e.toJson()).toList());
-                      } else {
-                        _contentVersion = ContentVersion.plainText;
-                        _contentController.text = _convertChecklistToText(_currentChecklist);
-                      }
-                    });
-                    break;
 
-                  case NoteAction.archive:
-                    if (_isNewNote) {
-                      SnackBarManager.show(msg: 'Please save the note first', type: SnackBarMessageType.error);
-                      return;
-                    }
-                    _hasTriggeredFinalSave = true;
-                    final targetUuid = widget.existingNoteWithFolder!.note.uuid;
-                    final router = GoRouter.of(context);
-                    await ref.read(noteActionsControllerProvider).archiveNotes([targetUuid]);
-                    if (context.mounted) router.pop();
-                    break;
-                  case NoteAction.find:
-                    if (_isFind) {
-                      _contentController.searchQuery = '';
-                    }
-                    setState(() {
-                      _isFind = !_isFind;
-                    });
-                    break;
-                  case NoteAction.reminder:
-                    break;
-                  case NoteAction.info:
-                    ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.noteDetails);
-                    break;
-                  default:
-                    break;
-                }
-              },
-            ),
+          actions: [
+
             if (PlatformHelper.isNativeDesktop) ...[
               const SizedBox(width: 4),
               IconButton(
@@ -335,7 +268,12 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
         ),
         body: SafeArea(
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                child: _buildTitleField(),
+              ),
               if (_isFind) ...[
                 FindReplaceWidget(
                   contentController: _contentController,
@@ -408,6 +346,9 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
             ),
           ),
         ),
+
+        SizedBox(height: 8,),
+        _optionMenu()
       ],
     );
   }
@@ -499,26 +440,28 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
   }
 
   Widget _buildUndoRedoButtons() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        ValueListenableBuilder<UndoHistoryValue>(
-          valueListenable: _undoController,
-          builder: (context, value, child) => IconButton(
-            onPressed: value.canUndo ? () => _undoController.undo() : null,
-            icon: const Icon(Icons.undo, size: 24),
+    return Center(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ValueListenableBuilder<UndoHistoryValue>(
+            valueListenable: _undoController,
+            builder: (context, value, child) => IconButton(
+              onPressed: value.canUndo ? () => _undoController.undo() : null,
+              icon: const Icon(Icons.undo, size: 24),
+            ),
           ),
-        ),
-        const SizedBox(width: 24),
-        ValueListenableBuilder<UndoHistoryValue>(
-          valueListenable: _undoController,
-          builder: (context, value, child) => IconButton(
-            onPressed: value.canRedo ? () => _undoController.redo() : null,
-            icon: const Icon(Icons.redo, size: 24),
+          const SizedBox(width: 24),
+          ValueListenableBuilder<UndoHistoryValue>(
+            valueListenable: _undoController,
+            builder: (context, value, child) => IconButton(
+              onPressed: value.canRedo ? () => _undoController.redo() : null,
+              icon: const Icon(Icons.redo, size: 24),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -566,5 +509,75 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
         if (mounted) SnackBarManager.show(msg: 'Action failed');
       }
     }
+  }
+
+  Widget _optionMenu() {
+    return NoteEditorOptionButton(
+      isLocked: _isLocked,
+      isPinned: _isPinned,
+      onPressed: (NoteAction option) async {
+        switch (option) {
+          case NoteAction.delete:
+            _handleDeleteNote();
+            break;
+          case NoteAction.pin:
+            if (_isNewNote) {
+              SnackBarManager.show(msg: 'Please save the note first', type: SnackBarMessageType.error);
+              return;
+            }
+            final targetUuid = widget.existingNoteWithFolder!.note.uuid;
+            final actionsController = ref.read(noteActionsControllerProvider);
+            await actionsController.togglePinNotes([targetUuid]);
+            if (mounted) {
+              setState(() {
+                _isPinned = !_isPinned;
+              });
+            }
+            break;
+          case NoteAction.lock:
+            _handleLockToggle();
+            break;
+          case NoteAction.checklist:
+            setState(() {
+              if (_contentVersion != ContentVersion.checklist) {
+                _contentVersion = ContentVersion.checklist;
+                _currentChecklist = _convertTextToChecklist(_contentController.text);
+                _contentController.text = jsonEncode(_currentChecklist.map((e) => e.toJson()).toList());
+              } else {
+                _contentVersion = ContentVersion.plainText;
+                _contentController.text = _convertChecklistToText(_currentChecklist);
+              }
+            });
+            break;
+
+          case NoteAction.archive:
+            if (_isNewNote) {
+              SnackBarManager.show(msg: 'Please save the note first', type: SnackBarMessageType.error);
+              return;
+            }
+            _hasTriggeredFinalSave = true;
+            final targetUuid = widget.existingNoteWithFolder!.note.uuid;
+            final router = GoRouter.of(context);
+            await ref.read(noteActionsControllerProvider).archiveNotes([targetUuid]);
+            if (context.mounted) router.pop();
+            break;
+          case NoteAction.find:
+            if (_isFind) {
+              _contentController.searchQuery = '';
+            }
+            setState(() {
+              _isFind = !_isFind;
+            });
+            break;
+          case NoteAction.reminder:
+            break;
+          case NoteAction.info:
+            ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.noteDetails);
+            break;
+          default:
+            break;
+        }
+      },
+    );
   }
 }
