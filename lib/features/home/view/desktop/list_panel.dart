@@ -163,31 +163,37 @@ class DesktopListPanel extends ConsumerWidget {
                               },
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 4),
-                                child: AppSearchBar(
-                                  controller: searchController,
-                                  focusNode: searchFocusNode,
-                                  hintText: 'Search...',
-                                  fillColor: colorScheme.surfaceContainerLow,
-                                  borderRadius: BorderRadius.circular(8),
-                                  isKeyboardDriven: isKeyboardDriven,
-                                  onKeyboardModeChanged: onKeyboardModeChanged,
-                                  onTap: () {
-                                    if (!homeState.isSearchMode) viewModel.enterSearchMode();
-                                  },
-                                  onClear: () {
-                                    searchController.clear();
-                                    ref.read(searchQueryProvider.notifier).clear();
-                                    viewModel.exitSearchMode();
-                                  },
-                                  onChanged: (value) {
-                                    if (value.isNotEmpty && !homeState.isSearchMode) viewModel.enterSearchMode();
-                                    if (value.isEmpty) {
+                                child: SmartActionWidget(
+                                  action: AppActions.search,
+                                  baseTooltip: 'Search',
+                                  badgeTop: 4,
+                                  badgeRight: 8,
+                                  child: AppSearchBar(
+                                    controller: searchController,
+                                    focusNode: searchFocusNode,
+                                    hintText: 'Search...',
+                                    fillColor: colorScheme.surfaceContainerLow,
+                                    borderRadius: BorderRadius.circular(8),
+                                    isKeyboardDriven: isKeyboardDriven,
+                                    onKeyboardModeChanged: onKeyboardModeChanged,
+                                    onTap: () {
+                                      if (!homeState.isSearchMode) viewModel.enterSearchMode();
+                                    },
+                                    onClear: () {
+                                      searchController.clear();
                                       ref.read(searchQueryProvider.notifier).clear();
                                       viewModel.exitSearchMode();
-                                    } else {
-                                      ref.read(searchQueryProvider.notifier).updateQuery(value);
-                                    }
-                                  },
+                                    },
+                                    onChanged: (value) {
+                                      if (value.isNotEmpty && !homeState.isSearchMode) viewModel.enterSearchMode();
+                                      if (value.isEmpty) {
+                                        ref.read(searchQueryProvider.notifier).clear();
+                                        viewModel.exitSearchMode();
+                                      } else {
+                                        ref.read(searchQueryProvider.notifier).updateQuery(value);
+                                      }
+                                    },
+                                  ),
                                 ),
                               ),
                             ),

@@ -7,12 +7,16 @@ class SmartActionWidget extends ConsumerWidget {
   final String action;
   final String baseTooltip;
   final Widget child;
+  final double badgeTop;
+  final double badgeRight;
 
   const SmartActionWidget({
     super.key,
     required this.action,
     required this.baseTooltip,
     required this.child,
+    this.badgeTop = 2.0,
+    this.badgeRight = 2.0,
   });
 
   @override
@@ -49,8 +53,8 @@ class SmartActionWidget extends ConsumerWidget {
         children: [
           content,
           Positioned(
-            top: -6,
-            right: -6,
+            top: badgeTop,
+            right: badgeRight,
             child: IgnorePointer( // Prevents the badge from stealing mouse clicks
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),

@@ -40,6 +40,7 @@ class KeybindingsDao extends DatabaseAccessor<LocalDatabase> with _$KeybindingsD
 
   /// Platform parameter so seeds are tied to the specific OS
   Future<void> seedDefaultKeybindings(String platform) async {
+    final isMac = platform == 'macos';
     // We use insertOrIgnore so we don't overwrite user preferences on app restart!
     await batch((batch) {
       batch.insertAll(
@@ -50,7 +51,8 @@ class KeybindingsDao extends DatabaseAccessor<LocalDatabase> with _$KeybindingsD
             targetPlatform: Value(platform), // Part of the new Primary Key
             keyLabel: 'S',
             keyId: LogicalKeyboardKey.keyS.keyId,
-            useCtrl: const Value(true),
+            useCtrl: Value(!isMac),
+            useMeta: Value(isMac),
             category: const Value(ShortcutCategories.global),
           ),
           AppKeybindingsCompanion.insert(
@@ -58,7 +60,8 @@ class KeybindingsDao extends DatabaseAccessor<LocalDatabase> with _$KeybindingsD
             targetPlatform: Value(platform),
             keyLabel: 'N',
             keyId: LogicalKeyboardKey.keyN.keyId,
-            useCtrl: const Value(true),
+            useCtrl: Value(!isMac),
+            useMeta: Value(isMac),
             category: const Value(ShortcutCategories.global),
           ),
           AppKeybindingsCompanion.insert(
@@ -66,13 +69,24 @@ class KeybindingsDao extends DatabaseAccessor<LocalDatabase> with _$KeybindingsD
             targetPlatform: Value(platform),
             keyLabel: 'M',
             keyId: LogicalKeyboardKey.keyM.keyId,
-            useCtrl: const Value(true),
+            useCtrl: Value(!isMac),
+            useMeta: Value(isMac),
             category: const Value(ShortcutCategories.navigation),
           ),
         ],
         mode: InsertMode.insertOrIgnore,
       );
     });
+
+    if (isMac) {
+      // Fix any previously seeded macOS records where useCtrl was set to true instead of useMeta
+      await (update(appKeybindings)
+        ..where((t) => t.targetPlatform.equals('macos') & t.useCtrl.equals(true) & t.useMeta.equals(false)))
+          .write(const AppKeybindingsCompanion(
+            useCtrl: Value(false),
+            useMeta: Value(true),
+          ));
+    }
   }
 
   /// .custom() to increment the sync counter, handles targetPlatform,

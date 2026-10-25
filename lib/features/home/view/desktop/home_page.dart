@@ -31,6 +31,7 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePanel> {
 
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
+  final FocusNode _homeFocusNode = FocusNode(debugLabel: 'HomePanelFocus');
 
   /// Tracks the current width of the middle panel. ValueNotifier avoids re-building the full widget tree on drag.
   late final ValueNotifier<double> _listPanelWidthNotifier;
@@ -72,6 +73,7 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePanel> {
     _listPanelWidthNotifier.dispose();
     _searchController.dispose();
     _searchFocusNode.dispose();
+    _homeFocusNode.dispose();
     HardwareKeyboard.instance.removeHandler(_handleKeyEvent);
     FocusManager.instance.removeHighlightModeListener(_handleHighlightModeChange);
     super.dispose();
@@ -148,6 +150,14 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePanel> {
     ref.read(activeNoteProvider.notifier).setNote(emptyNoteWithFolder);
   }
 
+  void _toggleDrawer() {
+    if (_leftScaffoldKey.currentState?.isDrawerOpen ?? false) {
+      _leftScaffoldKey.currentState?.closeDrawer();
+    } else {
+      _leftScaffoldKey.currentState?.openDrawer();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final homeState = ref.watch(homeViewModelProvider);
@@ -174,6 +184,7 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePanel> {
               _searchFocusNode.requestFocus();
             },
           if (shortcuts[AppActions.newNote] != null) shortcuts[AppActions.newNote]!.activator: _addNote,
+          if (shortcuts[AppActions.toggleMenu] != null) shortcuts[AppActions.toggleMenu]!.activator: _toggleDrawer,
         };
 
         final listPanelWidget = DesktopListPanel(
@@ -192,10 +203,13 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePanel> {
 
         return CallbackShortcuts(
           bindings: activeBindings,
-          child: GestureDetector(
-            onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-            child: FocusScope(
-              autofocus: true,
+          child: Focus(
+            focusNode: _homeFocusNode,
+            autofocus: true,
+            child: GestureDetector(
+              onTap: () {
+                _homeFocusNode.requestFocus();
+              },
               child: PopScope(
                 canPop: !homeState.isSelectMode,
                 onPopInvokedWithResult: (bool didPop, Object? result) {
