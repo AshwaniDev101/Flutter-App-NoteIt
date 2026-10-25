@@ -63,71 +63,144 @@ class DynamicNotesLayout extends ConsumerWidget {
   }
 
   Widget _buildAdaptiveLayout(List<NoteWithFolder> notesWithFolder, NoteViewType viewType, WidgetRef ref) {
-    Widget itemBuilder(BuildContext context, int index) {
-      final currentNoteWithFolder = notesWithFolder[index];
-      final isCurrentlySelected = noteIds.contains(currentNoteWithFolder.note.uuid);
-      return NoteCard(
-        noteWithFolder: currentNoteWithFolder,
-        key: ValueKey(currentNoteWithFolder.note.uuid),
-        isSelected: noteIds.contains(currentNoteWithFolder.note.uuid) || currentNoteWithFolder.note.uuid == activeNoteId,
-        searchQuery: ref.read(searchQueryProvider),
-
-        onTap: () {
-          // Native Desktop UX: Check if Ctrl (Windows) or Cmd (Mac) is held down
-          final isModifierPressed = HardwareKeyboard.instance.isControlPressed ||
-              HardwareKeyboard.instance.isMetaPressed;
-
-          if (isSelectMode || isModifierPressed) {
-            if (!isSelectMode) onEnableSelectMode();
-            onToggleSelection(currentNoteWithFolder.note.uuid);
-          } else {
-            onNoteTap(currentNoteWithFolder);
-          }
-        },
-        onLongPress: () {
-          if (!isSelectMode) {
-            onEnableSelectMode();
-            onToggleSelection(currentNoteWithFolder.note.uuid);
-          }
-        },
-
-        onContextMenuAction: (option) {
-          if (option == NoteAction.select) {
-            if (!isSelectMode) onEnableSelectMode();
-            if (!isCurrentlySelected) {
-              onToggleSelection(currentNoteWithFolder.note.uuid);
-            }
-            return;
-          }
-
-          if (isCurrentlySelected) {
-            _handleBatchAction(context, ref, option, noteIds.toList());
-          }
-          else {
-            _handleBatchAction(context, ref, option, [currentNoteWithFolder.note.uuid]);
-          }
-        },
-      );
-    }
+    final pinnedNotes = notesWithFolder.where((n) => n.note.pinnedAt != null).toList();
+    final otherNotes = notesWithFolder.where((n) => n.note.pinnedAt == null).toList();
 
     const physics = AlwaysScrollableScrollPhysics();
     const padding = EdgeInsets.only(bottom: 0);
 
-    if (viewType == NoteViewType.list || viewType == NoteViewType.detailedList) {
-      return ListView.builder(
+    // If no pinned notes, render standard unsectioned list/grid
+    if (pinnedNotes.isEmpty) {
+      if (viewType == NoteViewType.list || viewType == NoteViewType.detailedList) {
+        return ListView.builder(
+          physics: physics,
+          padding: padding,
+          itemCount: notesWithFolder.length,
+          itemBuilder: (context, index) => _buildNoteCard(context, ref, notesWithFolder[index], viewType),
+        );
+      }
+
+      return GridView.builder(
         physics: physics,
         padding: padding,
         itemCount: notesWithFolder.length,
-        itemBuilder: itemBuilder,
+        gridDelegate: _getGridDelegate(viewType),
+        itemBuilder: (context, index) => _buildNoteCard(context, ref, notesWithFolder[index], viewType),
       );
     }
 
-    return GridView.builder(
+    // Sectioned CustomScrollView when pinned notes exist
+    final isListView = viewType == NoteViewType.list || viewType == NoteViewType.detailedList;
+
+    return CustomScrollView(
       physics: physics,
-      padding: padding,
-      itemCount: notesWithFolder.length,
-      gridDelegate: _getGridDelegate(viewType),
-      itemBuilder: itemBuilder,
+      slivers: [
+        // PINNED SECTION HEADER
+        SliverToBoxAdapter(
+          child: _buildSectionHeader(ref.context, 'Pinned'),
+        ),
+
+        // PINNED NOTES
+        if (isListView)
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) => _buildNoteCard(context, ref, pinnedNotes[index], viewType),
+              childCount: pinnedNotes.length,
+            ),
+          )
+        else
+          SliverGrid(
+            gridDelegate: _getGridDelegate(viewType),
+            delegate: SliverChildBuilderDelegate(
+              (context, index) => _buildNoteCard(context, ref, pinnedNotes[index], viewType),
+              childCount: pinnedNotes.length,
+            ),
+          ),
+
+        // ALL NOTES SECTION HEADER & ITEMS
+        if (otherNotes.isNotEmpty) ...[
+          SliverToBoxAdapter(
+            child: _buildSectionHeader(ref.context, 'Others'),
+          ),
+
+          if (isListView)
+            SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) => _buildNoteCard(context, ref, otherNotes[index], viewType),
+                childCount: otherNotes.length,
+              ),
+            )
+          else
+            SliverGrid(
+              gridDelegate: _getGridDelegate(viewType),
+              delegate: SliverChildBuilderDelegate(
+                (context, index) => _buildNoteCard(context, ref, otherNotes[index], viewType),
+                childCount: otherNotes.length,
+              ),
+            ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildSectionHeader(BuildContext context, String title) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(left: 4.0, top: 12.0, bottom: 6.0, right: 4.0),
+      child: Text(
+        title,
+        style: theme.textTheme.labelSmall?.copyWith(
+          fontWeight: FontWeight.w700,
+          color: theme.colorScheme.primary,
+          letterSpacing: 1.0,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNoteCard(BuildContext context, WidgetRef ref, NoteWithFolder currentNoteWithFolder, NoteViewType viewType) {
+    final isCurrentlySelected = noteIds.contains(currentNoteWithFolder.note.uuid);
+    return NoteCard(
+      noteWithFolder: currentNoteWithFolder,
+      viewType: viewType,
+      key: ValueKey(currentNoteWithFolder.note.uuid),
+      isSelected: isCurrentlySelected || currentNoteWithFolder.note.uuid == activeNoteId,
+      searchQuery: ref.read(searchQueryProvider),
+
+      onTap: () {
+        // Native Desktop UX: Check if Ctrl (Windows) or Cmd (Mac) is held down
+        final isModifierPressed = HardwareKeyboard.instance.isControlPressed ||
+            HardwareKeyboard.instance.isMetaPressed;
+
+        if (isSelectMode || isModifierPressed) {
+          if (!isSelectMode) onEnableSelectMode();
+          onToggleSelection(currentNoteWithFolder.note.uuid);
+        } else {
+          onNoteTap(currentNoteWithFolder);
+        }
+      },
+      onLongPress: () {
+        if (!isSelectMode) {
+          onEnableSelectMode();
+          onToggleSelection(currentNoteWithFolder.note.uuid);
+        }
+      },
+
+      onContextMenuAction: (option) {
+        if (option == NoteAction.select) {
+          if (!isSelectMode) onEnableSelectMode();
+          if (!isCurrentlySelected) {
+            onToggleSelection(currentNoteWithFolder.note.uuid);
+          }
+          return;
+        }
+
+        if (isCurrentlySelected) {
+          _handleBatchAction(context, ref, option, noteIds.toList());
+        } else {
+          _handleBatchAction(context, ref, option, [currentNoteWithFolder.note.uuid]);
+        }
+      },
     );
   }
 

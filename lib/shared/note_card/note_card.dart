@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -10,8 +9,8 @@ import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/database/drift/notes/notes_dao.dart';
 import 'package:noteit/features/home/core/providers.dart';
 import 'package:noteit/features/lock/lock_manger/lock_manager.dart';
-import 'package:noteit/shared/note_card/widgets/lock_overlay.dart';
 import 'package:noteit/shared/menus/view_menu_button.dart';
+import 'package:noteit/shared/note_card/widgets/lock_overlay.dart';
 
 import '../text/highlighted_text.dart';
 import 'core/note_action.dart';
@@ -25,6 +24,7 @@ class NoteCard extends ConsumerStatefulWidget {
   final VoidCallback? onLongPress;
   final void Function(NoteAction)? onContextMenuAction;
   final List<NoteAction> contextMenuOptions;
+  final NoteViewType? viewType;
 
   static const List<NoteAction> defaultContextMenuOptions = [
     NoteAction.select,
@@ -37,8 +37,6 @@ class NoteCard extends ConsumerStatefulWidget {
     NoteAction.archive,
     NoteAction.delete,
   ];
-
-  final NoteViewType? viewType;
 
   const NoteCard({
     super.key,
@@ -73,7 +71,6 @@ class _NoteCardState extends ConsumerState<NoteCard> {
   @override
   Widget build(BuildContext context) {
     final NoteViewType viewType = widget.viewType ?? ref.watch(homeNoteViewTypeProvider);
-    final accentColor = _folderAccentColor;
 
     return MenuAnchor(
       controller: _menuController,
@@ -85,7 +82,9 @@ class _NoteCardState extends ConsumerState<NoteCard> {
         },
         child: FocusableActionDetector(
           onShowFocusHighlight: (hasFocus) {
-            setState(() => _isFocused = hasFocus);
+            if (_isFocused != hasFocus) {
+              setState(() => _isFocused = hasFocus);
+            }
           },
           actions: {
             ActivateIntent: CallbackAction<ActivateIntent>(
@@ -97,7 +96,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
           },
           child: MouseRegion(
             cursor: SystemMouseCursors.click,
-            child: _buildLayoutRouter(viewType, accentColor),
+            child: _buildLayoutRouter(context, viewType),
           ),
         ),
       ),
@@ -134,47 +133,20 @@ class _NoteCardState extends ConsumerState<NoteCard> {
     }).toList();
   }
 
-  Widget _buildLayoutRouter(NoteViewType viewType, Color? accentColor) {
+  Widget _buildLayoutRouter(BuildContext context, NoteViewType viewType) {
     switch (viewType) {
       case NoteViewType.list:
-        return _buildFlatListWrapper(child: _buildCompactList(), accentColor: accentColor);
+        return _buildFlatListWrapper(context, child: _buildCompactList(context));
       case NoteViewType.detailedList:
-        return _buildCardWrapper(child: _buildDetailedList(), accentColor: accentColor);
+        return _buildCardWrapper(context, child: _buildDetailedList(context));
       case NoteViewType.grid:
-        return _buildCardWrapper(child: _buildGrid(), accentColor: accentColor);
       case NoteViewType.largeGrid:
-        return _buildCardWrapper(child: _buildLargeGrid(), accentColor: accentColor);
+        return _buildCardWrapper(context, child: _buildGrid(context));
     }
   }
 
-  Widget _buildWithCornerAccent({
-    required Widget child,
-    required Color? accentColor,
-    double size = 14,
-  }) {
-    if (accentColor == null) return child;
-
-    return Stack(
-      children: [
-        child,
-        Positioned(
-          top: 0,
-          left: 0,
-          child: IgnorePointer(
-            child: CustomPaint(
-              size: Size(size, size),
-              painter: CornerTrianglePainter(color: accentColor),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCardWrapper({required Widget child, required Color? accentColor}) {
+  Widget _buildCardWrapper(BuildContext context, {required Widget child}) {
     final colorScheme = Theme.of(context).colorScheme;
-    // final content = _buildWithCornerAccent(child: child, accentColor: accentColor, size: 14);
-    final content = child;
 
     return Card(
       margin: const EdgeInsets.all(4.0),
@@ -194,12 +166,12 @@ class _NoteCardState extends ConsumerState<NoteCard> {
         onTap: widget.onTap,
         onLongPress: widget.onLongPress,
         canRequestFocus: false,
-        child: content,
+        child: child,
       ),
     );
   }
 
-  Widget _buildFlatListWrapper({required Widget child, required Color? accentColor}) {
+  Widget _buildFlatListWrapper(BuildContext context, {required Widget child}) {
     final colorScheme = Theme.of(context).colorScheme;
 
     final Color backgroundColor;
@@ -210,9 +182,6 @@ class _NoteCardState extends ConsumerState<NoteCard> {
     } else {
       backgroundColor = colorScheme.surface;
     }
-
-    // final content = _buildWithCornerAccent(child: child, accentColor: accentColor, size: 10);
-    final content = child;
 
     return Material(
       color: backgroundColor,
@@ -226,7 +195,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
         onTap: widget.onTap,
         onLongPress: widget.onLongPress,
         canRequestFocus: false,
-        child: content,
+        child: child,
       ),
     );
   }
@@ -266,45 +235,23 @@ class _NoteCardState extends ConsumerState<NoteCard> {
 
   Widget _buildMetadataRow(BuildContext context, {TextStyle? textStyle}) {
     final colorScheme = Theme.of(context).colorScheme;
-    final platform = _note.deletedPlatform ?? _note.creationPlatform;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-
-
-        if(_folder!=null)
-          _getFolderLabel(),
-
-      Spacer(),
-
-      Text(
+        if (_folder != null) _getFolderLabel(context),
+        const Spacer(),
+        Text(
           TimeHelper.formatTimeAgo(_note.updatedAt),
           style: textStyle ?? Theme.of(context).textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-
-        // Expanded(
-        //   child: Text(
-        //     TimeHelper.formatTimeAgo(_note.updatedAt),
-        //     style: textStyle ?? Theme.of(context).textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
-        //     maxLines: 1,
-        //     overflow: TextOverflow.ellipsis,
-        //   ),
-        // ),
-        // if (platform != null) ...[
-        //   const SizedBox(width: 8),
-        //   Tooltip(
-        //     message: _note.deletedPlatform != null ? 'Deleted on $platform' : 'Created on $platform',
-        //     child: _getPlatformIcon(platform, colorScheme),
-        //   ),
-        // ],
       ],
     );
   }
 
-  Widget _buildCompactList() {
+  Widget _buildCompactList(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textStyle = Theme.of(context).textTheme.bodyMedium;
 
@@ -340,7 +287,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
     );
   }
 
-  Widget _buildDetailedList() {
+  Widget _buildDetailedList(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Padding(
@@ -369,9 +316,9 @@ class _NoteCardState extends ConsumerState<NoteCard> {
             const SizedBox(height: 4),
             _buildMetadataRow(
               context,
-              textStyle: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
+              textStyle: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
             ),
           ],
         ],
@@ -379,7 +326,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
     );
   }
 
-  Widget _buildGrid() {
+  Widget _buildGrid(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Column(
@@ -405,43 +352,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
             const SizedBox(height: 4),
             _buildMetadataRow(
               context,
-              textStyle: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLargeGrid() {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildTitleHeader(
-            context,
-            textStyle: Theme.of(context).textTheme.titleSmall,
-          ),
-          const SizedBox(height: 4),
-          Expanded(
-            child: Stack(
-              children: [
-                Align(
-                  alignment: Alignment.topLeft,
-                  child: _buildNotePreview(context, overflow: TextOverflow.fade),
-                ),
-                LockOverlayWidget(noteWithFolder: widget.noteWithFolder),
-              ],
-            ),
-          ),
-          if (PlatformHelper.isDesktopScreen || PlatformHelper.isMobileScreen) ...[
-            const SizedBox(height: 4),
-            _buildMetadataRow(
-              context,
-              textStyle: Theme.of(context).textTheme.labelMedium?.copyWith(
+              textStyle: Theme.of(context).textTheme.labelSmall?.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
             ),
@@ -456,16 +367,21 @@ class _NoteCardState extends ConsumerState<NoteCard> {
     int? maxLines,
     TextOverflow overflow = TextOverflow.ellipsis,
   }) {
-    final isSessionUnlocked =
-        ref.watch(lockManagerProvider).sessionUnlockedNoteIds.contains(_note.uuid);
+    // Select ONLY whether THIS note is unlocked, avoiding unnecessary rebuilds when other notes lock/unlock.
+    final isSessionUnlocked = ref.watch(
+      lockManagerProvider.select(
+        (state) => state.sessionUnlockedNoteIds.contains(_note.uuid),
+      ),
+    );
 
     if (_isLocked && !isSessionUnlocked) {
       return const SizedBox.shrink();
     }
 
-    final textTheme = Theme.of(context).textTheme.bodyMedium!.copyWith(color:Theme.of(context).colorScheme.onSurfaceVariant);
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme.bodyMedium!.copyWith(color: theme.colorScheme.onSurfaceVariant);
 
-    if (_note.contentVersion == 2) {
+    if (_note.contentVersion == 2 && _note.content.startsWith('[')) {
       try {
         final List<dynamic> decoded = jsonDecode(_note.content);
         final itemsToRender = maxLines != null ? decoded.take(maxLines).toList() : decoded;
@@ -487,7 +403,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
           }).toList(),
         );
       } catch (_) {
-        // Fall back to standard text parsing if JSON decoding fails.
+        // Fall back to standard text rendering if JSON parsing fails.
       }
     }
 
@@ -498,75 +414,41 @@ class _NoteCardState extends ConsumerState<NoteCard> {
       overflow: overflow,
       normalStyle: textTheme,
       highlightStyle: textTheme.copyWith(
-        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-        color: Theme.of(context).colorScheme.onPrimaryContainer,
+        backgroundColor: theme.colorScheme.primaryContainer,
+        color: theme.colorScheme.onPrimaryContainer,
       ),
     );
   }
 
-  Widget _getPlatformIcon(String platform, ColorScheme colorScheme) {
-    final iconColor = colorScheme.onSurfaceVariant.withValues(alpha: 0.5);
+  Widget _getFolderLabel(BuildContext context) {
+    final theme = Theme.of(context);
+    final accent = _folderAccentColor;
 
-    switch (platform.toLowerCase()) {
-      case 'android':
-        return Icon(Icons.phone_android_rounded, size: 14, color: iconColor);
-      case 'ios':
-        return Icon(Icons.phone_iphone_rounded, size: 14, color: iconColor);
-      case 'windows':
-        return Icon(Icons.desktop_windows_sharp, size: 14, color: iconColor);
-      default:
-        return Icon(Icons.computer, size: 14, color: iconColor);
-    }
-  }
-
-
-  Widget _getFolderLabel()
-  {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
-      decoration: BoxDecoration(
-        color: _folderAccentColor?.withValues(alpha: 0.2) ?? Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8.0),
-        border: Border.all(
-          color: _folderAccentColor?.withValues(alpha: 0.5) ?? Colors.transparent,
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Container(
+          width: 8.0,
+          height: 8.0,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: accent ?? theme.colorScheme.outline,
+          ),
         ),
-      ),
-      child: Text(
-        _folder!.name,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: _folderAccentColor ?? Theme.of(context).colorScheme.onSurfaceVariant,
-          fontWeight: FontWeight.w600,
+        const SizedBox(width: 6.0),
+        Flexible(
+          child: Text(
+            _folder!.name,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
+      ],
     );
-  }
-}
-
-/// Paints a triangle accent in the top-left corner of a card or list item.
-class CornerTrianglePainter extends CustomPainter {
-  final Color color;
-
-  const CornerTrianglePainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-
-    final path = Path()
-      ..moveTo(0, 0)
-      ..lineTo(size.width, 0)
-      ..lineTo(0, size.height)
-      ..close();
-
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CornerTrianglePainter oldDelegate) {
-    return oldDelegate.color != color;
   }
 }
