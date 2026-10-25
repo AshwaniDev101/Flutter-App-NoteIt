@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 /// across list context menus and the note editor.
 enum NoteAction {
   // Common
-  select('Select', Icons.crop_square),
+  select('Select', Icons.check_circle_outline),
   pin('Pin', Icons.push_pin_outlined),
   unpin('Unpin', CupertinoIcons.pin_slash),
   lock('Lock', Icons.lock_outline),

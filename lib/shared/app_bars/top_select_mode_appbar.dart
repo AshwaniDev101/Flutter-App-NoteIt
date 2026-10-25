@@ -97,8 +97,11 @@ class TopSelectModeAppBar extends ConsumerWidget implements PreferredSizeWidget 
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    final effectiveBgColor = backgroundColor ?? colorScheme.secondaryContainer;
-    final effectiveFgColor = foregroundColor ?? colorScheme.onSecondaryContainer;
+/*    final effectiveBgColor = backgroundColor ?? colorScheme.secondaryContainer;
+    final effectiveFgColor = foregroundColor ?? colorScheme.onSecondaryContainer;*/
+
+    final effectiveBgColor = backgroundColor ?? colorScheme.primaryContainer;
+    final effectiveFgColor = foregroundColor ?? colorScheme.onPrimaryContainer;
 
     final viewModel = ref.read(homeViewModelProvider.notifier);
     final currentNotes = ref.watch(filteredNotesProvider).value ?? [];

@@ -19,12 +19,17 @@ import 'core/note_action.dart';
 class NoteCard extends ConsumerStatefulWidget {
   final NoteWithFolder noteWithFolder;
   final bool isSelected;
+  final bool isActive;
   final String searchQuery;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
   final void Function(NoteAction)? onContextMenuAction;
   final List<NoteAction> contextMenuOptions;
   final NoteViewType? viewType;
+
+  static const double selectedAlpha = 0.2;
+  static const double activeAlpha = 0.3;
+  static const double outlineAlpha = 0.3;
 
   static const List<NoteAction> defaultContextMenuOptions = [
     NoteAction.select,
@@ -43,6 +48,7 @@ class NoteCard extends ConsumerStatefulWidget {
     required this.noteWithFolder,
     this.viewType,
     this.isSelected = false,
+    this.isActive = false,
     this.searchQuery = '',
     this.onTap,
     this.onLongPress,
@@ -147,19 +153,29 @@ class _NoteCardState extends ConsumerState<NoteCard> {
 
   Widget _buildCardWrapper(BuildContext context, {required Widget child}) {
     final colorScheme = Theme.of(context).colorScheme;
+    final bool showPrimaryBorder = widget.isSelected || _isFocused;
+
+    final Color? cardColor;
+    if (widget.isSelected) {
+      cardColor = colorScheme.primary.withValues(alpha: NoteCard.selectedAlpha);
+    } else if (widget.isActive) {
+      cardColor = colorScheme.primary.withValues(alpha: NoteCard.activeAlpha);
+    } else {
+      cardColor = null;
+    }
 
     return Card(
       margin: const EdgeInsets.all(4.0),
-      elevation: widget.isSelected ? 1 : (_isFocused ? 4 : 0),
+      elevation: widget.isSelected ? 2 : (widget.isActive ? 1 : (_isFocused ? 4 : 0)),
       clipBehavior: Clip.antiAlias,
-      color: widget.isSelected ? colorScheme.primary.withValues(alpha: 0.5) : null,
+      color: cardColor,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
         side: BorderSide(
-          color: _isFocused
+          color: showPrimaryBorder
               ? colorScheme.primary
-              : colorScheme.outlineVariant.withValues(alpha: 0.3),
-          width: _isFocused ? 2 : 1,
+              : colorScheme.outlineVariant.withValues(alpha: NoteCard.outlineAlpha),
+          width: showPrimaryBorder ? 2 : 1,
         ),
       ),
       child: InkWell(
@@ -176,20 +192,32 @@ class _NoteCardState extends ConsumerState<NoteCard> {
 
     final Color backgroundColor;
     if (widget.isSelected) {
-      backgroundColor = colorScheme.primary.withValues(alpha: 0.3);
+      backgroundColor = colorScheme.primary.withValues(alpha: NoteCard.selectedAlpha);
+    } else if (widget.isActive) {
+      backgroundColor = colorScheme.primary.withValues(alpha: NoteCard.activeAlpha);
     } else if (_isFocused) {
       backgroundColor = colorScheme.surfaceContainerHighest;
     } else {
       backgroundColor = colorScheme.surface;
     }
 
+    final bool showPrimaryBorder = widget.isSelected;
+
     return Material(
       color: backgroundColor,
       shape: Border(
         bottom: BorderSide(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.3),
-          width: 1,
+          color: showPrimaryBorder
+              ? colorScheme.primary
+              : colorScheme.outlineVariant.withValues(alpha: NoteCard.outlineAlpha),
+          width: showPrimaryBorder ? 2 : 1,
         ),
+        left: showPrimaryBorder
+            ? BorderSide(
+                color: colorScheme.primary,
+                width: 4,
+              )
+            : BorderSide.none,
       ),
       child: InkWell(
         onTap: widget.onTap,
@@ -225,7 +253,10 @@ class _NoteCardState extends ConsumerState<NoteCard> {
             ),
           ),
         ),
-        if (_isPinned) ...[
+        if (widget.isSelected) ...[
+          const SizedBox(width: 8),
+          Icon(Icons.check_circle, size: 16, color: colorScheme.primary),
+        ] else if (_isPinned) ...[
           const SizedBox(width: 8),
           Icon(Icons.push_pin, size: 16, color: colorScheme.onSurfaceVariant),
         ],
@@ -235,15 +266,19 @@ class _NoteCardState extends ConsumerState<NoteCard> {
 
   Widget _buildMetadataRow(BuildContext context, {TextStyle? textStyle}) {
     final colorScheme = Theme.of(context).colorScheme;
+    final effectiveStyle = textStyle ??
+        Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            );
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        if (_folder != null) _getFolderLabel(context),
+        if (_folder != null) _getFolderLabel(context, textStyle: effectiveStyle),
         const Spacer(),
         Text(
           TimeHelper.formatTimeAgo(_note.updatedAt),
-          style: textStyle ?? Theme.of(context).textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
+          style: effectiveStyle,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
@@ -278,7 +313,10 @@ class _NoteCardState extends ConsumerState<NoteCard> {
             const SizedBox(width: 8),
             Icon(Icons.lock_outline, size: 16, color: colorScheme.onSurfaceVariant),
           ],
-          if (_isPinned) ...[
+          if (widget.isSelected) ...[
+            const SizedBox(width: 8),
+            Icon(Icons.check_circle, size: 16, color: colorScheme.primary),
+          ] else if (_isPinned) ...[
             const SizedBox(width: 8),
             Icon(Icons.push_pin, size: 16, color: colorScheme.onSurfaceVariant),
           ],
@@ -420,9 +458,13 @@ class _NoteCardState extends ConsumerState<NoteCard> {
     );
   }
 
-  Widget _getFolderLabel(BuildContext context) {
+  Widget _getFolderLabel(BuildContext context, {TextStyle? textStyle}) {
     final theme = Theme.of(context);
     final accent = _folderAccentColor;
+    final effectiveStyle = textStyle ??
+        theme.textTheme.labelSmall?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        );
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -440,10 +482,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
         Flexible(
           child: Text(
             _folder!.name,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
-            ),
+            style: effectiveStyle,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),

@@ -160,11 +160,14 @@ class DynamicNotesLayout extends ConsumerWidget {
 
   Widget _buildNoteCard(BuildContext context, WidgetRef ref, NoteWithFolder currentNoteWithFolder, NoteViewType viewType) {
     final isCurrentlySelected = noteIds.contains(currentNoteWithFolder.note.uuid);
+    final isActive = currentNoteWithFolder.note.uuid == activeNoteId;
+
     return NoteCard(
       noteWithFolder: currentNoteWithFolder,
       viewType: viewType,
       key: ValueKey(currentNoteWithFolder.note.uuid),
-      isSelected: isCurrentlySelected || currentNoteWithFolder.note.uuid == activeNoteId,
+      isSelected: isCurrentlySelected,
+      isActive: isActive,
       searchQuery: ref.read(searchQueryProvider),
 
       onTap: () {

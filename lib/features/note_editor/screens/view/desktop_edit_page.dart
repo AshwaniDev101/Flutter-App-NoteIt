@@ -381,7 +381,6 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
           onClose: _handleCloseNote,
           actions: [
             _buildUndoRedoButtons(),
-            const SizedBox(width: 8),
             if (!_isNewNote)
               NoteEditorOptionButton(
                 isLocked: _isLocked,
@@ -601,35 +600,33 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
   }
 
   Widget _buildUndoRedoButtons() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        ValueListenableBuilder<UndoHistoryValue>(
-          valueListenable: _undoController,
-          builder: (context, value, child) {
-            return Opacity(
-              opacity: value.canUndo ? 1.0 : 0.0,
-              child: IconButton(
-                onPressed: value.canUndo ? () => _undoController.undo() : null,
+    return ValueListenableBuilder<UndoHistoryValue>(
+      valueListenable: _undoController,
+      builder: (context, value, child) {
+        if (!value.canUndo && !value.canRedo) {
+          return const SizedBox.shrink();
+        }
+
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (value.canUndo)
+              IconButton(
+                onPressed: () => _undoController.undo(),
                 icon: const Icon(Icons.undo, size: 20),
+                tooltip: 'Undo',
               ),
-            );
-          },
-        ),
-        ValueListenableBuilder<UndoHistoryValue>(
-          valueListenable: _undoController,
-          builder: (context, value, child) {
-            return Opacity(
-              opacity: value.canRedo ? 1.0 : 0.0,
-              child: IconButton(
-                onPressed: value.canRedo ? () => _undoController.redo() : null,
+            if (value.canRedo)
+              IconButton(
+                onPressed: () => _undoController.redo(),
                 icon: const Icon(Icons.redo, size: 20),
+                tooltip: 'Redo',
               ),
-            );
-          },
-        ),
-      ],
+            const SizedBox(width: 8),
+          ],
+        );
+      },
     );
   }
 
@@ -657,7 +654,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
           style: Theme.of(context).textTheme.titleLarge,
           decoration: InputDecoration(
             isDense: true,
-            contentPadding: EdgeInsets.fromLTRB(leftPadding, 24, rightPadding, 8),
+            contentPadding: EdgeInsets.fromLTRB(leftPadding, 32, rightPadding, 8,),
             hintText: "Title",
             border: InputBorder.none,
             focusedBorder: InputBorder.none,

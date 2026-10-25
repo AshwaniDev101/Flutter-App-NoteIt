@@ -440,28 +440,35 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
   }
 
   Widget _buildUndoRedoButtons() {
-    return Center(
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ValueListenableBuilder<UndoHistoryValue>(
-            valueListenable: _undoController,
-            builder: (context, value, child) => IconButton(
-              onPressed: value.canUndo ? () => _undoController.undo() : null,
-              icon: const Icon(Icons.undo, size: 24),
-            ),
+    return ValueListenableBuilder<UndoHistoryValue>(
+      valueListenable: _undoController,
+      builder: (context, value, child) {
+        if (!value.canUndo && !value.canRedo) {
+          return const SizedBox.shrink();
+        }
+
+        return Center(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (value.canUndo)
+                IconButton(
+                  onPressed: () => _undoController.undo(),
+                  icon: const Icon(Icons.undo, size: 24),
+                  tooltip: 'Undo',
+                ),
+              if (value.canUndo && value.canRedo) const SizedBox(width: 24),
+              if (value.canRedo)
+                IconButton(
+                  onPressed: () => _undoController.redo(),
+                  icon: const Icon(Icons.redo, size: 24),
+                  tooltip: 'Redo',
+                ),
+            ],
           ),
-          const SizedBox(width: 24),
-          ValueListenableBuilder<UndoHistoryValue>(
-            valueListenable: _undoController,
-            builder: (context, value, child) => IconButton(
-              onPressed: value.canRedo ? () => _undoController.redo() : null,
-              icon: const Icon(Icons.redo, size: 24),
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
