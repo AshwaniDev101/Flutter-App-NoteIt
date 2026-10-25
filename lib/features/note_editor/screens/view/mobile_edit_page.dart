@@ -24,6 +24,7 @@ import '../../widgets/note_editor_options.dart';
 
 import '../../../lock/lock_manger/lock_manager.dart';
 import '../../../lock/view/setup_password_page.dart';
+import '../../../reminder/reminder_page.dart';
 import '../viewmodel/edit_note_view_model.dart';
 
 
@@ -577,6 +578,18 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
             });
             break;
           case NoteAction.reminder:
+            if (widget.existingNoteWithFolder == null) return;
+            final mTargetUuid = widget.existingNoteWithFolder!.note.uuid;
+            final mTargetTitle = widget.existingNoteWithFolder!.note.title;
+            final mExistingReminder = widget.existingNoteWithFolder!.note.reminderAt;
+            await showDialog<bool>(
+              context: context,
+              builder: (dialogContext) => ReminderPage(
+                noteUuid: mTargetUuid,
+                noteTitle: mTargetTitle,
+                existingReminderAt: mExistingReminder,
+              ),
+            );
             break;
           case NoteAction.info:
             ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.noteDetails);

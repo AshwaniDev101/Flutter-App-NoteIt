@@ -23,6 +23,7 @@ import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.d
 import '../../widgets/note_editor_options.dart';
 import '../../../lock/lock_manger/lock_manager.dart';
 import '../../../lock/view/setup_password_page.dart';
+import '../../../reminder/reminder_page.dart';
 import '../viewmodel/edit_note_view_model.dart';
 
 /// Defines the content structure currently active in the note editor.
@@ -395,6 +396,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
                   final targetUuid = _currentNoteWithFolder!.note.uuid;
                   final actionsController = ref.read(noteActionsControllerProvider);
                   final deviceInfo = await ref.read(deviceInfoProvider.future);
+                  if (!context.mounted) return;
 
                   switch (option) {
                     case NoteAction.delete:
@@ -445,7 +447,25 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
                       });
                       break;
                     case NoteAction.reminder:
-                      // TODO: UI Action - Open DatePicker
+                      if (_currentNoteWithFolder == null) return;
+                      final targetUuid = _currentNoteWithFolder!.note.uuid;
+                      final targetTitle = _currentNoteWithFolder!.note.title;
+                      final existingReminder = _currentNoteWithFolder!.note.reminderAt;
+                      final dialogContext = context;
+                      await showDialog<bool>(
+                        context: dialogContext,
+                        builder: (_) => ReminderPage(
+                          noteUuid: targetUuid,
+                          noteTitle: targetTitle,
+                          existingReminderAt: existingReminder,
+                        ),
+                      );
+                      if (!mounted) return;
+                      try {
+                        final updatedNote = await ref.read(notesDaoProvider).getNoteById(targetUuid);
+                        ref.read(activeNoteProvider.notifier).setNote(updatedNote);
+                        if (mounted) setState(() => _currentNoteWithFolder = updatedNote);
+                      } catch (_) {}
                       break;
                     default:
                       break;

@@ -209,6 +209,19 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
         0;
   }
 
+  Future<bool> updateNoteReminder(String uuid, DateTime? reminderAt) async {
+    return await (update(notes)..where((t) => t.uuid.equals(uuid))).write(
+          NotesCompanion.custom(
+            reminderAt: Variable(reminderAt),
+            cloudSyncStatus: const Variable(0),
+            localSyncStatus: const Variable(0),
+            updatedAt: Variable(DateTime.now().toUtc()),
+            updateCounter: notes.updateCounter + const Constant(1),
+          ),
+        ) >
+        0;
+  }
+
   Future<int> unlockAllNotes() async {
     return await (update(notes)..where((t) => t.lockedAt.isNotNull())).write(
       NotesCompanion.custom(

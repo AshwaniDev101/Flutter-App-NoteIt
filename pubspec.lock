@@ -61,10 +61,10 @@ packages:
     dependency: transitive
     description:
       name: android_file_picker
-      sha256: e94229cc41c4bb5fb6a2254146340a8b650664c99b5c93b9001f66c3375d0060
+      sha256: "03d3dd3cb578ab26b1e528aeea27bf6b976942f5a24e3da82d270369b8e161a8"
       url: "https://pub.dev"
     source: hosted
-    version: "2.1.1"
+    version: "2.1.2"
   archive:
     dependency: transitive
     description:
@@ -197,10 +197,10 @@ packages:
     dependency: "direct main"
     description:
       name: cloud_firestore
-      sha256: db785e4d0a995654781835b78a30b8bb203d967e123843bb918df0cdb6a7ec69
+      sha256: e51a7d63c1f0a153f678e27cc8baba56ba0083f0b3289dde183f42b4273e0c47
       url: "https://pub.dev"
     source: hosted
-    version: "6.10.0"
+    version: "6.10.2"
   cloud_firestore_platform_interface:
     dependency: transitive
     description:
@@ -333,10 +333,10 @@ packages:
     dependency: transitive
     description:
       name: equatable
-      sha256: "3bce007a596ff8b3119c45d68aaef631272537c03d30e5d4534dd24bf4c5eaa2"
+      sha256: ea36e500cbf0ec18361deabca755434f73e42fe53c5130021c7e2d6b5ebe1702
       url: "https://pub.dev"
     source: hosted
-    version: "2.1.0"
+    version: "3.0.0"
   extension_google_sign_in_as_googleapis_auth:
     dependency: transitive
     description:
@@ -381,18 +381,18 @@ packages:
     dependency: "direct main"
     description:
       name: file_picker
-      sha256: "98c0b156b6380ba55bc767a14e2e6b3feb246e713ad40092424596fa79005bea"
+      sha256: f201f3cbbb38ea5cd4e6896549662690f445a66261484f8ad697351c1ca25581
       url: "https://pub.dev"
     source: hosted
-    version: "13.1.0"
+    version: "13.2.0"
   file_picker_darwin:
     dependency: transitive
     description:
       name: file_picker_darwin
-      sha256: a5a48960703e7faa880544ef188491f442a93959b6afb5cae57575e5dc836589
+      sha256: "13e731433fb3e59c1aff5a1197e41c5c5f930fad16342d101579086271a70d7b"
       url: "https://pub.dev"
     source: hosted
-    version: "2.3.2"
+    version: "2.4.0"
   file_picker_linux:
     dependency: transitive
     description:
@@ -421,10 +421,10 @@ packages:
     dependency: "direct main"
     description:
       name: firebase_auth
-      sha256: "144fa22926b629e797ecc757db5d31b145aeedf6018160296dae945d98a98fb5"
+      sha256: "9580cae2c5aa5cd8f084ddfc8e10dd6fe68740ddca3a738b665b7c18a3680223"
       url: "https://pub.dev"
     source: hosted
-    version: "6.7.0"
+    version: "6.7.1"
   firebase_auth_platform_interface:
     dependency: transitive
     description:
@@ -445,10 +445,10 @@ packages:
     dependency: "direct main"
     description:
       name: firebase_core
-      sha256: "5fbbaa2aeb08a52feee559f92a62f5a6b04c9bdff81c8f608636771cf0d7b680"
+      sha256: "253da727a1eb7ed91a72cb4eb4a1b6db6993e04c228c2dcfa9e573901c252e35"
       url: "https://pub.dev"
     source: hosted
-    version: "4.15.0"
+    version: "4.15.2"
   firebase_core_platform_interface:
     dependency: transitive
     description:
@@ -494,6 +494,46 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.0.0"
+  flutter_local_notifications:
+    dependency: "direct main"
+    description:
+      name: flutter_local_notifications
+      sha256: fd5fc8966a8b34337ac182dc394f3506139b69d8138d4e9e174a13d6468adcd4
+      url: "https://pub.dev"
+    source: hosted
+    version: "22.3.3"
+  flutter_local_notifications_linux:
+    dependency: transitive
+    description:
+      name: flutter_local_notifications_linux
+      sha256: "3b89a4bf095fa5f8a99beeabf982c5bd506c3ad25e7b9e61da945e994dc5b615"
+      url: "https://pub.dev"
+    source: hosted
+    version: "8.0.2"
+  flutter_local_notifications_platform_interface:
+    dependency: transitive
+    description:
+      name: flutter_local_notifications_platform_interface
+      sha256: "43c3761d916c9bd3d5c7ebbc44d82f4990329840c0c5d62ad5260cc1b5d399bd"
+      url: "https://pub.dev"
+    source: hosted
+    version: "12.2.0"
+  flutter_local_notifications_web:
+    dependency: transitive
+    description:
+      name: flutter_local_notifications_web
+      sha256: "516afaf97a2d1e67a036c6617321b00d205d72f7a67b6eccf936cd565f985878"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0"
+  flutter_local_notifications_windows:
+    dependency: transitive
+    description:
+      name: flutter_local_notifications_windows
+      sha256: "6f43bdd03b171b7a90f22647506fea33e2bb12294b7c7c7a3d690e960a382945"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.1.1"
   flutter_riverpod:
     dependency: "direct main"
     description:
@@ -728,6 +768,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.12.0"
+  intl:
+    dependency: "direct main"
+    description:
+      name: intl
+      sha256: "1ca20c894b1717686a2319b8548763d812bc0aabdac580420a44c5178c57a867"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.20.3"
   io:
     dependency: transitive
     description:
@@ -832,6 +880,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.13.0"
+  menu_base:
+    dependency: transitive
+    description:
+      name: menu_base
+      sha256: "820368014a171bd1241030278e6c2617354f492f5c703d7b7d4570a6b8b84405"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.1"
   meta:
     dependency: transitive
     description:
@@ -1228,10 +1284,10 @@ packages:
     dependency: transitive
     description:
       name: shared_preferences_android
-      sha256: "732b86c5c726402ac781a9fe14fe9cadad3c7dde8f99c72ab43a75a307077336"
+      sha256: "593034a16e82953ca31145db6c85174286262715f9c5e6a9d8c65ffd9fcdce09"
       url: "https://pub.dev"
     source: hosted
-    version: "2.5.2"
+    version: "2.5.3"
   shared_preferences_foundation:
     dependency: transitive
     description:
@@ -1312,6 +1368,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.1"
+  shortid:
+    dependency: transitive
+    description:
+      name: shortid
+      sha256: d0b40e3dbb50497dad107e19c54ca7de0d1a274eb9b4404991e443dadb9ebedb
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.2"
   sky_engine:
     dependency: transitive
     description: flutter
@@ -1453,14 +1517,30 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.6.17"
+  timezone:
+    dependency: "direct main"
+    description:
+      name: timezone
+      sha256: "9f4e5a1a0e4fef7dd3424842c0575db01bfb7a11730e8d55753fcd5c5c98767b"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.11.2"
   toastification:
     dependency: "direct main"
     description:
       name: toastification
-      sha256: "66c96678e3dece8ba24de3ea31634bd65a80aaecb8105f9bafe946e5f0d7590a"
+      sha256: e06b82a66dffb866af2923cc04012f52ae96ec50ab9215efa07be8d6ec6486fb
       url: "https://pub.dev"
     source: hosted
-    version: "3.2.0"
+    version: "3.2.2"
+  tray_manager:
+    dependency: "direct main"
+    description:
+      name: tray_manager
+      sha256: "1a659b08baa6e9b91ef8ce16eda37740de398be1c4cf322b8a1ddfef25c68c5a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.5.3"
   typed_data:
     dependency: transitive
     description:

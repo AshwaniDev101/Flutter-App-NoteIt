@@ -13,6 +13,8 @@ import 'package:window_manager/window_manager.dart';
 
 import 'core/util/platform_helper.dart';
 import 'core/theme/app_theme.dart';
+import 'features/reminder/reminder_manager.dart';
+import 'features/tray/window_tray.dart';
 
 // Window Release : flutter build windows
 // Android Release : flutter run --release
@@ -21,23 +23,16 @@ import 'core/theme/app_theme.dart';
 // Build drift db : dart run build_runner build -d
 // Drift database location Windows : appdata\app-name\my_notes_db.sqlite
 
-class _WindowSizeObserver extends WindowListener {
-  @override
-  void onWindowResized() async {
-    final size = await windowManager.getSize();
-    SharedPreferenceManager.instance.setWindowWidth(size.width);
-    SharedPreferenceManager.instance.setWindowHeight(size.height);
-  }
-}
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await SharedPreferenceManager.init();
+  await ReminderManager().init();
 
   if (PlatformHelper.isNativeDesktop) {
-    // Remove the default windows form and add ability to add a custom one
+    // Remove default Windows frame and initialize window/tray manager
     await windowManager.ensureInitialized();
+    await DesktopTrayHandler.instance.init();
 
     final savedWidth = SharedPreferenceManager.instance.windowWidth;
     final savedHeight = SharedPreferenceManager.instance.windowHeight;
@@ -45,13 +40,11 @@ Future<void> main() async {
     const minWindowSize = Size(360, 500);
 
     WindowOptions windowOptions = WindowOptions(
-      titleBarStyle: TitleBarStyle.hidden, // Hides the default Windows frame
+      titleBarStyle: TitleBarStyle.hidden,
       size: Size(savedWidth, savedHeight),
       minimumSize: minWindowSize,
       center: true,
     );
-
-    windowManager.addListener(_WindowSizeObserver());
 
     await windowManager.waitUntilReadyToShow(windowOptions, () async {
       await windowManager.setMinimumSize(minWindowSize);
