@@ -68,6 +68,10 @@ class Notes extends Table {
 
   DateTimeColumn get reminderAt => dateTime().nullable()();
 
+  TextColumn get reminderRepeatMode => text().nullable()();
+
+  TextColumn get reminderCustomDays => text().nullable()();
+
   // SECURITY
   // Crucial for Firebase Security Rules. Ensures only the owner can read/write this note
   // when synced to the cloud. Also helps filter notes locally if multiple accounts share a device.

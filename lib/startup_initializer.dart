@@ -14,6 +14,7 @@ import 'features/local_sync/auto_connect/mdns_broadcast.dart';
 import 'features/local_sync/auto_connect/mdns_searcher.dart';
 import 'features/local_sync/provider/sync_client_provider.dart';
 import 'features/local_sync/provider/sync_server_provider.dart';
+import 'features/reminder/reminder_manager.dart';
 
 final startupInitializerProvider = NotifierProvider<StartupInitializer, void>(() {
   return StartupInitializer();
@@ -35,7 +36,9 @@ class StartupInitializer extends Notifier<void> {
   }
 
   void _evaluateSyncState() async {
-    AppLogger.d('StartupInitializer: Evaluating Sync State...');
+    AppLogger.d('StartupInitializer: Evaluating Sync State & Rearming Reminders...');
+
+    ReminderManager().rearmPendingReminders();
 
     final spp = ref.read(sharedPreferenceProvider);
     final engine = spp.currentEngine;
@@ -153,6 +156,8 @@ class StartupInitializer extends Notifier<void> {
 
   void onAppResumed() {
     AppLogger.d('StartupInitializer: App came back to the foreground');
+
+    ReminderManager().rearmPendingReminders();
 
     final spp = ref.read(sharedPreferenceProvider);
     if (spp.currentEngine != SyncEngine.local) {

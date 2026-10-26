@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import 'package:noteit/core/util/device_info.dart';
 import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/database/drift/notes/notes_dao.dart';
+import 'package:noteit/features/reminder/reminder_manager.dart';
 
 import '../../../../shared/text/find_replace.dart';
 import '../../../../shared/overlays/app_scaffold.dart';
@@ -387,6 +388,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
                 isLocked: _isLocked,
                 isPinned: _currentNoteWithFolder?.note.pinnedAt != null,
                 isChecklist: _contentVersion == ContentVersion.checklist,
+                hasReminder: _currentNoteWithFolder?.note.reminderAt != null,
                 onPressed: (NoteAction option) async {
                   if (_isNewNote && option != NoteAction.info) {
                     SnackBarManager.show(msg: 'Please save the note first', type: SnackBarMessageType.error);
@@ -447,25 +449,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
                       });
                       break;
                     case NoteAction.reminder:
-                      if (_currentNoteWithFolder == null) return;
-                      final targetUuid = _currentNoteWithFolder!.note.uuid;
-                      final targetTitle = _currentNoteWithFolder!.note.title;
-                      final existingReminder = _currentNoteWithFolder!.note.reminderAt;
-                      final dialogContext = context;
-                      await showDialog<bool>(
-                        context: dialogContext,
-                        builder: (_) => ReminderPage(
-                          noteUuid: targetUuid,
-                          noteTitle: targetTitle,
-                          existingReminderAt: existingReminder,
-                        ),
-                      );
-                      if (!mounted) return;
-                      try {
-                        final updatedNote = await ref.read(notesDaoProvider).getNoteById(targetUuid);
-                        ref.read(activeNoteProvider.notifier).setNote(updatedNote);
-                        if (mounted) setState(() => _currentNoteWithFolder = updatedNote);
-                      } catch (_) {}
+                      await _openReminderDialog();
                       break;
                     default:
                       break;
@@ -597,12 +581,98 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
                   );
           },
         ),
+        if (_currentNoteWithFolder?.note.reminderAt != null) ...[
+          const SizedBox(width: 8),
+          _buildReminderChip(context, _currentNoteWithFolder!.note.reminderAt!),
+        ],
         const SizedBox(width: 16),
         _buildNewLabel(),
       ],
     ),
   );
 }
+
+  Future<void> _openReminderDialog() async {
+    if (_currentNoteWithFolder == null) return;
+    final targetUuid = _currentNoteWithFolder!.note.uuid;
+    final targetTitle = _currentNoteWithFolder!.note.title;
+    final existingReminder = _currentNoteWithFolder!.note.reminderAt;
+    final existingRepeatMode = _currentNoteWithFolder!.note.reminderRepeatMode;
+    final existingCustomDays = _currentNoteWithFolder!.note.reminderCustomDays;
+
+    await showDialog<bool>(
+      context: context,
+      builder: (_) => ReminderPage(
+        noteUuid: targetUuid,
+        noteTitle: targetTitle,
+        existingReminderAt: existingReminder,
+        existingRepeatMode: existingRepeatMode,
+        existingCustomDays: existingCustomDays,
+      ),
+    );
+
+    if (!mounted) return;
+    try {
+      final updatedNote = await ref.read(notesDaoProvider).getNoteById(targetUuid);
+      ref.read(activeNoteProvider.notifier).setNote(updatedNote);
+      if (mounted) setState(() => _currentNoteWithFolder = updatedNote);
+    } catch (_) {}
+  }
+
+  Widget _buildReminderChip(BuildContext context, DateTime reminderAt) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isPast = reminderAt.isBefore(DateTime.now());
+    final formattedDate = ReminderManager.formatReminderLabel(
+      reminderAt,
+      _currentNoteWithFolder?.note.reminderRepeatMode,
+      _currentNoteWithFolder?.note.reminderCustomDays,
+    );
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: _openReminderDialog,
+        borderRadius: BorderRadius.circular(6),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: isPast
+                ? colorScheme.errorContainer.withValues(alpha: 0.8)
+                : colorScheme.secondaryContainer.withValues(alpha: 0.8),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(
+              color: isPast
+                  ? colorScheme.error.withValues(alpha: 0.4)
+                  : colorScheme.secondary.withValues(alpha: 0.4),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isPast ? Icons.notification_important_rounded : Icons.notifications_active_rounded,
+                size: 14,
+                color: isPast
+                    ? colorScheme.onErrorContainer
+                    : colorScheme.onSecondaryContainer,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                formattedDate,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: isPast
+                      ? colorScheme.onErrorContainer
+                      : colorScheme.onSecondaryContainer,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   Widget _buildNewLabel() {
     if (!_isNewNote) {

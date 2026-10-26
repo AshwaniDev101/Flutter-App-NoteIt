@@ -21,7 +21,6 @@ class ReminderSettingsPage extends ConsumerStatefulWidget {
 class _ReminderSettingsPageState extends ConsumerState<ReminderSettingsPage> {
   final SharedPreferenceManager _prefs = SharedPreferenceManager.instance;
 
-  late bool _soundEnabled;
   late bool _vibrationEnabled;
   late int _durationSeconds;
   late String _defaultRepeatMode;
@@ -38,7 +37,6 @@ class _ReminderSettingsPageState extends ConsumerState<ReminderSettingsPage> {
   }
 
   void _loadSettings() {
-    _soundEnabled = _prefs.reminderSoundEnabled;
     _vibrationEnabled = _prefs.reminderVibrationEnabled;
     _durationSeconds = _prefs.reminderDurationSeconds;
     _defaultRepeatMode = _prefs.defaultRepeatMode;
@@ -300,15 +298,19 @@ class _ReminderSettingsPageState extends ConsumerState<ReminderSettingsPage> {
                     ),
                     child: Column(
                       children: [
-                        SwitchListTile(
-                          title: const Text('Enable Alarm Sound'),
-                          subtitle: const Text(
-                              'Play audio ringer when reminder goes off'),
-                          value: _soundEnabled,
-                          secondary: const Icon(Icons.volume_up_outlined),
-                          onChanged: (val) async {
-                            setState(() => _soundEnabled = val);
-                            await _prefs.setReminderSoundEnabled(val);
+                        ValueListenableBuilder<bool>(
+                          valueListenable: _prefs.reminderSoundListenable,
+                          builder: (context, soundEnabled, _) {
+                            return SwitchListTile(
+                              title: const Text('Enable Alarm Sound'),
+                              subtitle: const Text(
+                                  'Play audio ringer when reminder goes off'),
+                              value: soundEnabled,
+                              secondary: const Icon(Icons.volume_up_outlined),
+                              onChanged: (val) async {
+                                await _prefs.setReminderSoundEnabled(val);
+                              },
+                            );
                           },
                         ),
                         const Divider(height: 1),

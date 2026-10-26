@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
@@ -19,9 +20,11 @@ class SharedPreferenceManager {
   static final SharedPreferenceManager instance = SharedPreferenceManager._internal();
 
   static late SharedPreferences _prefs;
+  late final ValueNotifier<bool> reminderSoundListenable;
 
   static Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
+    instance.reminderSoundListenable = ValueNotifier<bool>(instance.reminderSoundEnabled);
   }
 
   static const String _keyViewType = 'view_type';
@@ -219,6 +222,7 @@ class SharedPreferenceManager {
   bool get reminderSoundEnabled => _prefs.getBool(_keyReminderSoundEnabled) ?? true;
 
   Future<bool> setReminderSoundEnabled(bool value) async {
+    reminderSoundListenable.value = value;
     return await _prefs.setBool(_keyReminderSoundEnabled, value);
   }
 

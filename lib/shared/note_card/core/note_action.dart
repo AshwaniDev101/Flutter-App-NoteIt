@@ -13,7 +13,6 @@ enum NoteAction {
   reminder('Remind me', Icons.notifications_none_outlined),
   moveTo('Move to...', Icons.drive_file_move_outlined),
   duplicate('Duplicate', Icons.copy_outlined),
-  openNewWindow('Open in new window', Icons.open_in_new_outlined),
 
   // Filing
   archive('Archive', Icons.archive_outlined),
@@ -45,6 +44,7 @@ extension NoteActionUI on NoteAction {
     bool isLocked = false,
     bool isPinned = false,
     bool isChecklist = false,
+    bool hasReminder = false,
   }) {
     switch (this) {
       case NoteAction.lock:
@@ -68,6 +68,13 @@ extension NoteActionUI on NoteAction {
           tooltip: isChecklist ? 'Convert to Plain-text' : 'Turn to Checklist',
           isActive: isChecklist,
         );
+      case NoteAction.reminder:
+        return (
+          label: hasReminder ? 'Clean Reminder' : 'Set Reminder',
+          icon: hasReminder ? Icons.notifications_off_outlined : Icons.notifications_none_outlined,
+          tooltip: hasReminder ? 'Clean Reminder' : 'Set Reminder',
+          isActive: hasReminder,
+        );
       case NoteAction.delete:
         return (label: 'Delete', icon: Icons.delete_outline, tooltip: 'Delete Note', isActive: false);
       case NoteAction.archive:
@@ -76,8 +83,6 @@ extension NoteActionUI on NoteAction {
         return (label: 'Details', icon: Icons.info_outline, tooltip: 'Note Meta Data', isActive: false);
       case NoteAction.find:
         return (label: 'Find', icon: Icons.search_outlined, tooltip: 'Find in Note', isActive: false);
-      case NoteAction.reminder:
-        return (label: 'Reminder', icon: Icons.notifications_none_outlined, tooltip: 'Set Reminder', isActive: false);
       default:
         return (label: label, icon: icon, tooltip: label, isActive: false);
     }

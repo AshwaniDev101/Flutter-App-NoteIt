@@ -10,7 +10,8 @@ import 'package:noteit/database/drift/notes/notes_dao.dart';
 import 'package:noteit/features/home/core/providers.dart';
 import 'package:noteit/features/lock/lock_manger/lock_manager.dart';
 import 'package:noteit/shared/menus/view_menu_button.dart';
-import 'package:noteit/shared/note_card/widgets/lock_overlay.dart';
+import 'package:noteit/shared/note_card/overlays/lock_overlay.dart';
+import 'package:noteit/shared/note_card/overlays/reminder_overlay.dart';
 
 import '../text/highlighted_text.dart';
 import 'core/note_action.dart';
@@ -38,7 +39,6 @@ class NoteCard extends ConsumerStatefulWidget {
     NoteAction.reminder,
     NoteAction.moveTo,
     NoteAction.duplicate,
-    NoteAction.openNewWindow,
     NoteAction.archive,
     NoteAction.delete,
   ];
@@ -123,16 +123,25 @@ class _NoteCardState extends ConsumerState<NoteCard> {
         effectiveOption = NoteAction.pin;
       }
 
+      String label = effectiveOption.label;
+      IconData iconData = effectiveOption.icon;
+
+      if (option == NoteAction.reminder) {
+        final hasReminder = _note.reminderAt != null;
+        label = hasReminder ? 'Remove Reminder' : 'Remind me';
+        iconData = hasReminder ? Icons.notifications_off_outlined : Icons.notifications_none_outlined;
+      }
+
       final color = effectiveOption.isDestructive ? errorColor : null;
 
       return MenuItemButton(
         leadingIcon: Icon(
-          effectiveOption.icon,
+          iconData,
           color: color,
         ),
         onPressed: () => widget.onContextMenuAction?.call(effectiveOption),
         child: Text(
-          effectiveOption.label,
+          label,
           style: TextStyle(color: color),
         ),
       );
@@ -256,9 +265,15 @@ class _NoteCardState extends ConsumerState<NoteCard> {
         if (widget.isSelected) ...[
           const SizedBox(width: 8),
           Icon(Icons.check_circle, size: 16, color: colorScheme.primary),
-        ] else if (_isPinned) ...[
-          const SizedBox(width: 8),
-          Icon(Icons.push_pin, size: 16, color: colorScheme.onSurfaceVariant),
+        ] else ...[
+          if (_note.reminderAt != null) ...[
+            const SizedBox(width: 6),
+            Icon(Icons.notifications_active_outlined, size: 14, color: colorScheme.primary),
+          ],
+          if (_isPinned) ...[
+            const SizedBox(width: 8),
+            Icon(Icons.push_pin, size: 16, color: colorScheme.onSurfaceVariant),
+          ],
         ],
       ],
     );
@@ -383,6 +398,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
                   child: _buildNotePreview(context, overflow: TextOverflow.fade),
                 ),
                 LockOverlayWidget(noteWithFolder: widget.noteWithFolder),
+                ReminderOverlayWidget(noteWithFolder: widget.noteWithFolder),
               ],
             ),
           ),

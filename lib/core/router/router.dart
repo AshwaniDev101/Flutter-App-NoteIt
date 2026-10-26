@@ -19,7 +19,6 @@ import '../../features/local_sync/view/qr/qr_scanner/qr_scanner_page.dart';
 import '../../features/local_sync/view/synced_list.dart';
 import '../../features/note_editor/screens/view/desktop_edit_page.dart';
 import '../../features/note_editor/screens/view/mobile_edit_page.dart';
-import '../../features/reminder/note_showcase_page.dart';
 import '../../features/reminder/reminder_settings_page.dart';
 import '../../features/settings/view/default_settings_page.dart';
 import '../../features/settings/view/settings_page.dart';
@@ -50,7 +49,6 @@ class AppRoutes {
   static const String archive = '/archive';
   static const String defaultSettings = '/default-settings';
   static const String reminderSettings = '/reminder-settings';
-  static const String noteShowcase = '/note-showcase';
 }
 
 GoRoute _adaptiveRoute({
@@ -152,7 +150,6 @@ final routerProvider = Provider((ref) {
       GoRoute(path: AppRoutes.archive, builder: (context, state) => const ArchivePage()),
       GoRoute(path: AppRoutes.defaultSettings, builder: (context, state) => const DefaultSettingsPage()),
       GoRoute(path: AppRoutes.reminderSettings, builder: (context, state) => const ReminderSettingsPage()),
-      GoRoute(path: AppRoutes.noteShowcase, builder: (context, state) => NoteShowcasePage(noteWithFolder: state.extra as NoteWithFolder?)),
     ],
   );
 });

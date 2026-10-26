@@ -211,6 +211,7 @@ class DynamicNotesLayout extends ConsumerWidget {
     ref.read(homeViewModelProvider.notifier).clearSelection();
     final actionsController = ref.read(noteActionsControllerProvider);
     final deviceInfo = await ref.read(deviceInfoProvider.future);
+    if (!context.mounted) return;
     final String platform = deviceInfo.extractPlatform;
 
     switch (option) {
@@ -245,9 +246,6 @@ class DynamicNotesLayout extends ConsumerWidget {
       case NoteAction.moveTo:
         break;
       case NoteAction.reminder:
-        break;
-      case NoteAction.openNewWindow:
-
         break;
       case NoteAction.unarchive:
         await actionsController.unarchiveNotes(targetUuids);

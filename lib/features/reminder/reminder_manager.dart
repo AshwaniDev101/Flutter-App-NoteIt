@@ -2,10 +2,10 @@ import 'dart:async';
 import 'dart:io';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:window_manager/window_manager.dart';
@@ -13,6 +13,8 @@ import 'package:window_manager/window_manager.dart';
 import '../../core/router/router.dart';
 import '../../database/drift/notes/notes_dao.dart';
 import '../../database/shared_preference/shared_preference_manager.dart';
+import '../home/core/providers.dart';
+import '../home/view/desktop/content_panel/core/navigator.dart';
 
 enum ReminderRepeatMode { once, daily, customDays }
 
@@ -23,6 +25,7 @@ class ReminderManager {
 
   ReminderManager._internal();
 
+  ProviderContainer? _container;
   final FlutterLocalNotificationsPlugin _notificationsPlugin = FlutterLocalNotificationsPlugin();
   final Map<int, Timer> _desktopTimers = {};
   AudioPlayer? _audioPlayer;
@@ -78,31 +81,51 @@ class ReminderManager {
     if (noteUuid.isEmpty) return;
 
     try {
-      final container = ProviderContainer();
+      final container = _container;
+      if (container == null) return;
+
+      await _onReminderTriggered(noteUuid);
+
       final noteWithFolder = await container.read(notesDaoProvider).getNoteById(noteUuid);
-      container.dispose();
+
+      // Set active note in Riverpod state
+      container.read(activeNoteProvider.notifier).setNote(noteWithFolder);
 
       final context = rootNavigatorKey.currentContext;
-      if (context != null && context.mounted) {
-        if (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
-          try {
-            await windowManager.setSize(const Size(780, 720));
-            await windowManager.center();
-            await windowManager.show();
-            await windowManager.focus();
-          } catch (_) {}
+
+      if (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
+        try {
+          if (await windowManager.isMinimized()) {
+            await windowManager.restore();
+          }
+          await windowManager.show();
+          await windowManager.focus();
+        } catch (e) {
+          debugPrint('Error bringing desktop window to foreground: $e');
         }
-        if (context.mounted) {
-          GoRouter.of(context).push(AppRoutes.noteShowcase, extra: noteWithFolder);
+
+        // Set right panel view to note editor
+        container.read(desktopRightPanelViewProvider.notifier).setView(RightPanelPageOptions.noteEditor);
+
+        if (context != null && context.mounted) {
+          context.go(AppRoutes.home);
+        }
+      } else {
+        if (context != null && context.mounted) {
+          GoRouter.of(context).push(AppRoutes.edit, extra: noteWithFolder);
         }
       }
     } catch (e) {
-      debugPrint('Error launching NoteShowcasePage from notification: $e');
+      debugPrint('Error launching note from notification: $e');
     }
   }
 
   /// 1. Initialization for flutter_local_notifications 22.3.3
-  Future<void> init() async {
+  Future<void> init([ProviderContainer? container]) async {
+    if (container != null) {
+      _container = container;
+    }
+
     if (_isInitialized) return;
 
     tz.initializeTimeZones();
@@ -152,6 +175,36 @@ class ReminderManager {
     await androidImplementation?.createNotificationChannel(channel);
 
     _isInitialized = true;
+    await rearmPendingReminders();
+  }
+
+  /// Re-reads all upcoming pending reminders from SQLite and re-arms in-memory desktop sound timers.
+  Future<void> rearmPendingReminders() async {
+    final container = _container;
+    if (container == null) return;
+
+    try {
+      final pendingNotes = await container.read(notesDaoProvider).getNotesWithPendingReminders();
+      final now = DateTime.now();
+
+      for (final noteWithFolder in pendingNotes) {
+        final note = noteWithFolder.note;
+        final reminderAt = note.reminderAt;
+
+        if (reminderAt != null && reminderAt.isAfter(now)) {
+          final int baseId = getNotificationId(note.uuid);
+          _scheduleDesktopTimer(
+            id: baseId,
+            noteUuid: note.uuid,
+            title: 'Note-It Reminder',
+            message: note.title.isNotEmpty ? note.title : 'Reminder for your note',
+            scheduledDate: reminderAt,
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error re-arming pending reminders: $e');
+    }
   }
 
   Future<void> _ensureInitialized() async {
@@ -186,8 +239,50 @@ class ReminderManager {
   /// Unique notification integer ID derived from string note UUID
   int getNotificationId(String noteUuid) => noteUuid.hashCode.abs() % 2147483647;
 
+  static String formatReminderLabel(DateTime reminderAt, String? repeatMode, String? customDays) {
+    final timeStr = DateFormat('h:mm a').format(reminderAt);
+
+    if (repeatMode == 'daily') {
+      return 'Daily, $timeStr';
+    } else if (repeatMode == 'customDays' || repeatMode == 'custom') {
+      return 'Weekly, $timeStr';
+    } else {
+      return DateFormat('MMM d, h:mm a').format(reminderAt);
+    }
+  }
+
+  static DateTime _nextDailyOccurrence(DateTime targetTime) {
+    final now = DateTime.now();
+    DateTime candidate = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      targetTime.hour,
+      targetTime.minute,
+    );
+    if (candidate.isBefore(now) || candidate.isAtSameMomentAs(now)) {
+      candidate = candidate.add(const Duration(days: 1));
+    }
+    return candidate;
+  }
+
+  static DateTime _nextWeekdayOccurrence(DateTime targetTime, int targetWeekday) {
+    final now = DateTime.now();
+    DateTime candidate = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      targetTime.hour,
+      targetTime.minute,
+    );
+    while (candidate.isBefore(now) || candidate.isAtSameMomentAs(now) || candidate.weekday != targetWeekday) {
+      candidate = candidate.add(const Duration(days: 1));
+    }
+    return candidate;
+  }
+
   /// High-level method to schedule a reminder tied to a Note UUID
-  Future<void> scheduleForNote({
+  Future<DateTime?> scheduleForNote({
     required String noteUuid,
     required String title,
     required String message,
@@ -196,7 +291,7 @@ class ReminderManager {
     List<int>? selectedDays,
   }) async {
     final int baseId = getNotificationId(noteUuid);
-    await schedule(
+    return await schedule(
       baseId: baseId,
       noteUuid: noteUuid,
       title: title,
@@ -214,7 +309,7 @@ class ReminderManager {
   }
 
   /// 3. Scheduling notifications
-  Future<void> schedule({
+  Future<DateTime?> schedule({
     required int baseId,
     required String noteUuid,
     required String title,
@@ -225,11 +320,9 @@ class ReminderManager {
   }) async {
     await _ensureInitialized();
     final hasPermission = await requestPermission();
-    if (!hasPermission) return;
+    if (!hasPermission) return null;
 
     await cancelReminder(baseId);
-
-    final tz.TZDateTime scheduledDate = tz.TZDateTime.from(date, tz.local);
 
     final NotificationDetails details = NotificationDetails(
       android: AndroidNotificationDetails(
@@ -259,6 +352,7 @@ class ReminderManager {
     Future<void> scheduleNotification({
       required int id,
       required tz.TZDateTime time,
+      required DateTime targetDate,
       DateTimeComponents? matchComponents,
     }) async {
       // 1. System notification schedule
@@ -297,37 +391,48 @@ class ReminderManager {
         noteUuid: noteUuid,
         title: title,
         message: message,
-        scheduledDate: date,
+        scheduledDate: targetDate,
       );
     }
 
     switch (repeatMode) {
       case ReminderRepeatMode.once:
-        await scheduleNotification(id: baseId, time: scheduledDate);
-        break;
+        final scheduledDate = tz.TZDateTime.from(date, tz.local);
+        await scheduleNotification(id: baseId, time: scheduledDate, targetDate: date);
+        return date;
 
       case ReminderRepeatMode.daily:
+        final nextDate = _nextDailyOccurrence(date);
+        final nextTz = tz.TZDateTime.from(nextDate, tz.local);
         await scheduleNotification(
           id: baseId,
-          time: scheduledDate,
+          time: nextTz,
+          targetDate: nextDate,
           matchComponents: DateTimeComponents.time,
         );
-        break;
+        return nextDate;
 
       case ReminderRepeatMode.customDays:
-        if (selectedDays == null || selectedDays.isEmpty) return;
+        if (selectedDays == null || selectedDays.isEmpty) return null;
 
+        DateTime? earliestNextDate;
         for (int day in selectedDays) {
-          final tz.TZDateTime nextDayDate = _nextInstanceOfWeekday(scheduledDate, day);
+          final nextDate = _nextWeekdayOccurrence(date, day);
+          final nextTz = tz.TZDateTime.from(nextDate, tz.local);
           final int uniqueId = (baseId * 10) + day;
 
           await scheduleNotification(
             id: uniqueId,
-            time: nextDayDate,
+            time: nextTz,
+            targetDate: nextDate,
             matchComponents: DateTimeComponents.dayOfWeekAndTime,
           );
+
+          if (earliestNextDate == null || nextDate.isBefore(earliestNextDate)) {
+            earliestNextDate = nextDate;
+          }
         }
-        break;
+        return earliestNextDate;
     }
   }
 
@@ -344,7 +449,9 @@ class ReminderManager {
     if (duration.isNegative) return;
 
     _desktopTimers[id] = Timer(duration, () async {
+      _desktopTimers.remove(id);
       await _playDesktopAlarmSound();
+      await _onReminderTriggered(noteUuid);
 
       final NotificationDetails details = NotificationDetails(
         android: AndroidNotificationDetails(
@@ -404,11 +511,60 @@ class ReminderManager {
     }
   }
 
-  tz.TZDateTime _nextInstanceOfWeekday(tz.TZDateTime time, int weekday) {
-    tz.TZDateTime scheduledDate = time;
-    while (scheduledDate.weekday != weekday) {
-      scheduledDate = scheduledDate.add(const Duration(days: 1));
+  /// Handles auto-clearing one-time reminders or advancing repeating reminders when triggered.
+  Future<void> _onReminderTriggered(String noteUuid) async {
+    final container = _container;
+    if (container == null) return;
+
+    try {
+      final noteWithFolder = await container.read(notesDaoProvider).getNoteById(noteUuid);
+      final note = noteWithFolder.note;
+      final repeatMode = note.reminderRepeatMode;
+
+      if (repeatMode == 'daily') {
+        final currentReminder = note.reminderAt ?? DateTime.now();
+        final nextDate = currentReminder.add(const Duration(days: 1));
+        await container.read(notesDaoProvider).updateNoteReminder(
+              noteUuid,
+              nextDate,
+              repeatMode: 'daily',
+            );
+      } else if (repeatMode == 'customDays' && note.reminderCustomDays != null) {
+        final currentReminder = note.reminderAt ?? DateTime.now();
+        final days = note.reminderCustomDays!
+            .split(',')
+            .map((e) => int.tryParse(e.trim()))
+            .whereType<int>()
+            .toList();
+        if (days.isNotEmpty) {
+          final tzDate = tz.TZDateTime.from(currentReminder, tz.local);
+          final nextTz = _nextInstanceOfCustomDays(tzDate, days);
+          await container.read(notesDaoProvider).updateNoteReminder(
+                noteUuid,
+                nextTz.toLocal(),
+                repeatMode: 'customDays',
+                customDays: note.reminderCustomDays,
+              );
+        } else {
+          await container.read(notesDaoProvider).updateNoteReminder(noteUuid, null);
+        }
+      } else {
+        // One-time reminder: auto-clear in SQLite database
+        await container.read(notesDaoProvider).updateNoteReminder(noteUuid, null);
+      }
+    } catch (e) {
+      debugPrint('Error processing triggered reminder for note ($noteUuid): $e');
     }
-    return scheduledDate;
+  }
+
+  tz.TZDateTime _nextInstanceOfCustomDays(tz.TZDateTime from, List<int> days) {
+    tz.TZDateTime candidate = from.add(const Duration(days: 1));
+    for (int i = 0; i < 7; i++) {
+      if (days.contains(candidate.weekday)) {
+        return candidate;
+      }
+      candidate = candidate.add(const Duration(days: 1));
+    }
+    return candidate;
   }
 }

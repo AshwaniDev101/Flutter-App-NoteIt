@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:noteit/database/drift/notes/notes_dao.dart';
+import 'package:noteit/features/reminder/reminder_manager.dart';
 
 import 'package:noteit/features/note_editor/screens/view/desktop_edit_page.dart';
 
@@ -427,6 +428,10 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
             },
           ),
           const Spacer(),
+          if (widget.existingNoteWithFolder?.note.reminderAt != null) ...[
+            _buildReminderChip(context, widget.existingNoteWithFolder!.note.reminderAt!),
+            const SizedBox(width: 8),
+          ],
           if (_isLocked) ...[
             const Icon(Icons.lock_outline, size: 16),
             const SizedBox(width: 8),
@@ -523,6 +528,8 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
     return NoteEditorOptionButton(
       isLocked: _isLocked,
       isPinned: _isPinned,
+      isChecklist: _contentVersion == ContentVersion.checklist,
+      hasReminder: widget.existingNoteWithFolder?.note.reminderAt != null,
       onPressed: (NoteAction option) async {
         switch (option) {
           case NoteAction.delete:
@@ -578,18 +585,7 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
             });
             break;
           case NoteAction.reminder:
-            if (widget.existingNoteWithFolder == null) return;
-            final mTargetUuid = widget.existingNoteWithFolder!.note.uuid;
-            final mTargetTitle = widget.existingNoteWithFolder!.note.title;
-            final mExistingReminder = widget.existingNoteWithFolder!.note.reminderAt;
-            await showDialog<bool>(
-              context: context,
-              builder: (dialogContext) => ReminderPage(
-                noteUuid: mTargetUuid,
-                noteTitle: mTargetTitle,
-                existingReminderAt: mExistingReminder,
-              ),
-            );
+            await _openReminderDialog();
             break;
           case NoteAction.info:
             ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.noteDetails);
@@ -598,6 +594,83 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
             break;
         }
       },
+    );
+  }
+
+  Future<void> _openReminderDialog() async {
+    if (widget.existingNoteWithFolder == null) return;
+    final mTargetUuid = widget.existingNoteWithFolder!.note.uuid;
+    final mTargetTitle = widget.existingNoteWithFolder!.note.title;
+    final mExistingReminder = widget.existingNoteWithFolder!.note.reminderAt;
+    final mExistingRepeatMode = widget.existingNoteWithFolder!.note.reminderRepeatMode;
+    final mExistingCustomDays = widget.existingNoteWithFolder!.note.reminderCustomDays;
+
+    await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => ReminderPage(
+        noteUuid: mTargetUuid,
+        noteTitle: mTargetTitle,
+        existingReminderAt: mExistingReminder,
+        existingRepeatMode: mExistingRepeatMode,
+        existingCustomDays: mExistingCustomDays,
+      ),
+    );
+    if (!mounted) return;
+    setState(() {});
+  }
+
+  Widget _buildReminderChip(BuildContext context, DateTime reminderAt) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isPast = reminderAt.isBefore(DateTime.now());
+    final formattedDate = ReminderManager.formatReminderLabel(
+      reminderAt,
+      widget.existingNoteWithFolder?.note.reminderRepeatMode,
+      widget.existingNoteWithFolder?.note.reminderCustomDays,
+    );
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: _openReminderDialog,
+        borderRadius: BorderRadius.circular(6),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: isPast
+                ? colorScheme.errorContainer.withValues(alpha: 0.8)
+                : colorScheme.secondaryContainer.withValues(alpha: 0.8),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(
+              color: isPast
+                  ? colorScheme.error.withValues(alpha: 0.4)
+                  : colorScheme.secondary.withValues(alpha: 0.4),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isPast ? Icons.notification_important_rounded : Icons.notifications_active_rounded,
+                size: 14,
+                color: isPast
+                    ? colorScheme.onErrorContainer
+                    : colorScheme.onSecondaryContainer,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                formattedDate,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: isPast
+                      ? colorScheme.onErrorContainer
+                      : colorScheme.onSecondaryContainer,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

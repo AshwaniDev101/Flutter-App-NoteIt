@@ -8,6 +8,7 @@ class NoteEditorOptionButton extends StatefulWidget {
   final bool isLocked;
   final bool isPinned;
   final bool isChecklist;
+  final bool hasReminder;
   final List<NoteAction> options;
 
   static const List<NoteAction> defaultOptions = [
@@ -27,6 +28,7 @@ class NoteEditorOptionButton extends StatefulWidget {
     this.isLocked = false,
     this.isPinned = false,
     this.isChecklist = false,
+    this.hasReminder = false,
     this.options = defaultOptions,
   });
 
@@ -66,6 +68,7 @@ class _NoteEditorOptionButtonState extends State<NoteEditorOptionButton> {
           isLocked: widget.isLocked,
           isPinned: widget.isPinned,
           isChecklist: widget.isChecklist,
+          hasReminder: widget.hasReminder,
           options: widget.options,
         ),
       ],
@@ -78,6 +81,7 @@ class NoteEditorOptionMenu extends StatelessWidget {
   final bool isLocked;
   final bool isPinned;
   final bool isChecklist;
+  final bool hasReminder;
   final List<NoteAction> options;
 
   const NoteEditorOptionMenu({
@@ -86,6 +90,7 @@ class NoteEditorOptionMenu extends StatelessWidget {
     this.isLocked = false,
     this.isPinned = false,
     this.isChecklist = false,
+    this.hasReminder = false,
     this.options = NoteEditorOptionButton.defaultOptions,
   });
 
@@ -107,6 +112,7 @@ class NoteEditorOptionMenu extends StatelessWidget {
                 isLocked: isLocked,
                 isPinned: isPinned,
                 isChecklist: isChecklist,
+                hasReminder: hasReminder,
               );
 
               final Color iconColor = appearance.isActive
@@ -152,7 +158,13 @@ class NoteEditorOptionMenu extends StatelessWidget {
               children: [
                 icon,
                 const SizedBox(height: 4),
-                Text(name, style: Theme.of(context).textTheme.bodySmall, maxLines: 2, overflow: TextOverflow.ellipsis),
+                Text(
+                  name,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodySmall,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ],
             ),
           ),

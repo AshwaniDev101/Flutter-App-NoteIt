@@ -209,10 +209,17 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
         0;
   }
 
-  Future<bool> updateNoteReminder(String uuid, DateTime? reminderAt) async {
+  Future<bool> updateNoteReminder(
+    String uuid,
+    DateTime? reminderAt, {
+    String? repeatMode,
+    String? customDays,
+  }) async {
     return await (update(notes)..where((t) => t.uuid.equals(uuid))).write(
           NotesCompanion.custom(
             reminderAt: Variable(reminderAt),
+            reminderRepeatMode: Variable(repeatMode),
+            reminderCustomDays: Variable(customDays),
             cloudSyncStatus: const Variable(0),
             localSyncStatus: const Variable(0),
             updatedAt: Variable(DateTime.now().toUtc()),
@@ -220,6 +227,21 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
           ),
         ) >
         0;
+  }
+
+  /// Retrieves all active (non-deleted, non-archived) notes that have a scheduled reminder.
+  Future<List<NoteWithFolder>> getNotesWithPendingReminders() async {
+    final query = select(notes).join([
+      leftOuterJoin(folders, folders.uuid.equalsExp(notes.folderId)),
+    ])..where(notes.reminderAt.isNotNull() & notes.deletedAt.isNull() & notes.archivedAt.isNull());
+
+    final rows = await query.get();
+    return rows.map((row) {
+      return NoteWithFolder(
+        note: row.readTable(notes),
+        folder: row.readTableOrNull(folders),
+      );
+    }).toList();
   }
 
   Future<int> unlockAllNotes() async {

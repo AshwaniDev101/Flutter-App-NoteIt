@@ -162,6 +162,28 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _reminderRepeatModeMeta =
+      const VerificationMeta('reminderRepeatMode');
+  @override
+  late final GeneratedColumn<String> reminderRepeatMode =
+      GeneratedColumn<String>(
+        'reminder_repeat_mode',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _reminderCustomDaysMeta =
+      const VerificationMeta('reminderCustomDays');
+  @override
+  late final GeneratedColumn<String> reminderCustomDays =
+      GeneratedColumn<String>(
+        'reminder_custom_days',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _ownerUidMeta = const VerificationMeta(
     'ownerUid',
   );
@@ -326,6 +348,8 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
     folderId,
     tags,
     reminderAt,
+    reminderRepeatMode,
+    reminderCustomDays,
     ownerUid,
     createdAt,
     updatedAt,
@@ -450,6 +474,24 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
       context.handle(
         _reminderAtMeta,
         reminderAt.isAcceptableOrUnknown(data['reminder_at']!, _reminderAtMeta),
+      );
+    }
+    if (data.containsKey('reminder_repeat_mode')) {
+      context.handle(
+        _reminderRepeatModeMeta,
+        reminderRepeatMode.isAcceptableOrUnknown(
+          data['reminder_repeat_mode']!,
+          _reminderRepeatModeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('reminder_custom_days')) {
+      context.handle(
+        _reminderCustomDaysMeta,
+        reminderCustomDays.isAcceptableOrUnknown(
+          data['reminder_custom_days']!,
+          _reminderCustomDaysMeta,
+        ),
       );
     }
     if (data.containsKey('owner_uid')) {
@@ -622,6 +664,14 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}reminder_at'],
       ),
+      reminderRepeatMode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reminder_repeat_mode'],
+      ),
+      reminderCustomDays: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reminder_custom_days'],
+      ),
       ownerUid: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}owner_uid'],
@@ -698,6 +748,8 @@ class Note extends DataClass implements Insertable<Note> {
   final String? folderId;
   final String? tags;
   final DateTime? reminderAt;
+  final String? reminderRepeatMode;
+  final String? reminderCustomDays;
   final String? ownerUid;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -726,6 +778,8 @@ class Note extends DataClass implements Insertable<Note> {
     this.folderId,
     this.tags,
     this.reminderAt,
+    this.reminderRepeatMode,
+    this.reminderCustomDays,
     this.ownerUid,
     required this.createdAt,
     required this.updatedAt,
@@ -772,6 +826,12 @@ class Note extends DataClass implements Insertable<Note> {
     }
     if (!nullToAbsent || reminderAt != null) {
       map['reminder_at'] = Variable<DateTime>(reminderAt);
+    }
+    if (!nullToAbsent || reminderRepeatMode != null) {
+      map['reminder_repeat_mode'] = Variable<String>(reminderRepeatMode);
+    }
+    if (!nullToAbsent || reminderCustomDays != null) {
+      map['reminder_custom_days'] = Variable<String>(reminderCustomDays);
     }
     if (!nullToAbsent || ownerUid != null) {
       map['owner_uid'] = Variable<String>(ownerUid);
@@ -835,6 +895,12 @@ class Note extends DataClass implements Insertable<Note> {
       reminderAt: reminderAt == null && nullToAbsent
           ? const Value.absent()
           : Value(reminderAt),
+      reminderRepeatMode: reminderRepeatMode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reminderRepeatMode),
+      reminderCustomDays: reminderCustomDays == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reminderCustomDays),
       ownerUid: ownerUid == null && nullToAbsent
           ? const Value.absent()
           : Value(ownerUid),
@@ -891,6 +957,12 @@ class Note extends DataClass implements Insertable<Note> {
       folderId: serializer.fromJson<String?>(json['folderId']),
       tags: serializer.fromJson<String?>(json['tags']),
       reminderAt: serializer.fromJson<DateTime?>(json['reminderAt']),
+      reminderRepeatMode: serializer.fromJson<String?>(
+        json['reminderRepeatMode'],
+      ),
+      reminderCustomDays: serializer.fromJson<String?>(
+        json['reminderCustomDays'],
+      ),
       ownerUid: serializer.fromJson<String?>(json['ownerUid']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -926,6 +998,8 @@ class Note extends DataClass implements Insertable<Note> {
       'folderId': serializer.toJson<String?>(folderId),
       'tags': serializer.toJson<String?>(tags),
       'reminderAt': serializer.toJson<DateTime?>(reminderAt),
+      'reminderRepeatMode': serializer.toJson<String?>(reminderRepeatMode),
+      'reminderCustomDays': serializer.toJson<String?>(reminderCustomDays),
       'ownerUid': serializer.toJson<String?>(ownerUid),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
@@ -957,6 +1031,8 @@ class Note extends DataClass implements Insertable<Note> {
     Value<String?> folderId = const Value.absent(),
     Value<String?> tags = const Value.absent(),
     Value<DateTime?> reminderAt = const Value.absent(),
+    Value<String?> reminderRepeatMode = const Value.absent(),
+    Value<String?> reminderCustomDays = const Value.absent(),
     Value<String?> ownerUid = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -989,6 +1065,12 @@ class Note extends DataClass implements Insertable<Note> {
     folderId: folderId.present ? folderId.value : this.folderId,
     tags: tags.present ? tags.value : this.tags,
     reminderAt: reminderAt.present ? reminderAt.value : this.reminderAt,
+    reminderRepeatMode: reminderRepeatMode.present
+        ? reminderRepeatMode.value
+        : this.reminderRepeatMode,
+    reminderCustomDays: reminderCustomDays.present
+        ? reminderCustomDays.value
+        : this.reminderCustomDays,
     ownerUid: ownerUid.present ? ownerUid.value : this.ownerUid,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -1043,6 +1125,12 @@ class Note extends DataClass implements Insertable<Note> {
       reminderAt: data.reminderAt.present
           ? data.reminderAt.value
           : this.reminderAt,
+      reminderRepeatMode: data.reminderRepeatMode.present
+          ? data.reminderRepeatMode.value
+          : this.reminderRepeatMode,
+      reminderCustomDays: data.reminderCustomDays.present
+          ? data.reminderCustomDays.value
+          : this.reminderCustomDays,
       ownerUid: data.ownerUid.present ? data.ownerUid.value : this.ownerUid,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -1094,6 +1182,8 @@ class Note extends DataClass implements Insertable<Note> {
           ..write('folderId: $folderId, ')
           ..write('tags: $tags, ')
           ..write('reminderAt: $reminderAt, ')
+          ..write('reminderRepeatMode: $reminderRepeatMode, ')
+          ..write('reminderCustomDays: $reminderCustomDays, ')
           ..write('ownerUid: $ownerUid, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -1127,6 +1217,8 @@ class Note extends DataClass implements Insertable<Note> {
     folderId,
     tags,
     reminderAt,
+    reminderRepeatMode,
+    reminderCustomDays,
     ownerUid,
     createdAt,
     updatedAt,
@@ -1159,6 +1251,8 @@ class Note extends DataClass implements Insertable<Note> {
           other.folderId == this.folderId &&
           other.tags == this.tags &&
           other.reminderAt == this.reminderAt &&
+          other.reminderRepeatMode == this.reminderRepeatMode &&
+          other.reminderCustomDays == this.reminderCustomDays &&
           other.ownerUid == this.ownerUid &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
@@ -1189,6 +1283,8 @@ class NotesCompanion extends UpdateCompanion<Note> {
   final Value<String?> folderId;
   final Value<String?> tags;
   final Value<DateTime?> reminderAt;
+  final Value<String?> reminderRepeatMode;
+  final Value<String?> reminderCustomDays;
   final Value<String?> ownerUid;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
@@ -1218,6 +1314,8 @@ class NotesCompanion extends UpdateCompanion<Note> {
     this.folderId = const Value.absent(),
     this.tags = const Value.absent(),
     this.reminderAt = const Value.absent(),
+    this.reminderRepeatMode = const Value.absent(),
+    this.reminderCustomDays = const Value.absent(),
     this.ownerUid = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -1248,6 +1346,8 @@ class NotesCompanion extends UpdateCompanion<Note> {
     this.folderId = const Value.absent(),
     this.tags = const Value.absent(),
     this.reminderAt = const Value.absent(),
+    this.reminderRepeatMode = const Value.absent(),
+    this.reminderCustomDays = const Value.absent(),
     this.ownerUid = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -1279,6 +1379,8 @@ class NotesCompanion extends UpdateCompanion<Note> {
     Expression<String>? folderId,
     Expression<String>? tags,
     Expression<DateTime>? reminderAt,
+    Expression<String>? reminderRepeatMode,
+    Expression<String>? reminderCustomDays,
     Expression<String>? ownerUid,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
@@ -1311,6 +1413,10 @@ class NotesCompanion extends UpdateCompanion<Note> {
       if (folderId != null) 'folder_id': folderId,
       if (tags != null) 'tags': tags,
       if (reminderAt != null) 'reminder_at': reminderAt,
+      if (reminderRepeatMode != null)
+        'reminder_repeat_mode': reminderRepeatMode,
+      if (reminderCustomDays != null)
+        'reminder_custom_days': reminderCustomDays,
       if (ownerUid != null) 'owner_uid': ownerUid,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -1344,6 +1450,8 @@ class NotesCompanion extends UpdateCompanion<Note> {
     Value<String?>? folderId,
     Value<String?>? tags,
     Value<DateTime?>? reminderAt,
+    Value<String?>? reminderRepeatMode,
+    Value<String?>? reminderCustomDays,
     Value<String?>? ownerUid,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
@@ -1374,6 +1482,8 @@ class NotesCompanion extends UpdateCompanion<Note> {
       folderId: folderId ?? this.folderId,
       tags: tags ?? this.tags,
       reminderAt: reminderAt ?? this.reminderAt,
+      reminderRepeatMode: reminderRepeatMode ?? this.reminderRepeatMode,
+      reminderCustomDays: reminderCustomDays ?? this.reminderCustomDays,
       ownerUid: ownerUid ?? this.ownerUid,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -1438,6 +1548,12 @@ class NotesCompanion extends UpdateCompanion<Note> {
     if (reminderAt.present) {
       map['reminder_at'] = Variable<DateTime>(reminderAt.value);
     }
+    if (reminderRepeatMode.present) {
+      map['reminder_repeat_mode'] = Variable<String>(reminderRepeatMode.value);
+    }
+    if (reminderCustomDays.present) {
+      map['reminder_custom_days'] = Variable<String>(reminderCustomDays.value);
+    }
     if (ownerUid.present) {
       map['owner_uid'] = Variable<String>(ownerUid.value);
     }
@@ -1500,6 +1616,8 @@ class NotesCompanion extends UpdateCompanion<Note> {
           ..write('folderId: $folderId, ')
           ..write('tags: $tags, ')
           ..write('reminderAt: $reminderAt, ')
+          ..write('reminderRepeatMode: $reminderRepeatMode, ')
+          ..write('reminderCustomDays: $reminderCustomDays, ')
           ..write('ownerUid: $ownerUid, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -4511,6 +4629,8 @@ typedef $$NotesTableCreateCompanionBuilder =
       Value<String?> folderId,
       Value<String?> tags,
       Value<DateTime?> reminderAt,
+      Value<String?> reminderRepeatMode,
+      Value<String?> reminderCustomDays,
       Value<String?> ownerUid,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
@@ -4542,6 +4662,8 @@ typedef $$NotesTableUpdateCompanionBuilder =
       Value<String?> folderId,
       Value<String?> tags,
       Value<DateTime?> reminderAt,
+      Value<String?> reminderRepeatMode,
+      Value<String?> reminderCustomDays,
       Value<String?> ownerUid,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
@@ -4634,6 +4756,16 @@ class $$NotesTableFilterComposer
 
   ColumnFilters<DateTime> get reminderAt => $composableBuilder(
     column: $table.reminderAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reminderRepeatMode => $composableBuilder(
+    column: $table.reminderRepeatMode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reminderCustomDays => $composableBuilder(
+    column: $table.reminderCustomDays,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4782,6 +4914,16 @@ class $$NotesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get reminderRepeatMode => $composableBuilder(
+    column: $table.reminderRepeatMode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reminderCustomDays => $composableBuilder(
+    column: $table.reminderCustomDays,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get ownerUid => $composableBuilder(
     column: $table.ownerUid,
     builder: (column) => ColumnOrderings(column),
@@ -4911,6 +5053,16 @@ class $$NotesTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get reminderRepeatMode => $composableBuilder(
+    column: $table.reminderRepeatMode,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get reminderCustomDays => $composableBuilder(
+    column: $table.reminderCustomDays,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get ownerUid =>
       $composableBuilder(column: $table.ownerUid, builder: (column) => column);
 
@@ -5011,6 +5163,8 @@ class $$NotesTableTableManager
                 Value<String?> folderId = const Value.absent(),
                 Value<String?> tags = const Value.absent(),
                 Value<DateTime?> reminderAt = const Value.absent(),
+                Value<String?> reminderRepeatMode = const Value.absent(),
+                Value<String?> reminderCustomDays = const Value.absent(),
                 Value<String?> ownerUid = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -5040,6 +5194,8 @@ class $$NotesTableTableManager
                 folderId: folderId,
                 tags: tags,
                 reminderAt: reminderAt,
+                reminderRepeatMode: reminderRepeatMode,
+                reminderCustomDays: reminderCustomDays,
                 ownerUid: ownerUid,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -5071,6 +5227,8 @@ class $$NotesTableTableManager
                 Value<String?> folderId = const Value.absent(),
                 Value<String?> tags = const Value.absent(),
                 Value<DateTime?> reminderAt = const Value.absent(),
+                Value<String?> reminderRepeatMode = const Value.absent(),
+                Value<String?> reminderCustomDays = const Value.absent(),
                 Value<String?> ownerUid = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -5100,6 +5258,8 @@ class $$NotesTableTableManager
                 folderId: folderId,
                 tags: tags,
                 reminderAt: reminderAt,
+                reminderRepeatMode: reminderRepeatMode,
+                reminderCustomDays: reminderCustomDays,
                 ownerUid: ownerUid,
                 createdAt: createdAt,
                 updatedAt: updatedAt,

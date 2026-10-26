@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,7 +13,6 @@ import 'package:window_manager/window_manager.dart';
 
 import 'core/util/platform_helper.dart';
 import 'core/theme/app_theme.dart';
-import 'features/reminder/note_showcase_page.dart';
 import 'features/reminder/reminder_manager.dart';
 import 'features/tray/window_tray.dart';
 
@@ -29,33 +26,10 @@ import 'features/tray/window_tray.dart';
 Future<void> main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Fast synchronous check for sub-window isolate (0ms startup delay)
-  if (args.isNotEmpty && args.first == 'multi_window') {
-    final windowId = int.parse(args[1]);
-    final Map<String, dynamic> argumentData =
-        args.length > 2 && args[2].isNotEmpty
-            ? jsonDecode(args[2]) as Map<String, dynamic>
-            : <String, dynamic>{};
-
-    runApp(
-      MaterialApp(
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData.dark(useMaterial3: true),
-        home: NoteShowcaseMultiWindow(
-          windowId: windowId,
-          title: argumentData['title'] as String? ?? 'Untitled Note',
-          content: argumentData['content'] as String? ?? '',
-          folderName: argumentData['folderName'] as String?,
-          colorIndex: argumentData['colorIndex'] as int?,
-          reminderAtStr: argumentData['reminderAt'] as String?,
-        ),
-      ),
-    );
-    return;
-  }
+  final container = ProviderContainer();
 
   await SharedPreferenceManager.init();
-  await ReminderManager().init();
+  await ReminderManager().init(container);
 
   if (PlatformHelper.isNativeDesktop) {
     // Remove default Windows frame and initialize window/tray manager
@@ -87,7 +61,7 @@ Future<void> main(List<String> args) async {
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  runApp(const ProviderScope(child: _MyApp()));
+  runApp(UncontrolledProviderScope(container: container, child: const _MyApp()));
 }
 
 class _MyApp extends ConsumerWidget {

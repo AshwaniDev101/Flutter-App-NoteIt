@@ -10,12 +10,16 @@ class ReminderPage extends ConsumerStatefulWidget {
   final String noteUuid;
   final String noteTitle;
   final DateTime? existingReminderAt;
+  final String? existingRepeatMode;
+  final String? existingCustomDays;
 
   const ReminderPage({
     super.key,
     required this.noteUuid,
     required this.noteTitle,
     this.existingReminderAt,
+    this.existingRepeatMode,
+    this.existingCustomDays,
   });
 
   @override
@@ -32,7 +36,7 @@ class _ReminderPageState extends ConsumerState<ReminderPage> {
   final Set<int> _selectedDays = {}; // 1 = Mon, 7 = Sun
   bool _isSaving = false;
 
-  final Map<int, String> _weekDays = {
+  static const Map<int, String> _weekDays = {
     1: 'M', 2: 'T', 3: 'W', 4: 'T', 5: 'F', 6: 'S', 7: 'S'
   };
 
@@ -50,13 +54,29 @@ class _ReminderPageState extends ConsumerState<ReminderPage> {
       _selectedTime = TimeOfDay.fromDateTime(now);
     }
 
-    final savedRepeatStr = SharedPreferenceManager.instance.defaultRepeatMode;
-    if (savedRepeatStr == 'daily') {
-      _repeatMode = ReminderRepeatMode.daily;
-    } else if (savedRepeatStr == 'custom') {
-      _repeatMode = ReminderRepeatMode.customDays;
+    final existingMode = widget.existingRepeatMode;
+    if (existingMode != null && existingMode.isNotEmpty) {
+      if (existingMode == 'daily') {
+        _repeatMode = ReminderRepeatMode.daily;
+      } else if (existingMode == 'customDays' || existingMode == 'custom') {
+        _repeatMode = ReminderRepeatMode.customDays;
+      } else {
+        _repeatMode = ReminderRepeatMode.once;
+      }
     } else {
-      _repeatMode = ReminderRepeatMode.once;
+      final savedRepeatStr = SharedPreferenceManager.instance.defaultRepeatMode;
+      if (savedRepeatStr == 'daily') {
+        _repeatMode = ReminderRepeatMode.daily;
+      } else if (savedRepeatStr == 'custom') {
+        _repeatMode = ReminderRepeatMode.customDays;
+      } else {
+        _repeatMode = ReminderRepeatMode.once;
+      }
+    }
+
+    if (widget.existingCustomDays != null && widget.existingCustomDays!.isNotEmpty) {
+      final days = widget.existingCustomDays!.split(',').map((e) => int.tryParse(e.trim())).whereType<int>();
+      _selectedDays.addAll(days);
     }
 
     final displayTitle = widget.noteTitle.trim().isNotEmpty ? widget.noteTitle.trim() : 'Note';
@@ -76,7 +96,7 @@ class _ReminderPageState extends ConsumerState<ReminderPage> {
       firstDate: DateTime.now().subtract(const Duration(days: 1)),
       lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
     );
-    if (picked != null) setState(() => _selectedDate = picked);
+    if (picked != null && mounted) setState(() => _selectedDate = picked);
   }
 
   Future<void> _pickTime() async {
@@ -84,7 +104,7 @@ class _ReminderPageState extends ConsumerState<ReminderPage> {
       context: context,
       initialTime: _selectedTime,
     );
-    if (picked != null) setState(() => _selectedTime = picked);
+    if (picked != null && mounted) setState(() => _selectedTime = picked);
   }
 
   Future<void> _saveReminder() async {
@@ -129,7 +149,7 @@ class _ReminderPageState extends ConsumerState<ReminderPage> {
           : (widget.noteTitle.trim().isNotEmpty ? widget.noteTitle.trim() : 'Note');
 
       // 1. Schedule with Notification Manager
-      await ReminderManager().scheduleForNote(
+      final calculatedNextDate = await ReminderManager().scheduleForNote(
         noteUuid: widget.noteUuid,
         title: 'Note-It Reminder',
         message: messageText,
@@ -138,12 +158,23 @@ class _ReminderPageState extends ConsumerState<ReminderPage> {
         selectedDays: _selectedDays.toList(),
       );
 
-      // 2. Persist in Database
-      await ref.read(notesDaoProvider).updateNoteReminder(widget.noteUuid, finalDateTime);
+      final saveDate = calculatedNextDate ?? finalDateTime;
 
-      final formattedDate = DateFormat('MMM d, h:mm a').format(finalDateTime);
+      // 2. Persist in Database
+      await ref.read(notesDaoProvider).updateNoteReminder(
+        widget.noteUuid,
+        saveDate,
+        repeatMode: _repeatMode.name,
+        customDays: _repeatMode == ReminderRepeatMode.customDays ? _selectedDays.join(',') : null,
+      );
+
+      final formattedLabel = ReminderManager.formatReminderLabel(
+        saveDate,
+        _repeatMode.name,
+        _repeatMode == ReminderRepeatMode.customDays ? _selectedDays.join(',') : null,
+      );
       SnackBarManager.show(
-        msg: 'Reminder set for $formattedDate',
+        msg: 'Reminder set for $formattedLabel',
         type: SnackBarMessageType.acknowledgment,
       );
 
@@ -190,6 +221,7 @@ class _ReminderPageState extends ConsumerState<ReminderPage> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final hasExisting = widget.existingReminderAt != null;
+    final isDateDisabled = _repeatMode != ReminderRepeatMode.once;
     final screenHeight = MediaQuery.of(context).size.height;
 
     return Dialog(
@@ -267,41 +299,52 @@ class _ReminderPageState extends ConsumerState<ReminderPage> {
                         children: [
                           Expanded(
                             child: InkWell(
-                              onTap: _pickDate,
+                              onTap: isDateDisabled ? null : _pickDate,
                               borderRadius: BorderRadius.circular(12),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 12,
-                                  horizontal: 10,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: colorScheme.surfaceContainerHighest,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: colorScheme.outlineVariant
-                                        .withValues(alpha: 0.5),
+                              child: AnimatedOpacity(
+                                duration: const Duration(milliseconds: 200),
+                                opacity: isDateDisabled ? 0.4 : 1.0,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                    horizontal: 10,
                                   ),
-                                ),
-                                child: Column(
-                                  children: [
-                                    Icon(
-                                      Icons.calendar_today_rounded,
-                                      color: colorScheme.primary,
-                                      size: 20,
+                                  decoration: BoxDecoration(
+                                    color: colorScheme.surfaceContainerHighest,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: colorScheme.outlineVariant
+                                          .withValues(alpha: 0.5),
                                     ),
-                                    const SizedBox(height: 6),
-                                    FittedBox(
-                                      fit: BoxFit.scaleDown,
-                                      child: Text(
-                                        DateFormat('MMM dd, yyyy')
-                                            .format(_selectedDate),
-                                        style: theme.textTheme.titleSmall
-                                            ?.copyWith(
-                                          fontWeight: FontWeight.w600,
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      Icon(
+                                        Icons.calendar_today_rounded,
+                                        color: isDateDisabled
+                                            ? colorScheme.outline
+                                            : colorScheme.primary,
+                                        size: 20,
+                                      ),
+                                      const SizedBox(height: 6),
+                                      FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        child: Text(
+                                          isDateDisabled
+                                              ? 'Every Day'
+                                              : DateFormat('MMM dd, yyyy')
+                                                  .format(_selectedDate),
+                                          style: theme.textTheme.titleSmall
+                                              ?.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                            color: isDateDisabled
+                                                ? colorScheme.outline
+                                                : colorScheme.onSurface,
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
