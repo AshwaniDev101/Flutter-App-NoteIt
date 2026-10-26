@@ -1,4 +1,4 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:noteit/features/local_sync/view/role_selector_page.dart';
@@ -19,11 +19,15 @@ import '../../features/local_sync/view/qr/qr_scanner/qr_scanner_page.dart';
 import '../../features/local_sync/view/synced_list.dart';
 import '../../features/note_editor/screens/view/desktop_edit_page.dart';
 import '../../features/note_editor/screens/view/mobile_edit_page.dart';
+import '../../features/reminder/note_showcase_page.dart';
+import '../../features/reminder/reminder_settings_page.dart';
 import '../../features/settings/view/default_settings_page.dart';
 import '../../features/settings/view/settings_page.dart';
 import '../../features/themes/view/theme_page.dart';
 import '../../features/trash/view/trash_page.dart';
 import '../util/platform_helper.dart';
+
+final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
 class AppRoutes {
   static const String home = '/';
@@ -45,6 +49,8 @@ class AppRoutes {
   static const String noteDetails = '/note-details';
   static const String archive = '/archive';
   static const String defaultSettings = '/default-settings';
+  static const String reminderSettings = '/reminder-settings';
+  static const String noteShowcase = '/note-showcase';
 }
 
 GoRoute _adaptiveRoute({
@@ -62,6 +68,7 @@ GoRoute _adaptiveRoute({
 
 final routerProvider = Provider((ref) {
   return GoRouter(
+    navigatorKey: rootNavigatorKey,
     initialLocation: AppRoutes.home,
     routes: <RouteBase>[
       _adaptiveRoute(
@@ -87,12 +94,6 @@ final routerProvider = Provider((ref) {
         },
       ),
 
-      // GoRoute(
-      //   path: AppRoutes.masterPassword,
-      //   builder: (context, state) {
-      //     return const MasterPasswordPage();
-      //   },
-      // ),
       GoRoute(
         path: AppRoutes.trash,
         builder: (context, state) {
@@ -150,11 +151,8 @@ final routerProvider = Provider((ref) {
 
       GoRoute(path: AppRoutes.archive, builder: (context, state) => const ArchivePage()),
       GoRoute(path: AppRoutes.defaultSettings, builder: (context, state) => const DefaultSettingsPage()),
-
-
-
-      // Do not forget to update the navigator.dart file in
-      // lib/features/home/view/desktop/right_panel/core/navigator.dart
+      GoRoute(path: AppRoutes.reminderSettings, builder: (context, state) => const ReminderSettingsPage()),
+      GoRoute(path: AppRoutes.noteShowcase, builder: (context, state) => NoteShowcasePage(noteWithFolder: state.extra as NoteWithFolder?)),
     ],
   );
 });

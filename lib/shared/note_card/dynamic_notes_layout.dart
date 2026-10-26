@@ -247,6 +247,7 @@ class DynamicNotesLayout extends ConsumerWidget {
       case NoteAction.reminder:
         break;
       case NoteAction.openNewWindow:
+
         break;
       case NoteAction.unarchive:
         await actionsController.unarchiveNotes(targetUuids);

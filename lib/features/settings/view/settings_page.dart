@@ -138,11 +138,13 @@ class SettingsPage extends ConsumerWidget {
                     child: Column(
                       children: [
                         SettingsTile(
-                          icon: Icons.notifications_outlined,
+                          icon: Icons.notifications_active_outlined,
                           iconColor: Colors.teal,
-                          title: 'Notifications',
-                          subtitle: 'Manage alerts and sounds',
-                          onTap: () {},
+                          title: 'Reminders & Alarms',
+                          subtitle: 'Manage alarm tones, custom sounds, and behavior',
+                          onTap: () {
+                            ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.reminderSettings);
+                          },
                         ),
                         Divider(height: 1, indent: 64, color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
                         SettingsTile(

@@ -4,7 +4,6 @@ import '../../../database/drift/folders/folders_dao.dart';
 import '../../../database/drift/local_database.dart';
 import '../../../database/drift/notes/notes_dao.dart';
 import '../../../database/shared_preference/shared_preference_manager.dart';
-import '../../../shared/menus/sort_menu_button.dart';
 import '../../../shared/menus/view_menu_button.dart';
 import '../../home/core/providers.dart';
 

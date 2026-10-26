@@ -64,7 +64,8 @@ enum RightPanelPageOptions {
   scan('Scan QR Code', 'Scan a host QR code to join', Icons.qr_code_scanner_outlined, AppRoutes.scan),
   pin('Pairing PIN', 'Enter PIN to pair with device', Icons.pin_outlined, AppRoutes.pin),
   archivePage('Archive', 'Archive Notes to reduce clutter', Icons.archive_outlined, AppRoutes.archive),
-  defaultSettings('Default Layout', 'Configure default views, sort options, and window layout', Icons.tune_outlined, AppRoutes.defaultSettings);
+  defaultSettings('Default Layout', 'Configure default views, sort options, and window layout', Icons.tune_outlined, AppRoutes.defaultSettings),
+  reminderSettings('Reminder Settings', 'Customize alarm sound, snooze, and notification preferences', Icons.notifications_active_outlined, AppRoutes.reminderSettings);
 
   final String label;
   final String description;

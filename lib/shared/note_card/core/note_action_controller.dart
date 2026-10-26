@@ -1,12 +1,20 @@
+import 'dart:io';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 import 'package:drift/drift.dart';
+import 'package:window_manager/window_manager.dart';
 
 import 'package:noteit/core/util/logger.dart';
 import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/database/firebase/firebase_database.dart';
 import 'package:noteit/database/sync/sync_orchestrator.dart';
 import 'package:noteit/features/home/core/providers.dart';
+
+import '../../../core/router/router.dart';
+import '../../../database/drift/notes/notes_dao.dart';
 
 /// Provider for [NoteActionsController].
 final noteActionsControllerProvider = Provider<NoteActionsController>((ref) {
@@ -196,4 +204,25 @@ class NoteActionsController {
     ref.read(syncOrchestratorProvider).triggerSync();
     _clearActiveNoteIfAffected(notesList);
   }
+
+
+
+
+  // Opens the note in a spacious standalone showcase window.
+  Future<void> openInNewWindow(BuildContext context, NoteWithFolder noteWithFolder) async {
+    if (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
+      try {
+        await windowManager.setSize(const Size(780, 720));
+        await windowManager.center();
+        await windowManager.show();
+        await windowManager.focus();
+      } catch (_) {}
+    }
+
+    final rootContext = rootNavigatorKey.currentContext ?? context;
+    if (rootContext.mounted) {
+      GoRouter.of(rootContext).push(AppRoutes.noteShowcase, extra: noteWithFolder);
+    }
+  }
+
 }

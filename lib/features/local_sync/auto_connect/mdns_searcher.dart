@@ -119,7 +119,7 @@ class MdnsSearcherNotifier extends Notifier<MdnsState> {
       if (_discovery == null) {
         state = (status: ScanStatus.error, devices: []);
         completer.complete(null);
-        return completer.future;
+        return await completer.future;
       }
 
       _discovery!.addListener(() {

@@ -201,28 +201,26 @@ class _ExportNotesPageState extends ConsumerState<ExportNotesPage> {
                       ),
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
-                        child: Column(
-                          children: [
-                            RadioListTile<ExportFormat>(
-                              title: const Text('JSON (.json)', style: TextStyle(fontWeight: FontWeight.w600)),
-                              subtitle: const Text('Full structural backup containing notes, folders, timestamps, tags, and metadata. Recommended.'),
-                              value: ExportFormat.json,
-                              groupValue: _selectedFormat,
-                              onChanged: (val) {
-                                if (val != null) setState(() => _selectedFormat = val);
-                              },
-                            ),
-                            const Divider(height: 1),
-                            RadioListTile<ExportFormat>(
-                              title: const Text('CSV (.csv)', style: TextStyle(fontWeight: FontWeight.w600)),
-                              subtitle: const Text('Tabular format containing notes and folder information. Best for viewing in Excel or Google Sheets.'),
-                              value: ExportFormat.csv,
-                              groupValue: _selectedFormat,
-                              onChanged: (val) {
-                                if (val != null) setState(() => _selectedFormat = val);
-                              },
-                            ),
-                          ],
+                        child: RadioGroup<ExportFormat>(
+                          groupValue: _selectedFormat,
+                          onChanged: (val) {
+                            if (val != null) setState(() => _selectedFormat = val);
+                          },
+                          child: Column(
+                            children: [
+                              RadioListTile<ExportFormat>(
+                                title: const Text('JSON (.json)', style: TextStyle(fontWeight: FontWeight.w600)),
+                                subtitle: const Text('Full structural backup containing notes, folders, timestamps, tags, and metadata. Recommended.'),
+                                value: ExportFormat.json,
+                              ),
+                              const Divider(height: 1),
+                              RadioListTile<ExportFormat>(
+                                title: const Text('CSV (.csv)', style: TextStyle(fontWeight: FontWeight.w600)),
+                                subtitle: const Text('Tabular format containing notes and folder information. Best for viewing in Excel or Google Sheets.'),
+                                value: ExportFormat.csv,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),

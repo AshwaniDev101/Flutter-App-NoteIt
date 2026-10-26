@@ -1,9 +1,18 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
+import 'package:window_manager/window_manager.dart';
+
+import '../../core/router/router.dart';
+import '../../database/drift/notes/notes_dao.dart';
+import '../../database/shared_preference/shared_preference_manager.dart';
 
 enum ReminderRepeatMode { once, daily, customDays }
 
@@ -16,7 +25,81 @@ class ReminderManager {
 
   final FlutterLocalNotificationsPlugin _notificationsPlugin = FlutterLocalNotificationsPlugin();
   final Map<int, Timer> _desktopTimers = {};
+  AudioPlayer? _audioPlayer;
+  Timer? _desktopSoundTimer;
+  final ValueNotifier<bool> isRinging = ValueNotifier<bool>(false);
   bool _isInitialized = false;
+
+  /// Play custom alarm sound on Desktop (Windows / macOS / Linux)
+  Future<void> _playDesktopAlarmSound() async {
+    final prefs = SharedPreferenceManager.instance;
+    if (!prefs.reminderSoundEnabled) return;
+    if (kIsWeb || (!Platform.isWindows && !Platform.isMacOS && !Platform.isLinux)) return;
+
+    try {
+      await stopAlarmSound();
+      isRinging.value = true;
+      _audioPlayer = AudioPlayer();
+      await _audioPlayer!.setReleaseMode(ReleaseMode.loop);
+
+      final customPath = prefs.customReminderSoundPath;
+      if (customPath != null && customPath.isNotEmpty && File(customPath).existsSync()) {
+        await _audioPlayer!.play(DeviceFileSource(customPath));
+      } else {
+        await _audioPlayer!.play(AssetSource('alarm_ring.mp3'));
+      }
+
+      final timeoutSecs = prefs.reminderDurationSeconds;
+      _desktopSoundTimer = Timer(Duration(seconds: timeoutSecs), () {
+        stopAlarmSound();
+      });
+    } catch (e) {
+      debugPrint('Error playing desktop alarm sound: $e');
+    }
+  }
+
+  /// Stop playing active desktop alarm sound
+  Future<void> stopAlarmSound() async {
+    try {
+      isRinging.value = false;
+      _desktopSoundTimer?.cancel();
+      _desktopSoundTimer = null;
+      await _audioPlayer?.stop();
+      await _audioPlayer?.dispose();
+      _audioPlayer = null;
+    } catch (_) {}
+  }
+
+  Future<void> _handleNotificationTap(String? payload) async {
+    await stopAlarmSound();
+    if (payload == null || payload.isEmpty) return;
+
+    final String noteUuid = payload.startsWith('note_') ? payload.substring(5) : payload;
+    if (noteUuid.isEmpty) return;
+
+    try {
+      final container = ProviderContainer();
+      final noteWithFolder = await container.read(notesDaoProvider).getNoteById(noteUuid);
+      container.dispose();
+
+      final context = rootNavigatorKey.currentContext;
+      if (context != null && context.mounted) {
+        if (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
+          try {
+            await windowManager.setSize(const Size(780, 720));
+            await windowManager.center();
+            await windowManager.show();
+            await windowManager.focus();
+          } catch (_) {}
+        }
+        if (context.mounted) {
+          GoRouter.of(context).push(AppRoutes.noteShowcase, extra: noteWithFolder);
+        }
+      }
+    } catch (e) {
+      debugPrint('Error launching NoteShowcasePage from notification: $e');
+    }
+  }
 
   /// 1. Initialization for flutter_local_notifications 22.3.3
   Future<void> init() async {
@@ -46,12 +129,27 @@ class ReminderManager {
 
     await _notificationsPlugin.initialize(
       settings: initSettings,
-      onDidReceiveNotificationResponse: (NotificationResponse response) {
-        if (response.payload != null) {
-          debugPrint('Notification tapped with payload: ${response.payload}');
-        }
+      onDidReceiveNotificationResponse: (NotificationResponse response) async {
+        await _handleNotificationTap(response.payload);
       },
     );
+
+    // Create high-importance Loud Alarm notification channel on Android 8.0+
+    final AndroidFlutterLocalNotificationsPlugin? androidImplementation = _notificationsPlugin
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+
+    const AndroidNotificationChannel channel = AndroidNotificationChannel(
+      'noteit_loud_alarms_v3',
+      'Note-It Alarms',
+      description: 'Loud alarm ringers and reminders for Note-It',
+      importance: Importance.max,
+      playSound: true,
+      sound: RawResourceAndroidNotificationSound('alarm_ring'),
+      enableVibration: true,
+      audioAttributesUsage: AudioAttributesUsage.alarm,
+    );
+
+    await androidImplementation?.createNotificationChannel(channel);
 
     _isInitialized = true;
   }
@@ -75,7 +173,10 @@ class ReminderManager {
           .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
 
       final bool? granted = await androidImplementation?.requestNotificationsPermission();
-      await androidImplementation?.requestExactAlarmsPermission();
+      // Request exact alarm permissions for high-priority alarm timing
+      try {
+        await androidImplementation?.requestExactAlarmsPermission();
+      } catch (_) {}
 
       return granted ?? false;
     }
@@ -97,6 +198,7 @@ class ReminderManager {
     final int baseId = getNotificationId(noteUuid);
     await schedule(
       baseId: baseId,
+      noteUuid: noteUuid,
       title: title,
       message: message,
       date: date,
@@ -114,6 +216,7 @@ class ReminderManager {
   /// 3. Scheduling notifications
   Future<void> schedule({
     required int baseId,
+    required String noteUuid,
     required String title,
     required String message,
     required DateTime date,
@@ -128,15 +231,29 @@ class ReminderManager {
 
     final tz.TZDateTime scheduledDate = tz.TZDateTime.from(date, tz.local);
 
-    const NotificationDetails details = NotificationDetails(
+    final NotificationDetails details = NotificationDetails(
       android: AndroidNotificationDetails(
-        'note_reminders',
-        'Note Reminders',
+        'noteit_loud_alarms_v3',
+        'Note-It Alarms',
+        channelDescription: 'Loud alarm ringers and reminders for Note-It',
         importance: Importance.max,
         priority: Priority.high,
+        category: AndroidNotificationCategory.alarm,
+        audioAttributesUsage: AudioAttributesUsage.alarm,
+        playSound: true,
+        sound: const RawResourceAndroidNotificationSound('alarm_ring'),
+        additionalFlags: Int32List.fromList([4]), // FLAG_INSISTENT: loops alarm sound continuously until dismissed
+        enableVibration: true,
+        fullScreenIntent: true,
       ),
-      iOS: DarwinNotificationDetails(),
-      windows: WindowsNotificationDetails(),
+      iOS: const DarwinNotificationDetails(
+        presentSound: true,
+        sound: 'alarm_ring.mp3',
+        presentAlert: true,
+        presentBadge: true,
+        interruptionLevel: InterruptionLevel.timeSensitive,
+      ),
+      windows: const WindowsNotificationDetails(),
     );
 
     Future<void> scheduleNotification({
@@ -154,14 +271,34 @@ class ReminderManager {
           notificationDetails: details,
           androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
           matchDateTimeComponents: matchComponents,
-          payload: 'note_$baseId',
+          payload: 'note_$noteUuid',
         );
       } catch (e) {
-        debugPrint('zonedSchedule exception: $e');
+        debugPrint('exactAllowWhileIdle exception, falling back to inexact: $e');
+        try {
+          await _notificationsPlugin.zonedSchedule(
+            id: id,
+            title: title,
+            body: message,
+            scheduledDate: time,
+            notificationDetails: details,
+            androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+            matchDateTimeComponents: matchComponents,
+            payload: 'note_$noteUuid',
+          );
+        } catch (err) {
+          debugPrint('inexactAllowWhileIdle exception: $err');
+        }
       }
 
       // 2. Desktop in-memory timer backup
-      _scheduleDesktopTimer(id: id, title: title, message: message, scheduledDate: date);
+      _scheduleDesktopTimer(
+        id: id,
+        noteUuid: noteUuid,
+        title: title,
+        message: message,
+        scheduledDate: date,
+      );
     }
 
     switch (repeatMode) {
@@ -196,6 +333,7 @@ class ReminderManager {
 
   void _scheduleDesktopTimer({
     required int id,
+    required String noteUuid,
     required String title,
     required String message,
     required DateTime scheduledDate,
@@ -206,15 +344,31 @@ class ReminderManager {
     if (duration.isNegative) return;
 
     _desktopTimers[id] = Timer(duration, () async {
-      const NotificationDetails details = NotificationDetails(
+      await _playDesktopAlarmSound();
+
+      final NotificationDetails details = NotificationDetails(
         android: AndroidNotificationDetails(
-          'note_reminders',
-          'Note Reminders',
+          'noteit_loud_alarms_v3',
+          'Note-It Alarms',
+          channelDescription: 'Loud alarm ringers and reminders for Note-It',
           importance: Importance.max,
           priority: Priority.high,
+          category: AndroidNotificationCategory.alarm,
+          audioAttributesUsage: AudioAttributesUsage.alarm,
+          playSound: true,
+          sound: const RawResourceAndroidNotificationSound('alarm_ring'),
+          additionalFlags: Int32List.fromList([4]),
+          enableVibration: true,
+          fullScreenIntent: true,
         ),
-        iOS: DarwinNotificationDetails(),
-        windows: WindowsNotificationDetails(),
+        iOS: const DarwinNotificationDetails(
+          presentSound: true,
+          sound: 'alarm_ring.mp3',
+          presentAlert: true,
+          presentBadge: true,
+          interruptionLevel: InterruptionLevel.timeSensitive,
+        ),
+        windows: const WindowsNotificationDetails(),
       );
 
       await _notificationsPlugin.show(
@@ -222,13 +376,14 @@ class ReminderManager {
         title: title,
         body: message,
         notificationDetails: details,
-        payload: 'note_$id',
+        payload: 'note_$noteUuid',
       );
     });
   }
 
   Future<void> cancelReminder(int baseId) async {
     await _ensureInitialized();
+    await stopAlarmSound();
 
     // Cancel system schedule
     try {

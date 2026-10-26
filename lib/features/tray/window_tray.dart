@@ -4,6 +4,7 @@ import 'package:window_manager/window_manager.dart';
 
 import '../../core/util/platform_helper.dart';
 import '../../database/shared_preference/shared_preference_manager.dart';
+import '../reminder/reminder_manager.dart';
 
 /// Manages desktop system tray icon, context menu, and minimize-to-tray window behavior.
 class DesktopTrayHandler extends WindowListener with TrayListener {
@@ -35,6 +36,10 @@ class DesktopTrayHandler extends WindowListener with TrayListener {
             key: 'show_app',
             label: 'Open NoteIt',
           ),
+          MenuItem(
+            key: 'stop_alarm',
+            label: 'Silence Alarm',
+          ),
           MenuItem.separator(),
           MenuItem(
             key: 'exit_app',
@@ -47,6 +52,11 @@ class DesktopTrayHandler extends WindowListener with TrayListener {
     } catch (e) {
       debugPrint('Tray manager initialization error: $e');
     }
+  }
+
+  @override
+  void onWindowFocus() {
+    ReminderManager().stopAlarmSound();
   }
 
   @override
@@ -70,6 +80,7 @@ class DesktopTrayHandler extends WindowListener with TrayListener {
   void onTrayIconMouseDown() {
     windowManager.show();
     windowManager.focus();
+    ReminderManager().stopAlarmSound();
   }
 
   @override
@@ -82,6 +93,9 @@ class DesktopTrayHandler extends WindowListener with TrayListener {
     if (menuItem.key == 'show_app') {
       windowManager.show();
       windowManager.focus();
+      ReminderManager().stopAlarmSound();
+    } else if (menuItem.key == 'stop_alarm') {
+      ReminderManager().stopAlarmSound();
     } else if (menuItem.key == 'exit_app') {
       windowManager.setPreventClose(false);
       windowManager.destroy();
