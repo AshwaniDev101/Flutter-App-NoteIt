@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
@@ -12,10 +14,21 @@ class DesktopTrayHandler extends WindowListener with TrayListener {
   DesktopTrayHandler._();
 
   bool _isInitialized = false;
+  Future<void>? _initFuture;
+  Timer? _resizeDebounce;
+
+  VoidCallback? _ringingListener;
+  VoidCallback? _soundListener;
 
   Future<void> init() async {
     if (_isInitialized) return;
+    if (_initFuture != null) return _initFuture;
 
+    _initFuture = _doInit();
+    return _initFuture;
+  }
+
+  Future<void> _doInit() async {
     windowManager.addListener(this);
     trayManager.addListener(this);
 
@@ -30,19 +43,50 @@ class DesktopTrayHandler extends WindowListener with TrayListener {
       await trayManager.setIcon(iconPath);
       await trayManager.setToolTip('NoteIt');
 
-      // Rebuild tray menu when alarm sound state or silent mode changes
-      ReminderManager().isRinging.addListener(() {
-        updateTrayMenu();
-      });
-      SharedPreferenceManager.instance.reminderSoundListenable.addListener(() {
-        updateTrayMenu();
-      });
+      // Rebuild tray menu when alarm sound state or sound preference changes
+      _ringingListener = () => updateTrayMenu();
+      _soundListener = () => updateTrayMenu();
+
+      ReminderManager().isRinging.addListener(_ringingListener!);
+      SharedPreferenceManager.instance.reminderSoundListenable.addListener(_soundListener!);
 
       await updateTrayMenu();
       _isInitialized = true;
     } catch (e) {
       debugPrint('Tray manager initialization error: $e');
     }
+  }
+
+  /// Cleans up listeners, debounce timers, and tray resources.
+  void dispose() {
+    _resizeDebounce?.cancel();
+    _resizeDebounce = null;
+
+    if (_ringingListener != null) {
+      ReminderManager().isRinging.removeListener(_ringingListener!);
+      _ringingListener = null;
+    }
+    if (_soundListener != null) {
+      SharedPreferenceManager.instance.reminderSoundListenable.removeListener(_soundListener!);
+      _soundListener = null;
+    }
+
+    windowManager.removeListener(this);
+    trayManager.removeListener(this);
+    _isInitialized = false;
+    _initFuture = null;
+  }
+
+  /// Destroys the system tray icon cleanly before destroying the main app window
+  /// to avoid leaving orphaned/ghost tray icons on Windows.
+  Future<void> destroyTrayAndExit() async {
+    try {
+      await trayManager.destroy();
+    } catch (e) {
+      debugPrint('Error destroying tray manager: $e');
+    }
+    await windowManager.setPreventClose(false);
+    await windowManager.destroy();
   }
 
   /// Dynamically rebuilds the tray context menu based on alarm ringing state and sound preference.
@@ -77,14 +121,20 @@ class DesktopTrayHandler extends WindowListener with TrayListener {
 
   @override
   void onWindowFocus() {
-    ReminderManager().stopAlarmSound();
+    // Intentionally empty: prevents active window focus from silently dismissing background reminder audio cues.
   }
 
   @override
-  void onWindowResized() async {
-    final size = await windowManager.getSize();
-    SharedPreferenceManager.instance.setWindowWidth(size.width);
-    SharedPreferenceManager.instance.setWindowHeight(size.height);
+  void onWindowResized() {
+    // Debounce window size persistence to prevent unthrottled disk I/O while dragging window borders.
+    _resizeDebounce?.cancel();
+    _resizeDebounce = Timer(const Duration(milliseconds: 300), () async {
+      if (_isInitialized) {
+        final size = await windowManager.getSize();
+        SharedPreferenceManager.instance.setWindowWidth(size.width);
+        SharedPreferenceManager.instance.setWindowHeight(size.height);
+      }
+    });
   }
 
   @override
@@ -93,21 +143,30 @@ class DesktopTrayHandler extends WindowListener with TrayListener {
     if (isPreventClose) {
       await windowManager.hide();
     } else {
-      await windowManager.destroy();
+      await destroyTrayAndExit();
     }
   }
 
   @override
   void onTrayIconMouseDown() {
-    windowManager.show();
-    windowManager.focus();
-    ReminderManager().stopAlarmSound();
+    if (PlatformHelper.isMacOS) {
+      trayManager.popUpContextMenu();
+    } else {
+      windowManager.show();
+      windowManager.focus();
+      ReminderManager().stopAlarmSound();
+    }
   }
 
   @override
   void onTrayIconRightMouseDown() async {
-    await updateTrayMenu();
-    trayManager.popUpContextMenu();
+    // Force the OS to give this app foreground focus (even if hidden)
+    if (PlatformHelper.isWindows) {
+      await windowManager.focus();
+
+      //  Now show the menu
+      trayManager.popUpContextMenu();
+    }
   }
 
   @override
@@ -118,14 +177,13 @@ class DesktopTrayHandler extends WindowListener with TrayListener {
       ReminderManager().stopAlarmSound();
     } else if (menuItem.key == 'snooze_reminder') {
       ReminderManager().stopAlarmSound();
-    } else if (menuItem.key == 'toggle_alarm_sound' || menuItem.key == 'toggle_silent_mode') {
+    } else if (menuItem.key == 'toggle_alarm_sound') {
       final prefs = SharedPreferenceManager.instance;
       final currentSoundEnabled = prefs.reminderSoundEnabled;
       await prefs.setReminderSoundEnabled(!currentSoundEnabled);
       await updateTrayMenu();
     } else if (menuItem.key == 'exit_app') {
-      windowManager.setPreventClose(false);
-      windowManager.destroy();
+      await destroyTrayAndExit();
     }
   }
 }

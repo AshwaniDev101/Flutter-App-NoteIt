@@ -28,20 +28,20 @@ class MoveToFolderPage extends ConsumerStatefulWidget {
 class _MoveToFolderPageState extends ConsumerState<MoveToFolderPage> {
   String _folderSearchQuery = '';
   late final TextEditingController _searchController;
+  late final MovingNoteIdsNotifier _movingNoteNotifier;
 
   @override
   void initState() {
     super.initState();
     _searchController = TextEditingController();
+    _movingNoteNotifier = ref.read(movingNoteIdsProvider.notifier);
   }
 
   @override
   void dispose() {
     _searchController.dispose();
     // Auto-clean target note IDs state if user leaves without selecting
-    Future.microtask(() {
-      ref.read(movingNoteIdsProvider.notifier).clear();
-    });
+    _movingNoteNotifier.clear();
     super.dispose();
   }
 
