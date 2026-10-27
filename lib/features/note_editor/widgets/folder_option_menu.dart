@@ -113,11 +113,15 @@ class _FolderOptionMenuState extends ConsumerState<FolderOptionMenu> {
                 ),
                 const SizedBox(width: 6),
               ],
-              Text(
-                currentName,
-                style: textTheme.labelLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: isOpen ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
+              Flexible(
+                child: Text(
+                  currentName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: isOpen ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ),
               const SizedBox(width: 6),

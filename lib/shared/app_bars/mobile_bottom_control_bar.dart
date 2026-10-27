@@ -33,6 +33,10 @@ class MobileBottomControlBar extends ConsumerWidget {
         return HomeMenuAction.sortName;
       case NoteSortPreference.updatedAt:
         return HomeMenuAction.sortUpdated;
+      case NoteSortPreference.folder:
+        return HomeMenuAction.sortFolder;
+      case NoteSortPreference.reminderAt:
+        return HomeMenuAction.sortReminder;
     }
   }
 
@@ -123,6 +127,12 @@ class MobileBottomControlBar extends ConsumerWidget {
                           break;
                         case HomeMenuAction.sortUpdated:
                           ref.read(homeNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.updatedAt);
+                          break;
+                        case HomeMenuAction.sortFolder:
+                          ref.read(homeNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.folder);
+                          break;
+                        case HomeMenuAction.sortReminder:
+                          ref.read(homeNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.reminderAt);
                           break;
                         case HomeMenuAction.filterAll:
                           ref.read(homePlatformFilterProvider.notifier).setFilter(FilterPlatformOptions.all);

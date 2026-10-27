@@ -55,7 +55,7 @@ class _ArchivePageState extends ConsumerState<ArchivePage> with WidgetsBindingOb
   @override
   void dispose() {
     if (isSelectMode) {
-      ref.read(rightPanelSelectionProvider.notifier).exitSelection();
+      Future.microtask(() => ref.read(rightPanelSelectionProvider.notifier).exitSelection());
     }
     WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
@@ -159,6 +159,10 @@ class _ArchivePageState extends ConsumerState<ArchivePage> with WidgetsBindingOb
         return HomeMenuAction.sortName;
       case NoteSortPreference.updatedAt:
         return HomeMenuAction.sortUpdated;
+      case NoteSortPreference.folder:
+        return HomeMenuAction.sortFolder;
+      case NoteSortPreference.reminderAt:
+        return HomeMenuAction.sortReminder;
     }
   }
 
@@ -256,6 +260,23 @@ class _ArchivePageState extends ConsumerState<ArchivePage> with WidgetsBindingOb
         case NoteSortPreference.createdAt:
           return b.note.createdAt.compareTo(a.note.createdAt);
         case NoteSortPreference.updatedAt:
+          return b.note.updatedAt.compareTo(a.note.updatedAt);
+        case NoteSortPreference.folder:
+          final folderA = a.folder?.name.toLowerCase() ?? '';
+          final folderB = b.folder?.name.toLowerCase() ?? '';
+          final folderCmp = folderA.compareTo(folderB);
+          if (folderCmp != 0) return folderCmp;
+          return b.note.updatedAt.compareTo(a.note.updatedAt);
+        case NoteSortPreference.reminderAt:
+          final remA = a.note.reminderAt;
+          final remB = b.note.reminderAt;
+          if (remA == null && remB == null) {
+            return b.note.updatedAt.compareTo(a.note.updatedAt);
+          }
+          if (remA == null) return 1;
+          if (remB == null) return -1;
+          final remCmp = remA.compareTo(remB);
+          if (remCmp != 0) return remCmp;
           return b.note.updatedAt.compareTo(a.note.updatedAt);
       }
     });
@@ -615,6 +636,12 @@ class _ArchivePageState extends ConsumerState<ArchivePage> with WidgetsBindingOb
             break;
           case HomeMenuAction.sortUpdated:
             ref.read(archiveNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.updatedAt);
+            break;
+          case HomeMenuAction.sortFolder:
+            ref.read(archiveNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.folder);
+            break;
+          case HomeMenuAction.sortReminder:
+            ref.read(archiveNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.reminderAt);
             break;
           case HomeMenuAction.filterAll:
             ref.read(archivePlatformFilterProvider.notifier).setFilter(FilterPlatformOptions.all);

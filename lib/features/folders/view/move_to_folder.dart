@@ -41,7 +41,7 @@ class _MoveToFolderPageState extends ConsumerState<MoveToFolderPage> {
   void dispose() {
     _searchController.dispose();
     // Auto-clean target note IDs state if user leaves without selecting
-    _movingNoteNotifier.clear();
+    Future.microtask(() => _movingNoteNotifier.clear());
     super.dispose();
   }
 

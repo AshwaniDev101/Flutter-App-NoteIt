@@ -532,6 +532,14 @@ class _DefaultSettingsPageState extends ConsumerState<DefaultSettingsPage> {
                             value: NoteSortPreference.updatedAt,
                             child: Text('Modified Date'),
                           ),
+                          DropdownMenuItem(
+                            value: NoteSortPreference.folder,
+                            child: Text('By Folder'),
+                          ),
+                          DropdownMenuItem(
+                            value: NoteSortPreference.reminderAt,
+                            child: Text('By Reminder Time'),
+                          ),
                         ],
                         onChanged: (val) {
                           if (val != null) onSortChanged(val);

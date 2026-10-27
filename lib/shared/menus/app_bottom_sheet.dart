@@ -14,33 +14,47 @@ class AppBottomSheet {
       showDragHandle: true,
       useSafeArea: true,
       isScrollControlled: true,
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (BuildContext bottomSheetContext) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
-            final bottomPadding = MediaQuery.of(bottomSheetContext).viewInsets.bottom;
-            final content = Padding(
-              padding: EdgeInsets.only(bottom: bottomPadding),
-              child: builder(context, setModalState),
-            );
+            final mediaQuery = MediaQuery.of(bottomSheetContext);
+            final keyboardHeight = mediaQuery.viewInsets.bottom;
+            final screenHeight = mediaQuery.size.height;
+
+            Widget content = builder(context, setModalState);
 
             if (heightFactor != null) {
+              final targetHeight = screenHeight * heightFactor;
+
+              // Safely prevent overflow if the keyboard pushes the modal off the top of the screen
+              final maxAvailableHeight = screenHeight - keyboardHeight - mediaQuery.padding.top - kToolbarHeight;
+              final finalHeight = targetHeight > maxAvailableHeight ? maxAvailableHeight : targetHeight;
+
               return SafeArea(
-                child: SizedBox(
-                  height: MediaQuery.sizeOf(bottomSheetContext).height * heightFactor,
-                  child: content,
+                child: Padding(
+                  // APPLY PADDING OUTSIDE THE SIZED BOX
+                  padding: EdgeInsets.only(bottom: keyboardHeight),
+                  child: SizedBox(
+                    height: finalHeight,
+                    child: content,
+                  ),
                 ),
               );
             }
 
             return SafeArea(
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 16.0),
-                  child: content,
+              child: Padding(
+                // APPLY PADDING OUTSIDE FOR DYNAMIC HEIGHT SHEETS TOO
+                padding: EdgeInsets.only(bottom: keyboardHeight),
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 16.0),
+                    child: content,
+                  ),
                 ),
               ),
             );

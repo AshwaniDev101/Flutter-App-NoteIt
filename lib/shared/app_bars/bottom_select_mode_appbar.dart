@@ -21,7 +21,6 @@ class BottomSelectModeAppBar extends ConsumerWidget {
     NoteAction.delete,
     NoteAction.lock,
     NoteAction.moveTo,
-    NoteAction.reminder,
     NoteAction.duplicate,
   ];
 

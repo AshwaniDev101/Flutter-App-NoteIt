@@ -13,7 +13,7 @@ part 'notes_dao.g.dart';
 final notesDaoProvider = Provider((ref) => ref.watch(localDatabaseProvider).notesDao);
 
 /// Database sorting options for active notes query
-enum NoteSortPreference { name, createdAt, updatedAt }
+enum NoteSortPreference { name, createdAt, updatedAt, folder, reminderAt }
 
 class NoteWithFolder {
   final Note note;
@@ -112,8 +112,16 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
         OrderingTerm(expression: notes.title.collate(Collate.noCase), mode: OrderingMode.asc)
       else if (sortOption == NoteSortPreference.createdAt)
         OrderingTerm(expression: notes.createdAt, mode: OrderingMode.desc)
-      else
+      else if (sortOption == NoteSortPreference.updatedAt)
+        OrderingTerm(expression: notes.updatedAt, mode: OrderingMode.desc)
+      else if (sortOption == NoteSortPreference.folder) ...[
+        OrderingTerm(expression: folders.name.collate(Collate.noCase), mode: OrderingMode.asc, nulls: NullsOrder.last),
         OrderingTerm(expression: notes.updatedAt, mode: OrderingMode.desc),
+      ]
+      else if (sortOption == NoteSortPreference.reminderAt) ...[
+        OrderingTerm(expression: notes.reminderAt, mode: OrderingMode.asc, nulls: NullsOrder.last),
+        OrderingTerm(expression: notes.updatedAt, mode: OrderingMode.desc),
+      ],
     ]);
 
     return query.watch().map((rows) {

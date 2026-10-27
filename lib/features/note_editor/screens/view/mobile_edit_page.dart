@@ -384,29 +384,37 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
             ),
           ),
           const SizedBox(width: 8),
-          FolderOptionMenu(
-            selectedFolder: currentFolder,
-            emptyLabel: 'none',
-            onFolderSelected: (folder) async {
-              final newFolderId = folder?.uuid;
-              if (widget.existingNoteWithFolder?.note.folderId == newFolderId) return;
-              if (!_isNewNote && widget.existingNoteWithFolder != null) {
-                await ref.read(notesDaoProvider).updateNoteFolder(widget.existingNoteWithFolder!.note.uuid, newFolderId);
-              }
-            },
+          Flexible(
+            child: FolderOptionMenu(
+              selectedFolder: currentFolder,
+              emptyLabel: 'none',
+              onFolderSelected: (folder) async {
+                final newFolderId = folder?.uuid;
+                if (widget.existingNoteWithFolder?.note.folderId == newFolderId) return;
+                if (!_isNewNote && widget.existingNoteWithFolder != null) {
+                  await ref.read(notesDaoProvider).updateNoteFolder(widget.existingNoteWithFolder!.note.uuid, newFolderId);
+                }
+              },
+            ),
           ),
           const Spacer(),
           if (widget.existingNoteWithFolder?.note.reminderAt != null) ...[
-            _buildReminderChip(context, widget.existingNoteWithFolder!.note.reminderAt!),
+            Flexible(
+              child: _buildReminderChip(context, widget.existingNoteWithFolder!.note.reminderAt!),
+            ),
             const SizedBox(width: 8),
           ],
           if (_isLocked) ...[
             const Icon(Icons.lock_outline, size: 16),
             const SizedBox(width: 8),
           ],
-          SelectableText(
+          Flexible(
+            child: Text(
               _getFormattedDate(),
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+            ),
           ),
         ],
       ),
@@ -622,13 +630,17 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
                     : colorScheme.onSecondaryContainer,
               ),
               const SizedBox(width: 4),
-              Text(
-                formattedDate,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: isPast
-                      ? colorScheme.onErrorContainer
-                      : colorScheme.onSecondaryContainer,
+              Flexible(
+                child: Text(
+                  formattedDate,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: isPast
+                        ? colorScheme.onErrorContainer
+                        : colorScheme.onSecondaryContainer,
+                  ),
                 ),
               ),
             ],

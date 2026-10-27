@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/util/device_info.dart';
 import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/database/drift/notes/notes_dao.dart';
+import 'package:noteit/features/reminder/reminder_page.dart';
 
 import '../../../core/util/platform_helper.dart';
 import '../../../../../database/sync/sync_orchestrator.dart';
@@ -162,6 +163,11 @@ class DynamicNotesLayout extends ConsumerWidget {
   Widget _buildNoteCard(BuildContext context, WidgetRef ref, NoteWithFolder currentNoteWithFolder, NoteViewType viewType) {
     final isCurrentlySelected = noteIds.contains(currentNoteWithFolder.note.uuid);
     final isActive = currentNoteWithFolder.note.uuid == activeNoteId;
+    final isMultiSelectMode = isSelectMode || noteIds.length > 1;
+
+    final contextMenuOptions = isMultiSelectMode
+        ? NoteCard.defaultContextMenuOptions.where((opt) => opt != NoteAction.reminder).toList()
+        : NoteCard.defaultContextMenuOptions;
 
     return NoteCard(
       noteWithFolder: currentNoteWithFolder,
@@ -170,6 +176,7 @@ class DynamicNotesLayout extends ConsumerWidget {
       isSelected: isCurrentlySelected,
       isActive: isActive,
       searchQuery: ref.read(searchQueryProvider),
+      contextMenuOptions: contextMenuOptions,
 
       onTap: () {
         // Native Desktop UX: Check if Ctrl (Windows) or Cmd (Mac) is held down
@@ -252,6 +259,24 @@ class DynamicNotesLayout extends ConsumerWidget {
         ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.moveToFolder);
         break;
       case NoteAction.reminder:
+        if (targetUuids.length == 1) {
+          final targetUuid = targetUuids.first;
+          final db = ref.read(localDatabaseProvider);
+          try {
+            final noteWithFolder = await db.notesDao.getNoteById(targetUuid);
+            if (!context.mounted) return;
+            await showDialog<bool>(
+              context: context,
+              builder: (_) => ReminderPage(
+                noteUuid: noteWithFolder.note.uuid,
+                noteTitle: noteWithFolder.note.title,
+                existingReminderAt: noteWithFolder.note.reminderAt,
+                existingRepeatMode: noteWithFolder.note.reminderRepeatMode,
+                existingCustomDays: noteWithFolder.note.reminderCustomDays,
+              ),
+            );
+          } catch (_) {}
+        }
         break;
       case NoteAction.unarchive:
         await actionsController.unarchiveNotes(targetUuids);

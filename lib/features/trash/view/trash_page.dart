@@ -56,7 +56,7 @@ class _TrashPageState extends ConsumerState<TrashPage> with WidgetsBindingObserv
   @override
   void dispose() {
     if (isSelectMode) {
-      ref.read(rightPanelSelectionProvider.notifier).exitSelection();
+      Future.microtask(() => ref.read(rightPanelSelectionProvider.notifier).exitSelection());
     }
     WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
@@ -131,14 +131,11 @@ class _TrashPageState extends ConsumerState<TrashPage> with WidgetsBindingObserv
   }
 
   HomeMenuAction _getCurrentSortAction(NoteSortPreference currentSort) {
-    switch (currentSort) {
-      case NoteSortPreference.createdAt:
-        return HomeMenuAction.sortCreated;
-      case NoteSortPreference.name:
-        return HomeMenuAction.sortName;
-      case NoteSortPreference.updatedAt:
-        return HomeMenuAction.sortUpdated;
-    }
+    if (currentSort == NoteSortPreference.folder) return HomeMenuAction.sortFolder;
+    if (currentSort == NoteSortPreference.reminderAt) return HomeMenuAction.sortReminder;
+    if (currentSort == NoteSortPreference.name) return HomeMenuAction.sortName;
+    if (currentSort == NoteSortPreference.updatedAt) return HomeMenuAction.sortUpdated;
+    return HomeMenuAction.sortCreated;
   }
 
   HomeMenuAction _getCurrentPlatformAction(FilterPlatformOptions platformFilter) {
@@ -350,14 +347,31 @@ class _TrashPageState extends ConsumerState<TrashPage> with WidgetsBindingObserv
     }
 
     filtered.sort((a, b) {
-      switch (currentSort) {
-        case NoteSortPreference.name:
-          return a.note.title.toLowerCase().compareTo(b.note.title.toLowerCase());
-        case NoteSortPreference.createdAt:
-          return b.note.createdAt.compareTo(a.note.createdAt);
-        case NoteSortPreference.updatedAt:
+      if (currentSort == NoteSortPreference.name) {
+        return a.note.title.toLowerCase().compareTo(b.note.title.toLowerCase());
+      } else if (currentSort == NoteSortPreference.createdAt) {
+        return b.note.createdAt.compareTo(a.note.createdAt);
+      } else if (currentSort == NoteSortPreference.updatedAt) {
+        return b.note.updatedAt.compareTo(a.note.updatedAt);
+      } else if (currentSort == NoteSortPreference.folder) {
+        final folderA = a.folder?.name.toLowerCase() ?? '';
+        final folderB = b.folder?.name.toLowerCase() ?? '';
+        final cmp = folderA.compareTo(folderB);
+        if (cmp != 0) return cmp;
+        return b.note.updatedAt.compareTo(a.note.updatedAt);
+      } else if (currentSort == NoteSortPreference.reminderAt) {
+        final remA = a.note.reminderAt;
+        final remB = b.note.reminderAt;
+        if (remA == null && remB == null) {
           return b.note.updatedAt.compareTo(a.note.updatedAt);
+        }
+        if (remA == null) return 1;
+        if (remB == null) return -1;
+        final cmp = remA.compareTo(remB);
+        if (cmp != 0) return cmp;
+        return b.note.updatedAt.compareTo(a.note.updatedAt);
       }
+      return b.note.createdAt.compareTo(a.note.createdAt);
     });
 
     return filtered;
@@ -379,13 +393,12 @@ class _TrashPageState extends ConsumerState<TrashPage> with WidgetsBindingObserv
     }
 
     filtered.sort((a, b) {
-      switch (currentSort) {
-        case NoteSortPreference.name:
-          return a.name.toLowerCase().compareTo(b.name.toLowerCase());
-        case NoteSortPreference.createdAt:
-          return b.createdAt.compareTo(a.createdAt);
-        case NoteSortPreference.updatedAt:
-          return b.updatedAt.compareTo(a.updatedAt);
+      if (currentSort == NoteSortPreference.name) {
+        return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+      } else if (currentSort == NoteSortPreference.createdAt) {
+        return b.createdAt.compareTo(a.createdAt);
+      } else {
+        return b.updatedAt.compareTo(a.updatedAt);
       }
     });
 
@@ -893,25 +906,22 @@ class _TrashPageState extends ConsumerState<TrashPage> with WidgetsBindingObserv
       currentSortSelection: _getCurrentSortAction(currentSort),
       currentPlatformSelection: _getCurrentPlatformAction(platformFilter),
       onSelected: (HomeMenuAction action) {
-        switch (action) {
-          case HomeMenuAction.sortCreated:
-            ref.read(trashNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.createdAt);
-            break;
-          case HomeMenuAction.sortName:
-            ref.read(trashNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.name);
-            break;
-          case HomeMenuAction.sortUpdated:
-            ref.read(trashNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.updatedAt);
-            break;
-          case HomeMenuAction.filterAll:
-            ref.read(trashPlatformFilterProvider.notifier).setFilter(FilterPlatformOptions.all);
-            break;
-          case HomeMenuAction.filterPhone:
-            ref.read(trashPlatformFilterProvider.notifier).toggleFilter(FilterPlatformOptions.android);
-            break;
-          case HomeMenuAction.filterWindows:
-            ref.read(trashPlatformFilterProvider.notifier).toggleFilter(FilterPlatformOptions.windows);
-            break;
+        if (action == HomeMenuAction.sortCreated) {
+          ref.read(trashNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.createdAt);
+        } else if (action == HomeMenuAction.sortName) {
+          ref.read(trashNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.name);
+        } else if (action == HomeMenuAction.sortUpdated) {
+          ref.read(trashNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.updatedAt);
+        } else if (action == HomeMenuAction.sortFolder) {
+          ref.read(trashNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.folder);
+        } else if (action == HomeMenuAction.sortReminder) {
+          ref.read(trashNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.reminderAt);
+        } else if (action == HomeMenuAction.filterAll) {
+          ref.read(trashPlatformFilterProvider.notifier).setFilter(FilterPlatformOptions.all);
+        } else if (action == HomeMenuAction.filterPhone) {
+          ref.read(trashPlatformFilterProvider.notifier).toggleFilter(FilterPlatformOptions.android);
+        } else if (action == HomeMenuAction.filterWindows) {
+          ref.read(trashPlatformFilterProvider.notifier).toggleFilter(FilterPlatformOptions.windows);
         }
       },
     );
