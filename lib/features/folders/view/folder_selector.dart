@@ -174,7 +174,7 @@ class _FolderButtonState extends ConsumerState<FolderButton> {
             ),
             child: Text(
               '$displayCount',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.w700,
                 color: colorScheme.onSurfaceVariant,
               ),

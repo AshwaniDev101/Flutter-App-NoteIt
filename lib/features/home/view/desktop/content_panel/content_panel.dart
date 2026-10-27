@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:window_manager/window_manager.dart';
 
+import 'package:noteit/shared/app_bars/desktop_window_controls.dart';
+
 import 'package:noteit/core/util/platform_helper.dart';
 import 'package:noteit/database/drift/notes/notes_dao.dart';
 import 'package:noteit/features/backup/export_page.dart';
@@ -57,22 +59,9 @@ class DesktopContentPanel extends ConsumerWidget {
             ),
             elevation: 0,
             scrolledUnderElevation: PlatformHelper.isDesktopScreen ? 0.0 : null,
-            actions: [
+            actions: const [
               IconTray(),
-              const SizedBox(width: 8),
-              IconButton(icon: const Icon(Icons.minimize, size: 16), onPressed: () => windowManager.minimize()),
-              IconButton(
-                icon: const Icon(Icons.crop_square, size: 16),
-                onPressed: () async {
-                  if (await windowManager.isMaximized()) {
-                    windowManager.unmaximize();
-                  } else {
-                    windowManager.maximize();
-                  }
-                },
-              ),
-              IconButton(icon: const Icon(Icons.close, size: 16), onPressed: () => windowManager.close()),
-              const SizedBox(width: 8),
+              DesktopWindowControls(),
             ],
           ),
         ),

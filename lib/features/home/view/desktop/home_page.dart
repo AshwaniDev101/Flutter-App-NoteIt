@@ -218,71 +218,75 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePanel> {
                 child: Scaffold(
                   body: FocusTraversalGroup(
                     policy: OrderedTraversalPolicy(),
-                    child: ValueListenableBuilder<double>(
-                      valueListenable: _listPanelWidthNotifier,
-                      builder: (context, listPanelWidth, child) {
-                        final screenWidth = MediaQuery.sizeOf(context).width;
-                        final effectiveMaxWidth = math.max(_minListPanelWidth, screenWidth * 0.75);
-                        final clampedWidth = listPanelWidth.clamp(_minListPanelWidth, effectiveMaxWidth);
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final screenWidth = constraints.maxWidth;
+                        return ValueListenableBuilder<double>(
+                          valueListenable: _listPanelWidthNotifier,
+                          builder: (context, listPanelWidth, child) {
+                            final effectiveMaxWidth = math.max(_minListPanelWidth, screenWidth * 0.75);
+                            final clampedWidth = listPanelWidth.clamp(_minListPanelWidth, effectiveMaxWidth);
 
-                        return Stack(
-                          children: [
-                            Row(
+                            return Stack(
                               children: [
-                                // Middle Panel
-                                SizedBox(
-                                  width: clampedWidth,
-                                  child: listPanelWidget,
+                                Row(
+                                  children: [
+                                    // Middle Panel
+                                    SizedBox(
+                                      width: clampedWidth,
+                                      child: listPanelWidget,
+                                    ),
+                                    const VerticalDivider(width: 1, thickness: 1, color: Colors.transparent),
+
+                                    // Right Panel
+                                    Expanded(child: contentPanelWidget),
+                                  ],
                                 ),
-                                const VerticalDivider(width: 1, thickness: 1, color: Colors.transparent),
 
-                                // Right Panel
-                                Expanded(child: contentPanelWidget),
-                              ],
-                            ),
-
-                            // Middle Panel Divider
-                            Positioned(
-                              left: clampedWidth - 6,
-                              width: 13,
-                              top: 0,
-                              bottom: 0,
-                              child: MouseRegion(
-                                cursor: SystemMouseCursors.resizeColumn,
-                                child: GestureDetector(
-                                  behavior: HitTestBehavior.opaque,
-                                  onPanUpdate: (details) {
-                                    final newWidth = _listPanelWidthNotifier.value + details.delta.dx;
-                                    _listPanelWidthNotifier.value = newWidth.clamp(
-                                      _minListPanelWidth,
-                                      effectiveMaxWidth,
-                                    );
-                                  },
-                                  onPanEnd: (_) {
-                                    ref.read(listPanelWidthProvider.notifier).saveWidth(_listPanelWidthNotifier.value);
-                                  },
-                                  child: Container(color: Colors.transparent),
-                                ),
-                              ),
-                            ),
-
-                            // Invisible barrier over Right Panel
-                            if (_isDrawerOpen)
-                              Positioned(
-                                left: clampedWidth + 1,
-                                top: 0,
-                                bottom: 0,
-                                right: 0,
-                                child: GestureDetector(
-                                  behavior: HitTestBehavior.opaque,
-                                  onTap: () => _leftScaffoldKey.currentState?.closeDrawer(),
+                                // Middle Panel Divider
+                                Positioned(
+                                  left: clampedWidth - 6,
+                                  width: 13,
+                                  top: 0,
+                                  bottom: 0,
                                   child: MouseRegion(
-                                    cursor: SystemMouseCursors.basic,
-                                    child: Container(color: Colors.transparent),
+                                    cursor: SystemMouseCursors.resizeColumn,
+                                    child: GestureDetector(
+                                      behavior: HitTestBehavior.opaque,
+                                      onPanUpdate: (details) {
+                                        final newWidth = _listPanelWidthNotifier.value + details.delta.dx;
+                                        _listPanelWidthNotifier.value = newWidth.clamp(
+                                          _minListPanelWidth,
+                                          effectiveMaxWidth,
+                                        );
+                                      },
+                                      onPanEnd: (_) {
+                                        ref.read(listPanelWidthProvider.notifier).saveWidth(_listPanelWidthNotifier.value);
+                                      },
+                                      child: Container(color: Colors.transparent),
+                                    ),
                                   ),
                                 ),
-                              ),
-                          ],
+
+                                // Invisible barrier over Right Panel
+                                if (_isDrawerOpen)
+                                  Positioned(
+                                    left: clampedWidth + 1,
+                                    top: 0,
+                                    bottom: 0,
+                                    right: 0,
+                                    child: GestureDetector(
+                                      behavior: HitTestBehavior.opaque,
+                                      onTap: () => _leftScaffoldKey.currentState?.closeDrawer(),
+                                      child: MouseRegion(
+                                        cursor: SystemMouseCursors.basic,
+                                        child: Container(color: Colors.transparent),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            );
+                          },
                         );
                       },
                     ),

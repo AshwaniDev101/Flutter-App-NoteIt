@@ -11,6 +11,8 @@ import 'package:noteit/features/note_editor/screens/view/desktop_edit_page.dart'
 
 import 'package:window_manager/window_manager.dart';
 
+import '../../../../shared/app_bars/desktop_window_controls.dart';
+
 import '../../../../core/util/platform_helper.dart';
 import '../../../../shared/text/find_replace.dart';
 import '../../../../shared/note_card/core/note_action.dart';
@@ -232,40 +234,19 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
         appBar: AppBar(
           flexibleSpace: PlatformHelper.isNativeDesktop
               ? DragToMoveArea(
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              child: const SizedBox.expand(),
-            ),
-          )
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    child: const SizedBox.expand(),
+                  ),
+                )
               : null,
           automaticallyImplyLeading: false,
           leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: _handleMobileBack),
           titleSpacing: 0,
-
           actions: [
-
-            if (PlatformHelper.isNativeDesktop) ...[
-              const SizedBox(width: 4),
-              IconButton(
-                icon: const Icon(Icons.minimize, size: 16),
-                onPressed: () => windowManager.minimize(),
-              ),
-              IconButton(
-                icon: const Icon(Icons.crop_square, size: 16),
-                onPressed: () async {
-                  if (await windowManager.isMaximized()) {
-                    windowManager.unmaximize();
-                  } else {
-                    windowManager.maximize();
-                  }
-                },
-              ),
-              IconButton(
-                icon: const Icon(Icons.close, size: 16),
-                onPressed: () => windowManager.close(),
-              ),
-            ],
-            const SizedBox(width: 8),
+            _buildUndoRedoButtons(),
+            _optionMenu(),
+            const DesktopWindowControls(),
           ],
         ),
         body: SafeArea(
@@ -292,10 +273,6 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
                 _buildMetaDataRow(padding: 16.0),
               ],
               Expanded(child: _buildContentField(padding: 16.0)),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: _buildUndoRedoButtons(),
-              ),
             ],
           ),
         ),
@@ -304,30 +281,27 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
   }
 
   Widget _buildTitleField() {
-    return Row(
-      children: [
-        Flexible(
-          child: SizedBox(
-            height: 40,
-            child: Focus(
-              onKeyEvent: (node, event) {
-                if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
-                  node.unfocus();
-                  return KeyEventResult.handled;
-                }
-                return KeyEventResult.ignored;
-              },
-              child: TextField(
-                controller: _titleController,
-                focusNode: _titleFocusNode,
-                autofocus: _isNewNote,
-                textAlignVertical: TextAlignVertical.center,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-                decoration: InputDecoration(
-                  isDense: true,
-                  hintText: "Title",
-                  suffixIcon: _titleFocusNode.hasFocus
-                      ? ValueListenableBuilder<TextEditingValue>(
+    return SizedBox(
+      height: 40,
+      child: Focus(
+        onKeyEvent: (node, event) {
+          if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
+            node.unfocus();
+            return KeyEventResult.handled;
+          }
+          return KeyEventResult.ignored;
+        },
+        child: TextField(
+          controller: _titleController,
+          focusNode: _titleFocusNode,
+          autofocus: _isNewNote,
+          textAlignVertical: TextAlignVertical.center,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+          decoration: InputDecoration(
+            isDense: true,
+            hintText: "Title",
+            suffixIcon: _titleFocusNode.hasFocus
+                ? ValueListenableBuilder<TextEditingValue>(
                     valueListenable: _titleController,
                     builder: (context, value, child) {
                       if (value.text.isEmpty) {
@@ -342,16 +316,10 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
                       );
                     },
                   )
-                      : const SizedBox.shrink(),
-                ),
-              ),
-            ),
+                : const SizedBox.shrink(),
           ),
         ),
-
-        SizedBox(height: 8,),
-        _optionMenu()
-      ],
+      ),
     );
   }
 
@@ -453,26 +421,22 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
           return const SizedBox.shrink();
         }
 
-        return Center(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (value.canUndo)
-                IconButton(
-                  onPressed: () => _undoController.undo(),
-                  icon: const Icon(Icons.undo, size: 24),
-                  tooltip: 'Undo',
-                ),
-              if (value.canUndo && value.canRedo) const SizedBox(width: 24),
-              if (value.canRedo)
-                IconButton(
-                  onPressed: () => _undoController.redo(),
-                  icon: const Icon(Icons.redo, size: 24),
-                  tooltip: 'Redo',
-                ),
-            ],
-          ),
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (value.canUndo)
+              IconButton(
+                onPressed: () => _undoController.undo(),
+                icon: const Icon(Icons.undo, size: 20),
+                tooltip: 'Undo',
+              ),
+            if (value.canRedo)
+              IconButton(
+                onPressed: () => _undoController.redo(),
+                icon: const Icon(Icons.redo, size: 20),
+                tooltip: 'Redo',
+              ),
+          ],
         );
       },
     );

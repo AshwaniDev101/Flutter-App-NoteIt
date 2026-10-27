@@ -159,6 +159,14 @@ class SharedPreferenceManager {
     return await _prefs.setDouble(_keyWindowHeight, height);
   }
 
+  Future<bool> setWindowSize(double width, double height) async {
+    final results = await Future.wait([
+      _prefs.setDouble(_keyWindowWidth, width),
+      _prefs.setDouble(_keyWindowHeight, height),
+    ]);
+    return results.every((r) => r);
+  }
+
   double getDefaultWindowHeight() {
     return _prefs.getDouble('default_window_height') ?? 900.0;
   }

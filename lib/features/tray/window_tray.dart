@@ -125,14 +125,25 @@ class DesktopTrayHandler extends WindowListener with TrayListener {
   }
 
   @override
+  void onWindowResize() {
+    _debounceWindowSizeSave();
+  }
+
+  @override
   void onWindowResized() {
+    _debounceWindowSizeSave();
+  }
+
+  void _debounceWindowSizeSave() {
     // Debounce window size persistence to prevent unthrottled disk I/O while dragging window borders.
     _resizeDebounce?.cancel();
-    _resizeDebounce = Timer(const Duration(milliseconds: 300), () async {
+    _resizeDebounce = Timer(const Duration(milliseconds: 600), () async {
       if (_isInitialized) {
+        if (await windowManager.isMaximized() || await windowManager.isMinimized()) {
+          return;
+        }
         final size = await windowManager.getSize();
-        SharedPreferenceManager.instance.setWindowWidth(size.width);
-        SharedPreferenceManager.instance.setWindowHeight(size.height);
+        await SharedPreferenceManager.instance.setWindowSize(size.width, size.height);
       }
     });
   }

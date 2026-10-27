@@ -6,6 +6,8 @@ import 'package:noteit/shared/app_bars/bottom_select_mode_appbar.dart';
 
 import 'package:window_manager/window_manager.dart';
 
+import '../../../../shared/app_bars/desktop_window_controls.dart';
+
 import '../../../../core/router/router.dart';
 import '../../../../core/util/platform_helper.dart';
 import '../../../../database/drift/notes/notes_dao.dart';
@@ -100,30 +102,9 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> with WidgetsBin
           : null,
       elevation: 0,
       scrolledUnderElevation: PlatformHelper.isNativeDesktop ? 0.0 : null,
-      actions: [
-        const IconTray(),
-        if (PlatformHelper.isNativeDesktop) ...[
-          const SizedBox(width: 4),
-          IconButton(
-            icon: const Icon(Icons.minimize, size: 16),
-            onPressed: () => windowManager.minimize(),
-          ),
-          IconButton(
-            icon: const Icon(Icons.crop_square, size: 16),
-            onPressed: () async {
-              if (await windowManager.isMaximized()) {
-                windowManager.unmaximize();
-              } else {
-                windowManager.maximize();
-              }
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.close, size: 16),
-            onPressed: () => windowManager.close(),
-          ),
-        ],
-        const SizedBox(width: 8),
+      actions: const [
+        IconTray(),
+        DesktopWindowControls(),
       ],
     );
   }

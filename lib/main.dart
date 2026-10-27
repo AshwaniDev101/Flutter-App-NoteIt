@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -36,10 +38,10 @@ Future<void> main(List<String> args) async {
     await windowManager.ensureInitialized();
     await DesktopTrayHandler.instance.init();
 
-    final savedWidth = SharedPreferenceManager.instance.windowWidth;
-    final savedHeight = SharedPreferenceManager.instance.windowHeight;
-
     const minWindowSize = Size(360, 500);
+
+    final savedWidth = math.max(SharedPreferenceManager.instance.windowWidth, minWindowSize.width);
+    final savedHeight = math.max(SharedPreferenceManager.instance.windowHeight, minWindowSize.height);
 
     WindowOptions windowOptions = WindowOptions(
       titleBarStyle: TitleBarStyle.hidden,
@@ -49,17 +51,19 @@ Future<void> main(List<String> args) async {
     );
 
     await windowManager.waitUntilReadyToShow(windowOptions, () async {
-      await windowManager.setMinimumSize(minWindowSize);
       await windowManager.show();
       await windowManager.focus();
     });
   }
 
-  // Allow us to print app version in UI
-  final packageInfo = await PackageInfo.fromPlatform();
-  AppEnv.init(packageInfo);
+  // Allow us to print app version in UI and initialize Firebase concurrently
+  final results = await Future.wait([
+    PackageInfo.fromPlatform(),
+    Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform),
+  ]);
 
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  final packageInfo = results[0] as PackageInfo;
+  AppEnv.init(packageInfo);
 
   runApp(UncontrolledProviderScope(container: container, child: const _MyApp()));
 }
@@ -70,7 +74,7 @@ class _MyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
-    ref.watch(startupInitializerProvider);
+    ref.listen(startupInitializerProvider, (_, _) {});
     //  Watch the active theme state from your provider
     final activeTheme = ref.watch(themeProvider);
 
