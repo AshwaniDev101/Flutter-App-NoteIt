@@ -47,3 +47,5 @@ app.*.map.json
 /.env
 /lib/core/secrets/app_secrets.dart
 /docs/plans.txt
+# Widget Preview related
+.widget_preview/

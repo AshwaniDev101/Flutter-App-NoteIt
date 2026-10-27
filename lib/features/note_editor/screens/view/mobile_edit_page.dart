@@ -20,9 +20,10 @@ import '../../../../shared/note_card/core/note_action_controller.dart';
 import '../../../../shared/overlays/snack_bar_manager.dart';
 import '../../../../shared/text/highlighting_text_field.dart';
 import '../../../folders/core/providers.dart';
+import '../../../home/core/providers.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
 import '../../widgets/checklist_editor.dart';
-import '../../widgets/folder_option_menu.dart';
+import '../../../folders/view/folder_option_menu.dart';
 import '../../widgets/note_editor_options.dart';
 
 import '../../../lock/lock_manger/lock_manager.dart';
@@ -96,6 +97,14 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
 
     _contentController.addListener(_syncTitleFromContent);
     _titleController.addListener(_onTitleChanged);
+
+    if (widget.existingNoteWithFolder != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          ref.read(activeNoteProvider.notifier).setNote(widget.existingNoteWithFolder!);
+        }
+      });
+    }
   }
 
   // --- Checklist Conversion Helpers ---
@@ -164,10 +173,15 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
     _contentController.dispose();
     _undoController.dispose();
     _contentFocusNode.dispose();
+
+    Future.microtask(() {
+      ref.read(activeNoteProvider.notifier).clear();
+    });
+
     super.dispose();
   }
 
-  void _executeSave({bool isManualSave = false}) {
+  Future<void> _executeSave({bool isManualSave = false}) async {
     if (_hasTriggeredFinalSave && !isManualSave) return;
 
     final title = _titleController.text.trim();
@@ -179,7 +193,10 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
       if (_hasCreatedNewNote) return;
 
       final activeFolderId = ref.read(activeFolderProvider)?.uuid;
-      _viewModel.saveNote(title, content, _contentVersion, folderId: activeFolderId);
+      final newNote = await _viewModel.saveNote(title, content, _contentVersion, folderId: activeFolderId);
+      if (newNote != null) {
+        ref.read(activeNoteProvider.notifier).setNote(newNote);
+      }
       _hasCreatedNewNote = true;
     } else {
       // Check for version changes and pass _contentVersion
@@ -187,7 +204,11 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
           content != widget.existingNoteWithFolder!.note.content ||
           widget.existingNoteWithFolder!.note.contentVersion != _contentVersion.value) {
 
-        _viewModel.updateNote(widget.existingNoteWithFolder!.note.uuid, title, content, _contentVersion);
+        await _viewModel.updateNote(widget.existingNoteWithFolder!.note.uuid, title, content, _contentVersion);
+        try {
+          final updatedNote = await ref.read(notesDaoProvider).getNoteById(widget.existingNoteWithFolder!.note.uuid);
+          ref.read(activeNoteProvider.notifier).setNote(updatedNote);
+        } catch (_) {}
       }
     }
 
@@ -245,7 +266,11 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
           titleSpacing: 0,
           actions: [
             _buildUndoRedoButtons(),
+
+
             _optionMenu(),
+
+
             const DesktopWindowControls(),
           ],
         ),
@@ -393,6 +418,10 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
                 if (widget.existingNoteWithFolder?.note.folderId == newFolderId) return;
                 if (!_isNewNote && widget.existingNoteWithFolder != null) {
                   await ref.read(notesDaoProvider).updateNoteFolder(widget.existingNoteWithFolder!.note.uuid, newFolderId);
+                  try {
+                    final updatedNote = await ref.read(notesDaoProvider).getNoteById(widget.existingNoteWithFolder!.note.uuid);
+                    ref.read(activeNoteProvider.notifier).setNote(updatedNote);
+                  } catch (_) {}
                 }
               },
             ),
@@ -560,6 +589,16 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
             await _openReminderDialog();
             break;
           case NoteAction.info:
+            _executeSave(isManualSave: false);
+            if (widget.existingNoteWithFolder != null) {
+              try {
+                final currentNote = await ref.read(notesDaoProvider).getNoteById(widget.existingNoteWithFolder!.note.uuid);
+                ref.read(activeNoteProvider.notifier).setNote(currentNote);
+              } catch (_) {
+                ref.read(activeNoteProvider.notifier).setNote(widget.existingNoteWithFolder!);
+              }
+            }
+            if (!mounted) return;
             ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.noteDetails);
             break;
           default:
@@ -568,6 +607,11 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
       },
     );
   }
+
+
+
+
+
 
   Future<void> _openReminderDialog() async {
     if (widget.existingNoteWithFolder == null) return;
@@ -588,6 +632,10 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
       ),
     );
     if (!mounted) return;
+    try {
+      final updatedNote = await ref.read(notesDaoProvider).getNoteById(mTargetUuid);
+      ref.read(activeNoteProvider.notifier).setNote(updatedNote);
+    } catch (_) {}
     setState(() {});
   }
 

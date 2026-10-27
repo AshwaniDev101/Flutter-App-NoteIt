@@ -247,22 +247,40 @@ class _FolderOptionMenuContentState extends ConsumerState<_FolderOptionMenuConte
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+
+          SizedBox(height: 8,),
+          // Header Label
+          Padding(
+            padding: const EdgeInsets.only(left: 6.0, right: 2.0, bottom: 8.0),
+            child: Text(
+              "Move to Folder",
+              style: textTheme.labelMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.2,
+                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+              ),
+            ),
+          ),
+          SizedBox(height: 8,),
           // Search Bar
-          AppSearchBar(
-            controller: _searchController,
-            hintText: 'Search folders...',
-            fillColor: colorScheme.surfaceContainerLow,
-            onChanged: (value) {
-              setState(() {
-                _searchQuery = value;
-              });
-            },
-            onClear: () {
-              _searchController.clear();
-              setState(() {
-                _searchQuery = '';
-              });
-            },
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: AppSearchBar(
+              controller: _searchController,
+              hintText: 'Search folders...',
+              fillColor: colorScheme.surfaceContainerLow,
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value;
+                });
+              },
+              onClear: () {
+                _searchController.clear();
+                setState(() {
+                  _searchQuery = '';
+                });
+              },
+            ),
           ),
           const SizedBox(height: 8),
 
@@ -308,7 +326,8 @@ class _FolderOptionMenuContentState extends ConsumerState<_FolderOptionMenuConte
                         label: widget.emptyLabel,
                         isSelected: activeFolder == null,
                         leading: Icon(
-                          Icons.format_align_left_rounded,
+                          // Icons.format_align_left_rounded,
+                          Icons.circle_outlined,
                           size: 18,
                           color: activeFolder == null
                               ? colorScheme.primary
@@ -316,14 +335,14 @@ class _FolderOptionMenuContentState extends ConsumerState<_FolderOptionMenuConte
                         ),
                         onTap: () => widget.onFolderSelected(null),
                       ),
-                      if (matchingFolders.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
-                          child: Divider(
-                            height: 1,
-                            color: colorScheme.outlineVariant.withValues(alpha: 0.3),
-                          ),
-                        ),
+                      // if (matchingFolders.isNotEmpty)
+                      //   Padding(
+                      //     padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+                      //     child: Divider(
+                      //       height: 1,
+                      //       color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+                      //     ),
+                      //   ),
                     ],
 
                     // List of folders with leading colors

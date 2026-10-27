@@ -30,11 +30,12 @@ class NoteTapHandler {
 
     if (!context.mounted) return;
 
+    // Set active note state across both mobile and desktop
+    ref.read(activeNoteProvider.notifier).setNote(noteWithFolder);
+
     if (isWide) {
       final rightPanelNotifier = ref.read(desktopRightPanelViewProvider.notifier);
       final currentView = rightPanelNotifier.currentView;
-
-      ref.read(activeNoteProvider.notifier).setNote(noteWithFolder);
 
       if (currentView == RightPanelPageOptions.noteEditor) {
         rightPanelNotifier.setView(RightPanelPageOptions.noteEditor);

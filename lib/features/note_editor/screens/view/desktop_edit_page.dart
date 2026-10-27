@@ -18,7 +18,7 @@ import '../../../../shared/note_card/core/note_action_controller.dart';
 import '../../../../shared/overlays/snack_bar_manager.dart';
 import '../../../../shared/text/highlighting_text_field.dart';
 import '../../widgets/checklist_editor.dart';
-import '../../widgets/folder_option_menu.dart';
+import '../../../folders/view/folder_option_menu.dart';
 import '../../../home/core/providers.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
 import '../../widgets/note_editor_options.dart';
@@ -461,12 +461,12 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // --- The Top Accent Border ---
-              if (currentFolder != null)
-                Container(
-                  height: 4, // Change thickness here if you want it bolder
-                  width: double.infinity,
-                  color: folderAccentColor,
-                ),
+              // if (currentFolder != null)
+              //   Container(
+              //     height: 0, // Change thickness here
+              //     width: double.infinity,
+              //     color: folderAccentColor,
+              //   ),
 
               if (_isFind)
                 FindReplaceWidget(
@@ -818,22 +818,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
                   },
                 ),
               )
-            // : TextField(
-            // child: _contentVersion == ContentVersion.checklist
-            //     ? Padding(
-            //   padding: EdgeInsets.only(left: leftPadding, right: rightPadding),
-            //   child: CheckListWidget(
-            //     initialData: _currentChecklist,
-            //     onChange: (List<CheckListItemModel> updatedList) {
-            //       _currentChecklist = updatedList;
-            //       _highlightedContentController.text = jsonEncode(updatedList.map((e) => e.toJson()).toList());
-            //     },
-            //     onSubmit: (List<CheckListItemModel> updatedList) {
-            //       _currentChecklist = updatedList;
-            //       _highlightedContentController.text = jsonEncode(updatedList.map((e) => e.toJson()).toList());
-            //     },
-            //   ),
-            // )
+
             : TextField(
                 controller: _highlightedContentController,
                 undoController: _undoController,

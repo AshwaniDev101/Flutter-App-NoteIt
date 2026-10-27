@@ -11,7 +11,42 @@ class NoteDetailsPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final NoteWithFolder noteWithFolder = ref.watch(activeNoteProvider)!;
+    final NoteWithFolder? noteWithFolder = ref.watch(activeNoteProvider);
+
+    if (noteWithFolder == null) {
+      return AppScaffold.rightPanel(
+        option: RightPanelPageOptions.noteDetails,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.info_outline,
+                size: 48,
+                color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'No Note Selected',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Select a note to view its details.',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final note = noteWithFolder.note;
+    final folder = noteWithFolder.folder;
 
     return SelectionArea(
       child: AppScaffold.rightPanel(
@@ -24,10 +59,10 @@ class NoteDetailsPage extends ConsumerWidget {
               title: 'Primary Keys & Core Data',
               icon: Icons.vpn_key_outlined,
               children: [
-                _MetadataItem(label: 'UUID', value: noteWithFolder.note.uuid),
-                _MetadataItem(label: 'Title', value: noteWithFolder.note.title),
-                _MetadataItem(label: 'Content Length', value: '${noteWithFolder.note.content.length} characters'),
-                _MetadataItem(label: 'Content', value: noteWithFolder.note.content, isMultiline: true),
+                _MetadataItem(label: 'UUID', value: note.uuid),
+                _MetadataItem(label: 'Title', value: note.title),
+                _MetadataItem(label: 'Content Length', value: '${note.content.length} characters'),
+                _MetadataItem(label: 'Content', value: note.content, isMultiline: true),
               ],
             ),
             _buildSection(
@@ -35,12 +70,14 @@ class NoteDetailsPage extends ConsumerWidget {
               title: 'UI & UX Features',
               icon: Icons.design_services_outlined,
               children: [
-                _MetadataItem(label: 'Color (Hex)', value: '0x${noteWithFolder.note.color.toRadixString(16).toUpperCase()}'),
-                _MetadataItem(label: 'Pinned At', value: noteWithFolder.note.pinnedAt?.toIso8601String() ?? 'null'),
-                _MetadataItem(label: 'Archived At', value: noteWithFolder.note.archivedAt?.toIso8601String() ?? 'null'),
-                _MetadataItem(label: 'Locked At', value: noteWithFolder.note.lockedAt?.toIso8601String() ?? 'null'),
-                _MetadataItem(label: 'Tags', value: noteWithFolder.note.tags ?? 'null'),
-                _MetadataItem(label: 'Reminder At', value: noteWithFolder.note.reminderAt?.toIso8601String() ?? 'null'),
+                _MetadataItem(label: 'Color (Hex)', value: '0x${note.color.toRadixString(16).toUpperCase().padLeft(8, '0')}'),
+                _MetadataItem(label: 'Pinned At', value: note.pinnedAt?.toIso8601String() ?? 'null'),
+                _MetadataItem(label: 'Archived At', value: note.archivedAt?.toIso8601String() ?? 'null'),
+                _MetadataItem(label: 'Locked At', value: note.lockedAt?.toIso8601String() ?? 'null'),
+                _MetadataItem(label: 'Tags', value: note.tags ?? 'null'),
+                _MetadataItem(label: 'Reminder At', value: note.reminderAt?.toIso8601String() ?? 'null'),
+                _MetadataItem(label: 'Reminder Repeat Mode', value: note.reminderRepeatMode ?? 'null'),
+                _MetadataItem(label: 'Reminder Custom Days', value: note.reminderCustomDays ?? 'null'),
               ],
             ),
             _buildSection(
@@ -48,17 +85,17 @@ class NoteDetailsPage extends ConsumerWidget {
               title: 'Attachments & Media',
               icon: Icons.attachment_outlined,
               children: [
-                _MetadataItem(label: 'Local Path', value: noteWithFolder.note.localAttachmentPath ?? 'null', isMultiline: true),
-                _MetadataItem(label: 'Cloud URL', value: noteWithFolder.note.cloudAttachmentUrl ?? 'null', isMultiline: true),
+                _MetadataItem(label: 'Local Path', value: note.localAttachmentPath ?? 'null', isMultiline: true),
+                _MetadataItem(label: 'Cloud URL', value: note.cloudAttachmentUrl ?? 'null', isMultiline: true),
               ],
             ),
             _buildSection(
               context,
               title: 'Versioning & Schema',
-              icon: Icons.schema_outlined, // If not available, use Icons.layers_outlined
+              icon: Icons.schema_outlined,
               children: [
-                _MetadataItem(label: 'Schema Version', value: noteWithFolder.note.schemaVersion.toString()),
-                _MetadataItem(label: 'Content Version', value: noteWithFolder.note.contentVersion.toString()),
+                _MetadataItem(label: 'Schema Version', value: note.schemaVersion.toString()),
+                _MetadataItem(label: 'Content Version', value: note.contentVersion.toString()),
               ],
             ),
             _buildSection(
@@ -66,8 +103,9 @@ class NoteDetailsPage extends ConsumerWidget {
               title: 'Relational Data & Security',
               icon: Icons.security_outlined,
               children: [
-                _MetadataItem(label: 'Folder ID', value: noteWithFolder.note.folderId ?? 'null (root)'),
-                _MetadataItem(label: 'Owner UID', value: noteWithFolder.note.ownerUid ?? 'null'),
+                _MetadataItem(label: 'Folder ID', value: note.folderId ?? 'null (root)'),
+                _MetadataItem(label: 'Folder Name', value: folder?.name ?? 'null (root)'),
+                _MetadataItem(label: 'Owner UID', value: note.ownerUid ?? 'null'),
               ],
             ),
             _buildSection(
@@ -75,9 +113,9 @@ class NoteDetailsPage extends ConsumerWidget {
               title: 'Timestamps (LWW Engine)',
               icon: Icons.access_time,
               children: [
-                _MetadataItem(label: 'Created At', value: noteWithFolder.note.createdAt.toIso8601String()),
-                _MetadataItem(label: 'Updated At', value: noteWithFolder.note.updatedAt.toIso8601String()),
-                _MetadataItem(label: 'Deleted At', value: noteWithFolder.note.deletedAt?.toIso8601String() ?? 'null'),
+                _MetadataItem(label: 'Created At', value: note.createdAt.toIso8601String()),
+                _MetadataItem(label: 'Updated At', value: note.updatedAt.toIso8601String()),
+                _MetadataItem(label: 'Deleted At', value: note.deletedAt?.toIso8601String() ?? 'null'),
               ],
             ),
             _buildSection(
@@ -85,9 +123,9 @@ class NoteDetailsPage extends ConsumerWidget {
               title: 'Sync Engine',
               icon: Icons.sync,
               children: [
-                _MetadataItem(label: 'Cloud Sync Status', value: noteWithFolder.note.cloudSyncStatus.toString()),
-                _MetadataItem(label: 'Local Sync Status', value: noteWithFolder.note.localSyncStatus.toString()),
-                _MetadataItem(label: 'Update Counter', value: noteWithFolder.note.updateCounter.toString()),
+                _MetadataItem(label: 'Cloud Sync Status', value: note.cloudSyncStatus.toString()),
+                _MetadataItem(label: 'Local Sync Status', value: note.localSyncStatus.toString()),
+                _MetadataItem(label: 'Update Counter', value: note.updateCounter.toString()),
               ],
             ),
             _buildSection(
@@ -95,12 +133,12 @@ class NoteDetailsPage extends ConsumerWidget {
               title: 'Device & Platform Metadata',
               icon: Icons.devices_outlined,
               children: [
-                _MetadataItem(label: 'Creation Platform', value: noteWithFolder.note.creationPlatform ?? 'null'),
-                _MetadataItem(label: 'Creation Device', value: noteWithFolder.note.creationDevice ?? 'null'),
-                _MetadataItem(label: 'Last Edited Platform', value: noteWithFolder.note.lastEditedPlatform ?? 'null'),
-                _MetadataItem(label: 'Last Edited Device', value: noteWithFolder.note.lastEditedDevice ?? 'null'),
-                _MetadataItem(label: 'Deleted Platform', value: noteWithFolder.note.deletedPlatform ?? 'null'),
-                _MetadataItem(label: 'Deleted Device', value: noteWithFolder.note.deletedDevice ?? 'null'),
+                _MetadataItem(label: 'Creation Platform', value: note.creationPlatform ?? 'null'),
+                _MetadataItem(label: 'Creation Device', value: note.creationDevice ?? 'null'),
+                _MetadataItem(label: 'Last Edited Platform', value: note.lastEditedPlatform ?? 'null'),
+                _MetadataItem(label: 'Last Edited Device', value: note.lastEditedDevice ?? 'null'),
+                _MetadataItem(label: 'Deleted Platform', value: note.deletedPlatform ?? 'null'),
+                _MetadataItem(label: 'Deleted Device', value: note.deletedDevice ?? 'null'),
               ],
             ),
             const SizedBox(height: 32),

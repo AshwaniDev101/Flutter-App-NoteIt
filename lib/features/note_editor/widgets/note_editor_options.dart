@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/util/platform_helper.dart';
+import '../../../shared/menus/app_bottom_sheet.dart';
 import '../../../shared/note_card/core/note_action.dart';
 
-
-class NoteEditorOptionButton extends StatefulWidget {
+class NoteEditorOptionButton extends StatelessWidget {
   final void Function(NoteAction) onPressed;
   final bool isLocked;
   final bool isPinned;
   final bool isChecklist;
   final bool hasReminder;
   final List<NoteAction> options;
+  final IconData icon;
 
   static const List<NoteAction> defaultOptions = [
     NoteAction.delete,
@@ -30,20 +32,64 @@ class NoteEditorOptionButton extends StatefulWidget {
     this.isChecklist = false,
     this.hasReminder = false,
     this.options = defaultOptions,
+    this.icon = Icons.segment,
   });
 
-  @override
-  State<NoteEditorOptionButton> createState() => _NoteEditorOptionButtonState();
-}
-
-class _NoteEditorOptionButtonState extends State<NoteEditorOptionButton> {
-  final MenuController _menuController = MenuController();
+  void _showMobileBottomSheet(BuildContext context) {
+    AppBottomSheet.show(
+      context: context,
+      builder: (context, setModalState) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+              child: Text(
+                'Note Options',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+            ),
+            const Divider(indent: 16, endIndent: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: Center(
+                child: NoteEditorOptionMenu(
+                  isLocked: isLocked,
+                  isPinned: isPinned,
+                  isChecklist: isChecklist,
+                  hasReminder: hasReminder,
+                  options: options,
+                  width: double.infinity,
+                  showCard: false,
+                  onPressed: (option) {
+                    Navigator.pop(context);
+                    onPressed(option);
+                  },
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    // final colorSchema = Theme.of(context).colorScheme;
+    final isMobile = !PlatformHelper.isWideLayout(context);
+
+    if (isMobile) {
+      return IconButton(
+        tooltip: "Option Menu",
+        icon: Icon(icon),
+        onPressed: () => _showMobileBottomSheet(context),
+      );
+    }
+
     return MenuAnchor(
-      controller: _menuController,
       style: const MenuStyle(
         padding: WidgetStatePropertyAll(EdgeInsets.zero),
         backgroundColor: WidgetStatePropertyAll(Colors.transparent),
@@ -59,17 +105,17 @@ class _NoteEditorOptionButtonState extends State<NoteEditorOptionButton> {
               controller.open();
             }
           },
-          icon: const Icon(Icons.segment),
+          icon: Icon(icon),
         );
       },
       menuChildren: [
         NoteEditorOptionMenu(
-          onPressed: widget.onPressed,
-          isLocked: widget.isLocked,
-          isPinned: widget.isPinned,
-          isChecklist: widget.isChecklist,
-          hasReminder: widget.hasReminder,
-          options: widget.options,
+          onPressed: onPressed,
+          isLocked: isLocked,
+          isPinned: isPinned,
+          isChecklist: isChecklist,
+          hasReminder: hasReminder,
+          options: options,
         ),
       ],
     );
@@ -83,6 +129,8 @@ class NoteEditorOptionMenu extends StatelessWidget {
   final bool isChecklist;
   final bool hasReminder;
   final List<NoteAction> options;
+  final double width;
+  final bool showCard;
 
   const NoteEditorOptionMenu({
     super.key,
@@ -92,47 +140,58 @@ class NoteEditorOptionMenu extends StatelessWidget {
     this.isChecklist = false,
     this.hasReminder = false,
     this.options = NoteEditorOptionButton.defaultOptions,
+    this.width = 196,
+    this.showCard = true,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: Theme.of(context).colorScheme.surfaceContainer,
-      elevation: 2,
-      margin: const EdgeInsets.all(4.0),
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: SizedBox(
-          width: 196,
-          child: Wrap(
-            spacing: 8.0,
-            runSpacing: 8.0,
-            children: options.map((option) {
-              final appearance = option.getAppearance(
-                isLocked: isLocked,
-                isPinned: isPinned,
-                isChecklist: isChecklist,
-                hasReminder: hasReminder,
-              );
+    final colorScheme = Theme.of(context).colorScheme;
 
-              final Color iconColor = appearance.isActive
-                  ? Theme.of(context).colorScheme.primary
-                  : Theme.of(context).colorScheme.onSurfaceVariant;
+    final content = Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: SizedBox(
+        width: width,
+        child: Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 8.0,
+          runSpacing: 8.0,
+          children: options.map((option) {
+            final appearance = option.getAppearance(
+              isLocked: isLocked,
+              isPinned: isPinned,
+              isChecklist: isChecklist,
+              hasReminder: hasReminder,
+            );
 
-              return _editorOption(
-                context: context,
-                icon: Icon(appearance.icon, color: iconColor),
-                name: appearance.label,
-                tooltip: appearance.tooltip,
-                onPressed: () {
-                  MenuController.maybeOf(context)?.close();
-                  onPressed(option);
-                },
-              );
-            }).toList(),
-          ),
+            final Color iconColor = appearance.isActive
+                ? colorScheme.primary
+                : colorScheme.onSurfaceVariant;
+
+            return _editorOption(
+              context: context,
+              icon: Icon(appearance.icon, color: iconColor),
+              name: appearance.label,
+              tooltip: appearance.tooltip,
+              onPressed: () {
+                MenuController.maybeOf(context)?.close();
+                onPressed(option);
+              },
+            );
+          }).toList(),
         ),
       ),
+    );
+
+    if (!showCard) {
+      return content;
+    }
+
+    return Card(
+      color: colorScheme.surfaceContainer,
+      elevation: 2,
+      margin: const EdgeInsets.all(4.0),
+      child: content,
     );
   }
 
