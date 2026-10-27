@@ -11,6 +11,7 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:window_manager/window_manager.dart';
 
 import '../../core/router/router.dart';
+import '../../core/util/platform_helper.dart';
 import '../../database/drift/notes/notes_dao.dart';
 import '../../database/shared_preference/shared_preference_manager.dart';
 import '../home/core/providers.dart';
@@ -37,7 +38,7 @@ class ReminderManager {
   Future<void> _playDesktopAlarmSound() async {
     final prefs = SharedPreferenceManager.instance;
     if (!prefs.reminderSoundEnabled) return;
-    if (kIsWeb || (!Platform.isWindows && !Platform.isMacOS && !Platform.isLinux)) return;
+    if (PlatformHelper.isWeb || !PlatformHelper.isNativeDesktop) return;
 
     try {
       await stopAlarmSound();
@@ -93,7 +94,7 @@ class ReminderManager {
 
       final context = rootNavigatorKey.currentContext;
 
-      if (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
+      if (PlatformHelper.isNativeDesktop) {
         try {
           if (await windowManager.isMinimized()) {
             await windowManager.restore();
@@ -216,12 +217,12 @@ class ReminderManager {
   /// 2. Permission Request
   Future<bool> requestPermission() async {
     await _ensureInitialized();
-    if (Platform.isIOS) {
+    if (PlatformHelper.isIOS) {
       final bool? granted = await _notificationsPlugin
           .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()
           ?.requestPermissions(alert: true, badge: true, sound: true);
       return granted ?? false;
-    } else if (Platform.isAndroid) {
+    } else if (PlatformHelper.isAndroid) {
       final AndroidFlutterLocalNotificationsPlugin? androidImplementation = _notificationsPlugin
           .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
 
@@ -711,7 +712,7 @@ class ReminderManager {
     }
 
     // Re-arm desktop timers for the newly calculated future dates
-    if (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
+    if (PlatformHelper.isNativeDesktop) {
       await rearmPendingReminders();
     }
   }

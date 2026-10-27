@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:noteit/core/util/platform_helper.dart';
 import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/features/folders/view/folder_selector.dart';
 import 'package:noteit/shared/menus/app_bottom_sheet.dart';
@@ -135,7 +136,7 @@ class _FolderOptionMenuState extends ConsumerState<FolderOptionMenu> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final isMobile = MediaQuery.sizeOf(context).width < 600;
+    final isMobile = !PlatformHelper.isWideLayout(context);
 
     if (isMobile) {
       return _buildTriggerButton(

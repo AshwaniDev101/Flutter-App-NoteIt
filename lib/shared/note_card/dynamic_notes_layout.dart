@@ -14,6 +14,7 @@ import 'core/note_action_controller.dart';
 import 'note_card.dart';
 import '../../../features/home/core/providers.dart';
 import '../../../features/home/viewmodel/viewmodel.dart';
+import '../../../features/home/view/desktop/content_panel/core/navigator.dart';
 import '../../../features/lock/lock_manger/lock_manager.dart';
 import '../../../features/lock/password_prompt_helper.dart';
 
@@ -244,6 +245,11 @@ class DynamicNotesLayout extends ConsumerWidget {
         await actionsController.duplicateNotes(targetUuids, platform);
         break;
       case NoteAction.moveTo:
+        ref.read(movingNoteIdsProvider.notifier).setNoteIds(targetUuids);
+        if (isSelectMode) {
+          ref.read(homeViewModelProvider.notifier).clearSelection();
+        }
+        ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.moveToFolder);
         break;
       case NoteAction.reminder:
         break;

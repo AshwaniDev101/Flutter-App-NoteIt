@@ -9,6 +9,7 @@ import '../../database/drift/notes/notes_dao.dart';
 import '../../features/backup/export_page.dart';
 import '../../features/backup/import_page.dart';
 import '../../features/dev_tools/dev_page.dart';
+import '../../features/folders/view/move_to_folder.dart';
 import '../../features/home/view/desktop/home_page.dart';
 import '../../features/home/view/mobile/mobile_home_page.dart';
 import '../../features/local_sync/view/mdns/broadcast/host_broadcast.dart';
@@ -49,6 +50,7 @@ class AppRoutes {
   static const String archive = '/archive';
   static const String defaultSettings = '/default-settings';
   static const String reminderSettings = '/reminder-settings';
+  static const String moveToFolder = '/move-to-folder';
 }
 
 GoRoute _adaptiveRoute({
@@ -150,6 +152,7 @@ final routerProvider = Provider((ref) {
       GoRoute(path: AppRoutes.archive, builder: (context, state) => const ArchivePage()),
       GoRoute(path: AppRoutes.defaultSettings, builder: (context, state) => const DefaultSettingsPage()),
       GoRoute(path: AppRoutes.reminderSettings, builder: (context, state) => const ReminderSettingsPage()),
+      GoRoute(path: AppRoutes.moveToFolder, builder: (context, state) => const MoveToFolderPage()),
     ],
   );
 });

@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../../core/util/platform_helper.dart';
 import 'app_bottom_sheet.dart';
 
 enum HomeMenuAction {
@@ -72,7 +73,7 @@ class _SortMenuButtonState extends State<SortMenuButton> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.sizeOf(context).width < 600;
+    final isMobile = !PlatformHelper.isWideLayout(context);
 
     if (isMobile) {
       return IconButton(

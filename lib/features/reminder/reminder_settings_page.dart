@@ -1,11 +1,11 @@
 import 'dart:io';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/router/router.dart';
+import '../../core/util/platform_helper.dart';
 import '../../database/drift/notes/notes_dao.dart';
 import '../../database/shared_preference/shared_preference_manager.dart';
 
@@ -112,9 +112,11 @@ class _ReminderSettingsPageState extends ConsumerState<ReminderSettingsPage> {
 
         setState(() => _isPlayingTest = true);
 
-        if (_customSoundPath != null &&
+        final customFile = File(_customSoundPath ?? '');
+        if (PlatformHelper.isNativeDesktop &&
+            _customSoundPath != null &&
             _customSoundPath!.isNotEmpty &&
-            File(_customSoundPath!).existsSync()) {
+            customFile.existsSync()) {
           await _testAudioPlayer!
               .play(DeviceFileSource(_customSoundPath!));
         } else {
@@ -279,10 +281,7 @@ class _ReminderSettingsPageState extends ConsumerState<ReminderSettingsPage> {
                             onTap: () {
                               Navigator.of(modalCtx).pop();
                               ref.read(activeNoteProvider.notifier).setNote(noteWithFolder);
-                              if (!kIsWeb &&
-                                  (Platform.isWindows ||
-                                      Platform.isMacOS ||
-                                      Platform.isLinux)) {
+                              if (PlatformHelper.isNativeDesktop) {
                                 ref
                                     .read(desktopRightPanelViewProvider.notifier)
                                     .setView(RightPanelPageOptions.noteEditor);
@@ -313,8 +312,7 @@ class _ReminderSettingsPageState extends ConsumerState<ReminderSettingsPage> {
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
 
-    final isDesktop = !kIsWeb &&
-        (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
+    final isDesktop = PlatformHelper.isNativeDesktop;
 
     return AppScaffold.rightPanel(
       option: RightPanelPageOptions.reminderSettings,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/util/platform_helper.dart';
 import 'app_bottom_sheet.dart';
 
 // ==========================================
@@ -65,7 +66,7 @@ class _ViewMenuButtonState extends State<ViewMenuButton> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.sizeOf(context).width < 600;
+    final isMobile = !PlatformHelper.isWideLayout(context);
 
     if (isMobile) {
       return IconButton(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/core/util/platform_helper.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
 import 'package:noteit/shared/overlays/app_scaffold.dart';
 
@@ -9,10 +10,7 @@ class RoleSelectorPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, ref) {
     // Detect if the app is running on a desktop platform
-    final platform = Theme.of(context).platform;
-    final isDesktop = platform == TargetPlatform.macOS ||
-        platform == TargetPlatform.windows ||
-        platform == TargetPlatform.linux;
+    final isDesktop = PlatformHelper.isNativeDesktop;
 
     final clientTile = RoleTile(
       title: "Connect to a Host",

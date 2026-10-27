@@ -65,7 +65,8 @@ enum RightPanelPageOptions {
   pin('Pairing PIN', 'Enter PIN to pair with device', Icons.pin_outlined, AppRoutes.pin),
   archivePage('Archive', 'Archive Notes to reduce clutter', Icons.archive_outlined, AppRoutes.archive),
   defaultSettings('Default Layout', 'Configure default views, sort options, and window layout', Icons.tune_outlined, AppRoutes.defaultSettings),
-  reminderSettings('Reminder Settings', 'Customize alarm sound, snooze, and notification preferences', Icons.notifications_active_outlined, AppRoutes.reminderSettings);
+  reminderSettings('Reminder Settings', 'Customize alarm sound, snooze, and notification preferences', Icons.notifications_active_outlined, AppRoutes.reminderSettings),
+  moveToFolder('Move to Folder', 'Select a folder to move notes', Icons.folder_open_outlined, AppRoutes.moveToFolder);
 
   final String label;
   final String description;

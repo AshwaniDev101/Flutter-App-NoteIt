@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/util/platform_helper.dart';
 import '../../features/lock/lock_manger/lock_manager.dart';
 import '../../features/lock/password_prompt_helper.dart';
+import '../../features/folders/core/providers.dart';
+import '../../features/home/view/desktop/content_panel/core/navigator.dart';
 import '../../features/home/viewmodel/viewmodel.dart';
 import '../note_card/core/note_action.dart';
 import '../note_card/core/note_action_controller.dart';
@@ -70,6 +72,11 @@ class BottomSelectModeAppBar extends ConsumerWidget {
       case NoteAction.duplicate:
         await actionsController.duplicateNotes(selectedNoteIds, platform);
         break;
+      case NoteAction.moveTo:
+        ref.read(movingNoteIdsProvider.notifier).setNoteIds(selectedNoteIds);
+        ref.read(homeViewModelProvider.notifier).clearSelection();
+        ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.moveToFolder);
+        return;
       case NoteAction.restore:
         await actionsController.restoreNotes(selectedNoteIds);
         break;

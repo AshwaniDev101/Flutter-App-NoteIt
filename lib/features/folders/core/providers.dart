@@ -6,6 +6,22 @@ final activeFolderProvider = NotifierProvider<ActiveFolderNotifier, Folder?>(() 
   return ActiveFolderNotifier();
 });
 
+/// Holds target note UUIDs pending folder reassignment
+final movingNoteIdsProvider = NotifierProvider<MovingNoteIdsNotifier, List<String>>(MovingNoteIdsNotifier.new);
+
+class MovingNoteIdsNotifier extends Notifier<List<String>> {
+  @override
+  List<String> build() => [];
+
+  void setNoteIds(List<String> ids) {
+    state = ids;
+  }
+
+  void clear() {
+    state = [];
+  }
+}
+
 class ActiveFolderNotifier extends Notifier<Folder?> {
   @override
   Folder? build() {

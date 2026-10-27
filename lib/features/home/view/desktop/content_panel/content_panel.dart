@@ -21,6 +21,7 @@ import 'package:noteit/features/local_sync/view/synced_list.dart';
 import 'package:noteit/features/note_editor/screens/view/desktop_edit_page.dart';
 import 'package:noteit/features/note_editor/screens/view/details/detail_page.dart';
 import 'package:noteit/features/archive/view/archive_page.dart';
+import 'package:noteit/features/folders/view/move_to_folder.dart';
 import 'package:noteit/features/trash/view/trash_page.dart';
 import 'package:noteit/features/reminder/reminder_settings_page.dart';
 import 'package:noteit/features/settings/view/default_settings_page.dart';
@@ -170,6 +171,11 @@ class DesktopContentPanel extends ConsumerWidget {
         return const _PaddingWrapper(
           key: ValueKey('reminder_settings_view'),
           child: ReminderSettingsPage(),
+        );
+      case RightPanelPageOptions.moveToFolder:
+        return const _PaddingWrapper(
+          key: ValueKey('move_to_folder_view'),
+          child: MoveToFolderPage(),
         );
     }
   }

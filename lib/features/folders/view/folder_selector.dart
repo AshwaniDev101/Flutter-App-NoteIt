@@ -1,16 +1,17 @@
-export 'dialogs/folder_dialogs.dart';
+export 'dialogs/folder_editor_dialog.dart';
 export 'widgets/folder_list_item.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/util/platform_helper.dart';
 import '../../../shared/app_bars/app_search_bar.dart';
 
 import '../../../database/drift/folders/folders_dao.dart';
 import '../../../database/drift/local_database.dart';
 import '../../../database/drift/notes/notes_dao.dart';
 import '../../../shared/menus/app_bottom_sheet.dart';
-import 'dialogs/folder_dialogs.dart';
+import 'dialogs/folder_editor_dialog.dart';
 import 'widgets/folder_list_item.dart';
 
 final activeFoldersStreamProvider = StreamProvider<List<FolderWithCount>>((ref) {
@@ -186,7 +187,7 @@ class _FolderButtonState extends ConsumerState<FolderButton> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.sizeOf(context).width < 600;
+    final isMobile = !PlatformHelper.isWideLayout(context);
 
     if (isMobile) {
       return _buildTriggerButton(
