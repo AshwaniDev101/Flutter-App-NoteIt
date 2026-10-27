@@ -2,9 +2,10 @@ import 'package:flutter/material.dart' hide RepeatMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:noteit/database/drift/notes/notes_dao.dart';
-import '../../database/shared_preference/shared_preference_manager.dart';
 import '../../shared/overlays/snack_bar_manager.dart';
+import 'providers/reminder_provider.dart';
 import 'reminder_manager.dart';
+import 'widgets/conversational_chip.dart';
 
 class ReminderPage extends ConsumerStatefulWidget {
   final String noteUuid;
@@ -27,14 +28,8 @@ class ReminderPage extends ConsumerStatefulWidget {
 }
 
 class _ReminderPageState extends ConsumerState<ReminderPage> {
-  final TextEditingController _msgController = TextEditingController();
-
-  late DateTime _selectedDate;
-  late TimeOfDay _selectedTime;
-
-  ReminderRepeatMode _repeatMode = ReminderRepeatMode.once;
-  final Set<int> _selectedDays = {}; // 1 = Mon, 7 = Sun
-  bool _isSaving = false;
+  late final TextEditingController _msgController;
+  late final ReminderFormInitArgs _args;
 
   static const Map<int, String> _weekDays = {
     1: 'M', 2: 'T', 3: 'W', 4: 'T', 5: 'F', 6: 'S', 7: 'S'
@@ -43,44 +38,15 @@ class _ReminderPageState extends ConsumerState<ReminderPage> {
   @override
   void initState() {
     super.initState();
-    final existing = widget.existingReminderAt;
-    final now = DateTime.now();
-
-    if (existing != null && existing.isAfter(now)) {
-      _selectedDate = existing;
-      _selectedTime = TimeOfDay(hour: existing.hour, minute: existing.minute);
-    } else {
-      _selectedDate = now;
-      _selectedTime = TimeOfDay.fromDateTime(now);
-    }
-
-    final existingMode = widget.existingRepeatMode;
-    if (existingMode != null && existingMode.isNotEmpty) {
-      if (existingMode == 'daily') {
-        _repeatMode = ReminderRepeatMode.daily;
-      } else if (existingMode == 'customDays' || existingMode == 'custom') {
-        _repeatMode = ReminderRepeatMode.customDays;
-      } else {
-        _repeatMode = ReminderRepeatMode.once;
-      }
-    } else {
-      final savedRepeatStr = SharedPreferenceManager.instance.defaultRepeatMode;
-      if (savedRepeatStr == 'daily') {
-        _repeatMode = ReminderRepeatMode.daily;
-      } else if (savedRepeatStr == 'custom') {
-        _repeatMode = ReminderRepeatMode.customDays;
-      } else {
-        _repeatMode = ReminderRepeatMode.once;
-      }
-    }
-
-    if (widget.existingCustomDays != null && widget.existingCustomDays!.isNotEmpty) {
-      final days = widget.existingCustomDays!.split(',').map((e) => int.tryParse(e.trim())).whereType<int>();
-      _selectedDays.addAll(days);
-    }
-
-    final displayTitle = widget.noteTitle.trim().isNotEmpty ? widget.noteTitle.trim() : 'Note';
-    _msgController.text = displayTitle;
+    _msgController = TextEditingController(
+      text: widget.noteTitle.trim().isNotEmpty ? widget.noteTitle.trim() : 'Note',
+    );
+    _args = ReminderFormInitArgs(
+      existingReminderAt: widget.existingReminderAt,
+      existingRepeatMode: widget.existingRepeatMode,
+      existingCustomDays: widget.existingCustomDays,
+      noteTitle: widget.noteTitle,
+    );
   }
 
   @override
@@ -89,37 +55,209 @@ class _ReminderPageState extends ConsumerState<ReminderPage> {
     super.dispose();
   }
 
-  Future<void> _pickDate() async {
+  ReminderFormInitArgs get _initArgs => _args;
+
+  Future<void> _pickDate(ReminderFormNotifier notifier, DateTime currentDate) async {
+    final now = DateTime.now();
+    final firstDate = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 1));
+    final lastDate = now.add(const Duration(days: 365 * 5));
+
+    // Clamp both bottom and top bounds
+    var safeInitial = currentDate.isBefore(firstDate) ? firstDate : currentDate;
+    if (safeInitial.isAfter(lastDate)) safeInitial = lastDate;
+
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime.now().subtract(const Duration(days: 1)),
-      lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
+      initialDate: safeInitial,
+      firstDate: firstDate,
+      lastDate: lastDate,
     );
-    if (picked != null && mounted) setState(() => _selectedDate = picked);
+    if (picked != null) notifier.setDate(picked);
   }
 
-  Future<void> _pickTime() async {
+  Future<void> _pickTime(ReminderFormNotifier notifier, TimeOfDay currentTime) async {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
-      initialTime: _selectedTime,
+      initialTime: currentTime,
     );
-    if (picked != null && mounted) setState(() => _selectedTime = picked);
+    if (picked != null) notifier.setTime(picked);
   }
 
-  Future<void> _saveReminder() async {
-    if (_isSaving) return;
+  Future<void> _pickRepeatMode(
+    BuildContext context,
+    TapDownDetails details,
+    ReminderFormNotifier notifier,
+  ) async {
+    final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+    final RelativeRect position = RelativeRect.fromRect(
+      Rect.fromPoints(
+        details.globalPosition,
+        details.globalPosition,
+      ),
+      Offset.zero & overlay.size,
+    );
+
+    final selected = await showMenu<ReminderRepeatMode>(
+      context: context,
+      position: position,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      items: const [
+        PopupMenuItem(
+          value: ReminderRepeatMode.once,
+          child: Row(
+            children: [
+              Icon(Icons.looks_one_rounded, size: 18),
+              SizedBox(width: 8),
+              Text('Once'),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: ReminderRepeatMode.daily,
+          child: Row(
+            children: [
+              Icon(Icons.today_rounded, size: 18),
+              SizedBox(width: 8),
+              Text('Daily'),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: ReminderRepeatMode.weekly,
+          child: Row(
+            children: [
+              Icon(Icons.date_range_rounded, size: 18),
+              SizedBox(width: 8),
+              Text('Weekly'),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: ReminderRepeatMode.monthly,
+          child: Row(
+            children: [
+              Icon(Icons.calendar_view_month_rounded, size: 18),
+              SizedBox(width: 8),
+              Text('Monthly'),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: ReminderRepeatMode.yearly,
+          child: Row(
+            children: [
+              Icon(Icons.event_repeat_rounded, size: 18),
+              SizedBox(width: 8),
+              Text('Yearly'),
+            ],
+          ),
+        ),
+      ],
+    );
+
+    if (selected != null) {
+      notifier.setRepeatMode(selected);
+    }
+  }
+
+  Future<void> _pickMonthlyDay(ReminderFormNotifier notifier, int currentDay) async {
+    final selected = await showDialog<int>(
+      context: context,
+      builder: (ctx) {
+        final theme = Theme.of(ctx);
+        final colorScheme = theme.colorScheme;
+
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 300),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Select Day of Month',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 20),
+                        onPressed: () => Navigator.of(ctx).pop(),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: 31,
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 7,
+                      mainAxisSpacing: 6,
+                      crossAxisSpacing: 6,
+                      childAspectRatio: 1.0,
+                    ),
+                    itemBuilder: (ctx, index) {
+                      final dayNum = index + 1;
+                      final isSel = dayNum == currentDay;
+                      return InkWell(
+                        onTap: () => Navigator.of(ctx).pop(dayNum),
+                        borderRadius: BorderRadius.circular(8),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 150),
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: isSel
+                                ? colorScheme.primary
+                                : colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            '$dayNum',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
+                              color: isSel ? colorScheme.onPrimary : colorScheme.onSurface,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+    if (selected != null) {
+      notifier.setMonthlyDay(selected);
+    }
+  }
+
+  Future<void> _saveReminder(
+    ReminderFormState formState,
+    ReminderFormNotifier notifier,
+  ) async {
+    if (formState.isSaving) return;
 
     var finalDateTime = DateTime(
-      _selectedDate.year,
-      _selectedDate.month,
-      _selectedDate.day,
-      _selectedTime.hour,
-      _selectedTime.minute,
+      formState.selectedDate.year,
+      formState.selectedDate.month,
+      formState.selectedDate.day,
+      formState.selectedTime.hour,
+      formState.selectedTime.minute,
     );
 
     final now = DateTime.now();
-    if (_repeatMode == ReminderRepeatMode.once) {
+    if (formState.repeatMode == ReminderRepeatMode.once) {
       if (finalDateTime.isBefore(now)) {
         if (now.difference(finalDateTime).inMinutes < 1) {
           finalDateTime = now.add(const Duration(seconds: 5));
@@ -133,20 +271,49 @@ class _ReminderPageState extends ConsumerState<ReminderPage> {
       }
     }
 
-    if (_repeatMode == ReminderRepeatMode.customDays && _selectedDays.isEmpty) {
+    if (formState.repeatMode == ReminderRepeatMode.weekly && formState.selectedWeeklyDays.isEmpty) {
       SnackBarManager.show(
-        msg: 'Please select at least one day for repeat.',
+        msg: 'Please select at least one day for weekly repeat.',
         type: SnackBarMessageType.error,
       );
       return;
     }
 
-    setState(() => _isSaving = true);
+    notifier.setSaving(true);
 
     try {
       final messageText = _msgController.text.trim().isNotEmpty
           ? _msgController.text.trim()
           : (widget.noteTitle.trim().isNotEmpty ? widget.noteTitle.trim() : 'Note');
+
+      String? saveRepeatModeStr;
+      String? saveCustomDaysStr;
+      List<int>? selectedDaysList;
+
+      switch (formState.repeatMode) {
+        case ReminderRepeatMode.once:
+          saveRepeatModeStr = 'none';
+          saveCustomDaysStr = null;
+          break;
+        case ReminderRepeatMode.daily:
+          saveRepeatModeStr = 'daily';
+          saveCustomDaysStr = null;
+          break;
+        case ReminderRepeatMode.weekly:
+          saveRepeatModeStr = 'weekly';
+          selectedDaysList = formState.selectedWeeklyDays.toList()..sort();
+          saveCustomDaysStr = selectedDaysList.join(',');
+          break;
+        case ReminderRepeatMode.monthly:
+          saveRepeatModeStr = 'monthly';
+          selectedDaysList = [formState.selectedMonthlyDay];
+          saveCustomDaysStr = formState.selectedMonthlyDay.toString();
+          break;
+        case ReminderRepeatMode.yearly:
+          saveRepeatModeStr = 'yearly';
+          saveCustomDaysStr = null;
+          break;
+      }
 
       // 1. Schedule with Notification Manager
       final calculatedNextDate = await ReminderManager().scheduleForNote(
@@ -154,8 +321,8 @@ class _ReminderPageState extends ConsumerState<ReminderPage> {
         title: 'Note-It Reminder',
         message: messageText,
         date: finalDateTime,
-        repeatMode: _repeatMode,
-        selectedDays: _selectedDays.toList(),
+        repeatMode: formState.repeatMode,
+        selectedDays: selectedDaysList,
       );
 
       final saveDate = calculatedNextDate ?? finalDateTime;
@@ -164,14 +331,14 @@ class _ReminderPageState extends ConsumerState<ReminderPage> {
       await ref.read(notesDaoProvider).updateNoteReminder(
         widget.noteUuid,
         saveDate,
-        repeatMode: _repeatMode.name,
-        customDays: _repeatMode == ReminderRepeatMode.customDays ? _selectedDays.join(',') : null,
+        repeatMode: saveRepeatModeStr,
+        customDays: saveCustomDaysStr,
       );
 
       final formattedLabel = ReminderManager.formatReminderLabel(
         saveDate,
-        _repeatMode.name,
-        _repeatMode == ReminderRepeatMode.customDays ? _selectedDays.join(',') : null,
+        saveRepeatModeStr,
+        saveCustomDaysStr,
       );
       SnackBarManager.show(
         msg: 'Reminder set for $formattedLabel',
@@ -185,13 +352,12 @@ class _ReminderPageState extends ConsumerState<ReminderPage> {
         type: SnackBarMessageType.error,
       );
     } finally {
-      if (mounted) setState(() => _isSaving = false);
+      if (mounted) notifier.setSaving(false);
     }
   }
 
-  Future<void> _clearReminder() async {
-    if (_isSaving) return;
-    setState(() => _isSaving = true);
+  Future<void> _clearReminder(ReminderFormNotifier notifier) async {
+    notifier.setSaving(true);
 
     try {
       // 1. Cancel active local notifications
@@ -212,17 +378,53 @@ class _ReminderPageState extends ConsumerState<ReminderPage> {
         type: SnackBarMessageType.error,
       );
     } finally {
-      if (mounted) setState(() => _isSaving = false);
+      if (mounted) notifier.setSaving(false);
+    }
+  }
+
+  String _getRepeatModeLabel(ReminderRepeatMode mode) {
+    switch (mode) {
+      case ReminderRepeatMode.once:
+        return 'Once';
+      case ReminderRepeatMode.daily:
+        return 'Daily';
+      case ReminderRepeatMode.weekly:
+        return 'Weekly';
+      case ReminderRepeatMode.monthly:
+        return 'Monthly';
+      case ReminderRepeatMode.yearly:
+        return 'Yearly';
+    }
+  }
+
+  String _getDaySuffix(int day) {
+    if (day >= 11 && day <= 13) return 'th';
+    switch (day % 10) {
+      case 1:
+        return 'st';
+      case 2:
+        return 'nd';
+      case 3:
+        return 'rd';
+      default:
+        return 'th';
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final formState = ref.watch(reminderFormProvider(_initArgs));
+    final notifier = ref.read(reminderFormProvider(_initArgs).notifier);
+
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final hasExisting = widget.existingReminderAt != null;
-    final isDateDisabled = _repeatMode != ReminderRepeatMode.once;
     final screenHeight = MediaQuery.of(context).size.height;
+
+    final sentenceStyle = theme.textTheme.titleMedium?.copyWith(
+      height: 1.8,
+      fontWeight: FontWeight.w500,
+    );
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
@@ -233,7 +435,7 @@ class _ReminderPageState extends ConsumerState<ReminderPage> {
           maxHeight: screenHeight * 0.85,
         ),
         child: Padding(
-          padding: const EdgeInsets.all(20.0),
+          padding: const EdgeInsets.all(24.0),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -270,7 +472,7 @@ class _ReminderPageState extends ConsumerState<ReminderPage> {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
 
               // --- Scrollable Form Body ---
               Flexible(
@@ -279,7 +481,6 @@ class _ReminderPageState extends ConsumerState<ReminderPage> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SizedBox(height: 4),
                       // --- Message Input ---
                       TextField(
                         controller: _msgController,
@@ -287,247 +488,174 @@ class _ReminderPageState extends ConsumerState<ReminderPage> {
                           labelText: 'Reminder Message',
                           hintText: 'Enter reminder text...',
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(16),
                           ),
-                          prefixIcon: const Icon(Icons.edit_note),
+                          prefixIcon: const Icon(Icons.edit_note_rounded),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // --- Date & Time Selection ---
-                      Row(
-                        children: [
-                          Expanded(
-                            child: InkWell(
-                              onTap: isDateDisabled ? null : _pickDate,
-                              borderRadius: BorderRadius.circular(12),
-                              child: AnimatedOpacity(
-                                duration: const Duration(milliseconds: 200),
-                                opacity: isDateDisabled ? 0.4 : 1.0,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 12,
-                                    horizontal: 10,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: colorScheme.surfaceContainerHighest,
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: colorScheme.outlineVariant
-                                          .withValues(alpha: 0.5),
-                                    ),
-                                  ),
-                                  child: Column(
-                                    children: [
-                                      Icon(
-                                        Icons.calendar_today_rounded,
-                                        color: isDateDisabled
-                                            ? colorScheme.outline
-                                            : colorScheme.primary,
-                                        size: 20,
-                                      ),
-                                      const SizedBox(height: 6),
-                                      FittedBox(
-                                        fit: BoxFit.scaleDown,
-                                        child: Text(
-                                          isDateDisabled
-                                              ? 'Every Day'
-                                              : DateFormat('MMM dd, yyyy')
-                                                  .format(_selectedDate),
-                                          style: theme.textTheme.titleSmall
-                                              ?.copyWith(
-                                            fontWeight: FontWeight.w600,
-                                            color: isDateDisabled
-                                                ? colorScheme.outline
-                                                : colorScheme.onSurface,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: InkWell(
-                              onTap: _pickTime,
-                              borderRadius: BorderRadius.circular(12),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 12,
-                                  horizontal: 10,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: colorScheme.surfaceContainerHighest,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: colorScheme.outlineVariant
-                                        .withValues(alpha: 0.5),
-                                  ),
-                                ),
-                                child: Column(
-                                  children: [
-                                    Icon(
-                                      Icons.access_time_rounded,
-                                      color: colorScheme.primary,
-                                      size: 20,
-                                    ),
-                                    const SizedBox(height: 6),
-                                    FittedBox(
-                                      fit: BoxFit.scaleDown,
-                                      child: Text(
-                                        _selectedTime.format(context),
-                                        style: theme.textTheme.titleSmall
-                                            ?.copyWith(
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
                       ),
                       const SizedBox(height: 20),
 
-                      // --- Repeat Options ---
-                      Text(
-                        'Repeat',
-                        style: theme.textTheme.labelLarge?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      SizedBox(
+                      // --- Conversational "Mad Libs" Sentence UI ---
+                      Container(
                         width: double.infinity,
-                        child: SegmentedButton<ReminderRepeatMode>(
-                          showSelectedIcon: false,
-                          segments: const [
-                            ButtonSegment(
-                              value: ReminderRepeatMode.once,
-                              label: Text('Once'),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surfaceContainerLow,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                          ),
+                        ),
+                        child: Wrap(
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          runSpacing: 10,
+                          spacing: 6,
+                          children: [
+                            Text('Remind me ', style: sentenceStyle),
+                            Builder(
+                              builder: (chipContext) => ConversationalChip(
+                                label: _getRepeatModeLabel(formState.repeatMode),
+                                icon: Icons.repeat_rounded,
+                                onTapDown: (details) => _pickRepeatMode(chipContext, details, notifier),
+                              ),
                             ),
-                            ButtonSegment(
-                              value: ReminderRepeatMode.daily,
-                              label: Text('Daily'),
-                            ),
-                            ButtonSegment(
-                              value: ReminderRepeatMode.customDays,
-                              label: Text('Custom'),
-                            ),
+                            if (formState.repeatMode == ReminderRepeatMode.once) ...[
+                              Text(' on ', style: sentenceStyle),
+                              ConversationalChip(
+                                label: DateFormat('MMM d, yyyy').format(formState.selectedDate),
+                                icon: Icons.calendar_today_rounded,
+                                onTap: () => _pickDate(notifier, formState.selectedDate),
+                              ),
+                              Text(' at ', style: sentenceStyle),
+                              ConversationalChip(
+                                label: formState.selectedTime.format(context),
+                                icon: Icons.access_time_rounded,
+                                onTap: () => _pickTime(notifier, formState.selectedTime),
+                              ),
+                              Text('.', style: sentenceStyle),
+                            ] else if (formState.repeatMode == ReminderRepeatMode.daily) ...[
+                              Text(' starting ', style: sentenceStyle),
+                              ConversationalChip(
+                                label: DateFormat('MMM d, yyyy').format(formState.selectedDate),
+                                icon: Icons.calendar_today_rounded,
+                                onTap: () => _pickDate(notifier, formState.selectedDate),
+                              ),
+                              Text(' at ', style: sentenceStyle),
+                              ConversationalChip(
+                                label: formState.selectedTime.format(context),
+                                icon: Icons.access_time_rounded,
+                                onTap: () => _pickTime(notifier, formState.selectedTime),
+                              ),
+                              Text('.', style: sentenceStyle),
+                            ] else if (formState.repeatMode == ReminderRepeatMode.weekly) ...[
+                              Text(' on the selected days at ', style: sentenceStyle),
+                              ConversationalChip(
+                                label: formState.selectedTime.format(context),
+                                icon: Icons.access_time_rounded,
+                                onTap: () => _pickTime(notifier, formState.selectedTime),
+                              ),
+                              Text('.', style: sentenceStyle),
+                            ] else if (formState.repeatMode == ReminderRepeatMode.monthly) ...[
+                              Text(' on the ', style: sentenceStyle),
+                              ConversationalChip(
+                                label: '${formState.selectedMonthlyDay}${_getDaySuffix(formState.selectedMonthlyDay)}',
+                                icon: Icons.calendar_view_month_rounded,
+                                onTap: () => _pickMonthlyDay(notifier, formState.selectedMonthlyDay),
+                              ),
+                              Text(' of every month at ', style: sentenceStyle),
+                              ConversationalChip(
+                                label: formState.selectedTime.format(context),
+                                icon: Icons.access_time_rounded,
+                                onTap: () => _pickTime(notifier, formState.selectedTime),
+                              ),
+                              Text('.', style: sentenceStyle),
+                            ] else if (formState.repeatMode == ReminderRepeatMode.yearly) ...[
+                              Text(' every year on ', style: sentenceStyle),
+                              ConversationalChip(
+                                label: DateFormat('MMM d').format(formState.selectedDate),
+                                icon: Icons.event_repeat_rounded,
+                                onTap: () => _pickDate(notifier, formState.selectedDate),
+                              ),
+                              Text(' at ', style: sentenceStyle),
+                              ConversationalChip(
+                                label: formState.selectedTime.format(context),
+                                icon: Icons.access_time_rounded,
+                                onTap: () => _pickTime(notifier, formState.selectedTime),
+                              ),
+                              Text('.', style: sentenceStyle),
+                            ],
                           ],
-                          selected: {_repeatMode},
-                          onSelectionChanged:
-                              (Set<ReminderRepeatMode> newSelection) {
-                            setState(() => _repeatMode = newSelection.first);
-                          },
                         ),
                       ),
 
-                      // --- Custom Days Picker ---
-                      if (_repeatMode == ReminderRepeatMode.customDays) ...[
+                      // --- Weekly Day Selector ---
+                      if (formState.repeatMode == ReminderRepeatMode.weekly) ...[
                         const SizedBox(height: 16),
                         Text(
-                          'Select Days',
-                          style: theme.textTheme.labelLarge?.copyWith(
+                          'Repeat Days:',
+                          style: theme.textTheme.labelMedium?.copyWith(
                             color: colorScheme.onSurfaceVariant,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                         const SizedBox(height: 8),
-                        Row(
-                          children: _weekDays.entries.map((entry) {
-                            final isSelected =
-                                _selectedDays.contains(entry.key);
-                            return Expanded(
-                              child: Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 2.0),
-                                child: AspectRatio(
-                                  aspectRatio: 1.0,
-                                  child: Material(
-                                    color: isSelected
-                                        ? colorScheme.primary
-                                        : colorScheme.surfaceContainerHighest,
-                                    shape: const CircleBorder(),
-                                    clipBehavior: Clip.antiAlias,
-                                    child: InkWell(
-                                      onTap: () {
-                                        setState(() {
-                                          if (isSelected) {
-                                            _selectedDays.remove(entry.key);
-                                          } else {
-                                            _selectedDays.add(entry.key);
-                                          }
-                                        });
-                                      },
-                                      child: Center(
-                                        child: Text(
-                                          entry.value,
-                                          style: theme.textTheme.labelMedium
-                                              ?.copyWith(
-                                            fontWeight: FontWeight.bold,
-                                            color: isSelected
-                                                ? colorScheme.onPrimary
-                                                : colorScheme.onSurfaceVariant,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
+                        Wrap(
+                          alignment: WrapAlignment.spaceEvenly,
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: [
+                            for (int day = 1; day <= 7; day++)
+                              FilterChip(
+                                label: Text(_weekDays[day]!),
+                                selected: formState.selectedWeeklyDays.contains(day),
+                                onSelected: (_) => notifier.toggleWeeklyDay(day),
+                                visualDensity: VisualDensity.compact,
+                                showCheckmark: false,
                               ),
-                            );
-                          }).toList(),
+                          ],
                         ),
                       ],
-                      const SizedBox(height: 8),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
 
-              // --- Action Buttons ---
-              Wrap(
-                alignment: WrapAlignment.end,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: 8,
-                runSpacing: 8,
+              // --- Actions ---
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  if (hasExisting)
-                    TextButton.icon(
-                      onPressed: _isSaving ? null : _clearReminder,
-                      icon: Icon(
-                        Icons.delete_outline_rounded,
-                        color: colorScheme.error,
-                        size: 18,
-                      ),
-                      label: Text(
-                        'Clear',
-                        style: TextStyle(color: colorScheme.error),
+                  if (hasExisting) ...[
+                    OutlinedButton.icon(
+                      onPressed: formState.isSaving ? null : () => _clearReminder(notifier),
+                      icon: const Icon(Icons.delete_outline, size: 18),
+                      label: const Text('Clear'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: colorScheme.error,
+                        side: BorderSide(color: colorScheme.error),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       ),
                     ),
+                    const Spacer(),
+                  ],
                   TextButton(
-                    onPressed: _isSaving
-                        ? null
-                        : () => Navigator.of(context).pop(),
+                    onPressed: formState.isSaving ? null : () => Navigator.of(context).pop(),
                     child: const Text('Cancel'),
                   ),
-                  FilledButton(
-                    onPressed: _isSaving ? null : _saveReminder,
-                    child: _isSaving
+                  const SizedBox(width: 8),
+                  FilledButton.icon(
+                    onPressed: formState.isSaving ? null : () => _saveReminder(formState, notifier),
+                    icon: formState.isSaving
                         ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                            ),
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                           )
-                        : const Text('Save Reminder'),
+                        : const Icon(Icons.check_rounded, size: 18),
+                    label: Text(formState.isSaving ? 'Saving...' : 'Set Reminder'),
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    ),
                   ),
                 ],
               ),

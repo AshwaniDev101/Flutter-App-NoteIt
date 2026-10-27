@@ -1,14 +1,19 @@
 import 'dart:io';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/router/router.dart';
+import '../../database/drift/notes/notes_dao.dart';
 import '../../database/shared_preference/shared_preference_manager.dart';
 
 import '../../shared/overlays/app_scaffold.dart';
 import '../../shared/overlays/snack_bar_manager.dart';
+import '../home/core/providers.dart';
 import '../home/view/desktop/content_panel/core/navigator.dart';
+import 'reminder_manager.dart';
 
 class ReminderSettingsPage extends ConsumerStatefulWidget {
   const ReminderSettingsPage({super.key});
@@ -52,6 +57,7 @@ class _ReminderSettingsPageState extends ConsumerState<ReminderSettingsPage> {
   }
 
   Future<void> _pickCustomSound() async {
+    await _stopTestAudio();
     try {
       final PlatformFile? file = await FilePicker.pickFile(
         type: FileType.custom,
@@ -137,11 +143,178 @@ class _ReminderSettingsPageState extends ConsumerState<ReminderSettingsPage> {
     if (mounted) setState(() => _isPlayingTest = false);
   }
 
+  Future<void> _showActiveRemindersModal() async {
+    final notesDao = ref.read(notesDaoProvider);
+    final pendingNotes = await notesDao.getNotesWithPendingReminders();
+
+    if (!mounted) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (modalCtx, modalSetState) {
+            final theme = Theme.of(modalCtx);
+            final colorScheme = theme.colorScheme;
+
+            return Container(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(modalCtx).size.height * 0.75,
+              ),
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.alarm_on_rounded, color: colorScheme.primary),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Active Reminders (${pendingNotes.length})',
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.of(modalCtx).pop(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  if (pendingNotes.isEmpty) ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 32.0),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.notifications_off_outlined,
+                            size: 48,
+                            color: colorScheme.outline,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'No active reminders scheduled',
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ] else ...[
+                    Expanded(
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        itemCount: pendingNotes.length,
+                        separatorBuilder: (ctx, index) => const Divider(height: 1),
+                        itemBuilder: (context, index) {
+                          final noteWithFolder = pendingNotes[index];
+                          final note = noteWithFolder.note;
+                          final reminderAt = note.reminderAt;
+
+                          final formattedDate = reminderAt != null
+                              ? ReminderManager.formatReminderLabel(
+                                  reminderAt,
+                                  note.reminderRepeatMode,
+                                  note.reminderCustomDays,
+                                )
+                              : '';
+
+                          return ListTile(
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            title: Text(
+                              note.title.isNotEmpty ? note.title : 'Untitled Note',
+                              style: const TextStyle(fontWeight: FontWeight.w600),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            subtitle: Row(
+                              children: [
+                                Icon(
+                                  Icons.access_time_rounded,
+                                  size: 14,
+                                  color: colorScheme.primary,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  formattedDate,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: colorScheme.primary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.alarm_off_rounded, size: 20),
+                              color: colorScheme.error,
+                              tooltip: 'Clear Reminder',
+                              onPressed: () async {
+                                await ReminderManager().cancelForNote(note.uuid);
+                                await notesDao.updateNoteReminder(note.uuid, null);
+                                modalSetState(() {
+                                  pendingNotes.removeAt(index);
+                                });
+                                SnackBarManager.show(
+                                  msg: 'Reminder cleared',
+                                  type: SnackBarMessageType.acknowledgment,
+                                );
+                              },
+                            ),
+                            onTap: () {
+                              Navigator.of(modalCtx).pop();
+                              ref.read(activeNoteProvider.notifier).setNote(noteWithFolder);
+                              if (!kIsWeb &&
+                                  (Platform.isWindows ||
+                                      Platform.isMacOS ||
+                                      Platform.isLinux)) {
+                                ref
+                                    .read(desktopRightPanelViewProvider.notifier)
+                                    .setView(RightPanelPageOptions.noteEditor);
+                              } else {
+                                Navigator.of(context).pushNamed(
+                                  AppRoutes.edit,
+                                  arguments: noteWithFolder,
+                                );
+                              }
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
+
+    final isDesktop = !kIsWeb &&
+        (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
 
     return AppScaffold.rightPanel(
       option: RightPanelPageOptions.reminderSettings,
@@ -355,36 +528,41 @@ class _ReminderSettingsPageState extends ConsumerState<ReminderSettingsPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // --- Ring Timeout / Auto-Stop ---
-                          Text(
-                            'Desktop Ring Duration (Auto-Stop Timeout)',
-                            style: textTheme.titleSmall
-                                ?.copyWith(fontWeight: FontWeight.w600),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Controls how long the alarm audio loops on desktop before auto-stopping',
-                            style: textTheme.bodySmall?.copyWith(
-                                color: colorScheme.onSurfaceVariant),
-                          ),
-                          const SizedBox(height: 12),
-                          SegmentedButton<int>(
-                            segments: const [
-                              ButtonSegment(value: 10, label: Text('10 sec')),
-                              ButtonSegment(value: 30, label: Text('30 sec')),
-                              ButtonSegment(value: 60, label: Text('60 sec')),
-                              ButtonSegment(value: 120, label: Text('2 min')),
-                            ],
-                            selected: {_durationSeconds},
-                            onSelectionChanged: (newSelection) async {
-                              final val = newSelection.first;
-                              setState(() => _durationSeconds = val);
-                              await _prefs.setReminderDurationSeconds(val);
-                            },
-                          ),
-                          const SizedBox(height: 20),
-                          const Divider(),
-                          const SizedBox(height: 16),
+                          // --- Ring Timeout / Auto-Stop (Desktop Only) ---
+                          if (isDesktop) ...[
+                            Text(
+                              'Desktop Ring Duration (Auto-Stop Timeout)',
+                              style: textTheme.titleSmall
+                                  ?.copyWith(fontWeight: FontWeight.w600),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Controls how long the alarm audio loops on desktop before auto-stopping',
+                              style: textTheme.bodySmall?.copyWith(
+                                  color: colorScheme.onSurfaceVariant),
+                            ),
+                            const SizedBox(height: 12),
+                            SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: SegmentedButton<int>(
+                                segments: const [
+                                  ButtonSegment(value: 10, label: Text('10 sec')),
+                                  ButtonSegment(value: 30, label: Text('30 sec')),
+                                  ButtonSegment(value: 60, label: Text('60 sec')),
+                                  ButtonSegment(value: 120, label: Text('2 min')),
+                                ],
+                                selected: {_durationSeconds},
+                                onSelectionChanged: (newSelection) async {
+                                  final val = newSelection.first;
+                                  setState(() => _durationSeconds = val);
+                                  await _prefs.setReminderDurationSeconds(val);
+                                },
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            const Divider(),
+                            const SizedBox(height: 16),
+                          ],
 
                           // --- Default Repeat Mode ---
                           Text(
@@ -399,20 +577,80 @@ class _ReminderSettingsPageState extends ConsumerState<ReminderSettingsPage> {
                                 color: colorScheme.onSurfaceVariant),
                           ),
                           const SizedBox(height: 12),
-                          SegmentedButton<String>(
-                            segments: const [
-                              ButtonSegment(value: 'once', label: Text('Once')),
-                              ButtonSegment(
-                                  value: 'daily', label: Text('Daily')),
-                              ButtonSegment(
-                                  value: 'custom', label: Text('Custom')),
-                            ],
-                            selected: {_defaultRepeatMode},
-                            onSelectionChanged: (newSelection) async {
-                              final val = newSelection.first;
-                              setState(() => _defaultRepeatMode = val);
-                              await _prefs.setDefaultRepeatMode(val);
-                            },
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: SegmentedButton<String>(
+                              segments: const [
+                                ButtonSegment(value: 'once', label: Text('Once')),
+                                ButtonSegment(
+                                    value: 'daily', label: Text('Daily')),
+                                ButtonSegment(
+                                    value: 'custom', label: Text('Custom')),
+                              ],
+                              selected: {_defaultRepeatMode},
+                              onSelectionChanged: (newSelection) async {
+                                final val = newSelection.first;
+                                setState(() => _defaultRepeatMode = val);
+                                await _prefs.setDefaultRepeatMode(val);
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // ==================== MANAGE ACTIVE REMINDERS ====================
+                  Card(
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(
+                        color:
+                            colorScheme.outlineVariant.withValues(alpha: 0.5),
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: colorScheme.secondaryContainer,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              Icons.event_note_rounded,
+                              color: colorScheme.onSecondaryContainer,
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Active Reminders',
+                                  style: textTheme.titleMedium
+                                      ?.copyWith(fontWeight: FontWeight.w600),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'View and manage all notes with active scheduled alarms',
+                                  style: textTheme.bodySmall?.copyWith(
+                                      color: colorScheme.onSurfaceVariant),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          FilledButton.tonalIcon(
+                            onPressed: _showActiveRemindersModal,
+                            icon: const Icon(Icons.list_alt_rounded, size: 18),
+                            label: const Text('Manage'),
                           ),
                         ],
                       ),

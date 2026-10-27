@@ -19,7 +19,10 @@ class ReminderOverlayWidget extends ConsumerWidget {
     if (reminderAt == null) return const SizedBox.shrink();
 
     final repeatMode = note.reminderRepeatMode;
-    final isRepeating = repeatMode == 'daily' || repeatMode == 'customDays';
+    final isRepeating = repeatMode != null &&
+        repeatMode != 'none' &&
+        repeatMode != 'once' &&
+        repeatMode.trim().isNotEmpty;
     final isPast = reminderAt.isBefore(DateTime.now());
 
     // Hide one-time reminders that have already passed

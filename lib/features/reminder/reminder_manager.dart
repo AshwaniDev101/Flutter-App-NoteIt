@@ -16,7 +16,7 @@ import '../../database/shared_preference/shared_preference_manager.dart';
 import '../home/core/providers.dart';
 import '../home/view/desktop/content_panel/core/navigator.dart';
 
-enum ReminderRepeatMode { once, daily, customDays }
+enum ReminderRepeatMode { once, daily, weekly, monthly, yearly }
 
 class ReminderManager {
   static final ReminderManager _instance = ReminderManager._internal();
@@ -239,16 +239,59 @@ class ReminderManager {
   /// Unique notification integer ID derived from string note UUID
   int getNotificationId(String noteUuid) => noteUuid.hashCode.abs() % 2147483647;
 
+  /// Unique notification integer ID for a specific day of weekly repeating reminder
+  int getWeeklyDayNotificationId(String noteUuid, int day) =>
+      ('${noteUuid}_day_$day').hashCode.abs() % 2147483647;
+
   static String formatReminderLabel(DateTime reminderAt, String? repeatMode, String? customDays) {
     final timeStr = DateFormat('h:mm a').format(reminderAt);
 
     if (repeatMode == 'daily') {
       return 'Daily, $timeStr';
-    } else if (repeatMode == 'customDays' || repeatMode == 'custom') {
+    } else if (repeatMode == 'weekly' || repeatMode == 'customDays' || repeatMode == 'custom') {
+      if (customDays != null && customDays.trim().isNotEmpty) {
+        final daysList = customDays
+            .split(',')
+            .map((e) => int.tryParse(e.trim()))
+            .whereType<int>()
+            .toList();
+        daysList.sort();
+        const dayNames = {1: 'Mon', 2: 'Tue', 3: 'Wed', 4: 'Thu', 5: 'Fri', 6: 'Sat', 7: 'Sun'};
+        final formattedDays = daysList.map((d) => dayNames[d] ?? '').where((s) => s.isNotEmpty).join(', ');
+        if (formattedDays.isNotEmpty) {
+          return '$formattedDays, $timeStr';
+        }
+      }
       return 'Weekly, $timeStr';
+    } else if (repeatMode == 'monthly') {
+      final dayNum = customDays != null ? (int.tryParse(customDays) ?? reminderAt.day) : reminderAt.day;
+      final suffix = _getDaySuffix(dayNum);
+      return 'Monthly ($dayNum$suffix), $timeStr';
+    } else if (repeatMode == 'yearly') {
+      final monthDay = DateFormat('MMM d').format(reminderAt);
+      return 'Yearly ($monthDay), $timeStr';
     } else {
       return DateFormat('MMM d, h:mm a').format(reminderAt);
     }
+  }
+
+  static String _getDaySuffix(int day) {
+    if (day >= 11 && day <= 13) return 'th';
+    switch (day % 10) {
+      case 1:
+        return 'st';
+      case 2:
+        return 'nd';
+      case 3:
+        return 'rd';
+      default:
+        return 'th';
+    }
+  }
+
+  static int _clampDay(int year, int month, int day) {
+    final daysInMonth = DateTime(year, month + 1, 0).day;
+    return day > daysInMonth ? daysInMonth : (day < 1 ? 1 : day);
   }
 
   static DateTime _nextDailyOccurrence(DateTime targetTime) {
@@ -281,6 +324,65 @@ class ReminderManager {
     return candidate;
   }
 
+  static DateTime _nextMonthlyOccurrence(DateTime targetTime, int targetDay) {
+    final now = DateTime.now();
+    int year = now.year;
+    int month = now.month;
+
+    int clampedDay = _clampDay(year, month, targetDay);
+    DateTime candidate = DateTime(
+      year,
+      month,
+      clampedDay,
+      targetTime.hour,
+      targetTime.minute,
+    );
+
+    if (candidate.isBefore(now) || candidate.isAtSameMomentAs(now)) {
+      month++;
+      if (month > 12) {
+        month = 1;
+        year++;
+      }
+      clampedDay = _clampDay(year, month, targetDay);
+      candidate = DateTime(
+        year,
+        month,
+        clampedDay,
+        targetTime.hour,
+        targetTime.minute,
+      );
+    }
+    return candidate;
+  }
+
+  static DateTime _nextYearlyOccurrence(DateTime targetTime, int targetMonth, int targetDay) {
+    final now = DateTime.now();
+    int year = now.year;
+
+    int clampedDay = _clampDay(year, targetMonth, targetDay);
+    DateTime candidate = DateTime(
+      year,
+      targetMonth,
+      clampedDay,
+      targetTime.hour,
+      targetTime.minute,
+    );
+
+    if (candidate.isBefore(now) || candidate.isAtSameMomentAs(now)) {
+      year++;
+      clampedDay = _clampDay(year, targetMonth, targetDay);
+      candidate = DateTime(
+        year,
+        targetMonth,
+        clampedDay,
+        targetTime.hour,
+        targetTime.minute,
+      );
+    }
+    return candidate;
+  }
+
   /// High-level method to schedule a reminder tied to a Note UUID
   Future<DateTime?> scheduleForNote({
     required String noteUuid,
@@ -305,7 +407,7 @@ class ReminderManager {
   /// High-level method to cancel a reminder for a Note UUID
   Future<void> cancelForNote(String noteUuid) async {
     final int baseId = getNotificationId(noteUuid);
-    await cancelReminder(baseId);
+    await cancelReminder(baseId, noteUuid: noteUuid);
   }
 
   /// 3. Scheduling notifications
@@ -322,7 +424,7 @@ class ReminderManager {
     final hasPermission = await requestPermission();
     if (!hasPermission) return null;
 
-    await cancelReminder(baseId);
+    await cancelReminder(baseId, noteUuid: noteUuid);
 
     final NotificationDetails details = NotificationDetails(
       android: AndroidNotificationDetails(
@@ -412,14 +514,14 @@ class ReminderManager {
         );
         return nextDate;
 
-      case ReminderRepeatMode.customDays:
+      case ReminderRepeatMode.weekly:
         if (selectedDays == null || selectedDays.isEmpty) return null;
 
         DateTime? earliestNextDate;
         for (int day in selectedDays) {
           final nextDate = _nextWeekdayOccurrence(date, day);
           final nextTz = tz.TZDateTime.from(nextDate, tz.local);
-          final int uniqueId = (baseId * 10) + day;
+          final int uniqueId = getWeeklyDayNotificationId(noteUuid, day);
 
           await scheduleNotification(
             id: uniqueId,
@@ -433,6 +535,29 @@ class ReminderManager {
           }
         }
         return earliestNextDate;
+
+      case ReminderRepeatMode.monthly:
+        final targetDay = selectedDays != null && selectedDays.isNotEmpty ? selectedDays.first : date.day;
+        final nextDate = _nextMonthlyOccurrence(date, targetDay);
+        final nextTz = tz.TZDateTime.from(nextDate, tz.local);
+        await scheduleNotification(
+          id: baseId,
+          time: nextTz,
+          targetDate: nextDate,
+          matchComponents: DateTimeComponents.dayOfMonthAndTime,
+        );
+        return nextDate;
+
+      case ReminderRepeatMode.yearly:
+        final nextDate = _nextYearlyOccurrence(date, date.month, date.day);
+        final nextTz = tz.TZDateTime.from(nextDate, tz.local);
+        await scheduleNotification(
+          id: baseId,
+          time: nextTz,
+          targetDate: nextDate,
+          matchComponents: DateTimeComponents.dateAndTime,
+        );
+        return nextDate;
     }
   }
 
@@ -488,19 +613,18 @@ class ReminderManager {
     });
   }
 
-  Future<void> cancelReminder(int baseId) async {
+  Future<void> cancelReminder(int baseId, {String? noteUuid}) async {
     await _ensureInitialized();
     await stopAlarmSound();
 
-    // Cancel system schedule
+    // Cancel base system schedule and desktop timer
     try {
       await _notificationsPlugin.cancel(id: baseId);
     } catch (_) {}
-
-    // Cancel in-memory desktop timer
     _desktopTimers[baseId]?.cancel();
     _desktopTimers.remove(baseId);
 
+    // Cancel weekly numeric subIDs (baseId * 10 + i)
     for (int i = 1; i <= 7; i++) {
       final subId = (baseId * 10) + i;
       try {
@@ -508,6 +632,18 @@ class ReminderManager {
       } catch (_) {}
       _desktopTimers[subId]?.cancel();
       _desktopTimers.remove(subId);
+    }
+
+    // Cancel weekly hashed string subIDs if noteUuid provided
+    if (noteUuid != null && noteUuid.isNotEmpty) {
+      for (int i = 1; i <= 7; i++) {
+        final subId = getWeeklyDayNotificationId(noteUuid, i);
+        try {
+          await _notificationsPlugin.cancel(id: subId);
+        } catch (_) {}
+        _desktopTimers[subId]?.cancel();
+        _desktopTimers.remove(subId);
+      }
     }
   }
 
@@ -523,13 +659,13 @@ class ReminderManager {
 
       if (repeatMode == 'daily') {
         final currentReminder = note.reminderAt ?? DateTime.now();
-        final nextDate = currentReminder.add(const Duration(days: 1));
+        final nextDate = _nextDailyOccurrence(currentReminder);
         await container.read(notesDaoProvider).updateNoteReminder(
               noteUuid,
               nextDate,
               repeatMode: 'daily',
             );
-      } else if (repeatMode == 'customDays' && note.reminderCustomDays != null) {
+      } else if ((repeatMode == 'weekly' || repeatMode == 'customDays') && note.reminderCustomDays != null) {
         final currentReminder = note.reminderAt ?? DateTime.now();
         final days = note.reminderCustomDays!
             .split(',')
@@ -542,12 +678,30 @@ class ReminderManager {
           await container.read(notesDaoProvider).updateNoteReminder(
                 noteUuid,
                 nextTz.toLocal(),
-                repeatMode: 'customDays',
+                repeatMode: 'weekly',
                 customDays: note.reminderCustomDays,
               );
         } else {
           await container.read(notesDaoProvider).updateNoteReminder(noteUuid, null);
         }
+      } else if (repeatMode == 'monthly') {
+        final currentReminder = note.reminderAt ?? DateTime.now();
+        final day = int.tryParse(note.reminderCustomDays ?? '') ?? currentReminder.day;
+        final nextDate = _nextMonthlyOccurrence(currentReminder, day);
+        await container.read(notesDaoProvider).updateNoteReminder(
+              noteUuid,
+              nextDate,
+              repeatMode: 'monthly',
+              customDays: day.toString(),
+            );
+      } else if (repeatMode == 'yearly') {
+        final currentReminder = note.reminderAt ?? DateTime.now();
+        final nextDate = _nextYearlyOccurrence(currentReminder, currentReminder.month, currentReminder.day);
+        await container.read(notesDaoProvider).updateNoteReminder(
+              noteUuid,
+              nextDate,
+              repeatMode: 'yearly',
+            );
       } else {
         // One-time reminder: auto-clear in SQLite database
         await container.read(notesDaoProvider).updateNoteReminder(noteUuid, null);
@@ -555,14 +709,17 @@ class ReminderManager {
     } catch (e) {
       debugPrint('Error processing triggered reminder for note ($noteUuid): $e');
     }
+
+    // Re-arm desktop timers for the newly calculated future dates
+    if (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
+      await rearmPendingReminders();
+    }
   }
 
   tz.TZDateTime _nextInstanceOfCustomDays(tz.TZDateTime from, List<int> days) {
+    final now = DateTime.now();
     tz.TZDateTime candidate = from.add(const Duration(days: 1));
-    for (int i = 0; i < 7; i++) {
-      if (days.contains(candidate.weekday)) {
-        return candidate;
-      }
+    while (candidate.isBefore(now) || candidate.isAtSameMomentAs(now) || !days.contains(candidate.weekday)) {
       candidate = candidate.add(const Duration(days: 1));
     }
     return candidate;
