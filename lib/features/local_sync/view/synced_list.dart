@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/helpers/time_helper.dart';
 import '../../../database/drift/synced_devices/synced_devices_dao.dart';
 import '../../../shared/overlays/snack_bar_manager.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
@@ -10,9 +11,7 @@ class SyncedDevicesListView extends ConsumerWidget {
   const SyncedDevicesListView({super.key});
 
   String _formatDate(DateTime? date) {
-    if (date == null) return 'Never';
-    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')} '
-        '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+    return TimeHelper.formatFullDateTime(date);
   }
 
   IconData _getPlatformIcon(String? platform) {

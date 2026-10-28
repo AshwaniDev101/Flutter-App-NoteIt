@@ -7,7 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:window_manager/window_manager.dart';
 
-import '../../../../core/util/platform_helper.dart';
+import '../../../../core/helpers/platform_helper.dart';
+import '../../../../core/helpers/time_helper.dart';
 import '../../../../database/drift/local_database.dart';
 import '../../../../database/drift/notes/notes_dao.dart';
 import '../../../../shared/app_bars/desktop_window_controls.dart';
@@ -329,11 +330,7 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
 
   String _getFormattedDate() {
     final now = _currentNoteWithFolder?.note.updatedAt ?? _currentNoteWithFolder?.note.createdAt ?? DateTime.now();
-    if (_isNewNote) {
-      return '${now.month}/${now.day}/${now.year}';
-    }
-    final minuteStr = now.minute.toString().padLeft(2, '0');
-    return '${now.month}/${now.day}/${now.year} ${now.hour}:$minuteStr';
+    return TimeHelper.formatEditorDate(now, isNewNote: _isNewNote);
   }
 
   // =============================================================================

@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
-import '../../core/util/platform_helper.dart';
+import '../../core/helpers/platform_helper.dart';
 import '../../database/shared_preference/shared_preference_manager.dart';
 import '../reminder/reminder_manager.dart';
 

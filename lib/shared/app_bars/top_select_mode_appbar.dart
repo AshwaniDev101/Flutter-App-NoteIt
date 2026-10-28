@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/util/platform_helper.dart';
+import '../../core/helpers/platform_helper.dart';
 import '../../features/lock/lock_manger/lock_manager.dart';
 import '../../features/lock/password_prompt_helper.dart';
 import '../../features/home/core/providers.dart';

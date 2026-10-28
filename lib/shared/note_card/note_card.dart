@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:noteit/core/helpers/time_helper.dart';
-import 'package:noteit/core/util/platform_helper.dart';
+import 'package:noteit/core/helpers/platform_helper.dart';
 import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/database/drift/notes/notes_dao.dart';
 import 'package:noteit/features/home/core/providers.dart';
@@ -436,21 +436,24 @@ class _NoteCardState extends ConsumerState<NoteCard> {
         final List<dynamic> decoded = jsonDecode(_note.content);
         final itemsToRender = maxLines != null ? decoded.take(maxLines).toList() : decoded;
 
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: itemsToRender.map((item) {
-            final isChecked = item['isChecked'] == true;
-            final text = item['text'] as String? ?? '';
+        return SingleChildScrollView(
+          physics: const NeverScrollableScrollPhysics(),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: itemsToRender.map((item) {
+              final isChecked = item['isChecked'] == true;
+              final text = item['text'] as String? ?? '';
 
-            return Text(
-              '${isChecked ? "◆" : "◇"} $text',
-              maxLines: 1,
-              softWrap: false,
-              overflow: TextOverflow.ellipsis,
-              style: textTheme,
-            );
-          }).toList(),
+              return Text(
+                '${isChecked ? "◆" : "◇"} $text',
+                maxLines: 1,
+                softWrap: false,
+                overflow: TextOverflow.ellipsis,
+                style: textTheme,
+              );
+            }).toList(),
+          ),
         );
       } catch (_) {
         // Fall back to standard text rendering if JSON parsing fails.

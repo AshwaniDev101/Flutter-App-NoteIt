@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:window_manager/window_manager.dart';
 
-import '../../../core/util/platform_helper.dart';
+import '../../../core/helpers/platform_helper.dart';
 import '../../../database/shared_preference/shared_preference_manager.dart';
 import '../../../shared/overlays/app_scaffold.dart';
 import '../../../shared/overlays/snack_bar_manager.dart';

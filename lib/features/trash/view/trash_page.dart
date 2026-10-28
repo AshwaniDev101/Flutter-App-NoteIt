@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/util/platform_helper.dart';
+import '../../../core/helpers/platform_helper.dart';
 import '../../../database/drift/folders/folders_dao.dart';
 import '../../../database/drift/local_database.dart';
 import '../../../database/drift/notes/notes_dao.dart';

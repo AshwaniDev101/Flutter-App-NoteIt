@@ -5,7 +5,7 @@ import 'package:window_manager/window_manager.dart';
 
 import 'package:noteit/shared/app_bars/desktop_window_controls.dart';
 
-import 'package:noteit/core/util/platform_helper.dart';
+import 'package:noteit/core/helpers/platform_helper.dart';
 import 'package:noteit/database/drift/notes/notes_dao.dart';
 import 'package:noteit/features/backup/export_page.dart';
 import 'package:noteit/features/backup/import_page.dart';

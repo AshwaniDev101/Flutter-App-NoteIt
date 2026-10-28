@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/util/platform_helper.dart';
+import '../../../core/helpers/platform_helper.dart';
 import '../../../shared/menus/app_bottom_sheet.dart';
 import '../../../shared/note_card/core/note_action.dart';
 

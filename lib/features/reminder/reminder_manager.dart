@@ -5,13 +5,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:window_manager/window_manager.dart';
 
 import '../../core/router/router.dart';
-import '../../core/util/platform_helper.dart';
+import '../../core/helpers/platform_helper.dart';
+import '../../core/helpers/time_helper.dart';
 import '../../database/drift/notes/notes_dao.dart';
 import '../../database/shared_preference/shared_preference_manager.dart';
 import '../home/core/providers.dart';
@@ -245,7 +245,7 @@ class ReminderManager {
       ('${noteUuid}_day_$day').hashCode.abs() % 2147483647;
 
   static String formatReminderLabel(DateTime reminderAt, String? repeatMode, String? customDays) {
-    final timeStr = DateFormat('h:mm a').format(reminderAt);
+    final timeStr = TimeHelper.format12HourTime(reminderAt);
 
     if (repeatMode == 'daily') {
       return 'Daily, $timeStr';
@@ -266,27 +266,13 @@ class ReminderManager {
       return 'Weekly, $timeStr';
     } else if (repeatMode == 'monthly') {
       final dayNum = customDays != null ? (int.tryParse(customDays) ?? reminderAt.day) : reminderAt.day;
-      final suffix = _getDaySuffix(dayNum);
+      final suffix = TimeHelper.getDaySuffix(dayNum);
       return 'Monthly ($dayNum$suffix), $timeStr';
     } else if (repeatMode == 'yearly') {
-      final monthDay = DateFormat('MMM d').format(reminderAt);
+      final monthDay = TimeHelper.formatShortMonthDay(reminderAt);
       return 'Yearly ($monthDay), $timeStr';
     } else {
-      return DateFormat('MMM d, h:mm a').format(reminderAt);
-    }
-  }
-
-  static String _getDaySuffix(int day) {
-    if (day >= 11 && day <= 13) return 'th';
-    switch (day % 10) {
-      case 1:
-        return 'st';
-      case 2:
-        return 'nd';
-      case 3:
-        return 'rd';
-      default:
-        return 'th';
+      return TimeHelper.formatMonthDayTime(reminderAt);
     }
   }
 

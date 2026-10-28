@@ -25,7 +25,7 @@ import '../../features/settings/view/default_settings_page.dart';
 import '../../features/settings/view/settings_page.dart';
 import '../../features/themes/view/theme_page.dart';
 import '../../features/trash/view/trash_page.dart';
-import '../util/platform_helper.dart';
+import '../helpers/platform_helper.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 

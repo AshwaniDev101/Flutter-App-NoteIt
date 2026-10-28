@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 
+import '../../core/helpers/time_helper.dart';
 import '../../core/util/logger.dart';
 import '../../database/drift/folders/folders_dao.dart';
 import '../../database/drift/local_database.dart';
@@ -73,7 +74,7 @@ class _ExportNotesPageState extends ConsumerState<ExportNotesPage> {
       }
 
       Uint8List fileBytes = Uint8List.fromList(utf8.encode(result.content));
-      final dateStr = DateTime.now().toIso8601String().split('T').first.replaceAll('-', '');
+      final dateStr = TimeHelper.formatCompactDate();
       final defaultFileName = 'noteit_backup_$dateStr.${result.extension}';
 
       Uri? outputFile = await FilePicker.saveFile(

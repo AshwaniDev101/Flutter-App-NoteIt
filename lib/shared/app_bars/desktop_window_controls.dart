@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 
-import '../../core/util/platform_helper.dart';
+import '../../core/helpers/platform_helper.dart';
 
 /// Desktop window control buttons (minimize, maximize/unmaximize, close).
 ///

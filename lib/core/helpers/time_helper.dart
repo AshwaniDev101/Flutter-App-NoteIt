@@ -1,3 +1,5 @@
+import 'package:intl/intl.dart';
+
 class TimeHelper {
   TimeHelper._();
 
@@ -124,6 +126,72 @@ class TimeHelper {
     }
 
     return result;
+  }
+
+  /// Formats a [DateTime] for note editor header/status bar.
+  /// Returns 'M/d/yyyy' if [isNewNote] is true, otherwise 'M/d/yyyy H:mm'.
+  static String formatEditorDate(DateTime dt, {bool isNewNote = false}) {
+    final minuteStr = dt.minute.toString().padLeft(2, '0');
+    if (isNewNote) {
+      return '${dt.month}/${dt.day}/${dt.year}';
+    }
+    return '${dt.month}/${dt.day}/${dt.year} ${dt.hour}:$minuteStr';
+  }
+
+  /// Formats a [DateTime] into a standard 'YYYY-MM-DD HH:mm' string.
+  /// Returns [fallback] (default 'Never') if [dt] is null.
+  static String formatFullDateTime(DateTime? dt, {String fallback = 'Never'}) {
+    if (dt == null) return fallback;
+    final y = dt.year;
+    final m = dt.month.toString().padLeft(2, '0');
+    final d = dt.day.toString().padLeft(2, '0');
+    final h = dt.hour.toString().padLeft(2, '0');
+    final min = dt.minute.toString().padLeft(2, '0');
+    return '$y-$m-$d $h:$min';
+  }
+
+  /// Formats a [DateTime] into a compact 'YYYYMMDD' string for file naming.
+  static String formatCompactDate([DateTime? dt]) {
+    final now = dt ?? DateTime.now();
+    final y = now.year;
+    final m = now.month.toString().padLeft(2, '0');
+    final d = now.day.toString().padLeft(2, '0');
+    return '$y$m$d';
+  }
+
+  /// Returns the ordinal suffix for a day of the month (e.g. 1st, 2nd, 3rd, 4th).
+  static String getDaySuffix(int day) {
+    if (day >= 11 && day <= 13) return 'th';
+    switch (day % 10) {
+      case 1:
+        return 'st';
+      case 2:
+        return 'nd';
+      case 3:
+        return 'rd';
+      default:
+        return 'th';
+    }
+  }
+
+  /// Formats time in 12-hour format with AM/PM (e.g. '5:30 PM').
+  static String format12HourTime(DateTime dt) {
+    return DateFormat('h:mm a').format(dt);
+  }
+
+  /// Formats date in short month and day format (e.g. 'Oct 24').
+  static String formatShortMonthDay(DateTime dt) {
+    return DateFormat('MMM d').format(dt);
+  }
+
+  /// Formats date in full month, day, and year format (e.g. 'Oct 24, 2023').
+  static String formatMonthDayYear(DateTime dt) {
+    return DateFormat('MMM d, yyyy').format(dt);
+  }
+
+  /// Formats date and time in month, day, and 12-hour time format (e.g. 'Oct 24, 5:30 PM').
+  static String formatMonthDayTime(DateTime dt) {
+    return DateFormat('MMM d, h:mm a').format(dt);
   }
 
   /// Safely converts various date/timestamp formats (int epoch ms, double, String ISO, DateTime) into UTC DateTime

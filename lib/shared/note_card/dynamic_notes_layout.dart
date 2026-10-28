@@ -6,7 +6,7 @@ import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/database/drift/notes/notes_dao.dart';
 import 'package:noteit/features/reminder/reminder_page.dart';
 
-import '../../../core/util/platform_helper.dart';
+import '../../core/helpers/platform_helper.dart';
 import '../../../../../database/sync/sync_orchestrator.dart';
 import '../../features/folders/core/providers.dart';
 import '../menus/view_menu_button.dart';

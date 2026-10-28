@@ -13,7 +13,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:toastification/toastification.dart';
 import 'package:window_manager/window_manager.dart';
 
-import 'core/util/platform_helper.dart';
+import 'core/helpers/platform_helper.dart';
 import 'core/theme/app_theme.dart';
 import 'features/reminder/reminder_manager.dart';
 import 'features/tray/window_tray.dart';

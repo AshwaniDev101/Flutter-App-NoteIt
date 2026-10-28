@@ -4,7 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:noteit/core/util/platform_helper.dart';
+import 'package:noteit/core/helpers/platform_helper.dart';
 import 'package:noteit/database/drift/notes/notes_dao.dart';
 
 import 'package:window_manager/window_manager.dart';

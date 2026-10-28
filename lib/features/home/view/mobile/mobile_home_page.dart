@@ -9,7 +9,7 @@ import 'package:window_manager/window_manager.dart';
 import '../../../../shared/app_bars/desktop_window_controls.dart';
 
 import '../../../../core/router/router.dart';
-import '../../../../core/util/platform_helper.dart';
+import '../../../../core/helpers/platform_helper.dart';
 import '../../../../database/drift/notes/notes_dao.dart';
 import '../../../../database/sync/sync_orchestrator.dart';
 import '../../../../shared/app_bars/mobile_bottom_control_bar.dart';

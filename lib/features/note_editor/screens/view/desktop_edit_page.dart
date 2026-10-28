@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/helpers/time_helper.dart';
 import '../../../../core/util/device_info.dart';
 import '../../../../database/drift/local_database.dart';
 import '../../../../database/drift/notes/notes_dao.dart';
@@ -362,11 +363,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
 
   String _getFormattedDate() {
     final now = _currentNoteWithFolder?.note.updatedAt ?? _currentNoteWithFolder?.note.createdAt ?? DateTime.now();
-    if (_isNewNote) {
-      return '${now.month}/${now.day}/${now.year}';
-    }
-    final minuteStr = now.minute.toString().padLeft(2, '0');
-    return '${now.month}/${now.day}/${now.year} ${now.hour}:$minuteStr';
+    return TimeHelper.formatEditorDate(now, isNewNote: _isNewNote);
   }
 
   // =============================================================================

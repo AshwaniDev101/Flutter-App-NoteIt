@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:noteit/core/util/platform_helper.dart';
+import 'package:noteit/core/helpers/platform_helper.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
 import 'package:noteit/shared/overlays/app_scaffold.dart';
 

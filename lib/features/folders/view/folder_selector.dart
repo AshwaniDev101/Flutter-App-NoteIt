@@ -4,7 +4,7 @@ export 'widgets/folder_list_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/util/platform_helper.dart';
+import '../../../core/helpers/platform_helper.dart';
 import '../../../shared/app_bars/app_search_bar.dart';
 
 import '../../../database/drift/folders/folders_dao.dart';

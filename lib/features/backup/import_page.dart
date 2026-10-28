@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 
+import '../../core/helpers/time_helper.dart';
 import '../../core/util/logger.dart';
 import '../../database/drift/folders/folders_dao.dart';
 import '../../shared/overlays/app_scaffold.dart';
@@ -235,8 +236,7 @@ class _ImportNotesPageState extends ConsumerState<ImportNotesPage> {
   }
 
   String _formatDate(DateTime dt) {
-    return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} '
-        '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    return TimeHelper.formatFullDateTime(dt);
   }
 
   @override

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../../core/util/platform_helper.dart';
+import '../../../../../core/helpers/platform_helper.dart';
 import '../../../../../database/sync/local_sync_service.dart';
 import '../../../../local_sync/provider/sync_server_provider.dart';
 

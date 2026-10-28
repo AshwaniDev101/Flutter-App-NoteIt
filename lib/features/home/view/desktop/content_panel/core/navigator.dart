@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:noteit/core/router/router.dart';
-import 'package:noteit/core/util/platform_helper.dart';
+import 'package:noteit/core/helpers/platform_helper.dart';
 import 'package:noteit/features/home/core/providers.dart';
 
 // To Navigate to Any page use

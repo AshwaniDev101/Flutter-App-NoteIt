@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Core utilities
 import 'package:noteit/core/util/logger.dart';
-import 'package:noteit/core/util/platform_helper.dart';
+import 'package:noteit/core/helpers/platform_helper.dart';
 import 'package:noteit/core/util/device_info.dart';
 
 // Database and Sync

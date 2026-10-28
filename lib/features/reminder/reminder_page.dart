@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart' hide RepeatMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:noteit/database/drift/notes/notes_dao.dart';
+import '../../core/helpers/time_helper.dart';
 import '../../shared/overlays/snack_bar_manager.dart';
 import 'providers/reminder_provider.dart';
 import 'reminder_manager.dart';
@@ -397,20 +397,6 @@ class _ReminderPageState extends ConsumerState<ReminderPage> {
     }
   }
 
-  String _getDaySuffix(int day) {
-    if (day >= 11 && day <= 13) return 'th';
-    switch (day % 10) {
-      case 1:
-        return 'st';
-      case 2:
-        return 'nd';
-      case 3:
-        return 'rd';
-      default:
-        return 'th';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final formState = ref.watch(reminderFormProvider(_initArgs));
@@ -522,7 +508,7 @@ class _ReminderPageState extends ConsumerState<ReminderPage> {
                             if (formState.repeatMode == ReminderRepeatMode.once) ...[
                               Text(' on ', style: sentenceStyle),
                               ConversationalChip(
-                                label: DateFormat('MMM d, yyyy').format(formState.selectedDate),
+                                label: TimeHelper.formatMonthDayYear(formState.selectedDate),
                                 icon: Icons.calendar_today_rounded,
                                 onTap: () => _pickDate(notifier, formState.selectedDate),
                               ),
@@ -536,7 +522,7 @@ class _ReminderPageState extends ConsumerState<ReminderPage> {
                             ] else if (formState.repeatMode == ReminderRepeatMode.daily) ...[
                               Text(' starting ', style: sentenceStyle),
                               ConversationalChip(
-                                label: DateFormat('MMM d, yyyy').format(formState.selectedDate),
+                                label: TimeHelper.formatMonthDayYear(formState.selectedDate),
                                 icon: Icons.calendar_today_rounded,
                                 onTap: () => _pickDate(notifier, formState.selectedDate),
                               ),
@@ -558,7 +544,7 @@ class _ReminderPageState extends ConsumerState<ReminderPage> {
                             ] else if (formState.repeatMode == ReminderRepeatMode.monthly) ...[
                               Text(' on the ', style: sentenceStyle),
                               ConversationalChip(
-                                label: '${formState.selectedMonthlyDay}${_getDaySuffix(formState.selectedMonthlyDay)}',
+                                label: '${formState.selectedMonthlyDay}${TimeHelper.getDaySuffix(formState.selectedMonthlyDay)}',
                                 icon: Icons.calendar_view_month_rounded,
                                 onTap: () => _pickMonthlyDay(notifier, formState.selectedMonthlyDay),
                               ),
@@ -572,7 +558,7 @@ class _ReminderPageState extends ConsumerState<ReminderPage> {
                             ] else if (formState.repeatMode == ReminderRepeatMode.yearly) ...[
                               Text(' every year on ', style: sentenceStyle),
                               ConversationalChip(
-                                label: DateFormat('MMM d').format(formState.selectedDate),
+                                label: TimeHelper.formatShortMonthDay(formState.selectedDate),
                                 icon: Icons.event_repeat_rounded,
                                 onTap: () => _pickDate(notifier, formState.selectedDate),
                               ),

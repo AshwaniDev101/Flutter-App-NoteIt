@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/router/router.dart';
-import '../../core/util/platform_helper.dart';
+import '../../core/helpers/platform_helper.dart';
 import '../../database/drift/notes/notes_dao.dart';
 import '../../database/shared_preference/shared_preference_manager.dart';
 
