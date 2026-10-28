@@ -1,3 +1,5 @@
+// new settings page
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../database/sync/sync_engine.dart';
@@ -14,7 +16,6 @@ class SettingsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
 
     // Listen to states
     final lockState = ref.watch(lockManagerProvider);
@@ -22,6 +23,7 @@ class SettingsPage extends ConsumerWidget {
 
     // Watch shortcut preferences
     final shortcutPrefs = ref.watch(shortcutPreferencesProvider);
+    final bool showShortcuts = shortcutPrefs.showDynamicKeyHints || shortcutPrefs.appendShortcutToTooltips;
 
     return AppScaffold.rightPanel(
       option: RightPanelPageOptions.settings,
@@ -30,216 +32,126 @@ class SettingsPage extends ConsumerWidget {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 600),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 24.0),
               child: Column(
-                // padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // ==================== SYNCHRONIZATION SECTION ====================
+                  const _SectionHeader(title: 'Synchronization'),
+                  const SizedBox(height: 8),
                   Padding(
-                    padding: const EdgeInsets.only(left: 8.0, bottom: 8.0),
-                    child: Text(
-                      'Synchronization',
-                      style: textTheme.titleSmall?.copyWith(color: colorScheme.primary, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  Card(
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      side: BorderSide(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Colors.blueAccent.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Icon(Icons.sync_alt, color: Colors.blueAccent, size: 22),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Active Sync Engine',
-                                      style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w500),
-                                    ),
-                                    Text(
-                                      'Choose how your notes are backed up and shared.',
-                                      style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 20),
-                          SegmentedButton<SyncEngine>(
-                            segments: const [
-                              ButtonSegment<SyncEngine>(
-                                value: SyncEngine.cloud,
-                                label: Text('Cloud'),
-                                icon: Icon(Icons.cloud_outlined),
-                              ),
-                              ButtonSegment<SyncEngine>(
-                                value: SyncEngine.local,
-                                label: Text('Offline Sync'),
-                                icon: Icon(Icons.wifi),
-                              ),
-                              ButtonSegment<SyncEngine>(
-                                value: SyncEngine.offline,
-                                label: Text('No Sync'),
-                                icon: Icon(Icons.signal_wifi_off),
-                              ),
-                            ],
-                            selected: {currentEngine},
-                            onSelectionChanged: (Set<SyncEngine> newSelection) async {
-                              final selectedMode = newSelection.first;
+                    padding: const EdgeInsets.symmetric(vertical: 4.0),
+                    child: SegmentedButton<SyncEngine>(
+                      segments: const [
+                        ButtonSegment<SyncEngine>(
+                          value: SyncEngine.cloud,
+                          label: Text('Cloud'),
+                          icon: Icon(Icons.cloud_outlined),
+                        ),
+                        ButtonSegment<SyncEngine>(
+                          value: SyncEngine.local,
+                          label: Text('Offline Sync'),
+                          icon: Icon(Icons.wifi),
+                        ),
+                        ButtonSegment<SyncEngine>(
+                          value: SyncEngine.offline,
+                          label: Text('No Sync'),
+                          icon: Icon(Icons.signal_wifi_off),
+                        ),
+                      ],
+                      selected: {currentEngine},
+                      onSelectionChanged: (Set<SyncEngine> newSelection) async {
+                        final selectedMode = newSelection.first;
 
-                              final bool success = await ref
-                                  .read(syncEngineProvider.notifier)
-                                  .requestEngineChange(selectedMode);
+                        final bool success = await ref
+                            .read(syncEngineProvider.notifier)
+                            .requestEngineChange(selectedMode);
 
-                              if (success) {
-                                ref.read(syncOrchestratorProvider).triggerSync();
-                              }
-                            },
-                          ),
-                        ],
-                      ),
+                        if (success) {
+                          ref.read(syncOrchestratorProvider).triggerSync();
+                        }
+                      },
                     ),
                   ),
 
                   const SizedBox(height: 24),
 
-                  // ==================== GENERAL SECTION ====================
-                  Padding(
-                    padding: const EdgeInsets.only(left: 8.0, bottom: 8.0),
-                    child: Text(
-                      'General & Security',
-                      style: textTheme.titleSmall?.copyWith(color: colorScheme.primary, fontWeight: FontWeight.bold),
-                    ),
+                  // ==================== GENERAL & SECURITY SECTION ====================
+                  const _SectionHeader(title: 'General & Security'),
+                  const SizedBox(height: 8),
+                  _SettingsRow(
+                    icon: Icons.notifications_active_outlined,
+                    title: 'Reminders & Alarms',
+                    onTap: () {
+                      ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.reminderSettings);
+                    },
                   ),
-                  Card(
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      side: BorderSide(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
-                    ),
-                    child: Column(
-                      children: [
-                        SettingsTile(
-                          icon: Icons.notifications_active_outlined,
-                          iconColor: Colors.teal,
-                          title: 'Reminders & Alarms',
-                          subtitle: 'Manage alarm tones, custom sounds, and behavior',
-                          onTap: () {
-                            ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.reminderSettings);
-                          },
-                        ),
-                        Divider(height: 1, indent: 64, color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
-                        SettingsTile(
-                          icon: Icons.lock_outline,
-                          iconColor: Colors.amber,
-                          title: 'Master password',
-                          subtitle: lockState.hasMasterPassword
-                              ? 'Update or remove master password'
-                              : 'Set up master password',
-                          onTap: () {
-                            PasswordPromptHelper.showMasterPasswordManagement(context, ref);
-                          },
-                        ),
-                        Divider(height: 1, indent: 64, color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
-                        SettingsSwitchTile(
-                          icon: Icons.lock_open_rounded,
-                          iconColor: Colors.amber.shade300,
-                          title: 'Keep notes unlocked',
-                          subtitle: 'Stay unlocked during session',
-                          value: lockState.keepUnlockedDuringSession,
-                          onChanged: (bool value) {
-                            ref.read(lockManagerProvider.notifier).setKeepUnlockedPreference(value);
-                          },
-                        ),
-                      ],
-                    ),
+                  Divider(height: 1, indent: 36, color: colorScheme.outlineVariant.withValues(alpha: 0.3)),
+                  _SettingsRow(
+                    icon: Icons.lock_outline,
+                    title: 'Master password',
+                    subtitle: lockState.hasMasterPassword
+                        ? 'Update or remove master password'
+                        : 'Set up master password',
+                    onTap: () {
+                      PasswordPromptHelper.showMasterPasswordManagement(context, ref);
+                    },
+                  ),
+                  Divider(height: 1, indent: 36, color: colorScheme.outlineVariant.withValues(alpha: 0.3)),
+                  _SettingsSwitchRow(
+                    icon: Icons.lock_open_rounded,
+                    title: 'Keep notes unlocked during session',
+                    value: lockState.keepUnlockedDuringSession,
+                    onChanged: (bool value) {
+                      ref.read(lockManagerProvider.notifier).setKeepUnlockedPreference(value);
+                    },
                   ),
 
                   const SizedBox(height: 24),
 
                   // ==================== INTERFACE & KEYBOARD SECTION ====================
-                  Padding(
-                    padding: const EdgeInsets.only(left: 8.0, bottom: 8.0),
-                    child: Text(
-                      'Interface & Keyboard',
-                      style: textTheme.titleSmall?.copyWith(color: colorScheme.primary, fontWeight: FontWeight.bold),
-                    ),
+                  const _SectionHeader(title: 'Interface & Keyboard'),
+                  const SizedBox(height: 8),
+                  _SettingsSwitchRow(
+                    icon: Icons.keyboard_alt_outlined,
+                    title: 'Show keyboard shortcuts',
+                    value: showShortcuts,
+                    onChanged: (bool value) {
+                      ref.read(shortcutPreferencesProvider.notifier).toggleHints(value);
+                      ref.read(shortcutPreferencesProvider.notifier).toggleTooltips(value);
+                    },
                   ),
-                  Card(
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      side: BorderSide(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
-                    ),
-                    child: Column(
-                      children: [
-                        SettingsSwitchTile(
-                          icon: Icons.keyboard_alt_outlined,
-                          iconColor: Colors.white,
-                          title: 'Dynamic key hints',
-                          subtitle: 'Show key badges when holding Ctrl/Cmd',
-                          value: shortcutPrefs.showDynamicKeyHints,
-                          onChanged: (bool value) {
-                            ref.read(shortcutPreferencesProvider.notifier).toggleHints(value);
-                          },
-                        ),
-                        Divider(height: 1, indent: 64, color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
-                        SettingsSwitchTile(
-                          icon: Icons.info_outline,
-                          iconColor: Colors.white,
-                          title: 'Shortcuts in tooltips',
-                          subtitle: 'Append shortcuts to hover labels (e.g., Ctrl+N)',
-                          value: shortcutPrefs.appendShortcutToTooltips,
-                          onChanged: (bool value) {
-                            ref.read(shortcutPreferencesProvider.notifier).toggleTooltips(value);
-                          },
-                        ),
-                        Divider(height: 1, indent: 64, color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
-                        SettingsTile(
-                          icon: Icons.tune_outlined,
-                          iconColor: Colors.purpleAccent,
-                          title: 'Default views & layout',
-                          subtitle: 'Configure default page views, sort orders, and window size',
-                          onTap: () {
-                            ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.defaultSettings);
-                          },
-                        ),
-                      ],
-                    ),
+                  Divider(height: 1, indent: 36, color: colorScheme.outlineVariant.withValues(alpha: 0.3)),
+                  _SettingsRow(
+                    icon: Icons.tune_outlined,
+                    title: 'Default views & layout',
+                    onTap: () {
+                      ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.defaultSettings);
+                    },
+                  ),
+                  Divider(height: 1, indent: 36, color: colorScheme.outlineVariant.withValues(alpha: 0.3)),
+                  _SettingsRow(
+                    icon: Icons.access_time_rounded,
+                    title: 'Time & Date',
+                    onTap: () {
+                      ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.timeSettings);
+                    },
                   ),
 
-                  // ======================== OTHEr =======================================
-                  SettingsTile(
-                    icon: Icons.download,
-                    iconColor: Colors.pinkAccent,
+                  const SizedBox(height: 24),
+
+                  // ==================== DATA MANAGEMENT SECTION ====================
+                  const _SectionHeader(title: 'Data Management'),
+                  const SizedBox(height: 8),
+                  _SettingsRow(
+                    icon: Icons.download_outlined,
                     title: 'Export Notes',
-                    subtitle: 'Download notes to a folder',
                     onTap: () => ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.export),
                   ),
-
-                  SettingsTile(
-                    icon: Icons.upload,
-                    iconColor: Colors.redAccent,
+                  Divider(height: 1, indent: 36, color: colorScheme.outlineVariant.withValues(alpha: 0.3)),
+                  _SettingsRow(
+                    icon: Icons.upload_outlined,
                     title: 'Import Notes',
-                    subtitle: 'Upload notes from a folder',
                     onTap: () => ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.import),
                   ),
                 ],
@@ -252,20 +164,34 @@ class SettingsPage extends ConsumerWidget {
   }
 }
 
-// EXISTING WIDGET
-class SettingsTile extends StatelessWidget {
-  final IconData icon;
-  final Color iconColor;
+class _SectionHeader extends StatelessWidget {
   final String title;
-  final String subtitle;
+
+  const _SectionHeader({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Text(
+      title,
+      style: theme.textTheme.titleSmall?.copyWith(
+        color: theme.colorScheme.primary,
+        fontWeight: FontWeight.bold,
+      ),
+    );
+  }
+}
+
+class _SettingsRow extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String? subtitle;
   final VoidCallback onTap;
 
-  const SettingsTile({
-    super.key,
+  const _SettingsRow({
     required this.icon,
-    required this.iconColor,
     required this.title,
-    required this.subtitle,
+    this.subtitle,
     required this.onTap,
   });
 
@@ -274,37 +200,29 @@ class SettingsTile extends StatelessWidget {
     final theme = Theme.of(context);
 
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 2.0),
       hoverColor: theme.colorScheme.primary.withValues(alpha: 0.04),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      leading: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-        child: Icon(icon, color: iconColor, size: 22),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      leading: Icon(icon, size: 20, color: theme.colorScheme.onSurfaceVariant),
       title: Text(title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w500)),
-      subtitle: Text(subtitle, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-      trailing: Icon(Icons.arrow_forward_ios, size: 14, color: theme.colorScheme.outline),
+      subtitle: subtitle != null
+          ? Text(subtitle!, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant))
+          : null,
+      trailing: Icon(Icons.chevron_right, size: 18, color: theme.colorScheme.outline),
       onTap: onTap,
     );
   }
 }
 
-// A tile with a Switch instead of an arrow
-class SettingsSwitchTile extends StatelessWidget {
+class _SettingsSwitchRow extends StatelessWidget {
   final IconData icon;
-  final Color iconColor;
   final String title;
-  final String subtitle;
   final bool value;
   final ValueChanged<bool> onChanged;
 
-  const SettingsSwitchTile({
-    super.key,
+  const _SettingsSwitchRow({
     required this.icon,
-    required this.iconColor,
     required this.title,
-    required this.subtitle,
     required this.value,
     required this.onChanged,
   });
@@ -314,16 +232,11 @@ class SettingsSwitchTile extends StatelessWidget {
     final theme = Theme.of(context);
 
     return SwitchListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 2.0),
       hoverColor: theme.colorScheme.primary.withValues(alpha: 0.04),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      secondary: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-        child: Icon(icon, color: iconColor, size: 22),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      secondary: Icon(icon, size: 20, color: theme.colorScheme.onSurfaceVariant),
       title: Text(title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w500)),
-      subtitle: Text(subtitle, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
       value: value,
       onChanged: onChanged,
     );

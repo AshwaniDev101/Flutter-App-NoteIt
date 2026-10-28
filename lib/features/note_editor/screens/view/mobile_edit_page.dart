@@ -330,7 +330,8 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
 
   String _getFormattedDate() {
     final now = _currentNoteWithFolder?.note.updatedAt ?? _currentNoteWithFolder?.note.createdAt ?? DateTime.now();
-    return TimeHelper.formatEditorDate(now, isNewNote: _isNewNote);
+    final formatFn = ref.watch(timeFormatterProvider);
+    return formatFn(now);
   }
 
   // =============================================================================

@@ -320,4 +320,55 @@ class SharedPreferenceManager {
   Future<bool> setAppendShortcutToTooltips(bool value) async {
     return await _prefs.setBool(_keyAppendShortcutToTooltips, value);
   }
+
+  // --- Time & Date Formatting Preferences ---
+  static const String _keyTimeUseSystemFormat = 'time_use_system_format';
+  static const String _keyTimeIs24Hour = 'time_is_24_hour';
+  static const String _keyTimeDayFormat = 'time_day_format';
+  static const String _keyTimeMonthFormat = 'time_month_format';
+  static const String _keyTimeYearFormat = 'time_year_format';
+  static const String _keyTimeSeparator = 'time_separator';
+  static const String _keyTimeOrder = 'time_order';
+
+  /// Whether to use system default time formatting instead of custom options.
+  bool get timeUseSystemFormat => _prefs.getBool(_keyTimeUseSystemFormat) ?? false;
+
+  /// Saves the system format preference.
+  Future<bool> setTimeUseSystemFormat(bool value) async => await _prefs.setBool(_keyTimeUseSystemFormat, value);
+
+  /// Whether 24-hour time format is enabled.
+  bool get timeIs24Hour => _prefs.getBool(_keyTimeIs24Hour) ?? false;
+
+  /// Saves the 24-hour time preference.
+  Future<bool> setTimeIs24Hour(bool value) async => await _prefs.setBool(_keyTimeIs24Hour, value);
+
+  /// Preferred day format representation (e.g. 'd', 'dd').
+  String get timeDayFormat => _prefs.getString(_keyTimeDayFormat) ?? 'dd';
+
+  /// Saves the preferred day format.
+  Future<bool> setTimeDayFormat(String value) async => await _prefs.setString(_keyTimeDayFormat, value);
+
+  /// Preferred month format representation (e.g. 'M', 'MM', 'MMM', 'MMMM').
+  String get timeMonthFormat => _prefs.getString(_keyTimeMonthFormat) ?? 'MMM';
+
+  /// Saves the preferred month format.
+  Future<bool> setTimeMonthFormat(String value) async => await _prefs.setString(_keyTimeMonthFormat, value);
+
+  /// Preferred year format representation (e.g. 'yy', 'yyyy').
+  String get timeYearFormat => _prefs.getString(_keyTimeYearFormat) ?? 'yyyy';
+
+  /// Saves the preferred year format.
+  Future<bool> setTimeYearFormat(String value) async => await _prefs.setString(_keyTimeYearFormat, value);
+
+  /// Preferred date separator character (e.g. '-', '/', '.', ' ').
+  String get timeSeparator => _prefs.getString(_keyTimeSeparator) ?? '-';
+
+  /// Saves the preferred date separator.
+  Future<bool> setTimeSeparator(String value) async => await _prefs.setString(_keyTimeSeparator, value);
+
+  /// Preferred ordering of date and time parts (e.g. ['day', 'month', 'year', 'time']).
+  List<String> get timeOrder => _prefs.getStringList(_keyTimeOrder) ?? const ['day', 'month', 'year', 'time'];
+
+  /// Saves the preferred layout ordering.
+  Future<bool> setTimeOrder(List<String> order) async => await _prefs.setStringList(_keyTimeOrder, order);
 }

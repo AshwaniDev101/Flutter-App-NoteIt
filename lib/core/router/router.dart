@@ -23,6 +23,7 @@ import '../../features/note_editor/screens/view/mobile_edit_page.dart';
 import '../../features/reminder/reminder_settings_page.dart';
 import '../../features/settings/view/default_settings_page.dart';
 import '../../features/settings/view/settings_page.dart';
+import '../../features/settings/view/time_settings_page.dart';
 import '../../features/themes/view/theme_page.dart';
 import '../../features/trash/view/trash_page.dart';
 import '../helpers/platform_helper.dart';
@@ -51,6 +52,7 @@ class AppRoutes {
   static const String defaultSettings = '/default-settings';
   static const String reminderSettings = '/reminder-settings';
   static const String moveToFolder = '/move-to-folder';
+  static const String timeSettings = '/time-settings';
 }
 
 GoRoute _adaptiveRoute({
@@ -153,6 +155,7 @@ final routerProvider = Provider((ref) {
       GoRoute(path: AppRoutes.defaultSettings, builder: (context, state) => const DefaultSettingsPage()),
       GoRoute(path: AppRoutes.reminderSettings, builder: (context, state) => const ReminderSettingsPage()),
       GoRoute(path: AppRoutes.moveToFolder, builder: (context, state) => const MoveToFolderPage()),
+      GoRoute(path: AppRoutes.timeSettings, builder: (context, state) => const DemoTimeSettingsPage()),
     ],
   );
 });

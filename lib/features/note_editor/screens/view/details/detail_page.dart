@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../database/drift/notes/notes_dao.dart';
 import '../../../../home/core/providers.dart';
+import 'package:noteit/core/helpers/time_helper.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
 import '../../../../../shared/overlays/app_scaffold.dart';
 
@@ -23,7 +24,7 @@ class NoteDetailsPage extends ConsumerWidget {
               Icon(
                 Icons.info_outline,
                 size: 48,
-                color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
+                color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
               ),
               const SizedBox(height: 16),
               Text(
@@ -47,6 +48,7 @@ class NoteDetailsPage extends ConsumerWidget {
 
     final note = noteWithFolder.note;
     final folder = noteWithFolder.folder;
+    final formatDateTime = ref.watch(timeFormatterProvider);
 
     return SelectionArea(
       child: AppScaffold.rightPanel(
@@ -71,11 +73,11 @@ class NoteDetailsPage extends ConsumerWidget {
               icon: Icons.design_services_outlined,
               children: [
                 _MetadataItem(label: 'Color (Hex)', value: '0x${note.color.toRadixString(16).toUpperCase().padLeft(8, '0')}'),
-                _MetadataItem(label: 'Pinned At', value: note.pinnedAt?.toIso8601String() ?? 'null'),
-                _MetadataItem(label: 'Archived At', value: note.archivedAt?.toIso8601String() ?? 'null'),
-                _MetadataItem(label: 'Locked At', value: note.lockedAt?.toIso8601String() ?? 'null'),
+                _MetadataItem(label: 'Pinned At', value: note.pinnedAt != null ? formatDateTime(note.pinnedAt) : 'null'),
+                _MetadataItem(label: 'Archived At', value: note.archivedAt != null ? formatDateTime(note.archivedAt) : 'null'),
+                _MetadataItem(label: 'Locked At', value: note.lockedAt != null ? formatDateTime(note.lockedAt) : 'null'),
                 _MetadataItem(label: 'Tags', value: note.tags ?? 'null'),
-                _MetadataItem(label: 'Reminder At', value: note.reminderAt?.toIso8601String() ?? 'null'),
+                _MetadataItem(label: 'Reminder At', value: note.reminderAt != null ? formatDateTime(note.reminderAt) : 'null'),
                 _MetadataItem(label: 'Reminder Repeat Mode', value: note.reminderRepeatMode ?? 'null'),
                 _MetadataItem(label: 'Reminder Custom Days', value: note.reminderCustomDays ?? 'null'),
               ],
@@ -113,9 +115,9 @@ class NoteDetailsPage extends ConsumerWidget {
               title: 'Timestamps (LWW Engine)',
               icon: Icons.access_time,
               children: [
-                _MetadataItem(label: 'Created At', value: note.createdAt.toIso8601String()),
-                _MetadataItem(label: 'Updated At', value: note.updatedAt.toIso8601String()),
-                _MetadataItem(label: 'Deleted At', value: note.deletedAt?.toIso8601String() ?? 'null'),
+                _MetadataItem(label: 'Created At', value: formatDateTime(note.createdAt)),
+                _MetadataItem(label: 'Updated At', value: formatDateTime(note.updatedAt)),
+                _MetadataItem(label: 'Deleted At', value: note.deletedAt != null ? formatDateTime(note.deletedAt) : 'null'),
               ],
             ),
             _buildSection(

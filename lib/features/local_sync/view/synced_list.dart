@@ -10,9 +10,7 @@ import '../../../shared/overlays/app_scaffold.dart';
 class SyncedDevicesListView extends ConsumerWidget {
   const SyncedDevicesListView({super.key});
 
-  String _formatDate(DateTime? date) {
-    return TimeHelper.formatFullDateTime(date);
-  }
+
 
   IconData _getPlatformIcon(String? platform) {
     switch (platform?.toLowerCase()) {
@@ -42,6 +40,7 @@ class SyncedDevicesListView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final devicesAsyncValue = ref.watch(syncedDevicesStreamProvider);
+    final formatDateTime = ref.watch(timeFormatterProvider);
 
     return AppScaffold.rightPanel(
       option: RightPanelPageOptions.syncedList,
@@ -183,7 +182,7 @@ class SyncedDevicesListView extends ConsumerWidget {
                               _CompactDetail(
                                 icon: Icons.access_time,
                                 label: 'Last Seen',
-                                value: _formatDate(lastSeenDate),
+                                value: lastSeenDate != null ? formatDateTime(lastSeenDate) : 'Never',
                               ),
                             ],
                           ),
