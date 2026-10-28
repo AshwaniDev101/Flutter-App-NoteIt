@@ -86,7 +86,7 @@ class DynamicNotesLayout extends ConsumerWidget {
         physics: physics,
         padding: padding,
         itemCount: notesWithFolder.length,
-        gridDelegate: _getGridDelegate(viewType),
+        gridDelegate: _getGridDelegate(ref.context, viewType),
         itemBuilder: (context, index) => _buildNoteCard(context, ref, notesWithFolder[index], viewType),
       );
     }
@@ -112,7 +112,7 @@ class DynamicNotesLayout extends ConsumerWidget {
           )
         else
           SliverGrid(
-            gridDelegate: _getGridDelegate(viewType),
+            gridDelegate: _getGridDelegate(ref.context, viewType),
             delegate: SliverChildBuilderDelegate(
               (context, index) => _buildNoteCard(context, ref, pinnedNotes[index], viewType),
               childCount: pinnedNotes.length,
@@ -134,7 +134,7 @@ class DynamicNotesLayout extends ConsumerWidget {
             )
           else
             SliverGrid(
-              gridDelegate: _getGridDelegate(viewType),
+              gridDelegate: _getGridDelegate(ref.context, viewType),
               delegate: SliverChildBuilderDelegate(
                 (context, index) => _buildNoteCard(context, ref, otherNotes[index], viewType),
                 childCount: otherNotes.length,
@@ -292,8 +292,8 @@ class DynamicNotesLayout extends ConsumerWidget {
     }
   }
 
-  SliverGridDelegate _getGridDelegate(NoteViewType viewType) {
-    final isMobile = PlatformHelper.isMobileScreen;
+  SliverGridDelegate _getGridDelegate(BuildContext context, NoteViewType viewType) {
+    final isMobile = !PlatformHelper.isWideLayout(context);
 
     if (viewType == NoteViewType.grid) {
       return isMobile

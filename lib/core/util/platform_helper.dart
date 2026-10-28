@@ -11,11 +11,11 @@ class PlatformHelper {
   }
 
   /// Returns true if running on a native Android or iOS device (excluding web)
-  static bool get isMobileScreen {
-    if (kIsWeb) return false;
-    return defaultTargetPlatform == TargetPlatform.android ||
-        defaultTargetPlatform == TargetPlatform.iOS;
-  }
+  // static bool get isMobileScreen {
+  //   if (kIsWeb) return false;
+  //   return defaultTargetPlatform == TargetPlatform.android ||
+  //       defaultTargetPlatform == TargetPlatform.iOS;
+  // }
 
   /// Returns true if running on Windows, macOS, Linux, or the Web
   static bool get isDesktopScreen {

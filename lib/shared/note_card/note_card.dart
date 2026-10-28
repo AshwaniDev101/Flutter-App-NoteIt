@@ -365,15 +365,13 @@ class _NoteCardState extends ConsumerState<NoteCard> {
                 )
               : _buildNotePreview(context, maxLines: 2, overflow: TextOverflow.ellipsis),
           const SizedBox(height: 4),
-          if (PlatformHelper.isDesktopScreen || PlatformHelper.isMobileScreen) ...[
-            const SizedBox(height: 4),
-            _buildMetadataRow(
-              context,
-              textStyle: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-            ),
-          ],
+          const SizedBox(height: 4),
+          _buildMetadataRow(
+            context,
+            textStyle: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+          ),
         ],
       ),
     );
@@ -402,15 +400,13 @@ class _NoteCardState extends ConsumerState<NoteCard> {
               ],
             ),
           ),
-          if (PlatformHelper.isDesktopScreen || PlatformHelper.isMobileScreen) ...[
-            const SizedBox(height: 4),
-            _buildMetadataRow(
-              context,
-              textStyle: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-            ),
-          ],
+          const SizedBox(height: 4),
+          _buildMetadataRow(
+            context,
+            textStyle: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+          ),
         ],
       ),
     );

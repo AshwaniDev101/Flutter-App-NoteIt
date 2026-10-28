@@ -76,7 +76,7 @@ class AppScaffold extends ConsumerWidget {
     if (effectiveAppBar == null && title != null) {
       Widget? effectiveLeading = leading;
 
-      if (effectiveLeading == null && PlatformHelper.isDesktopScreen) {
+      if (effectiveLeading == null && PlatformHelper.isWideLayout(context)) {
         final canPop = ref.watch(desktopRightPanelViewProvider.select((stack) => stack.length > 1));
         if (canPop) {
           effectiveLeading = IconButton(
@@ -102,7 +102,7 @@ class AppScaffold extends ConsumerWidget {
         leading: effectiveLeading,
         centerTitle: centerTitle,
         backgroundColor: bg,
-        scrolledUnderElevation: PlatformHelper.isDesktopScreen ? 0.0 : null,
+        scrolledUnderElevation: PlatformHelper.isWideLayout(context) ? 0.0 : null,
         actions: [
           ...?actions,
           if (showDesktopCloseButton) DesktopCloseButton(onPressed: onClose),

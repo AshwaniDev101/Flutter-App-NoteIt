@@ -58,7 +58,7 @@ class DesktopContentPanel extends ConsumerWidget {
               ),
             ),
             elevation: 0,
-            scrolledUnderElevation: PlatformHelper.isDesktopScreen ? 0.0 : null,
+            scrolledUnderElevation: PlatformHelper.isWideLayout(context) ? 0.0 : null,
             actions: const [
               IconTray(),
               DesktopWindowControls(),

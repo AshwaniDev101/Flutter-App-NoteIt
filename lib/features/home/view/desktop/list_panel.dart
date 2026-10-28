@@ -133,7 +133,7 @@ class DesktopListPanel extends ConsumerWidget {
                         backgroundColor: Colors.transparent,
                         leading: const DrawerMenuButton(),
                         elevation: 0,
-                        scrolledUnderElevation: PlatformHelper.isDesktopScreen ? 0.0 : null,
+                        scrolledUnderElevation: PlatformHelper.isWideLayout(context) ? 0.0 : null,
                         iconTheme: IconThemeData(color: Theme.of(context).colorScheme.primary),
                       ),
               ),

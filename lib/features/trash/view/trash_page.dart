@@ -74,7 +74,7 @@ class _TrashPageState extends ConsumerState<TrashPage> with WidgetsBindingObserv
     final isKeyboardOpen = bottomInset > 0;
 
     if (_wasKeyboardOpen && !isKeyboardOpen) {
-      if (_isSearching && PlatformHelper.isMobileScreen && mounted) {
+      if (_isSearching && !PlatformHelper.isWideLayout(context) && mounted) {
         setState(() {
           _isSearching = false;
           _searchController.clear();
@@ -153,7 +153,7 @@ class _TrashPageState extends ConsumerState<TrashPage> with WidgetsBindingObserv
   }
 
   SliverGridDelegate _getGridDelegate(NoteViewType viewType) {
-    final isMobile = PlatformHelper.isMobileScreen;
+    final isMobile = !PlatformHelper.isWideLayout(context);
     switch (viewType) {
       case NoteViewType.list:
         return const SliverGridDelegateWithFixedCrossAxisCount(
@@ -519,8 +519,8 @@ class _TrashPageState extends ConsumerState<TrashPage> with WidgetsBindingObserv
         padding: const EdgeInsets.symmetric(horizontal: 3.0),
         child: Column(
           children: [
-            // Top control bar for Desktop
-            if (PlatformHelper.isDesktopScreen) _buildControlBarContent(),
+            // Top control bar for Desktop / Wide layout
+            if (PlatformHelper.isWideLayout(context)) _buildControlBarContent(),
 
             // Content Area
             Expanded(
@@ -560,8 +560,8 @@ class _TrashPageState extends ConsumerState<TrashPage> with WidgetsBindingObserv
               ),
             ),
 
-            // Bottom control bar for Mobile
-            if (PlatformHelper.isMobileScreen && !isSelectMode)
+            // Bottom control bar for Mobile / Compact layout
+            if (!PlatformHelper.isWideLayout(context) && !isSelectMode)
               BottomAppBar(
                 elevation: 8.0,
                 child: _buildControlBarContent(),
@@ -853,7 +853,7 @@ class _TrashPageState extends ConsumerState<TrashPage> with WidgetsBindingObserv
       secondChild: Row(
         key: const ValueKey('searching_control_bar'),
         children: [
-          if (PlatformHelper.isDesktopScreen) ...[
+          if (PlatformHelper.isWideLayout(context)) ...[
             _folderOptionMenu(),
             const Spacer(),
             _sortMenuButton(currentSort, platformFilter),
@@ -863,7 +863,7 @@ class _TrashPageState extends ConsumerState<TrashPage> with WidgetsBindingObserv
           Expanded(
             child: ConstrainedBox(
               constraints: BoxConstraints(
-                maxWidth: PlatformHelper.isMobileScreen ? double.infinity : 320,
+                maxWidth: !PlatformHelper.isWideLayout(context) ? double.infinity : 320,
               ),
               child: AppSearchBar(
                 controller: _searchController,

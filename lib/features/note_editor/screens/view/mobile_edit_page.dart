@@ -65,10 +65,10 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
 
   bool get _isNewNote =>
       _currentNoteWithFolder == null ||
-      (_currentNoteWithFolder!.note.title.isEmpty &&
-          _currentNoteWithFolder!.note.content.isEmpty &&
-          _currentNoteWithFolder!.note.cloudSyncStatus == 0 &&
-          _currentNoteWithFolder!.note.localSyncStatus == 0);
+          (_currentNoteWithFolder!.note.title.isEmpty &&
+              _currentNoteWithFolder!.note.content.isEmpty &&
+              _currentNoteWithFolder!.note.cloudSyncStatus == 0 &&
+              _currentNoteWithFolder!.note.localSyncStatus == 0);
 
   // =============================================================================
   // LIFECYCLE METHODS
@@ -96,7 +96,7 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
       }
     }
 
-    _titleFocusNode = FocusNode()..addListener(() => setState(() {}));
+    _titleFocusNode = FocusNode();
     _contentFocusNode = FocusNode();
 
     if (_titleController.text.isEmpty) _isAutoSyncingTitle = true;
@@ -342,38 +342,30 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
 
   @override
   Widget build(BuildContext context) {
+    final panelColor = Theme.of(context).colorScheme.surfaceContainerLow;
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
         if (!didPop) _handleMobileBack();
       },
       child: Scaffold(
-        backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
-        appBar: PlatformHelper.isNativeDesktop
-            ? AppBar(
-                flexibleSpace: DragToMoveArea(
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    child: const SizedBox.expand(),
-                  ),
-                ),
-                automaticallyImplyLeading: false,
-                titleSpacing: 0,
-                actions: const [
-                  DesktopWindowControls(),
-                ],
-              )
-            : null,
+        backgroundColor: panelColor,
+        appBar: PlatformHelper.isWindows
+            ? null
+            : AppBar(
+                backgroundColor: panelColor,
+                surfaceTintColor: Colors.transparent,
+                title: _getTextField(),
+                actions: [_optionMenu()],
+              ),
         body: SafeArea(
           child: Stack(
             children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                    child: _buildTitleRow(),
-                  ),
+                  if (PlatformHelper.isWindows) _buildTopRow(),
                   if (_isFind) ...[
                     FindReplaceWidget(
                       contentController: _contentController,
@@ -392,7 +384,13 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
                   Expanded(child: _buildContentField(padding: 16.0)),
                 ],
               ),
-              _buildUndoRedoButtons(),
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 16.0),
+                  child: _buildUndoRedoButtons(),
+                ),
+              ),
             ],
           ),
         ),
@@ -400,61 +398,56 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
     );
   }
 
-  Widget _buildTitleRow() {
-    return SizedBox(
-      height: 48,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          IconButton(
-            onPressed: _handleMobileBack,
-            icon: const Icon(Icons.arrow_back),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Focus(
-              onKeyEvent: (node, event) {
-                if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
-                  node.unfocus();
-                  return KeyEventResult.handled;
-                }
-                return KeyEventResult.ignored;
-              },
-              child: TextField(
-                controller: _titleController,
-                focusNode: _titleFocusNode,
-                autofocus: _isNewNote,
-                textAlignVertical: TextAlignVertical.center,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-                decoration: InputDecoration(
-                  isDense: true,
-                  contentPadding: EdgeInsets.zero,
-                  border: InputBorder.none,
-                  hintText: 'Title',
-                  suffixIcon: _titleFocusNode.hasFocus
-                      ? ValueListenableBuilder<TextEditingValue>(
-                          valueListenable: _titleController,
-                          builder: (context, value, child) {
-                            if (value.text.isEmpty) {
-                              return const SizedBox.shrink();
-                            }
-                            return IconButton(
-                              icon: const Icon(Icons.close, size: 16),
-                              onPressed: () {
-                                _titleController.clear();
-                                _isAutoSyncingTitle = true;
-                              },
-                            );
-                          },
-                        )
-                      : const SizedBox.shrink(),
+  Widget _buildTopRow() {
+    final isDesktop = PlatformHelper.isNativeDesktop;
+    final isWide = PlatformHelper.isWideLayout(context);
+
+    final titleTextField = _getTextField();
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Row 1: Window Controls and Drag Area (Desktop Only)
+        if (isDesktop)
+          Row(
+            children: [
+              Expanded(
+                child: DragToMoveArea(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    child: const SizedBox(height: 32), // Standard drag area height
+                  ),
                 ),
               ),
+              const DesktopWindowControls(),
+            ],
+          ),
+
+        // Row 2: Title Bar, Back Button, Options
+        Padding(
+          padding: const EdgeInsets.only(left: 4.0, right: 16.0, top: 8.0, bottom: 8.0),
+          child: SizedBox(
+            height: 48,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                if (!isWide) ...[
+                  IconButton(
+                    onPressed: _handleMobileBack,
+                    icon: const Icon(Icons.arrow_back),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                Expanded(
+                  child: titleTextField,
+                ),
+                if (!isWide) _optionMenu(),
+              ],
             ),
           ),
-          _optionMenu(),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -476,93 +469,108 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
         },
         child: _contentVersion == ContentVersion.checklist
             ? CheckListWidget(
-                initialData: _currentChecklist,
-                onChange: (List<CheckListItemModel> updatedList) {
-                  _currentChecklist = updatedList;
-                  _contentController.text = jsonEncode(updatedList.map((e) => e.toJson()).toList());
-                },
-              )
+          initialData: _currentChecklist,
+          onChange: (List<CheckListItemModel> updatedList) {
+            _currentChecklist = updatedList;
+            _contentController.text = jsonEncode(updatedList.map((e) => e.toJson()).toList());
+          },
+        )
             : TextField(
-                controller: _contentController,
-                undoController: _undoController,
-                maxLines: null,
-                expands: true,
-                textAlignVertical: TextAlignVertical.top,
-                textCapitalization: TextCapitalization.sentences,
-                decoration: const InputDecoration(border: InputBorder.none),
-                style: Theme.of(context).textTheme.bodyLarge,
-              ),
+          controller: _contentController,
+          undoController: _undoController,
+          maxLines: null,
+          expands: true,
+          textAlignVertical: TextAlignVertical.top,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: const InputDecoration(border: InputBorder.none),
+          style: Theme.of(context).textTheme.bodyLarge,
+        ),
       ),
     );
   }
 
   Widget _buildMetaDataRow({required double padding}) {
     final currentFolder = _currentNoteWithFolder?.folder ?? _selectedFolderForNewNote;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: padding, vertical: 8.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  FolderOptionMenu(
-                    selectedFolder: currentFolder,
-                    emptyLabel: 'none',
-                    onFolderSelected: (folder) async {
-                      final newFolderId = folder?.uuid;
-                      if (_currentNoteWithFolder?.note.folderId == newFolderId) return;
+          // Row 1: Folder, Lock, and Date Stamp (on the right)
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      FolderOptionMenu(
+                        selectedFolder: currentFolder,
+                        emptyLabel: 'none',
+                        onFolderSelected: (folder) async {
+                          final newFolderId = folder?.uuid;
+                          if (_currentNoteWithFolder?.note.folderId == newFolderId) return;
 
-                      if (!_isNewNote && _currentNoteWithFolder != null) {
-                        await ref.read(notesDaoProvider).updateNoteFolder(_currentNoteWithFolder!.note.uuid, newFolderId);
-                      }
+                          if (!_isNewNote && _currentNoteWithFolder != null) {
+                            await ref.read(notesDaoProvider).updateNoteFolder(_currentNoteWithFolder!.note.uuid, newFolderId);
+                          }
 
-                      setState(() {
-                        if (_currentNoteWithFolder != null) {
-                          final updatedDriftNote = _currentNoteWithFolder!.note.copyWith(folderId: drift.Value(newFolderId));
-                          _currentNoteWithFolder = NoteWithFolder(note: updatedDriftNote, folder: folder);
-                        } else {
-                          _selectedFolderForNewNote = folder;
-                        }
-                      });
-                    },
+                          setState(() {
+                            if (_currentNoteWithFolder != null) {
+                              final updatedDriftNote = _currentNoteWithFolder!.note.copyWith(folderId: drift.Value(newFolderId));
+                              _currentNoteWithFolder = NoteWithFolder(note: updatedDriftNote, folder: folder);
+                            } else {
+                              _selectedFolderForNewNote = folder;
+                            }
+                          });
+                        },
+                      ),
+                      const SizedBox(width: 8),
+                      if (_isLocked) ...[
+                        const Icon(Icons.lock_outline, size: 16),
+                        const SizedBox(width: 8),
+                      ],
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  if (_currentNoteWithFolder?.note.reminderAt != null) ...[
-                    _buildReminderChip(context, _currentNoteWithFolder!.note.reminderAt!),
-                    const SizedBox(width: 8),
-                  ],
-                  if (_isLocked) ...[
-                    const Icon(Icons.lock_outline, size: 16),
-                    const SizedBox(width: 8),
-                  ],
-                ],
+                ),
               ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Text(
-            _getFormattedDate(),
-            maxLines: 1,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-          ),
-          if (_isNewNote) ...[
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(4),
+              const SizedBox(width: 16),
+              Text(
+                _getFormattedDate(),
+                maxLines: 1,
+                style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
               ),
-              child: Text(
-                'New',
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              if (_isNewNote) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    'New',
+                    style: theme.textTheme.labelSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
-              ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+
+          // Row 2: Reminder on the right
+          if (_currentNoteWithFolder?.note.reminderAt != null) ...[
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                _buildReminderChip(context, _currentNoteWithFolder!.note.reminderAt!),
+              ],
             ),
           ],
         ],
@@ -730,6 +738,52 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _getTextField() {
+    return Focus(
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
+          node.unfocus();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: TextField(
+        controller: _titleController,
+        focusNode: _titleFocusNode,
+        autofocus: _isNewNote,
+        textAlignVertical: TextAlignVertical.center,
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+        decoration: InputDecoration(
+          isDense: true,
+          contentPadding: EdgeInsets.zero,
+          border: InputBorder.none,
+          hintText: 'Title',
+          suffixIcon: ListenableBuilder(
+            listenable: _titleFocusNode,
+            builder: (context, _) {
+              if (!_titleFocusNode.hasFocus) return const SizedBox.shrink();
+              return ValueListenableBuilder<TextEditingValue>(
+                valueListenable: _titleController,
+                builder: (context, value, child) {
+                  if (value.text.isEmpty) {
+                    return const SizedBox.shrink();
+                  }
+                  return IconButton(
+                    icon: const Icon(Icons.close, size: 16),
+                    onPressed: () {
+                      _titleController.clear();
+                      _isAutoSyncingTitle = true;
+                    },
+                  );
+                },
+              );
+            },
           ),
         ),
       ),
