@@ -6,25 +6,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:noteit/core/util/device_info.dart';
-import 'package:noteit/database/drift/local_database.dart';
-import 'package:noteit/database/drift/notes/notes_dao.dart';
-import 'package:noteit/features/reminder/reminder_manager.dart';
 
-import '../../../../shared/text/find_replace.dart';
-import '../../../../shared/overlays/app_scaffold.dart';
+import '../../../../core/util/device_info.dart';
+import '../../../../database/drift/local_database.dart';
+import '../../../../database/drift/notes/notes_dao.dart';
 import '../../../../shared/note_card/core/note_action.dart';
 import '../../../../shared/note_card/core/note_action_controller.dart';
+import '../../../../shared/overlays/app_scaffold.dart';
 import '../../../../shared/overlays/snack_bar_manager.dart';
+import '../../../../shared/text/find_replace.dart';
 import '../../../../shared/text/highlighting_text_field.dart';
-import '../../widgets/checklist_editor.dart';
 import '../../../folders/view/folder_option_menu.dart';
 import '../../../home/core/providers.dart';
-import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
-import '../../widgets/note_editor_options.dart';
+import '../../../home/view/desktop/content_panel/core/navigator.dart';
 import '../../../lock/lock_manger/lock_manager.dart';
 import '../../../lock/view/setup_password_page.dart';
+import '../../../reminder/reminder_manager.dart';
 import '../../../reminder/reminder_page.dart';
+import '../../widgets/checklist_editor.dart';
+import '../../widgets/note_editor_options.dart';
 import '../viewmodel/edit_note_view_model.dart';
 
 /// Defines the content structure currently active in the note editor.
@@ -36,15 +36,17 @@ enum ContentVersion {
 
   const ContentVersion(this.value);
 
-  /// Helper method to easily convert a database integer back into an Enum.
-  /// Fallbacks to [ContentVersion.plainText] if the integer is unrecognized.
+  /// Helper method to convert a database integer back into a [ContentVersion].
+  /// Fallbacks to [ContentVersion.plainText] if unrecognized.
   static ContentVersion fromValue(int val) {
-    return ContentVersion.values.firstWhere((e) => e.value == val, orElse: () => ContentVersion.plainText);
+    return ContentVersion.values.firstWhere(
+      (e) => e.value == val,
+      orElse: () => ContentVersion.plainText,
+    );
   }
 }
 
 /// A desktop-optimized page for creating and editing notes.
-///
 /// Handles automatic saving, syncing, check-lists, and lock management.
 class DesktopEditNotePage extends ConsumerStatefulWidget {
   final NoteWithFolder? existingNoteWithFolder;
@@ -56,19 +58,16 @@ class DesktopEditNotePage extends ConsumerStatefulWidget {
 }
 
 class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
-  // --- Controllers ---
+  static final RegExp _bulletPrefixRegex = RegExp(r'^[-*]\s+');
+
   late final TextEditingController _titleController;
   late final HighlightingTextField _highlightedContentController;
   final UndoHistoryController _undoController = UndoHistoryController();
 
-  // --- View Models & State Management ---
   late final EditNoteViewModel _viewModel;
   NoteWithFolder? _currentNoteWithFolder;
-
-  // String? _selectedFolderIdForNewNote;
   Folder? _selectedFolderForNewNote;
 
-  // --- UI State Flags ---
   late bool _isLocked;
   bool _isAutoSyncingTitle = false;
   bool _isDeleted = false;
@@ -77,22 +76,23 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
 
   final ValueNotifier<bool> _isSaved = ValueNotifier(true);
 
-  // --- Timers & Focus ---
   Timer? _autoSaveTimer;
   late final FocusNode _titleFocusNode;
   late final FocusNode _contentFocusNode;
 
-  // --- Checklist Management ---
   ContentVersion _contentVersion = ContentVersion.plainText;
   List<CheckListItemModel> _currentChecklist = [];
 
-  /// Determines if the note is brand new and unsaved to the local database.
   bool get _isNewNote =>
       _currentNoteWithFolder == null ||
       (_currentNoteWithFolder!.note.title.isEmpty &&
           _currentNoteWithFolder!.note.content.isEmpty &&
           _currentNoteWithFolder!.note.cloudSyncStatus == 0 &&
           _currentNoteWithFolder!.note.localSyncStatus == 0);
+
+  // =============================================================================
+  // LIFECYCLE METHODS
+  // =============================================================================
 
   @override
   void initState() {
@@ -105,7 +105,6 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
     _titleController = TextEditingController(text: _currentNoteWithFolder?.note.title ?? '');
     _highlightedContentController = HighlightingTextField(text: _currentNoteWithFolder?.note.content ?? '');
 
-    // Initialize checklist logic if applicable
     if (_currentNoteWithFolder != null) {
       final String textContent = _highlightedContentController.text.trim();
       if (_currentNoteWithFolder!.note.contentVersion == ContentVersion.checklist.value) {
@@ -119,7 +118,6 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
 
     _isAutoSyncingTitle = _titleController.text.isEmpty && _highlightedContentController.text.isEmpty;
 
-    // Attach listeners
     _highlightedContentController.addListener(_syncTitleFromContent);
     _titleController.addListener(_onTitleChanged);
     _titleController.addListener(_scheduleAutoSave);
@@ -130,16 +128,18 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
   void dispose() {
     _autoSaveTimer?.cancel();
 
-    // Capture exact final state before destruction
     final finalTitle = _titleController.text;
     final finalContent = _highlightedContentController.text;
 
-    // Push final save to the next event loop, safely escaping widget teardown
     Future(() {
-      _executeSave(isManualSave: false, isDisposing: true, overrideTitle: finalTitle, overrideContent: finalContent);
+      _executeSave(
+        isManualSave: false,
+        isDisposing: true,
+        overrideTitle: finalTitle,
+        overrideContent: finalContent,
+      );
     });
 
-    // Cleanup
     _highlightedContentController.removeListener(_syncTitleFromContent);
     _titleController.removeListener(_onTitleChanged);
     _titleController.removeListener(_scheduleAutoSave);
@@ -155,9 +155,9 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
     super.dispose();
   }
 
-  // ===========================================================================
-  // DATA PARSING & SYNC LOGIC
-  // ===========================================================================
+  // =============================================================================
+  // TITLE SYNC & CHECKLIST CONVERSION LOGIC
+  // =============================================================================
 
   List<CheckListItemModel> _convertTextToChecklist(String text) {
     if (text.trim().isEmpty) return [];
@@ -166,17 +166,13 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
       final decoded = jsonDecode(text) as List<dynamic>;
       return decoded.map((e) => CheckListItemModel.fromJson(e)).toList();
     } catch (_) {
-      // Fallback: Parsing normal text
       return text.split('\n').where((line) => line.trim().isNotEmpty).map((line) {
-        String cleanLine = line.trimLeft();
-        cleanLine = cleanLine.replaceFirst(RegExp(r'^[-*]\s+'), ''); // Strip bullets
-
+        String cleanLine = line.trimLeft().replaceFirst(_bulletPrefixRegex, '');
         bool isChecked = false;
         if (cleanLine.toLowerCase().startsWith('x ')) {
           isChecked = true;
           cleanLine = cleanLine.substring(2).trimLeft();
         }
-
         return CheckListItemModel(id: UniqueKey().toString(), text: cleanLine, isChecked: isChecked);
       }).toList();
     }
@@ -186,19 +182,22 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
     return items.map((e) => e.text).join('\n');
   }
 
-  void _syncTitleFromContent() {
-    if (_contentVersion == ContentVersion.checklist) return;
-    if (!_isAutoSyncingTitle) return;
-
-    String firstLine = _highlightedContentController.text.isNotEmpty
-        ? _highlightedContentController.text.split('\n').first
-        : '';
-
-    // Restrict to exactly 30 characters maximum
-    if (firstLine.length > 30) {
-      firstLine = firstLine.substring(0, 30);
+  String _extractFirstLineForTitle() {
+    if (_contentVersion == ContentVersion.checklist) {
+      final text = _currentChecklist.isNotEmpty ? _currentChecklist.first.text : '';
+      return text.length > 30 ? text.substring(0, 30) : text;
     }
+    final text = _highlightedContentController.text;
+    if (text.isEmpty) return '';
+    final newlineIndex = text.indexOf('\n');
+    final line = newlineIndex != -1 ? text.substring(0, newlineIndex) : text;
+    return line.length > 30 ? line.substring(0, 30) : line;
+  }
 
+  void _syncTitleFromContent() {
+    if (_contentVersion == ContentVersion.checklist || !_isAutoSyncingTitle) return;
+
+    final firstLine = _extractFirstLineForTitle();
     if (_titleController.text != firstLine) {
       _titleController.value = _titleController.value.copyWith(
         text: firstLine,
@@ -211,24 +210,20 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
     if (_titleController.text.isEmpty && _highlightedContentController.text.isEmpty) {
       _isAutoSyncingTitle = true;
     } else {
-      String expectedSync = _highlightedContentController.text.isNotEmpty
-          ? _highlightedContentController.text.split('\n').first
-          : '';
-      if (expectedSync.length > 30) expectedSync = expectedSync.substring(0, 30);
-
+      final expectedSync = _extractFirstLineForTitle();
       if (_titleController.text != expectedSync) {
         _isAutoSyncingTitle = false;
       }
     }
   }
 
-  // ===========================================================================
-  // SAVING & DATABASE LOGIC
-  // ===========================================================================
+  // =============================================================================
+  // PERSISTENCE & ACTIONS
+  // =============================================================================
 
   void _scheduleAutoSave() {
     if (_isSaved.value) {
-      _isSaved.value = false; // localized update, no setState needed
+      _isSaved.value = false;
     }
 
     if (_autoSaveTimer?.isActive ?? false) _autoSaveTimer!.cancel();
@@ -265,7 +260,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
 
       if (!isDisposing && mounted && newlySavedNote != null) {
         setState(() {
-          _currentNoteWithFolder = newlySavedNote; // Transitions _isNewNote to false
+          _currentNoteWithFolder = newlySavedNote;
         });
         _isSaved.value = true;
 
@@ -290,7 +285,6 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
   }
 
   Future<void> _handleLockToggle() async {
-    bool isCurrentlyLocked = _isLocked;
     final lockManager = ref.read(lockManagerProvider.notifier);
     bool shouldProceed = false;
 
@@ -316,7 +310,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
       final success = await lockManager.togglePersistentLock(
         _currentNoteWithFolder!.note.uuid,
         '',
-        shouldLock: !isCurrentlyLocked,
+        shouldLock: !_isLocked,
         ignorePassword: true,
       );
 
@@ -324,12 +318,11 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
         if (mounted) {
           setState(() => _isLocked = !_isLocked);
         }
-
-        if (!isCurrentlyLocked) {
-          _handleCloseNote(); // Only close the note if it was just locked
+        if (!_isLocked) {
+          _handleCloseNote();
         }
-      } else {
-        if (mounted) SnackBarManager.show(msg: 'Action failed');
+      } else if (mounted) {
+        SnackBarManager.show(msg: 'Action failed');
       }
     }
   }
@@ -337,41 +330,59 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
   void _handleCloseNote() {
     ref.read(activeNoteProvider.notifier).clear();
     ref.read(desktopRightPanelViewProvider.notifier).setView(RightPanelPageOptions.noteEditor);
-    if (context.canPop()) context.pop();
+    if (mounted && context.canPop()) context.pop();
   }
 
-  // ===========================================================================
-  // UI BUILDERS
-  // ===========================================================================
+  Future<void> _openReminderDialog() async {
+    if (_currentNoteWithFolder == null) return;
+    final targetUuid = _currentNoteWithFolder!.note.uuid;
+    final targetTitle = _currentNoteWithFolder!.note.title;
+    final existingReminder = _currentNoteWithFolder!.note.reminderAt;
+    final existingRepeatMode = _currentNoteWithFolder!.note.reminderRepeatMode;
+    final existingCustomDays = _currentNoteWithFolder!.note.reminderCustomDays;
+
+    await showDialog<bool>(
+      context: context,
+      builder: (_) => ReminderPage(
+        noteUuid: targetUuid,
+        noteTitle: targetTitle,
+        existingReminderAt: existingReminder,
+        existingRepeatMode: existingRepeatMode,
+        existingCustomDays: existingCustomDays,
+      ),
+    );
+
+    if (!mounted) return;
+    try {
+      final updatedNote = await ref.read(notesDaoProvider).getNoteById(targetUuid);
+      ref.read(activeNoteProvider.notifier).setNote(updatedNote);
+      if (mounted) setState(() => _currentNoteWithFolder = updatedNote);
+    } catch (_) {}
+  }
 
   String _getFormattedDate() {
     final now = _currentNoteWithFolder?.note.updatedAt ?? _currentNoteWithFolder?.note.createdAt ?? DateTime.now();
-    return _isNewNote
-        ? "${now.month}/${now.day}/${now.year}"
-        : "${now.month}/${now.day}/${now.year} ${now.hour}:${now.minute.toString().padLeft(2, '0')}";
+    if (_isNewNote) {
+      return '${now.month}/${now.day}/${now.year}';
+    }
+    final minuteStr = now.minute.toString().padLeft(2, '0');
+    return '${now.month}/${now.day}/${now.year} ${now.hour}:$minuteStr';
   }
+
+  // =============================================================================
+  // UI BUILDERS
+  // =============================================================================
 
   @override
   Widget build(BuildContext context) {
     final panelColor = Theme.of(context).colorScheme.surfaceContainerLow;
-
     final currentFolder = _currentNoteWithFolder?.folder ?? _selectedFolderForNewNote;
-
-    // Extract the color directly from our localized currentFolder
-    final folderAccentColor = currentFolder != null
-        ? Colors.primaries[currentFolder.colorIndex % Colors.primaries.length]
-        : Colors.transparent;
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Optimal reading width
         const double maxTextWidth = 850.0;
-
-        // Lock the left margin
         const double leftPadding = 48.0;
 
-        // The right margin absorbs the extra screen width so text doesn't stretch forever.
-        // It maintains a minimum right padding of 48.0 on smaller screens.
         final double rightPadding = constraints.maxWidth > (maxTextWidth + leftPadding + 48.0)
             ? constraints.maxWidth - maxTextWidth - leftPadding
             : 48.0;
@@ -460,14 +471,6 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // --- The Top Accent Border ---
-              // if (currentFolder != null)
-              //   Container(
-              //     height: 0, // Change thickness here
-              //     width: double.infinity,
-              //     color: folderAccentColor,
-              //   ),
-
               if (_isFind)
                 FindReplaceWidget(
                   contentController: _highlightedContentController,
@@ -479,7 +482,6 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
                   },
                   padding: leftPadding,
                 ),
-
               _buildTitleField(leftPadding: leftPadding, rightPadding: rightPadding),
               Expanded(
                 child: _buildContentField(leftPadding: leftPadding, rightPadding: rightPadding),
@@ -491,132 +493,98 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
     );
   }
 
-  // ===========================================================================
-  // Top Meta Row
-  // ===========================================================================
-
   Widget _buildTopMetaRow(Folder? currentFolder) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
-        const SizedBox(width: 8),
-        FolderOptionMenu(
-          selectedFolder: currentFolder,
-          emptyLabel: 'none',
-          onFolderSelected: (folder) async {
-            final newFolderId = folder?.uuid;
+          const SizedBox(width: 8),
+          FolderOptionMenu(
+            selectedFolder: currentFolder,
+            emptyLabel: 'none',
+            onFolderSelected: (folder) async {
+              final newFolderId = folder?.uuid;
 
-            if (_currentNoteWithFolder?.note.folderId == newFolderId) return;
+              if (_currentNoteWithFolder?.note.folderId == newFolderId) return;
 
-            if (!_isNewNote && _currentNoteWithFolder != null) {
-              await ref.read(notesDaoProvider).updateNoteFolder(_currentNoteWithFolder!.note.uuid, newFolderId);
-            }
-
-            setState(() {
-              if (_currentNoteWithFolder != null) {
-                // Copy the underlying Drift Note, updating the folderId
-                final updatedDriftNote = _currentNoteWithFolder!.note.copyWith(folderId: drift.Value(newFolderId));
-                // Re-wrap it in a new NoteWithFolder class, passing the
-                // new folder object (which was passed in from the dropdown).
-                _currentNoteWithFolder = NoteWithFolder(note: updatedDriftNote, folder: folder);
-              } else {
-                _selectedFolderForNewNote = folder;
+              if (!_isNewNote && _currentNoteWithFolder != null) {
+                await ref.read(notesDaoProvider).updateNoteFolder(_currentNoteWithFolder!.note.uuid, newFolderId);
               }
-            });
-          },
-        ),
-        const SizedBox(width: 16),
-        Text(
-          "Edited ${_getFormattedDate()}",
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-        ),
-        const SizedBox(width: 16),
-        ValueListenableBuilder<bool>(
-          valueListenable: _isSaved,
-          builder: (context, isSaved, child) {
-            return isSaved
-                ? Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.done_all, size: 16, color: Theme.of(context).colorScheme.outline),
-                        const SizedBox(width: 4),
-                        Text(
-                          "Saved",
-                          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.outline,
-                            fontStyle: FontStyle.italic,
+
+              setState(() {
+                if (_currentNoteWithFolder != null) {
+                  final updatedDriftNote = _currentNoteWithFolder!.note.copyWith(folderId: drift.Value(newFolderId));
+                  _currentNoteWithFolder = NoteWithFolder(note: updatedDriftNote, folder: folder);
+                } else {
+                  _selectedFolderForNewNote = folder;
+                }
+              });
+            },
+          ),
+          const SizedBox(width: 16),
+          Text(
+            'Edited ${_getFormattedDate()}',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+          ),
+          const SizedBox(width: 16),
+          ValueListenableBuilder<bool>(
+            valueListenable: _isSaved,
+            builder: (context, isSaved, child) {
+              return isSaved
+                  ? Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.done_all, size: 16, color: Theme.of(context).colorScheme.outline),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Saved',
+                            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                  color: Theme.of(context).colorScheme.outline,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(4),
+                        onTap: () {
+                          _executeSave(isManualSave: true);
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.done, size: 16, color: Theme.of(context).colorScheme.primary),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Save',
+                                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
-                  )
-                : Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(4),
-                      onTap: () {
-                        _executeSave(isManualSave: true);
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.done, size: 16, color: Theme.of(context).colorScheme.primary),
-                            const SizedBox(width: 4),
-                            Text(
-                              "Save",
-                              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                                color: Theme.of(context).colorScheme.primary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
                       ),
-                    ),
-                  );
-          },
-        ),
-        if (_currentNoteWithFolder?.note.reminderAt != null) ...[
-          const SizedBox(width: 8),
-          _buildReminderChip(context, _currentNoteWithFolder!.note.reminderAt!),
+                    );
+            },
+          ),
+          if (_currentNoteWithFolder?.note.reminderAt != null) ...[
+            const SizedBox(width: 8),
+            _buildReminderChip(context, _currentNoteWithFolder!.note.reminderAt!),
+          ],
+          const SizedBox(width: 16),
+          _buildNewLabel(),
         ],
-        const SizedBox(width: 16),
-        _buildNewLabel(),
-      ],
-    ),
-  );
-}
-
-  Future<void> _openReminderDialog() async {
-    if (_currentNoteWithFolder == null) return;
-    final targetUuid = _currentNoteWithFolder!.note.uuid;
-    final targetTitle = _currentNoteWithFolder!.note.title;
-    final existingReminder = _currentNoteWithFolder!.note.reminderAt;
-    final existingRepeatMode = _currentNoteWithFolder!.note.reminderRepeatMode;
-    final existingCustomDays = _currentNoteWithFolder!.note.reminderCustomDays;
-
-    await showDialog<bool>(
-      context: context,
-      builder: (_) => ReminderPage(
-        noteUuid: targetUuid,
-        noteTitle: targetTitle,
-        existingReminderAt: existingReminder,
-        existingRepeatMode: existingRepeatMode,
-        existingCustomDays: existingCustomDays,
       ),
     );
-
-    if (!mounted) return;
-    try {
-      final updatedNote = await ref.read(notesDaoProvider).getNoteById(targetUuid);
-      ref.read(activeNoteProvider.notifier).setNote(updatedNote);
-      if (mounted) setState(() => _currentNoteWithFolder = updatedNote);
-    } catch (_) {}
   }
 
   Widget _buildReminderChip(BuildContext context, DateTime reminderAt) {
@@ -653,18 +621,14 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
               Icon(
                 isPast ? Icons.notification_important_rounded : Icons.notifications_active_rounded,
                 size: 14,
-                color: isPast
-                    ? colorScheme.onErrorContainer
-                    : colorScheme.onSecondaryContainer,
+                color: isPast ? colorScheme.onErrorContainer : colorScheme.onSecondaryContainer,
               ),
               const SizedBox(width: 4),
               Text(
                 formattedDate,
                 style: theme.textTheme.labelSmall?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: isPast
-                      ? colorScheme.onErrorContainer
-                      : colorScheme.onSecondaryContainer,
+                  color: isPast ? colorScheme.onErrorContainer : colorScheme.onSecondaryContainer,
                 ),
               ),
             ],
@@ -698,7 +662,6 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
         }
 
         return Row(
-          mainAxisAlignment: MainAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
             if (value.canUndo)
@@ -720,10 +683,6 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
     );
   }
 
-  // ===========================================================================
-  // Title & Content Fields
-  // ===========================================================================
-
   Widget _buildTitleField({required double leftPadding, required double rightPadding}) {
     return FocusTraversalOrder(
       order: const NumericFocusOrder(4),
@@ -744,8 +703,8 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
           style: Theme.of(context).textTheme.titleLarge,
           decoration: InputDecoration(
             isDense: true,
-            contentPadding: EdgeInsets.fromLTRB(leftPadding, 32, rightPadding, 8,),
-            hintText: "Title",
+            contentPadding: EdgeInsets.fromLTRB(leftPadding, 32, rightPadding, 8),
+            hintText: 'Title',
             border: InputBorder.none,
             focusedBorder: InputBorder.none,
             enabledBorder: InputBorder.none,
@@ -796,7 +755,6 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
           }
           return KeyEventResult.ignored;
         },
-
         child: _contentVersion == ContentVersion.checklist
             ? Padding(
                 padding: EdgeInsets.only(left: leftPadding, right: rightPadding),
@@ -805,7 +763,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
                   builder: (context, _) {
                     return CheckListWidget(
                       initialData: _currentChecklist,
-                      searchQuery: _highlightedContentController.searchQuery, // Passes search query down
+                      searchQuery: _highlightedContentController.searchQuery,
                       onChange: (List<CheckListItemModel> updatedList) {
                         _currentChecklist = updatedList;
                         _highlightedContentController.text = jsonEncode(updatedList.map((e) => e.toJson()).toList());
@@ -818,7 +776,6 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
                   },
                 ),
               )
-
             : TextField(
                 controller: _highlightedContentController,
                 undoController: _undoController,
@@ -827,14 +784,14 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
                 textAlignVertical: TextAlignVertical.top,
                 textCapitalization: TextCapitalization.sentences,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  height: 1.6, // improved line height for reading
-                ),
+                      height: 1.6,
+                    ),
                 decoration: InputDecoration(
                   border: InputBorder.none,
                   focusedBorder: InputBorder.none,
                   enabledBorder: InputBorder.none,
                   contentPadding: EdgeInsets.fromLTRB(leftPadding, 8, rightPadding, 32),
-                  hintText: "Type here...",
+                  hintText: 'Type here...',
                 ),
               ),
       ),

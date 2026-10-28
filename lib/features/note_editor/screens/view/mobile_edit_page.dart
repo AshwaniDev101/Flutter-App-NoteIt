@@ -1,36 +1,32 @@
 import 'dart:convert';
 
+import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:noteit/database/drift/notes/notes_dao.dart';
-import 'package:noteit/features/reminder/reminder_manager.dart';
-
-import 'package:noteit/features/note_editor/screens/view/desktop_edit_page.dart';
-
 import 'package:window_manager/window_manager.dart';
 
-import '../../../../shared/app_bars/desktop_window_controls.dart';
-
 import '../../../../core/util/platform_helper.dart';
-import '../../../../shared/text/find_replace.dart';
+import '../../../../database/drift/local_database.dart';
+import '../../../../database/drift/notes/notes_dao.dart';
+import '../../../../shared/app_bars/desktop_window_controls.dart';
 import '../../../../shared/note_card/core/note_action.dart';
 import '../../../../shared/note_card/core/note_action_controller.dart';
 import '../../../../shared/overlays/snack_bar_manager.dart';
+import '../../../../shared/text/find_replace.dart';
 import '../../../../shared/text/highlighting_text_field.dart';
-import '../../../folders/core/providers.dart';
-import '../../../home/core/providers.dart';
-import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
-import '../../widgets/checklist_editor.dart';
 import '../../../folders/view/folder_option_menu.dart';
-import '../../widgets/note_editor_options.dart';
-
+import '../../../home/core/providers.dart';
+import '../../../home/view/desktop/content_panel/core/navigator.dart';
 import '../../../lock/lock_manger/lock_manager.dart';
 import '../../../lock/view/setup_password_page.dart';
+import '../../../reminder/reminder_manager.dart';
 import '../../../reminder/reminder_page.dart';
+import '../../widgets/checklist_editor.dart';
+import '../../widgets/note_editor_options.dart';
 import '../viewmodel/edit_note_view_model.dart';
-
+import 'desktop_edit_page.dart';
 
 class MobileEditNotePage extends ConsumerStatefulWidget {
   final NoteWithFolder? existingNoteWithFolder;
@@ -42,12 +38,17 @@ class MobileEditNotePage extends ConsumerStatefulWidget {
 }
 
 class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
+  static final RegExp _bulletPrefixRegex = RegExp(r'^[-*]\s+');
 
   late final TextEditingController _titleController;
   late final HighlightingTextField _contentController;
   final UndoHistoryController _undoController = UndoHistoryController();
 
   late final EditNoteViewModel _viewModel;
+  late final ActiveNoteNotifier _activeNoteNotifier;
+  late final NotesDao _notesDao;
+  NoteWithFolder? _currentNoteWithFolder;
+  Folder? _selectedFolderForNewNote;
 
   bool _isAutoSyncingTitle = false;
   late bool _isLocked;
@@ -56,7 +57,6 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
   bool _hasCreatedNewNote = false;
   bool _isFind = false;
 
-  // --- Checklist State ---
   ContentVersion _contentVersion = ContentVersion.plainText;
   List<CheckListItemModel> _currentChecklist = [];
 
@@ -64,26 +64,32 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
   late final FocusNode _contentFocusNode;
 
   bool get _isNewNote =>
-      widget.existingNoteWithFolder == null ||
-          (widget.existingNoteWithFolder!.note.title.isEmpty &&
-              widget.existingNoteWithFolder!.note.content.isEmpty &&
-              widget.existingNoteWithFolder!.note.cloudSyncStatus == 0 &&
-              widget.existingNoteWithFolder!.note.localSyncStatus == 0);
+      _currentNoteWithFolder == null ||
+      (_currentNoteWithFolder!.note.title.isEmpty &&
+          _currentNoteWithFolder!.note.content.isEmpty &&
+          _currentNoteWithFolder!.note.cloudSyncStatus == 0 &&
+          _currentNoteWithFolder!.note.localSyncStatus == 0);
+
+  // =============================================================================
+  // LIFECYCLE METHODS
+  // =============================================================================
 
   @override
   void initState() {
     super.initState();
+    _currentNoteWithFolder = widget.existingNoteWithFolder;
     _viewModel = ref.read(editNoteViewModelProvider.notifier);
-    _isLocked = widget.existingNoteWithFolder?.note.lockedAt != null;
-    _isPinned = widget.existingNoteWithFolder?.note.pinnedAt != null;
+    _activeNoteNotifier = ref.read(activeNoteProvider.notifier);
+    _notesDao = ref.read(notesDaoProvider);
+    _isLocked = _currentNoteWithFolder?.note.lockedAt != null;
+    _isPinned = _currentNoteWithFolder?.note.pinnedAt != null;
 
-    _titleController = TextEditingController(text: widget.existingNoteWithFolder?.note.title ?? '');
-    _contentController = HighlightingTextField(text: widget.existingNoteWithFolder?.note.content ?? '');
+    _titleController = TextEditingController(text: _currentNoteWithFolder?.note.title ?? '');
+    _contentController = HighlightingTextField(text: _currentNoteWithFolder?.note.content ?? '');
 
-    // --- Checklist Init ---
-    if (widget.existingNoteWithFolder != null) {
+    if (_currentNoteWithFolder != null) {
       final String textContent = _contentController.text.trim();
-      if (widget.existingNoteWithFolder!.note.contentVersion == ContentVersion.checklist.value ||
+      if (_currentNoteWithFolder!.note.contentVersion == ContentVersion.checklist.value ||
           (textContent.startsWith('[') && textContent.endsWith(']'))) {
         _contentVersion = ContentVersion.checklist;
         _currentChecklist = _convertTextToChecklist(textContent);
@@ -98,16 +104,39 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
     _contentController.addListener(_syncTitleFromContent);
     _titleController.addListener(_onTitleChanged);
 
-    if (widget.existingNoteWithFolder != null) {
+    if (_currentNoteWithFolder != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          ref.read(activeNoteProvider.notifier).setNote(widget.existingNoteWithFolder!);
+          _activeNoteNotifier.setNote(_currentNoteWithFolder!);
         }
       });
     }
   }
 
-  // --- Checklist Conversion Helpers ---
+  @override
+  void dispose() {
+    _executeSave(isManualSave: false);
+
+    _contentController.searchQuery = '';
+    _contentController.removeListener(_syncTitleFromContent);
+    _titleController.removeListener(_onTitleChanged);
+    _titleFocusNode.dispose();
+    _titleController.dispose();
+    _contentController.dispose();
+    _undoController.dispose();
+    _contentFocusNode.dispose();
+
+    Future.microtask(() {
+      _activeNoteNotifier.clear();
+    });
+
+    super.dispose();
+  }
+
+  // =============================================================================
+  // TITLE SYNC & CHECKLIST CONVERSION LOGIC
+  // =============================================================================
+
   List<CheckListItemModel> _convertTextToChecklist(String text) {
     if (text.trim().isEmpty) return [];
     try {
@@ -115,7 +144,7 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
       return decoded.map((e) => CheckListItemModel.fromJson(e)).toList();
     } catch (_) {
       return text.split('\n').where((line) => line.trim().isNotEmpty).map((line) {
-        String cleanLine = line.trimLeft().replaceFirst(RegExp(r'^[-*]\s+'), '');
+        String cleanLine = line.trimLeft().replaceFirst(_bulletPrefixRegex, '');
         bool isChecked = false;
         if (cleanLine.toLowerCase().startsWith('x ')) {
           isChecked = true;
@@ -134,13 +163,14 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
     if (_contentVersion == ContentVersion.checklist) {
       return _currentChecklist.isNotEmpty ? _currentChecklist.first.text : '';
     }
-    return _contentController.text.isNotEmpty ? _contentController.text.split('\n').first : '';
+    final text = _contentController.text;
+    if (text.isEmpty) return '';
+    final newlineIndex = text.indexOf('\n');
+    return newlineIndex != -1 ? text.substring(0, newlineIndex) : text;
   }
-  // -------------------------------
 
   void _syncTitleFromContent() {
-    if (_contentVersion == ContentVersion.checklist) return; // Prevent JSON syncing
-    if (!_isAutoSyncingTitle) return;
+    if (_contentVersion == ContentVersion.checklist || !_isAutoSyncingTitle) return;
 
     final firstLine = _extractFirstLineForTitle();
     if (_titleController.text != firstLine) {
@@ -152,34 +182,18 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
   }
 
   void _onTitleChanged() {
-    if (_contentVersion == ContentVersion.checklist) return; // Prevent JSON syncing
+    if (_contentVersion == ContentVersion.checklist) return;
 
     if (_titleController.text.isEmpty) {
       _isAutoSyncingTitle = true;
-    } else {
-      if (_titleController.text != _extractFirstLineForTitle()) _isAutoSyncingTitle = false;
+    } else if (_titleController.text != _extractFirstLineForTitle()) {
+      _isAutoSyncingTitle = false;
     }
   }
 
-  @override
-  void dispose() {
-    _executeSave(isManualSave: false);
-
-    _contentController.searchQuery = '';
-    _contentController.removeListener(_syncTitleFromContent);
-    _titleController.removeListener(_onTitleChanged);
-    _titleFocusNode.dispose();
-    _titleController.dispose();
-    _contentController.dispose();
-    _undoController.dispose();
-    _contentFocusNode.dispose();
-
-    Future.microtask(() {
-      ref.read(activeNoteProvider.notifier).clear();
-    });
-
-    super.dispose();
-  }
+  // =============================================================================
+  // PERSISTENCE & ACTIONS
+  // =============================================================================
 
   Future<void> _executeSave({bool isManualSave = false}) async {
     if (_hasTriggeredFinalSave && !isManualSave) return;
@@ -192,22 +206,30 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
     if (_isNewNote) {
       if (_hasCreatedNewNote) return;
 
-      final activeFolderId = ref.read(activeFolderProvider)?.uuid;
-      final newNote = await _viewModel.saveNote(title, content, _contentVersion, folderId: activeFolderId);
-      if (newNote != null) {
-        ref.read(activeNoteProvider.notifier).setNote(newNote);
+      final newlySavedNote = await _viewModel.saveNote(
+        title,
+        content,
+        _contentVersion,
+        folderId: _selectedFolderForNewNote?.uuid,
+      );
+
+      if (newlySavedNote != null) {
+        if (mounted) {
+          setState(() {
+            _currentNoteWithFolder = newlySavedNote;
+          });
+        }
+        _activeNoteNotifier.setNote(newlySavedNote);
       }
       _hasCreatedNewNote = true;
     } else {
-      // Check for version changes and pass _contentVersion
-      if (title != widget.existingNoteWithFolder!.note.title ||
-          content != widget.existingNoteWithFolder!.note.content ||
-          widget.existingNoteWithFolder!.note.contentVersion != _contentVersion.value) {
-
-        await _viewModel.updateNote(widget.existingNoteWithFolder!.note.uuid, title, content, _contentVersion);
+      if (title != _currentNoteWithFolder!.note.title ||
+          content != _currentNoteWithFolder!.note.content ||
+          _currentNoteWithFolder!.note.contentVersion != _contentVersion.value) {
+        await _viewModel.updateNote(_currentNoteWithFolder!.note.uuid, title, content, _contentVersion);
         try {
-          final updatedNote = await ref.read(notesDaoProvider).getNoteById(widget.existingNoteWithFolder!.note.uuid);
-          ref.read(activeNoteProvider.notifier).setNote(updatedNote);
+          final updatedNote = await _notesDao.getNoteById(_currentNoteWithFolder!.note.uuid);
+          _activeNoteNotifier.setNote(updatedNote);
         } catch (_) {}
       }
     }
@@ -223,9 +245,9 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
   }
 
   void _handleDeleteNote() {
-    if (!_isNewNote && widget.existingNoteWithFolder != null) {
+    if (!_isNewNote && _currentNoteWithFolder != null) {
       _hasTriggeredFinalSave = true;
-      ref.read(editNoteViewModelProvider.notifier).deleteNote(widget.existingNoteWithFolder!.note.uuid);
+      ref.read(editNoteViewModelProvider.notifier).deleteNote(_currentNoteWithFolder!.note.uuid);
       if (mounted) context.pop();
     }
   }
@@ -236,12 +258,87 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
     if (mounted) context.pop();
   }
 
-  String _getFormattedDate() {
-    final now = widget.existingNoteWithFolder?.note.updatedAt ?? widget.existingNoteWithFolder?.note.createdAt ?? DateTime.now();
-    return _isNewNote
-        ? "${now.month}/${now.day}/${now.year}"
-        : "${now.month}/${now.day}/${now.year} ${now.hour}:${now.minute.toString().padLeft(2, '0')}";
+  Future<void> _handleLockToggle() async {
+    final lockManager = ref.read(lockManagerProvider.notifier);
+    bool shouldProceed = false;
+
+    if (!lockManager.hasMasterPassword) {
+      final enteredPassword = await showGeneralDialog<String>(
+        context: context,
+        barrierDismissible: true,
+        barrierLabel: 'Dismiss',
+        barrierColor: Colors.black45,
+        pageBuilder: (context, anim1, anim2) => const SetupPasswordPage(),
+      );
+
+      if (enteredPassword != null && enteredPassword.isNotEmpty) {
+        await lockManager.setupMasterPassword(enteredPassword);
+        if (context.mounted) SnackBarManager.show(msg: 'Master Password Created!');
+        shouldProceed = true;
+      }
+    } else {
+      shouldProceed = true;
+    }
+
+    if (shouldProceed && _currentNoteWithFolder != null) {
+      final success = await lockManager.togglePersistentLock(
+        _currentNoteWithFolder!.note.uuid,
+        '',
+        shouldLock: !_isLocked,
+        ignorePassword: true,
+      );
+
+      if (success && mounted) {
+        setState(() => _isLocked = !_isLocked);
+        if (!_isLocked) {
+          context.pop();
+        }
+      } else if (mounted) {
+        SnackBarManager.show(msg: 'Action failed');
+      }
+    }
   }
+
+  Future<void> _openReminderDialog() async {
+    if (_currentNoteWithFolder == null) return;
+    final mTargetUuid = _currentNoteWithFolder!.note.uuid;
+    final mTargetTitle = _currentNoteWithFolder!.note.title;
+    final mExistingReminder = _currentNoteWithFolder!.note.reminderAt;
+    final mExistingRepeatMode = _currentNoteWithFolder!.note.reminderRepeatMode;
+    final mExistingCustomDays = _currentNoteWithFolder!.note.reminderCustomDays;
+
+    await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => ReminderPage(
+        noteUuid: mTargetUuid,
+        noteTitle: mTargetTitle,
+        existingReminderAt: mExistingReminder,
+        existingRepeatMode: mExistingRepeatMode,
+        existingCustomDays: mExistingCustomDays,
+      ),
+    );
+    if (!mounted) return;
+    try {
+      final updatedNote = await ref.read(notesDaoProvider).getNoteById(mTargetUuid);
+      ref.read(activeNoteProvider.notifier).setNote(updatedNote);
+      setState(() {
+        _currentNoteWithFolder = updatedNote;
+      });
+    } catch (_) {}
+  }
+
+  String _getFormattedDate() {
+    final now = _currentNoteWithFolder?.note.updatedAt ?? _currentNoteWithFolder?.note.createdAt ?? DateTime.now();
+    if (_isNewNote) {
+      return '${now.month}/${now.day}/${now.year}';
+    }
+    final minuteStr = now.minute.toString().padLeft(2, '0');
+    return '${now.month}/${now.day}/${now.year} ${now.hour}:$minuteStr';
+  }
+
+  // =============================================================================
+  // UI BUILDERS
+  // =============================================================================
 
   @override
   Widget build(BuildContext context) {
@@ -252,52 +349,50 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
       },
       child: Scaffold(
         backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
-        appBar: AppBar(
-          flexibleSpace: PlatformHelper.isNativeDesktop
-              ? DragToMoveArea(
+        appBar: PlatformHelper.isNativeDesktop
+            ? AppBar(
+                flexibleSpace: DragToMoveArea(
                   child: GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     child: const SizedBox.expand(),
                   ),
-                )
-              : null,
-          automaticallyImplyLeading: false,
-          leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: _handleMobileBack),
-          titleSpacing: 0,
-          actions: [
-            _buildUndoRedoButtons(),
-
-
-            _optionMenu(),
-
-
-            const DesktopWindowControls(),
-          ],
-        ),
-        body: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                child: _buildTitleField(),
-              ),
-              if (_isFind) ...[
-                FindReplaceWidget(
-                  contentController: _contentController,
-                  contentFocusNode: _contentFocusNode,
-                  onClose: () {
-                    _contentController.searchQuery = '';
-                    setState(() {
-                      _isFind = false;
-                    });
-                  },
-                  padding: 16.0,
                 ),
-              ] else ...[
-                _buildMetaDataRow(padding: 16.0),
-              ],
-              Expanded(child: _buildContentField(padding: 16.0)),
+                automaticallyImplyLeading: false,
+                titleSpacing: 0,
+                actions: const [
+                  DesktopWindowControls(),
+                ],
+              )
+            : null,
+        body: SafeArea(
+          child: Stack(
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                    child: _buildTitleRow(),
+                  ),
+                  if (_isFind) ...[
+                    FindReplaceWidget(
+                      contentController: _contentController,
+                      contentFocusNode: _contentFocusNode,
+                      onClose: () {
+                        _contentController.searchQuery = '';
+                        setState(() {
+                          _isFind = false;
+                        });
+                      },
+                      padding: 16.0,
+                    ),
+                  ] else ...[
+                    _buildMetaDataRow(padding: 16.0),
+                  ],
+                  Expanded(child: _buildContentField(padding: 16.0)),
+                ],
+              ),
+              _buildUndoRedoButtons(),
             ],
           ),
         ),
@@ -305,45 +400,60 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
     );
   }
 
-  Widget _buildTitleField() {
+  Widget _buildTitleRow() {
     return SizedBox(
-      height: 40,
-      child: Focus(
-        onKeyEvent: (node, event) {
-          if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
-            node.unfocus();
-            return KeyEventResult.handled;
-          }
-          return KeyEventResult.ignored;
-        },
-        child: TextField(
-          controller: _titleController,
-          focusNode: _titleFocusNode,
-          autofocus: _isNewNote,
-          textAlignVertical: TextAlignVertical.center,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-          decoration: InputDecoration(
-            isDense: true,
-            hintText: "Title",
-            suffixIcon: _titleFocusNode.hasFocus
-                ? ValueListenableBuilder<TextEditingValue>(
-                    valueListenable: _titleController,
-                    builder: (context, value, child) {
-                      if (value.text.isEmpty) {
-                        return const SizedBox.shrink();
-                      }
-                      return IconButton(
-                        icon: const Icon(Icons.close, size: 16),
-                        onPressed: () {
-                          _titleController.clear();
-                          _isAutoSyncingTitle = true;
-                        },
-                      );
-                    },
-                  )
-                : const SizedBox.shrink(),
+      height: 48,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          IconButton(
+            onPressed: _handleMobileBack,
+            icon: const Icon(Icons.arrow_back),
           ),
-        ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Focus(
+              onKeyEvent: (node, event) {
+                if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
+                  node.unfocus();
+                  return KeyEventResult.handled;
+                }
+                return KeyEventResult.ignored;
+              },
+              child: TextField(
+                controller: _titleController,
+                focusNode: _titleFocusNode,
+                autofocus: _isNewNote,
+                textAlignVertical: TextAlignVertical.center,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                decoration: InputDecoration(
+                  isDense: true,
+                  contentPadding: EdgeInsets.zero,
+                  border: InputBorder.none,
+                  hintText: 'Title',
+                  suffixIcon: _titleFocusNode.hasFocus
+                      ? ValueListenableBuilder<TextEditingValue>(
+                          valueListenable: _titleController,
+                          builder: (context, value, child) {
+                            if (value.text.isEmpty) {
+                              return const SizedBox.shrink();
+                            }
+                            return IconButton(
+                              icon: const Icon(Icons.close, size: 16),
+                              onPressed: () {
+                                _titleController.clear();
+                                _isAutoSyncingTitle = true;
+                              },
+                            );
+                          },
+                        )
+                      : const SizedBox.shrink(),
+                ),
+              ),
+            ),
+          ),
+          _optionMenu(),
+        ],
       ),
     );
   }
@@ -364,87 +474,97 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
           }
           return KeyEventResult.ignored;
         },
-        // --- UI Swap Logic ---
         child: _contentVersion == ContentVersion.checklist
             ? CheckListWidget(
-          initialData: _currentChecklist,
-          onChange: (List<CheckListItemModel> updatedList) {
-            _currentChecklist = updatedList;
-            _contentController.text = jsonEncode(updatedList.map((e) => e.toJson()).toList());
-          },
-        )
+                initialData: _currentChecklist,
+                onChange: (List<CheckListItemModel> updatedList) {
+                  _currentChecklist = updatedList;
+                  _contentController.text = jsonEncode(updatedList.map((e) => e.toJson()).toList());
+                },
+              )
             : TextField(
-          controller: _contentController,
-          undoController: _undoController,
-          maxLines: null,
-          expands: true,
-          textAlignVertical: TextAlignVertical.top,
-          textCapitalization: TextCapitalization.sentences,
-          decoration: const InputDecoration(border: InputBorder.none),
-          style: Theme.of(context).textTheme.bodyLarge,
-        ),
+                controller: _contentController,
+                undoController: _undoController,
+                maxLines: null,
+                expands: true,
+                textAlignVertical: TextAlignVertical.top,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: const InputDecoration(border: InputBorder.none),
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
       ),
     );
   }
 
   Widget _buildMetaDataRow({required double padding}) {
-    final currentFolder = widget.existingNoteWithFolder?.folder;
+    final currentFolder = _currentNoteWithFolder?.folder ?? _selectedFolderForNewNote;
+
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: padding, vertical: 8.0),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-            decoration: BoxDecoration(
-              color: _isNewNote
-                  ? Theme.of(context).colorScheme.primaryContainer
-                  : Theme.of(context).colorScheme.tertiaryContainer,
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Text(
-              _isNewNote ? 'New' : 'Updating...',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                fontWeight: FontWeight.bold,
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  FolderOptionMenu(
+                    selectedFolder: currentFolder,
+                    emptyLabel: 'none',
+                    onFolderSelected: (folder) async {
+                      final newFolderId = folder?.uuid;
+                      if (_currentNoteWithFolder?.note.folderId == newFolderId) return;
+
+                      if (!_isNewNote && _currentNoteWithFolder != null) {
+                        await ref.read(notesDaoProvider).updateNoteFolder(_currentNoteWithFolder!.note.uuid, newFolderId);
+                      }
+
+                      setState(() {
+                        if (_currentNoteWithFolder != null) {
+                          final updatedDriftNote = _currentNoteWithFolder!.note.copyWith(folderId: drift.Value(newFolderId));
+                          _currentNoteWithFolder = NoteWithFolder(note: updatedDriftNote, folder: folder);
+                        } else {
+                          _selectedFolderForNewNote = folder;
+                        }
+                      });
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  if (_currentNoteWithFolder?.note.reminderAt != null) ...[
+                    _buildReminderChip(context, _currentNoteWithFolder!.note.reminderAt!),
+                    const SizedBox(width: 8),
+                  ],
+                  if (_isLocked) ...[
+                    const Icon(Icons.lock_outline, size: 16),
+                    const SizedBox(width: 8),
+                  ],
+                ],
               ),
             ),
           ),
-          const SizedBox(width: 8),
-          Flexible(
-            child: FolderOptionMenu(
-              selectedFolder: currentFolder,
-              emptyLabel: 'none',
-              onFolderSelected: (folder) async {
-                final newFolderId = folder?.uuid;
-                if (widget.existingNoteWithFolder?.note.folderId == newFolderId) return;
-                if (!_isNewNote && widget.existingNoteWithFolder != null) {
-                  await ref.read(notesDaoProvider).updateNoteFolder(widget.existingNoteWithFolder!.note.uuid, newFolderId);
-                  try {
-                    final updatedNote = await ref.read(notesDaoProvider).getNoteById(widget.existingNoteWithFolder!.note.uuid);
-                    ref.read(activeNoteProvider.notifier).setNote(updatedNote);
-                  } catch (_) {}
-                }
-              },
-            ),
+          const SizedBox(width: 16),
+          Text(
+            _getFormattedDate(),
+            maxLines: 1,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
-          const Spacer(),
-          if (widget.existingNoteWithFolder?.note.reminderAt != null) ...[
-            Flexible(
-              child: _buildReminderChip(context, widget.existingNoteWithFolder!.note.reminderAt!),
-            ),
+          if (_isNewNote) ...[
             const SizedBox(width: 8),
-          ],
-          if (_isLocked) ...[
-            const Icon(Icons.lock_outline, size: 16),
-            const SizedBox(width: 8),
-          ],
-          Flexible(
-            child: Text(
-              _getFormattedDate(),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                'New',
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -479,58 +599,12 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
     );
   }
 
-  Future<void> _handleLockToggle() async {
-    bool isCurrentlyLocked = _isLocked;
-    final lockManager = ref.read(lockManagerProvider.notifier);
-    bool shouldProceed = false;
-
-    if (!lockManager.hasMasterPassword) {
-      final enteredPassword = await showGeneralDialog<String>(
-        context: context,
-        barrierDismissible: true,
-        barrierLabel: 'Dismiss',
-        barrierColor: Colors.black45,
-        pageBuilder: (context, anim1, anim2) => const SetupPasswordPage(),
-      );
-
-      if (enteredPassword != null && enteredPassword.isNotEmpty) {
-        await lockManager.setupMasterPassword(enteredPassword);
-        if (context.mounted) SnackBarManager.show(msg: 'Master Password Created!');
-        shouldProceed = true;
-      }
-    } else {
-      shouldProceed = true;
-    }
-
-    if (shouldProceed && widget.existingNoteWithFolder != null) {
-      final success = await lockManager.togglePersistentLock(
-        widget.existingNoteWithFolder!.note.uuid,
-        '',
-        shouldLock: !isCurrentlyLocked,
-        ignorePassword: true,
-      );
-
-      if (success) {
-        if (mounted) {
-          setState(() => _isLocked = !_isLocked);
-
-          // Mobile specific UX: If we lock it, pop back to the list
-          if (!isCurrentlyLocked) {
-            context.pop();
-          }
-        }
-      } else {
-        if (mounted) SnackBarManager.show(msg: 'Action failed');
-      }
-    }
-  }
-
   Widget _optionMenu() {
     return NoteEditorOptionButton(
       isLocked: _isLocked,
       isPinned: _isPinned,
       isChecklist: _contentVersion == ContentVersion.checklist,
-      hasReminder: widget.existingNoteWithFolder?.note.reminderAt != null,
+      hasReminder: _currentNoteWithFolder?.note.reminderAt != null,
       onPressed: (NoteAction option) async {
         switch (option) {
           case NoteAction.delete:
@@ -541,7 +615,7 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
               SnackBarManager.show(msg: 'Please save the note first', type: SnackBarMessageType.error);
               return;
             }
-            final targetUuid = widget.existingNoteWithFolder!.note.uuid;
+            final targetUuid = _currentNoteWithFolder!.note.uuid;
             final actionsController = ref.read(noteActionsControllerProvider);
             await actionsController.togglePinNotes([targetUuid]);
             if (mounted) {
@@ -565,14 +639,13 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
               }
             });
             break;
-
           case NoteAction.archive:
             if (_isNewNote) {
               SnackBarManager.show(msg: 'Please save the note first', type: SnackBarMessageType.error);
               return;
             }
             _hasTriggeredFinalSave = true;
-            final targetUuid = widget.existingNoteWithFolder!.note.uuid;
+            final targetUuid = _currentNoteWithFolder!.note.uuid;
             final router = GoRouter.of(context);
             await ref.read(noteActionsControllerProvider).archiveNotes([targetUuid]);
             if (context.mounted) router.pop();
@@ -590,12 +663,12 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
             break;
           case NoteAction.info:
             _executeSave(isManualSave: false);
-            if (widget.existingNoteWithFolder != null) {
+            if (_currentNoteWithFolder != null) {
               try {
-                final currentNote = await ref.read(notesDaoProvider).getNoteById(widget.existingNoteWithFolder!.note.uuid);
+                final currentNote = await ref.read(notesDaoProvider).getNoteById(_currentNoteWithFolder!.note.uuid);
                 ref.read(activeNoteProvider.notifier).setNote(currentNote);
               } catch (_) {
-                ref.read(activeNoteProvider.notifier).setNote(widget.existingNoteWithFolder!);
+                ref.read(activeNoteProvider.notifier).setNote(_currentNoteWithFolder!);
               }
             }
             if (!mounted) return;
@@ -608,45 +681,14 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
     );
   }
 
-
-
-
-
-
-  Future<void> _openReminderDialog() async {
-    if (widget.existingNoteWithFolder == null) return;
-    final mTargetUuid = widget.existingNoteWithFolder!.note.uuid;
-    final mTargetTitle = widget.existingNoteWithFolder!.note.title;
-    final mExistingReminder = widget.existingNoteWithFolder!.note.reminderAt;
-    final mExistingRepeatMode = widget.existingNoteWithFolder!.note.reminderRepeatMode;
-    final mExistingCustomDays = widget.existingNoteWithFolder!.note.reminderCustomDays;
-
-    await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => ReminderPage(
-        noteUuid: mTargetUuid,
-        noteTitle: mTargetTitle,
-        existingReminderAt: mExistingReminder,
-        existingRepeatMode: mExistingRepeatMode,
-        existingCustomDays: mExistingCustomDays,
-      ),
-    );
-    if (!mounted) return;
-    try {
-      final updatedNote = await ref.read(notesDaoProvider).getNoteById(mTargetUuid);
-      ref.read(activeNoteProvider.notifier).setNote(updatedNote);
-    } catch (_) {}
-    setState(() {});
-  }
-
   Widget _buildReminderChip(BuildContext context, DateTime reminderAt) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isPast = reminderAt.isBefore(DateTime.now());
     final formattedDate = ReminderManager.formatReminderLabel(
       reminderAt,
-      widget.existingNoteWithFolder?.note.reminderRepeatMode,
-      widget.existingNoteWithFolder?.note.reminderCustomDays,
+      _currentNoteWithFolder?.note.reminderRepeatMode,
+      _currentNoteWithFolder?.note.reminderCustomDays,
     );
 
     return Material(
@@ -673,9 +715,7 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
               Icon(
                 isPast ? Icons.notification_important_rounded : Icons.notifications_active_rounded,
                 size: 14,
-                color: isPast
-                    ? colorScheme.onErrorContainer
-                    : colorScheme.onSecondaryContainer,
+                color: isPast ? colorScheme.onErrorContainer : colorScheme.onSecondaryContainer,
               ),
               const SizedBox(width: 4),
               Flexible(
@@ -685,9 +725,7 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
                   maxLines: 1,
                   style: theme.textTheme.labelSmall?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: isPast
-                        ? colorScheme.onErrorContainer
-                        : colorScheme.onSecondaryContainer,
+                    color: isPast ? colorScheme.onErrorContainer : colorScheme.onSecondaryContainer,
                   ),
                 ),
               ),

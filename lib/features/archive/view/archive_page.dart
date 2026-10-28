@@ -44,9 +44,12 @@ class _ArchivePageState extends ConsumerState<ArchivePage> with WidgetsBindingOb
 
   final Set<String> noteIds = {};
 
+  late final RightPanelSelectionNotifier _selectionNotifier;
+
   @override
   void initState() {
     super.initState();
+    _selectionNotifier = ref.read(rightPanelSelectionProvider.notifier);
     WidgetsBinding.instance.addObserver(this);
     _searchController = TextEditingController();
     _searchFocusNode = FocusNode();
@@ -55,7 +58,7 @@ class _ArchivePageState extends ConsumerState<ArchivePage> with WidgetsBindingOb
   @override
   void dispose() {
     if (isSelectMode) {
-      Future.microtask(() => ref.read(rightPanelSelectionProvider.notifier).exitSelection());
+      Future.microtask(() => _selectionNotifier.exitSelection());
     }
     WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
