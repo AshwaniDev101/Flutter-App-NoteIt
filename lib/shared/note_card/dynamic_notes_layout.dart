@@ -26,6 +26,7 @@ class DynamicNotesLayout extends ConsumerWidget {
   final Function(String) onToggleSelection;
   final Function() onEnableSelectMode;
   final void Function(NoteWithFolder) onNoteTap;
+  final double bottomPadding;
 
   const DynamicNotesLayout({
     super.key,
@@ -35,6 +36,7 @@ class DynamicNotesLayout extends ConsumerWidget {
     required this.onToggleSelection,
     required this.onEnableSelectMode,
     required this.onNoteTap,
+    this.bottomPadding = 88.0,
   });
 
   @override
@@ -69,7 +71,7 @@ class DynamicNotesLayout extends ConsumerWidget {
     final otherNotes = notesWithFolder.where((n) => n.note.pinnedAt == null).toList();
 
     const physics = AlwaysScrollableScrollPhysics();
-    const padding = EdgeInsets.only(bottom: 0);
+    final padding = EdgeInsets.only(bottom: bottomPadding);
 
     // If no pinned notes, render standard unsectioned list/grid
     if (pinnedNotes.isEmpty) {
@@ -99,7 +101,7 @@ class DynamicNotesLayout extends ConsumerWidget {
       slivers: [
         // PINNED SECTION HEADER
         SliverToBoxAdapter(
-          child: _buildSectionHeader(ref.context, 'Pinned'),
+          child: _buildSectionHeader(ref.context, 'Pinned (${pinnedNotes.length})'),
         ),
 
         // PINNED NOTES
@@ -122,7 +124,7 @@ class DynamicNotesLayout extends ConsumerWidget {
         // ALL NOTES SECTION HEADER & ITEMS
         if (otherNotes.isNotEmpty) ...[
           SliverToBoxAdapter(
-            child: _buildSectionHeader(ref.context, 'Others'),
+            child: _buildSectionHeader(ref.context, 'Others (${otherNotes.length})'),
           ),
 
           if (isListView)
@@ -141,6 +143,11 @@ class DynamicNotesLayout extends ConsumerWidget {
               ),
             ),
         ],
+
+        // BOTTOM PADDING SPACER FOR FAB CLEARANCE
+        SliverToBoxAdapter(
+          child: SizedBox(height: bottomPadding),
+        ),
       ],
     );
   }

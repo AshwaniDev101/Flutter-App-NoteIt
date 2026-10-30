@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:noteit/core/helpers/time_helper.dart';
-import 'package:noteit/core/helpers/platform_helper.dart';
 import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/database/drift/notes/notes_dao.dart';
 import 'package:noteit/features/home/core/providers.dart';
@@ -287,15 +286,18 @@ class _NoteCardState extends ConsumerState<NoteCard> {
             );
 
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        if (_folder != null) _getFolderLabel(context, textStyle: effectiveStyle),
-        const Spacer(),
+        if (_folder != null) ...[
+          Expanded(
+            child: _getFolderLabel(context, textStyle: effectiveStyle),
+          ),
+          const SizedBox(width: 8.0),
+        ] else
+          const Spacer(),
         Text(
           TimeHelper.formatTimeAgo(_note.updatedAt),
           style: effectiveStyle,
           maxLines: 1,
-          overflow: TextOverflow.ellipsis,
         ),
       ],
     );
@@ -499,7 +501,8 @@ class _NoteCardState extends ConsumerState<NoteCard> {
             _folder!.name,
             style: effectiveStyle,
             maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+            softWrap: false,
+            overflow: TextOverflow.fade,
           ),
         ),
       ],

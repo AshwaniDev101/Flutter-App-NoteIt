@@ -24,6 +24,7 @@ import '../../../lock/lock_manger/lock_manager.dart';
 import '../../../lock/view/setup_password_page.dart';
 import '../../../reminder/reminder_manager.dart';
 import '../../../reminder/reminder_page.dart';
+import '../../../settings/providers/note_editor_settings_provider.dart';
 import '../../widgets/checklist_editor.dart';
 import '../../widgets/note_editor_options.dart';
 import '../viewmodel/edit_note_view_model.dart';
@@ -123,6 +124,17 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
     _titleController.addListener(_onTitleChanged);
     _titleController.addListener(_scheduleAutoSave);
     _highlightedContentController.addListener(_scheduleAutoSave);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && !_isLocked) {
+        final settings = ref.read(noteEditorSettingsProvider);
+        if (settings.putCursorOnContent) {
+          _contentFocusNode.requestFocus();
+        } else if (_isNewNote) {
+          _titleFocusNode.requestFocus();
+        }
+      }
+    });
   }
 
   @override
@@ -682,6 +694,8 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
   }
 
   Widget _buildTitleField({required double leftPadding, required double rightPadding}) {
+    final editorSettings = ref.watch(noteEditorSettingsProvider);
+
     return FocusTraversalOrder(
       order: const NumericFocusOrder(4),
       child: Focus(
@@ -695,10 +709,12 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
         child: TextField(
           controller: _titleController,
           focusNode: _titleFocusNode,
-          autofocus: _isNewNote,
+          autofocus: !editorSettings.putCursorOnContent && _isNewNote,
           textAlignVertical: TextAlignVertical.center,
           textCapitalization: TextCapitalization.sentences,
-          style: Theme.of(context).textTheme.titleLarge,
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontSize: editorSettings.titleFontSize,
+              ),
           decoration: InputDecoration(
             isDense: true,
             contentPadding: EdgeInsets.fromLTRB(leftPadding, 32, rightPadding, 8),
@@ -738,6 +754,8 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
   }
 
   Widget _buildContentField({required double leftPadding, required double rightPadding}) {
+    final editorSettings = ref.watch(noteEditorSettingsProvider);
+
     return FocusTraversalOrder(
       order: const NumericFocusOrder(5),
       child: Focus(
@@ -756,22 +774,29 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
         child: _contentVersion == ContentVersion.checklist
             ? Padding(
                 padding: EdgeInsets.only(left: leftPadding, right: rightPadding),
-                child: ListenableBuilder(
-                  listenable: _highlightedContentController,
-                  builder: (context, _) {
-                    return CheckListWidget(
-                      initialData: _currentChecklist,
-                      searchQuery: _highlightedContentController.searchQuery,
-                      onChange: (List<CheckListItemModel> updatedList) {
-                        _currentChecklist = updatedList;
-                        _highlightedContentController.text = jsonEncode(updatedList.map((e) => e.toJson()).toList());
-                      },
-                      onSubmit: (List<CheckListItemModel> updatedList) {
-                        _currentChecklist = updatedList;
-                        _highlightedContentController.text = jsonEncode(updatedList.map((e) => e.toJson()).toList());
-                      },
-                    );
-                  },
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      ListenableBuilder(
+                        listenable: _highlightedContentController,
+                        builder: (context, _) {
+                          return CheckListWidget(
+                            initialData: _currentChecklist,
+                            searchQuery: _highlightedContentController.searchQuery,
+                            onChange: (List<CheckListItemModel> updatedList) {
+                              _currentChecklist = updatedList;
+                              _highlightedContentController.text = jsonEncode(updatedList.map((e) => e.toJson()).toList());
+                            },
+                            onSubmit: (List<CheckListItemModel> updatedList) {
+                              _currentChecklist = updatedList;
+                              _highlightedContentController.text = jsonEncode(updatedList.map((e) => e.toJson()).toList());
+                            },
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 300),
+                    ],
+                  ),
                 ),
               )
             : TextField(
@@ -782,13 +807,19 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
                 textAlignVertical: TextAlignVertical.top,
                 textCapitalization: TextCapitalization.sentences,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      height: 1.6,
+                      fontSize: editorSettings.contentFontSize,
+                      height: editorSettings.lineSpacing,
                     ),
                 decoration: InputDecoration(
                   border: InputBorder.none,
                   focusedBorder: InputBorder.none,
                   enabledBorder: InputBorder.none,
-                  contentPadding: EdgeInsets.fromLTRB(leftPadding, 8, rightPadding, 32),
+                  contentPadding: EdgeInsets.fromLTRB(
+                    leftPadding,
+                    8,
+                    rightPadding,
+                    300,
+                  ),
                   hintText: 'Type here...',
                 ),
               ),

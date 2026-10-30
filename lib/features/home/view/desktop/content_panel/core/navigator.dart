@@ -67,7 +67,8 @@ enum RightPanelPageOptions {
   defaultSettings('Default Layout', 'Configure default views, sort options, and window layout', Icons.tune_outlined, AppRoutes.defaultSettings),
   reminderSettings('Reminder Settings', 'Customize alarm sound, snooze, and notification preferences', Icons.notifications_active_outlined, AppRoutes.reminderSettings),
   moveToFolder('Move to Folder', 'Select a folder to move notes', Icons.folder_open_outlined, AppRoutes.moveToFolder),
-  timeSettings('Time & Date', 'Customize time and date formats across the app', Icons.access_time_rounded, AppRoutes.timeSettings);
+  timeSettings('Time & Date', 'Customize time and date formats across the app', Icons.access_time_rounded, AppRoutes.timeSettings),
+  noteEditorSettings('Note Editor', 'Customize font sizes, line spacing, cursor focus, and bottom spacing', Icons.edit_note_rounded, AppRoutes.noteEditorSettings);
 
   final String label;
   final String description;

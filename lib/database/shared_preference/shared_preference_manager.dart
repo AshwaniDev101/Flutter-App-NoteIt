@@ -37,6 +37,12 @@ class SharedPreferenceManager {
   static const String _keyShowDynamicKeyHints = 'show_dynamic_key_hints';
   static const String _keyAppendShortcutToTooltips = 'append_shortcut_to_tooltips';
 
+  // Note Editor Keys
+  static const String _keyPutCursorOnContent = 'editor_put_cursor_on_content';
+  static const String _keyTitleFontSize = 'editor_title_font_size';
+  static const String _keyContentFontSize = 'editor_content_font_size';
+  static const String _keyLineSpacing = 'editor_line_spacing';
+
   // Layout Keys
   static const String _keyWindowWidth = 'window_width';
   static const String _keyWindowHeight = 'window_height';
@@ -371,4 +377,21 @@ class SharedPreferenceManager {
 
   /// Saves the preferred layout ordering.
   Future<bool> setTimeOrder(List<String> order) async => await _prefs.setStringList(_keyTimeOrder, order);
+
+  // --- Note Editor Preferences ---
+  bool get putCursorOnContent => _prefs.getBool(_keyPutCursorOnContent) ?? true;
+
+  Future<bool> setPutCursorOnContent(bool value) async => await _prefs.setBool(_keyPutCursorOnContent, value);
+
+  double get titleFontSize => _prefs.getDouble(_keyTitleFontSize) ?? 22.0;
+
+  Future<bool> setTitleFontSize(double value) async => await _prefs.setDouble(_keyTitleFontSize, value);
+
+  double get contentFontSize => _prefs.getDouble(_keyContentFontSize) ?? 16.0;
+
+  Future<bool> setContentFontSize(double value) async => await _prefs.setDouble(_keyContentFontSize, value);
+
+  double get lineSpacing => _prefs.getDouble(_keyLineSpacing) ?? 1.5;
+
+  Future<bool> setLineSpacing(double value) async => await _prefs.setDouble(_keyLineSpacing, value);
 }

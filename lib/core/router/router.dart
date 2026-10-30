@@ -9,7 +9,7 @@ import '../../database/drift/notes/notes_dao.dart';
 import '../../features/backup/export_page.dart';
 import '../../features/backup/import_page.dart';
 import '../../features/dev_tools/dev_page.dart';
-import '../../features/folders/view/move_to_folder.dart';
+import '../../features/folders/view/move_to_folder_page.dart';
 import '../../features/home/view/desktop/home_page.dart';
 import '../../features/home/view/mobile/mobile_home_page.dart';
 import '../../features/local_sync/view/mdns/broadcast/host_broadcast.dart';
@@ -22,6 +22,7 @@ import '../../features/note_editor/screens/view/desktop_edit_page.dart';
 import '../../features/note_editor/screens/view/mobile_edit_page.dart';
 import '../../features/reminder/reminder_settings_page.dart';
 import '../../features/settings/view/default_settings_page.dart';
+import '../../features/settings/view/note_editor_settings.dart';
 import '../../features/settings/view/settings_page.dart';
 import '../../features/settings/view/time_settings_page.dart';
 import '../../features/themes/view/theme_page.dart';
@@ -53,6 +54,7 @@ class AppRoutes {
   static const String reminderSettings = '/reminder-settings';
   static const String moveToFolder = '/move-to-folder';
   static const String timeSettings = '/time-settings';
+  static const String noteEditorSettings = '/note-editor-settings';
 }
 
 GoRoute _adaptiveRoute({
@@ -156,6 +158,7 @@ final routerProvider = Provider((ref) {
       GoRoute(path: AppRoutes.reminderSettings, builder: (context, state) => const ReminderSettingsPage()),
       GoRoute(path: AppRoutes.moveToFolder, builder: (context, state) => const MoveToFolderPage()),
       GoRoute(path: AppRoutes.timeSettings, builder: (context, state) => const DemoTimeSettingsPage()),
+      GoRoute(path: AppRoutes.noteEditorSettings, builder: (context, state) => const NoteEditorSettingsPage()),
     ],
   );
 });

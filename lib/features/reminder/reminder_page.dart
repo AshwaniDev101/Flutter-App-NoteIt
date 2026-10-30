@@ -638,7 +638,7 @@ class _ReminderPageState extends ConsumerState<ReminderPage> {
                             child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                           )
                         : const Icon(Icons.check_rounded, size: 18),
-                    label: Text(formState.isSaving ? 'Saving...' : 'Set Reminder'),
+                    label: Text(formState.isSaving ? 'Saving...' : 'Done'),
                     style: FilledButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     ),

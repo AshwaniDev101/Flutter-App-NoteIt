@@ -243,15 +243,15 @@ class _FolderOptionMenuContentState extends ConsumerState<_FolderOptionMenuConte
     final activeFolder = widget.selectedFolder;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 10.0),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
 
-          SizedBox(height: 8,),
+          SizedBox(height: 16,),
           // Header Label
           Padding(
-            padding: const EdgeInsets.only(left: 6.0, right: 2.0, bottom: 8.0),
+            padding: const EdgeInsets.only(left:16, bottom: 8.0),
             child: Text(
               "Move to Folder",
               style: textTheme.labelMedium?.copyWith(

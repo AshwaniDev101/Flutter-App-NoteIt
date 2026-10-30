@@ -24,6 +24,7 @@ import '../../../lock/lock_manger/lock_manager.dart';
 import '../../../lock/view/setup_password_page.dart';
 import '../../../reminder/reminder_manager.dart';
 import '../../../reminder/reminder_page.dart';
+import '../../../settings/providers/note_editor_settings_provider.dart';
 import '../../widgets/checklist_editor.dart';
 import '../../widgets/note_editor_options.dart';
 import '../viewmodel/edit_note_view_model.dart';
@@ -105,13 +106,19 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
     _contentController.addListener(_syncTitleFromContent);
     _titleController.addListener(_onTitleChanged);
 
-    if (_currentNoteWithFolder != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && !_isLocked) {
+        if (_currentNoteWithFolder != null) {
           _activeNoteNotifier.setNote(_currentNoteWithFolder!);
         }
-      });
-    }
+        final settings = ref.read(noteEditorSettingsProvider);
+        if (settings.putCursorOnContent) {
+          _contentFocusNode.requestFocus();
+        } else if (_isNewNote) {
+          _titleFocusNode.requestFocus();
+        }
+      }
+    });
   }
 
   @override
@@ -450,6 +457,8 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
   }
 
   Widget _buildContentField({required double padding}) {
+    final editorSettings = ref.watch(noteEditorSettingsProvider);
+
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: padding, vertical: 0),
       child: Focus(
@@ -466,23 +475,36 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
           return KeyEventResult.ignored;
         },
         child: _contentVersion == ContentVersion.checklist
-            ? CheckListWidget(
-          initialData: _currentChecklist,
-          onChange: (List<CheckListItemModel> updatedList) {
-            _currentChecklist = updatedList;
-            _contentController.text = jsonEncode(updatedList.map((e) => e.toJson()).toList());
-          },
-        )
+            ? SingleChildScrollView(
+                child: Column(
+                  children: [
+                    CheckListWidget(
+                      initialData: _currentChecklist,
+                      onChange: (List<CheckListItemModel> updatedList) {
+                        _currentChecklist = updatedList;
+                        _contentController.text = jsonEncode(updatedList.map((e) => e.toJson()).toList());
+                      },
+                    ),
+                    const SizedBox(height: 300),
+                  ],
+                ),
+              )
             : TextField(
-          controller: _contentController,
-          undoController: _undoController,
-          maxLines: null,
-          expands: true,
-          textAlignVertical: TextAlignVertical.top,
-          textCapitalization: TextCapitalization.sentences,
-          decoration: const InputDecoration(border: InputBorder.none),
-          style: Theme.of(context).textTheme.bodyLarge,
-        ),
+                controller: _contentController,
+                undoController: _undoController,
+                maxLines: null,
+                expands: true,
+                textAlignVertical: TextAlignVertical.top,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: const InputDecoration(
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.only(bottom: 300),
+                ),
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      fontSize: editorSettings.contentFontSize,
+                      height: editorSettings.lineSpacing,
+                    ),
+              ),
       ),
     );
   }
@@ -743,6 +765,8 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
   }
 
   Widget _getTextField() {
+    final editorSettings = ref.watch(noteEditorSettingsProvider);
+
     return Focus(
       onKeyEvent: (node, event) {
         if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
@@ -754,9 +778,12 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
       child: TextField(
         controller: _titleController,
         focusNode: _titleFocusNode,
-        autofocus: _isNewNote,
+        autofocus: !editorSettings.putCursorOnContent && _isNewNote,
         textAlignVertical: TextAlignVertical.center,
-        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              fontSize: editorSettings.titleFontSize,
+            ),
         decoration: InputDecoration(
           isDense: true,
           contentPadding: EdgeInsets.zero,

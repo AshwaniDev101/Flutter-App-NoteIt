@@ -38,184 +38,184 @@ class _SharedDrawerContentState extends ConsumerState<SharedDrawerContent> {
     final colorScheme = theme.colorScheme;
     final isDarkMode = theme.brightness == Brightness.dark;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min, // Hugs content dynamically
-      children: [
-        // --- Top Logo / App Identity ---
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-          child: Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(color: colorScheme.primaryContainer, borderRadius: BorderRadius.circular(12)),
-            alignment: Alignment.center,
-            child: Text(
-              'N', // NoteIt Logo Placeholder
-              style: theme.textTheme.headlineMedium?.copyWith(
-                color: colorScheme.onPrimaryContainer,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ),
-
-        // --- Scrollable Navigation ---
-        Flexible(
-          child: Scrollbar(
-            controller: _scrollController,
-            thumbVisibility: true,
-            interactive: true,
-            child: SingleChildScrollView(
-              controller: _scrollController,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const _SectionHeader(title: 'WORKSPACE'),
-                  // _CompactDrawerTile(
-                  //   option: RightPanelPageOptions.noteEditor,
-                  //   isSelected: widget.selectedOption == RightPanelPageOptions.noteEditor,
-                  //   onTap: () => widget.onOptionSelected(RightPanelPageOptions.noteEditor),
-                  // ),
-                  _CompactDrawerTile(
-                    option: RightPanelPageOptions.trash,
-                    isSelected: widget.selectedOption == RightPanelPageOptions.trash,
-                    onTap: () => widget.onOptionSelected(RightPanelPageOptions.trash),
+    return SafeArea(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // --- 1. Top Logo & App Identity ---
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(10),
                   ),
-
-                  const SizedBox(height: 16),
-
-                  const _SectionHeader(title: 'SYSTEM'),
-                  _CompactDrawerTile(
-                    option: RightPanelPageOptions.localSync,
-                    isSelected: widget.selectedOption == RightPanelPageOptions.localSync,
-                    onTap: () => widget.onOptionSelected(RightPanelPageOptions.localSync),
-                  ),
-                  _CompactDrawerTile(
-                    option: RightPanelPageOptions.themes,
-                    isSelected: widget.selectedOption == RightPanelPageOptions.themes,
-                    onTap: () => widget.onOptionSelected(RightPanelPageOptions.themes),
-                  ),
-                  _CompactDrawerTile(
-                    option: RightPanelPageOptions.settings,
-                    isSelected: widget.selectedOption == RightPanelPageOptions.settings,
-                    onTap: () => widget.onOptionSelected(RightPanelPageOptions.settings),
-                  ),
-                  _CompactDrawerTile(
-                    option: RightPanelPageOptions.devTools,
-                    isSelected: widget.selectedOption == RightPanelPageOptions.devTools,
-                    onTap: () => widget.onOptionSelected(RightPanelPageOptions.devTools),
-                  ),
-
-                  _CompactDrawerTile(
-                    option: RightPanelPageOptions.archivePage,
-                    isSelected: widget.selectedOption == RightPanelPageOptions.archivePage,
-                    onTap: () => widget.onOptionSelected(RightPanelPageOptions.archivePage),
-                  ),
-
-                  const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 12.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SelectableText(
-                          "version: ${AppEnv.version}",
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
-                        ),
-                        const SizedBox(height: 4),
-                        SelectableText(
-                          "build number: ${AppEnv.buildNumber}",
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
-                        ),
-                      ],
+                  alignment: Alignment.center,
+                  child: Text(
+                    'N', // NoteIt Logo Placeholder
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: colorScheme.onPrimaryContainer,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                ),
+                const SizedBox(width: 16),
+                Text(
+                  'NoteIt',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
 
-                ],
+          // --- 2. Scrollable Navigation ---
+          Expanded(
+            child: Scrollbar(
+              controller: _scrollController,
+              thumbVisibility: true,
+              interactive: true,
+              child: SingleChildScrollView(
+                controller: _scrollController,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const _SectionHeader(title: 'WORKSPACE'),
+                    _CompactDrawerTile(
+                      option: RightPanelPageOptions.trash,
+                      isSelected: widget.selectedOption == RightPanelPageOptions.trash,
+                      onTap: () => widget.onOptionSelected(RightPanelPageOptions.trash),
+                    ),
+                    const SizedBox(height: 16),
+
+                    const _SectionHeader(title: 'SYSTEM'),
+                    _CompactDrawerTile(
+                      option: RightPanelPageOptions.localSync,
+                      isSelected: widget.selectedOption == RightPanelPageOptions.localSync,
+                      onTap: () => widget.onOptionSelected(RightPanelPageOptions.localSync),
+                    ),
+                    _CompactDrawerTile(
+                      option: RightPanelPageOptions.themes,
+                      isSelected: widget.selectedOption == RightPanelPageOptions.themes,
+                      onTap: () => widget.onOptionSelected(RightPanelPageOptions.themes),
+                    ),
+                    _CompactDrawerTile(
+                      option: RightPanelPageOptions.settings,
+                      isSelected: widget.selectedOption == RightPanelPageOptions.settings,
+                      onTap: () => widget.onOptionSelected(RightPanelPageOptions.settings),
+                    ),
+                    _CompactDrawerTile(
+                      option: RightPanelPageOptions.devTools,
+                      isSelected: widget.selectedOption == RightPanelPageOptions.devTools,
+                      onTap: () => widget.onOptionSelected(RightPanelPageOptions.devTools),
+                    ),
+                    _CompactDrawerTile(
+                      option: RightPanelPageOptions.archivePage,
+                      isSelected: widget.selectedOption == RightPanelPageOptions.archivePage,
+                      onTap: () => widget.onOptionSelected(RightPanelPageOptions.archivePage),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // Version Info
+                    Padding(
+                      padding: const EdgeInsets.only(left: 12.0, bottom: 16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SelectableText(
+                            "Version: ${AppEnv.version}",
+                            style: theme.textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                          ),
+                          const SizedBox(height: 2),
+                          SelectableText(
+                            "Build: ${AppEnv.buildNumber}",
+                            style: theme.textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
 
-        // --- Primary Action Button (Sign In / Out) ---
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          child: StreamBuilder<User?>(
-            initialData: FirebaseAuth.instance.currentUser, // Prevents layout stutter
-            stream: FirebaseAuth.instance.authStateChanges(),
-            builder: (context, snapshot) {
-              final user = snapshot.data;
-              final isSignedIn = user != null;
+          // --- 3. Unified Footer (Actions & Theme) ---
+          Divider(height: 1, color: colorScheme.surfaceContainerHighest),
 
-              if (isSignedIn) {
-                return _ActionContainer(
-                  title: 'Sign Out',
-                  subtitle: user.displayName ?? 'Account',
-                  icon: Icons.logout_rounded,
-                  backgroundColor: colorScheme.surfaceContainerHighest,
-                  foregroundColor: colorScheme.onSurfaceVariant,
-                  onTap: () async {
-                    await ref.read(authRepositoryProvider).signOut();
-                    widget.onClose();
+          Container(
+            color: colorScheme.surfaceContainerLowest, // Optional: slightly distinct footer background
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            child: Column(
+              children: [
+                // Auth Button
+                StreamBuilder<User?>(
+                  initialData: FirebaseAuth.instance.currentUser,
+                  stream: FirebaseAuth.instance.authStateChanges(),
+                  builder: (context, snapshot) {
+                    final user = snapshot.data;
+                    final isSignedIn = user != null;
+
+                    return _ActionContainer(
+                      title: isSignedIn ? 'Sign Out' : 'Sign In',
+                      subtitle: isSignedIn ? (user.displayName ?? 'Account') : 'Sync your data',
+                      icon: isSignedIn ? Icons.logout_rounded : Icons.login_rounded,
+                      backgroundColor: isSignedIn ? colorScheme.surfaceContainerHighest : colorScheme.primaryContainer,
+                      foregroundColor: isSignedIn ? colorScheme.onSurfaceVariant : colorScheme.onPrimaryContainer,
+                      onTap: () async {
+                        if (isSignedIn) {
+                          await ref.read(authRepositoryProvider).signOut();
+                        } else {
+                          await ref.read(authRepositoryProvider).signInWithGoogle();
+                        }
+                        widget.onClose();
+                      },
+                    );
                   },
-                );
-              } else {
-                return _ActionContainer(
-                  title: 'Sign In',
-                  subtitle: 'Sync your data',
-                  icon: Icons.add_circle_outline_rounded,
-                  backgroundColor: colorScheme.primaryContainer,
-                  foregroundColor: Colors.white,
-                  onTap: () async {
-                    await ref.read(authRepositoryProvider).signInWithGoogle();
-                    widget.onClose();
-                  },
-                );
-              }
-            },
-          ),
-        ),
+                ),
 
-        // --- Bottom Theme Toggle ---
-        Padding(
-          padding: const EdgeInsets.only(bottom: 24, left: 24, right: 24),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'Light',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: !isDarkMode ? colorScheme.onSurface : colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-                  fontWeight: !isDarkMode ? FontWeight.w600 : FontWeight.normal,
+                const SizedBox(height: 20),
+
+                // Theme Toggle
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.light_mode_rounded,
+                      size: 18,
+                      color: !isDarkMode ? colorScheme.primary : colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                    ),
+                    const SizedBox(width: 8),
+                    Switch(
+                      value: isDarkMode,
+                      inactiveThumbColor: colorScheme.surface,
+                      inactiveTrackColor: colorScheme.surfaceContainerHighest,
+                      onChanged: (value) {
+                        final newTheme = value ? AppThemeType.dark : AppThemeType.light;
+                        ref.read(themeProvider.notifier).setTheme(newTheme);
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(
+                      Icons.dark_mode_rounded,
+                      size: 18,
+                      color: isDarkMode ? colorScheme.primary : colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(width: 12),
-              Switch(
-                value: isDarkMode,
-                // activeThumbColor: Colors.blue,
-                inactiveThumbColor: colorScheme.surface,
-                inactiveTrackColor: colorScheme.surfaceContainerHighest,
-                onChanged: (value) {
-                  final newTheme = value ? AppThemeType.dark : AppThemeType.light;
-                  ref.read(themeProvider.notifier).setTheme(newTheme);
-                },
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Dark',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: isDarkMode ? colorScheme.onSurface : colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-                  fontWeight: isDarkMode ? FontWeight.w600 : FontWeight.normal,
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -234,7 +234,7 @@ class _SectionHeader extends StatelessWidget {
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
           letterSpacing: 1.2,
           fontWeight: FontWeight.w700,
-          color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
       ),
     );
@@ -254,26 +254,30 @@ class _CompactDrawerTile extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.only(bottom: 2),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
         child: Container(
           decoration: BoxDecoration(
-            color: isSelected ? colorScheme.surfaceContainerHigh : Colors.transparent,
+            color: isSelected ? colorScheme.secondaryContainer : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           child: Row(
             children: [
-              Icon(option.icon, size: 20, color: isSelected ? colorScheme.onSurface : colorScheme.onSurfaceVariant),
+              Icon(
+                  option.icon,
+                  size: 20,
+                  color: isSelected ? colorScheme.onSecondaryContainer : colorScheme.onSurfaceVariant
+              ),
               const SizedBox(width: 16),
               Expanded(
                 child: Text(
                   option.label,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                    color: isSelected ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
+                    color: isSelected ? colorScheme.onSecondaryContainer : colorScheme.onSurfaceVariant,
                   ),
                 ),
               ),
@@ -309,7 +313,14 @@ class _ActionContainer extends StatelessWidget {
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(color: backgroundColor, borderRadius: BorderRadius.circular(12)),
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: foregroundColor.withValues(alpha: 0.1),
+            width: 1,
+          ),
+        ),
         child: Row(
           children: [
             Icon(icon, color: foregroundColor, size: 22),

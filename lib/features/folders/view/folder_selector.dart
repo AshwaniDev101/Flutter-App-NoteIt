@@ -168,10 +168,10 @@ class _FolderButtonState extends ConsumerState<FolderButton> {
           const SizedBox(width: 6),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
-              borderRadius: BorderRadius.circular(10),
-            ),
+            // decoration: BoxDecoration(
+            //   color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
+            //   borderRadius: BorderRadius.circular(10),
+            // ),
             child: Text(
               '$displayCount',
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -457,6 +457,8 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
         mainAxisSize: MainAxisSize.max,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+
+          SizedBox(height: 8,),
           // Header Label
           Padding(
             padding: const EdgeInsets.only(left: 6.0, right: 2.0, bottom: 8.0),
@@ -469,6 +471,7 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
               ),
             ),
           ),
+          SizedBox(height: 8,),
 
           // Folders List (Middle)
           Expanded(
