@@ -27,7 +27,7 @@ import '../../../../database/drift/keybindings/keybindings_dao.dart';
 import '../../../keybinding/shortcut_config.dart';
 import '../../../keybinding/smart_action_widget.dart';
 import '../../../reminder/reminder_page.dart';
-import '../../../settings/providers/note_editor_settings_provider.dart';
+import '../../../settings/note_editor/note_editor_settings_provider.dart';
 import '../../widgets/checklist_editor.dart';
 import '../../widgets/note_editor_options.dart';
 import '../viewmodel/edit_note_view_model.dart';

@@ -21,11 +21,11 @@ import '../../features/local_sync/view/synced_list.dart';
 import '../../features/note_editor/screens/view/desktop_edit_page.dart';
 import '../../features/note_editor/screens/view/mobile_edit_page.dart';
 import '../../features/reminder/reminder_settings_page.dart';
-import '../../features/settings/view/default_settings_page.dart';
-import '../../features/settings/view/keybinding_settings.dart';
-import '../../features/settings/view/note_editor_settings.dart';
-import '../../features/settings/view/settings_page.dart';
-import '../../features/settings/view/time_settings_page.dart';
+import '../../features/settings/default_layout/default_settings_page.dart';
+import '../../features/settings/keybindings/keybinding_settings_page.dart';
+import '../../features/settings/main/settings_page.dart';
+import '../../features/settings/note_editor/note_editor_settings_page.dart';
+import '../../features/settings/time_format/time_settings_page.dart';
 import '../../features/themes/view/theme_page.dart';
 import '../../features/trash/view/trash_page.dart';
 import '../helpers/platform_helper.dart';
@@ -159,7 +159,7 @@ final routerProvider = Provider((ref) {
       GoRoute(path: AppRoutes.defaultSettings, builder: (context, state) => const DefaultSettingsPage()),
       GoRoute(path: AppRoutes.reminderSettings, builder: (context, state) => const ReminderSettingsPage()),
       GoRoute(path: AppRoutes.moveToFolder, builder: (context, state) => const MoveToFolderPage()),
-      GoRoute(path: AppRoutes.timeSettings, builder: (context, state) => const DemoTimeSettingsPage()),
+      GoRoute(path: AppRoutes.timeSettings, builder: (context, state) => const TimeSettingsPage()),
       GoRoute(path: AppRoutes.noteEditorSettings, builder: (context, state) => const NoteEditorSettingsPage()),
       GoRoute(path: AppRoutes.keybindingSettings, builder: (context, state) => const KeybindingSettingsPage()),
     ],

@@ -24,7 +24,7 @@ import '../../../lock/lock_manger/lock_manager.dart';
 import '../../../lock/view/setup_password_page.dart';
 import '../../../reminder/reminder_manager.dart';
 import '../../../reminder/reminder_page.dart';
-import '../../../settings/providers/note_editor_settings_provider.dart';
+import '../../../settings/note_editor/note_editor_settings_provider.dart';
 import '../../widgets/checklist_editor.dart';
 import '../../widgets/note_editor_options.dart';
 import '../viewmodel/edit_note_view_model.dart';
