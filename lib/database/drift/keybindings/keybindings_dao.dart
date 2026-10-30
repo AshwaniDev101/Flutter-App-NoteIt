@@ -186,4 +186,20 @@ class KeybindingsDao extends DatabaseAccessor<LocalDatabase> with _$KeybindingsD
       ),
     );
   }
+
+  /// Reset a single keybinding back to its default seed values
+  Future<void> resetKeybinding(String actionName, String targetPlatform) async {
+    await (delete(appKeybindings)
+          ..where((t) => t.actionName.equals(actionName) & t.targetPlatform.equals(targetPlatform)))
+        .go();
+    await seedDefaultKeybindings(targetPlatform);
+  }
+
+  /// Reset all keybindings for a platform back to system defaults
+  Future<void> resetAllKeybindings(String targetPlatform) async {
+    await (delete(appKeybindings)
+          ..where((t) => t.targetPlatform.equals(targetPlatform)))
+        .go();
+    await seedDefaultKeybindings(targetPlatform);
+  }
 }

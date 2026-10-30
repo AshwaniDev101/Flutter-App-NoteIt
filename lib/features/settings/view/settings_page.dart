@@ -141,9 +141,18 @@ class SettingsPage extends ConsumerWidget {
                   _SettingsRow(
                     icon: Icons.edit_note_rounded,
                     title: 'Note Editor Preferences',
-                    subtitle: 'Font size, line spacing, cursor position, and bottom spacing',
+                    subtitle: 'Font size, line spacing, and cursor position',
                     onTap: () {
                       ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.noteEditorSettings);
+                    },
+                  ),
+                  Divider(height: 1, indent: 36, color: colorScheme.outlineVariant.withValues(alpha: 0.3)),
+                  _SettingsRow(
+                    icon: Icons.keyboard_rounded,
+                    title: 'Keyboard Shortcuts',
+                    subtitle: 'Customize keyboard shortcuts and keybinding chord rules',
+                    onTap: () {
+                      ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.keybindingSettings);
                     },
                   ),
 

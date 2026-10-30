@@ -22,6 +22,7 @@ import '../../features/note_editor/screens/view/desktop_edit_page.dart';
 import '../../features/note_editor/screens/view/mobile_edit_page.dart';
 import '../../features/reminder/reminder_settings_page.dart';
 import '../../features/settings/view/default_settings_page.dart';
+import '../../features/settings/view/keybinding_settings.dart';
 import '../../features/settings/view/note_editor_settings.dart';
 import '../../features/settings/view/settings_page.dart';
 import '../../features/settings/view/time_settings_page.dart';
@@ -55,6 +56,7 @@ class AppRoutes {
   static const String moveToFolder = '/move-to-folder';
   static const String timeSettings = '/time-settings';
   static const String noteEditorSettings = '/note-editor-settings';
+  static const String keybindingSettings = '/keybinding-settings';
 }
 
 GoRoute _adaptiveRoute({
@@ -159,6 +161,7 @@ final routerProvider = Provider((ref) {
       GoRoute(path: AppRoutes.moveToFolder, builder: (context, state) => const MoveToFolderPage()),
       GoRoute(path: AppRoutes.timeSettings, builder: (context, state) => const DemoTimeSettingsPage()),
       GoRoute(path: AppRoutes.noteEditorSettings, builder: (context, state) => const NoteEditorSettingsPage()),
+      GoRoute(path: AppRoutes.keybindingSettings, builder: (context, state) => const KeybindingSettingsPage()),
     ],
   );
 });

@@ -27,6 +27,7 @@ import 'package:noteit/features/folders/view/move_to_folder_page.dart';
 import 'package:noteit/features/trash/view/trash_page.dart';
 import 'package:noteit/features/reminder/reminder_settings_page.dart';
 import 'package:noteit/features/settings/view/default_settings_page.dart';
+import 'package:noteit/features/settings/view/keybinding_settings.dart';
 import 'package:noteit/features/settings/view/note_editor_settings.dart';
 import 'package:noteit/features/settings/view/settings_page.dart';
 import 'package:noteit/features/settings/view/time_settings_page.dart';
@@ -177,6 +178,11 @@ class DesktopContentPanel extends ConsumerWidget {
         return const _PaddingWrapper(
           key: ValueKey('note_editor_settings_view'),
           child: NoteEditorSettingsPage(),
+        );
+      case RightPanelPageOptions.keybindingSettings:
+        return const _PaddingWrapper(
+          key: ValueKey('keybinding_settings_view'),
+          child: KeybindingSettingsPage(),
         );
     }
   }
