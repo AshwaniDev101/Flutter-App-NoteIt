@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/helpers/platform_helper.dart';
+import '../../../database/drift/keybindings/keybindings_dao.dart';
 import '../../../shared/menus/app_bottom_sheet.dart';
 import '../../../shared/note_card/core/note_action.dart';
+import '../../keybinding/shortcut_config.dart';
+import '../../keybinding/smart_action_widget.dart';
 
 class NoteEditorOptionButton extends StatelessWidget {
   final void Function(NoteAction) onPressed;
@@ -168,7 +171,7 @@ class NoteEditorOptionMenu extends StatelessWidget {
                 ? colorScheme.primary
                 : colorScheme.onSurfaceVariant;
 
-            return _editorOption(
+            final Widget optionWidget = _editorOption(
               context: context,
               icon: Icon(appearance.icon, color: iconColor),
               name: appearance.label,
@@ -178,6 +181,19 @@ class NoteEditorOptionMenu extends StatelessWidget {
                 onPressed(option);
               },
             );
+
+            if (option == NoteAction.find) {
+              return SmartActionWidget(
+                action: AppActions.findInNote,
+                scope: ShortcutScope.editor,
+                baseTooltip: appearance.tooltip,
+                badgeTop: -2,
+                badgeRight: -2,
+                child: optionWidget,
+              );
+            }
+
+            return optionWidget;
           }).toList(),
         ),
       ),

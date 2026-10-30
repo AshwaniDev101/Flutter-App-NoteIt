@@ -35,6 +35,32 @@ class ModifierHeldNotifier extends Notifier<bool> {
   }
 }
 
+/// Defines UI scopes where keybinding action badges are contextualized.
+enum ShortcutScope {
+  /// Always active regardless of panel focus
+  global,
+
+  /// Active when focus is inside the left navigation / list panel
+  listPanel,
+
+  /// Active when focus is inside the right note editor
+  editor,
+}
+
+final activeShortcutScopeProvider = NotifierProvider<ActiveShortcutScopeNotifier, ShortcutScope>(
+  ActiveShortcutScopeNotifier.new,
+);
+
+/// Manages active shortcut scope across split-panel UI.
+class ActiveShortcutScopeNotifier extends Notifier<ShortcutScope> {
+  @override
+  ShortcutScope build() => ShortcutScope.global;
+
+  void setScope(ShortcutScope scope) {
+    if (state != scope) state = scope;
+  }
+}
+
 // THE DATABASE TRANSLATOR
 final keybindingsProvider = StreamProvider<Map<String, ShortcutConfig>>((ref) {
   final dao = ref.watch(keybindingsDaoProvider);

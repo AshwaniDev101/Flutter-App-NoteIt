@@ -16,6 +16,7 @@ import '../../../../shared/menus/view_menu_button.dart';
 import '../../../drawer/desktop_drawer_button.dart';
 import '../../../folders/core/providers.dart';
 import '../../../folders/view/folder_selector.dart';
+import '../../../keybinding/shortcut_config.dart';
 import '../../../keybinding/smart_action_widget.dart';
 import '../../core/db_sorting_filtering.dart';
 import '../../core/providers.dart';
@@ -152,6 +153,11 @@ class DesktopListPanel extends ConsumerWidget {
                             order: const NumericFocusOrder(1),
                             child: Focus(
                               canRequestFocus: true,
+                              onFocusChange: (hasFocus) {
+                                if (hasFocus) {
+                                  ref.read(activeShortcutScopeProvider.notifier).setScope(ShortcutScope.listPanel);
+                                }
+                              },
                               onKeyEvent: (node, event) {
                                 if (event is KeyDownEvent) {
                                   if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
@@ -165,6 +171,7 @@ class DesktopListPanel extends ConsumerWidget {
                                 padding: const EdgeInsets.symmetric(horizontal: 4),
                                 child: SmartActionWidget(
                                   action: AppActions.search,
+                                  scope: ShortcutScope.listPanel,
                                   baseTooltip: 'Search',
                                   badgeTop: 4,
                                   badgeRight: 8,

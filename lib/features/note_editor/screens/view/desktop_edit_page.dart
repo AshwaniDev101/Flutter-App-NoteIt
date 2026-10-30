@@ -23,6 +23,9 @@ import '../../../home/view/desktop/content_panel/core/navigator.dart';
 import '../../../lock/lock_manger/lock_manager.dart';
 import '../../../lock/view/setup_password_page.dart';
 import '../../../reminder/reminder_manager.dart';
+import '../../../../database/drift/keybindings/keybindings_dao.dart';
+import '../../../keybinding/shortcut_config.dart';
+import '../../../keybinding/smart_action_widget.dart';
 import '../../../reminder/reminder_page.dart';
 import '../../../settings/providers/note_editor_settings_provider.dart';
 import '../../widgets/checklist_editor.dart';
@@ -392,6 +395,23 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
   Widget build(BuildContext context) {
     final panelColor = Theme.of(context).colorScheme.surfaceContainerLow;
     final currentFolder = _currentNoteWithFolder?.folder ?? _selectedFolderForNewNote;
+    final shortcuts = ref.watch(keybindingsProvider).value ?? {};
+
+    final activeBindings = <ShortcutActivator, VoidCallback>{
+      if (shortcuts[AppActions.saveNote] != null)
+        shortcuts[AppActions.saveNote]!.activator: () {
+          _executeSave(isManualSave: true);
+        },
+      if (shortcuts[AppActions.findInNote] != null)
+        shortcuts[AppActions.findInNote]!.activator: () {
+          if (_isFind) {
+            _highlightedContentController.searchQuery = '';
+          }
+          setState(() {
+            _isFind = !_isFind;
+          });
+        },
+    };
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -402,127 +422,138 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
             ? constraints.maxWidth - maxTextWidth - leftPadding
             : 48.0;
 
-        return AppScaffold(
-          backgroundColor: panelColor,
-          title: _buildTopMetaRow(currentFolder),
-          centerTitle: false,
-          onClose: _handleCloseNote,
-          actions: [
-            _buildUndoRedoButtons(),
-            if (!_isNewNote)
-              NoteEditorOptionButton(
-                isLocked: _isLocked,
-                isPinned: _currentNoteWithFolder?.note.pinnedAt != null,
-                isChecklist: _contentVersion == ContentVersion.checklist,
-                hasReminder: _currentNoteWithFolder?.note.reminderAt != null,
-                onPressed: (NoteAction option) async {
-                  if (_isNewNote && option != NoteAction.info) {
-                    SnackBarManager.show(msg: 'Please save the note first', type: SnackBarMessageType.error);
-                    return;
-                  }
+        return CallbackShortcuts(
+          bindings: activeBindings,
+          child: Focus(
+            canRequestFocus: false,
+            onFocusChange: (hasFocus) {
+              if (hasFocus) {
+                ref.read(activeShortcutScopeProvider.notifier).setScope(ShortcutScope.editor);
+              }
+            },
+            child: AppScaffold(
+            backgroundColor: panelColor,
+            title: _buildTopMetaRow(currentFolder),
+            centerTitle: false,
+            onClose: _handleCloseNote,
+            actions: [
+              _buildUndoRedoButtons(),
+              if (!_isNewNote)
+                NoteEditorOptionButton(
+                  isLocked: _isLocked,
+                  isPinned: _currentNoteWithFolder?.note.pinnedAt != null,
+                  isChecklist: _contentVersion == ContentVersion.checklist,
+                  hasReminder: _currentNoteWithFolder?.note.reminderAt != null,
+                  onPressed: (NoteAction option) async {
+                    if (_isNewNote && option != NoteAction.info) {
+                      SnackBarManager.show(msg: 'Please save the note first', type: SnackBarMessageType.error);
+                      return;
+                    }
 
-                  final targetUuid = _currentNoteWithFolder!.note.uuid;
-                  final actionsController = ref.read(noteActionsControllerProvider);
-                  final deviceInfo = await ref.read(deviceInfoProvider.future);
-                  if (!context.mounted) return;
+                    final targetUuid = _currentNoteWithFolder!.note.uuid;
+                    final actionsController = ref.read(noteActionsControllerProvider);
+                    final deviceInfo = await ref.read(deviceInfoProvider.future);
+                    if (!context.mounted) return;
 
-                  switch (option) {
-                    case NoteAction.delete:
-                      _isDeleted = true;
-                      await actionsController.deleteNotes([targetUuid], deviceInfo.extractPlatform);
-                      _handleCloseNote();
-                      break;
-                    case NoteAction.pin:
-                      await actionsController.togglePinNotes([targetUuid]);
-                      try {
-                        final updatedNote = await ref.read(notesDaoProvider).getNoteById(targetUuid);
-                        ref.read(activeNoteProvider.notifier).setNote(updatedNote);
-                        _currentNoteWithFolder = updatedNote;
-                      } catch (_) {}
-                      if (mounted) setState(() {});
-                      break;
-                    case NoteAction.lock:
-                      _handleLockToggle();
-                      break;
-                    case NoteAction.archive:
-                      await actionsController.archiveNotes([targetUuid]);
-                      _handleCloseNote();
-                      break;
-                    case NoteAction.info:
-                      if (!context.mounted) return;
-                      ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.noteDetails);
-                      break;
-                    case NoteAction.checklist:
-                      setState(() {
-                        if (_contentVersion != ContentVersion.checklist) {
-                          _contentVersion = ContentVersion.checklist;
-                          _currentChecklist = _convertTextToChecklist(_highlightedContentController.text);
-                          _highlightedContentController.text = jsonEncode(
-                            _currentChecklist.map((e) => e.toJson()).toList(),
-                          );
-                        } else {
-                          _contentVersion = ContentVersion.plainText;
-                          _highlightedContentController.text = _convertChecklistToText(_currentChecklist);
+                    switch (option) {
+                      case NoteAction.delete:
+                        _isDeleted = true;
+                        await actionsController.deleteNotes([targetUuid], deviceInfo.extractPlatform);
+                        _handleCloseNote();
+                        break;
+                      case NoteAction.pin:
+                        await actionsController.togglePinNotes([targetUuid]);
+                        try {
+                          final updatedNote = await ref.read(notesDaoProvider).getNoteById(targetUuid);
+                          ref.read(activeNoteProvider.notifier).setNote(updatedNote);
+                          _currentNoteWithFolder = updatedNote;
+                        } catch (_) {}
+                        if (mounted) setState(() {});
+                        break;
+                      case NoteAction.lock:
+                        _handleLockToggle();
+                        break;
+                      case NoteAction.archive:
+                        await actionsController.archiveNotes([targetUuid]);
+                        _handleCloseNote();
+                        break;
+                      case NoteAction.info:
+                        if (!context.mounted) return;
+                        ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.noteDetails);
+                        break;
+                      case NoteAction.checklist:
+                        setState(() {
+                          if (_contentVersion != ContentVersion.checklist) {
+                            _contentVersion = ContentVersion.checklist;
+                            _currentChecklist = _convertTextToChecklist(_highlightedContentController.text);
+                            _highlightedContentController.text = jsonEncode(
+                              _currentChecklist.map((e) => e.toJson()).toList(),
+                            );
+                          } else {
+                            _contentVersion = ContentVersion.plainText;
+                            _highlightedContentController.text = _convertChecklistToText(_currentChecklist);
+                          }
+                        });
+                        break;
+                      case NoteAction.find:
+                        if (_isFind) {
+                          _highlightedContentController.searchQuery = '';
                         }
-                      });
-                      break;
-                    case NoteAction.find:
-                      if (_isFind) {
-                        _highlightedContentController.searchQuery = '';
-                      }
-                      setState(() {
-                        _isFind = !_isFind;
-                      });
-                      break;
-                    case NoteAction.reminder:
-                      await _openReminderDialog();
-                      break;
-                    default:
-                      break;
-                  }
-                },
-              ),
-          ],
-          body: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (_isFind)
-                FindReplaceWidget(
-                  contentController: _highlightedContentController,
-                  contentFocusNode: _contentFocusNode,
-                  onClose: () {
-                    setState(() {
-                      _isFind = false;
-                    });
-                  },
-                  padding: leftPadding,
-                ),
-              Expanded(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () {
-                    if (!_contentFocusNode.hasFocus && !_titleFocusNode.hasFocus) {
-                      _contentFocusNode.requestFocus();
+                        setState(() {
+                          _isFind = !_isFind;
+                        });
+                        break;
+                      case NoteAction.reminder:
+                        await _openReminderDialog();
+                        break;
+                      default:
+                        break;
                     }
                   },
-                  child: SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildTitleField(leftPadding: leftPadding, rightPadding: rightPadding),
-                        _buildContentField(leftPadding: leftPadding, rightPadding: rightPadding),
-                        const SizedBox(height: 300),
-                      ],
+                ),
+            ],
+            body: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (_isFind)
+                  FindReplaceWidget(
+                    contentController: _highlightedContentController,
+                    contentFocusNode: _contentFocusNode,
+                    onClose: () {
+                      setState(() {
+                        _isFind = false;
+                      });
+                    },
+                    padding: leftPadding,
+                  ),
+                Expanded(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      if (!_contentFocusNode.hasFocus && !_titleFocusNode.hasFocus) {
+                        _contentFocusNode.requestFocus();
+                      }
+                    },
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildTitleField(leftPadding: leftPadding, rightPadding: rightPadding),
+                          _buildContentField(leftPadding: leftPadding, rightPadding: rightPadding),
+                          const SizedBox(height: 300),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        );
-      },
-    );
+        ),
+      );
+    },
+  );
   }
 
   Widget _buildTopMetaRow(Folder? currentFolder) {
@@ -559,54 +590,61 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
             style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
           const SizedBox(width: 16),
-          ValueListenableBuilder<bool>(
-            valueListenable: _isSaved,
-            builder: (context, isSaved, child) {
-              return isSaved
-                  ? Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.done_all, size: 16, color: Theme.of(context).colorScheme.outline),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Saved',
-                            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                                  color: Theme.of(context).colorScheme.outline,
-                                  fontStyle: FontStyle.italic,
+          SmartActionWidget(
+            action: AppActions.saveNote,
+            scope: ShortcutScope.editor,
+            baseTooltip: 'Save Note',
+            badgeTop: -2,
+            badgeRight: -2,
+            child: ValueListenableBuilder<bool>(
+              valueListenable: _isSaved,
+              builder: (context, isSaved, child) {
+                return isSaved
+                    ? Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.done_all, size: 16, color: Theme.of(context).colorScheme.outline),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Saved',
+                              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                    color: Theme.of(context).colorScheme.outline,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(4),
+                          onTap: () {
+                            _executeSave(isManualSave: true);
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.done, size: 16, color: Theme.of(context).colorScheme.primary),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Save',
+                                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                        color: Theme.of(context).colorScheme.primary,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                 ),
-                          ),
-                        ],
-                      ),
-                    )
-                  : Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(4),
-                        onTap: () {
-                          _executeSave(isManualSave: true);
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.done, size: 16, color: Theme.of(context).colorScheme.primary),
-                              const SizedBox(width: 4),
-                              Text(
-                                'Save',
-                                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                                      color: Theme.of(context).colorScheme.primary,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                    );
-            },
+                      );
+              },
+            ),
           ),
           if (_currentNoteWithFolder?.note.reminderAt != null) ...[
             const SizedBox(width: 8),

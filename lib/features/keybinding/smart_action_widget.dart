@@ -7,6 +7,7 @@ class SmartActionWidget extends ConsumerWidget {
   final String action;
   final String baseTooltip;
   final Widget child;
+  final ShortcutScope scope;
   final double badgeTop;
   final double badgeRight;
 
@@ -15,6 +16,7 @@ class SmartActionWidget extends ConsumerWidget {
     required this.action,
     required this.baseTooltip,
     required this.child,
+    this.scope = ShortcutScope.global,
     this.badgeTop = 2.0,
     this.badgeRight = 2.0,
   });
@@ -44,8 +46,11 @@ class SmartActionWidget extends ConsumerWidget {
       child: child,
     );
 
-    // Add Dynamic Key Hint Overlay if enabled, shortcut exists, and Ctrl is held
-    if (prefs.showDynamicKeyHints && showModifierHints && config != null) {
+    final activeScope = ref.watch(activeShortcutScopeProvider);
+    final isScopeActive = scope == ShortcutScope.global || scope == activeScope;
+
+    // Add Dynamic Key Hint Overlay if enabled, shortcut exists, Ctrl is held, and current scope matches
+    if (prefs.showDynamicKeyHints && showModifierHints && config != null && isScopeActive) {
       final colorScheme = Theme.of(context).colorScheme;
 
       content = Stack(

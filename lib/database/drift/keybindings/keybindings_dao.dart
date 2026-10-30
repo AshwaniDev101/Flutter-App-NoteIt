@@ -18,6 +18,7 @@ class AppActions {
   static const String toggleMenu = 'toggle_menu';
   static const String deleteNote = 'delete_note';
   static const String saveNote = 'save_note';
+  static const String findInNote = 'find_in_note';
 }
 
 class ShortcutCategories {
@@ -41,6 +42,17 @@ class KeybindingsDao extends DatabaseAccessor<LocalDatabase> with _$KeybindingsD
   /// Platform parameter so seeds are tied to the specific OS
   Future<void> seedDefaultKeybindings(String platform) async {
     final isMac = platform == 'macos';
+
+    // Update old search shortcut if it was S to F so Ctrl+F is Search and Ctrl+S is Save
+    await (update(appKeybindings)
+          ..where((t) => t.targetPlatform.equals(platform) & t.actionName.equals(AppActions.search) & t.keyLabel.equals('S')))
+        .write(
+      AppKeybindingsCompanion(
+        keyLabel: const Value('F'),
+        keyId: Value(LogicalKeyboardKey.keyF.keyId),
+      ),
+    );
+
     // We use insertOrIgnore so we don't overwrite user preferences on app restart!
     await batch((batch) {
       batch.insertAll(
@@ -49,8 +61,26 @@ class KeybindingsDao extends DatabaseAccessor<LocalDatabase> with _$KeybindingsD
           AppKeybindingsCompanion.insert(
             actionName: AppActions.search,
             targetPlatform: Value(platform), // Part of the new Primary Key
+            keyLabel: 'F',
+            keyId: LogicalKeyboardKey.keyF.keyId,
+            useCtrl: Value(!isMac),
+            useMeta: Value(isMac),
+            category: const Value(ShortcutCategories.global),
+          ),
+          AppKeybindingsCompanion.insert(
+            actionName: AppActions.saveNote,
+            targetPlatform: Value(platform),
             keyLabel: 'S',
             keyId: LogicalKeyboardKey.keyS.keyId,
+            useCtrl: Value(!isMac),
+            useMeta: Value(isMac),
+            category: const Value(ShortcutCategories.global),
+          ),
+          AppKeybindingsCompanion.insert(
+            actionName: AppActions.findInNote,
+            targetPlatform: Value(platform),
+            keyLabel: 'F',
+            keyId: LogicalKeyboardKey.keyF.keyId,
             useCtrl: Value(!isMac),
             useMeta: Value(isMac),
             category: const Value(ShortcutCategories.global),
