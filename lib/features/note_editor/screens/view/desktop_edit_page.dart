@@ -276,6 +276,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
           _currentNoteWithFolder = newlySavedNote;
         });
         _isSaved.value = true;
+        ref.read(activeNoteProvider.notifier).setNote(newlySavedNote);
 
         if (isManualSave) {
           SnackBarManager.show(msg: 'Saved!', type: SnackBarMessageType.acknowledgment);
@@ -286,6 +287,10 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
           content != _currentNoteWithFolder!.note.content ||
           _currentNoteWithFolder!.note.contentVersion != _contentVersion.value) {
         await _viewModel.updateNote(_currentNoteWithFolder!.note.uuid, title, content, _contentVersion);
+        try {
+          final updatedNote = await ref.read(notesDaoProvider).getNoteById(_currentNoteWithFolder!.note.uuid);
+          ref.read(activeNoteProvider.notifier).setNote(updatedNote);
+        } catch (_) {}
       }
 
       if (!isDisposing && mounted) {
@@ -492,9 +497,26 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
                   },
                   padding: leftPadding,
                 ),
-              _buildTitleField(leftPadding: leftPadding, rightPadding: rightPadding),
               Expanded(
-                child: _buildContentField(leftPadding: leftPadding, rightPadding: rightPadding),
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {
+                    if (!_contentFocusNode.hasFocus && !_titleFocusNode.hasFocus) {
+                      _contentFocusNode.requestFocus();
+                    }
+                  },
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildTitleField(leftPadding: leftPadding, rightPadding: rightPadding),
+                        _buildContentField(leftPadding: leftPadding, rightPadding: rightPadding),
+                        const SizedBox(height: 300),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
@@ -664,6 +686,10 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
   }
 
   Widget _buildUndoRedoButtons() {
+    if (_contentVersion == ContentVersion.checklist) {
+      return const SizedBox.shrink();
+    }
+
     return ValueListenableBuilder<UndoHistoryValue>(
       valueListenable: _undoController,
       builder: (context, value, child) {
@@ -759,7 +785,6 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
     return FocusTraversalOrder(
       order: const NumericFocusOrder(5),
       child: Focus(
-        focusNode: _contentFocusNode,
         onKeyEvent: (node, event) {
           if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
             node.unfocus();
@@ -774,36 +799,29 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
         child: _contentVersion == ContentVersion.checklist
             ? Padding(
                 padding: EdgeInsets.only(left: leftPadding, right: rightPadding),
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      ListenableBuilder(
-                        listenable: _highlightedContentController,
-                        builder: (context, _) {
-                          return CheckListWidget(
-                            initialData: _currentChecklist,
-                            searchQuery: _highlightedContentController.searchQuery,
-                            onChange: (List<CheckListItemModel> updatedList) {
-                              _currentChecklist = updatedList;
-                              _highlightedContentController.text = jsonEncode(updatedList.map((e) => e.toJson()).toList());
-                            },
-                            onSubmit: (List<CheckListItemModel> updatedList) {
-                              _currentChecklist = updatedList;
-                              _highlightedContentController.text = jsonEncode(updatedList.map((e) => e.toJson()).toList());
-                            },
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 300),
-                    ],
-                  ),
+                child: ListenableBuilder(
+                  listenable: _highlightedContentController,
+                  builder: (context, _) {
+                    return CheckListWidget(
+                      initialData: _currentChecklist,
+                      searchQuery: _highlightedContentController.searchQuery,
+                      onChange: (List<CheckListItemModel> updatedList) {
+                        _currentChecklist = updatedList;
+                        _highlightedContentController.text = jsonEncode(updatedList.map((e) => e.toJson()).toList());
+                      },
+                      onSubmit: (List<CheckListItemModel> updatedList) {
+                        _currentChecklist = updatedList;
+                        _highlightedContentController.text = jsonEncode(updatedList.map((e) => e.toJson()).toList());
+                      },
+                    );
+                  },
                 ),
               )
             : TextField(
                 controller: _highlightedContentController,
+                focusNode: _contentFocusNode,
                 undoController: _undoController,
                 maxLines: null,
-                expands: true,
                 textAlignVertical: TextAlignVertical.top,
                 textCapitalization: TextCapitalization.sentences,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
@@ -818,7 +836,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
                     leftPadding,
                     8,
                     rightPadding,
-                    300,
+                    8,
                   ),
                   hintText: 'Type here...',
                 ),

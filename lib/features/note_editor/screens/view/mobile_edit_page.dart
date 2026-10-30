@@ -386,7 +386,26 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
                   ] else ...[
                     _buildMetaDataRow(padding: 16.0),
                   ],
-                  Expanded(child: _buildContentField(padding: 16.0)),
+                  Expanded(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () {
+                        if (!_contentFocusNode.hasFocus && !_titleFocusNode.hasFocus) {
+                          _contentFocusNode.requestFocus();
+                        }
+                      },
+                      child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildContentField(padding: 16.0),
+                            const SizedBox(height: 300),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
               Align(
@@ -462,7 +481,6 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: padding, vertical: 0),
       child: Focus(
-        focusNode: _contentFocusNode,
         onKeyEvent: (node, event) {
           if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
             node.unfocus();
@@ -475,30 +493,23 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
           return KeyEventResult.ignored;
         },
         child: _contentVersion == ContentVersion.checklist
-            ? SingleChildScrollView(
-                child: Column(
-                  children: [
-                    CheckListWidget(
-                      initialData: _currentChecklist,
-                      onChange: (List<CheckListItemModel> updatedList) {
-                        _currentChecklist = updatedList;
-                        _contentController.text = jsonEncode(updatedList.map((e) => e.toJson()).toList());
-                      },
-                    ),
-                    const SizedBox(height: 300),
-                  ],
-                ),
+            ? CheckListWidget(
+                initialData: _currentChecklist,
+                onChange: (List<CheckListItemModel> updatedList) {
+                  _currentChecklist = updatedList;
+                  _contentController.text = jsonEncode(updatedList.map((e) => e.toJson()).toList());
+                },
               )
             : TextField(
                 controller: _contentController,
+                focusNode: _contentFocusNode,
                 undoController: _undoController,
                 maxLines: null,
-                expands: true,
                 textAlignVertical: TextAlignVertical.top,
                 textCapitalization: TextCapitalization.sentences,
                 decoration: const InputDecoration(
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.only(bottom: 300),
+                  contentPadding: EdgeInsets.symmetric(vertical: 8),
                 ),
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       fontSize: editorSettings.contentFontSize,
@@ -599,6 +610,10 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
   }
 
   Widget _buildUndoRedoButtons() {
+    if (_contentVersion == ContentVersion.checklist) {
+      return const SizedBox.shrink();
+    }
+
     return ValueListenableBuilder<UndoHistoryValue>(
       valueListenable: _undoController,
       builder: (context, value, child) {
