@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/overlays/snack_bar_manager.dart';
 import '../../home/view/desktop/content_panel/core/navigator.dart';
-import '../common/settings_widgets.dart';
+import '../shared/settings_widgets.dart';
 import 'note_editor_settings_provider.dart';
 
 /// Settings page for configuring note editor typography, line spacing, and focus behavior.

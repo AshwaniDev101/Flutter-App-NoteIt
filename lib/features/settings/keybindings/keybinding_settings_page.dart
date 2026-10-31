@@ -6,7 +6,7 @@ import '../../../database/drift/keybindings/keybindings_dao.dart';
 import '../../../shared/overlays/snack_bar_manager.dart';
 import '../../home/view/desktop/content_panel/core/navigator.dart';
 import '../../keybinding/shortcut_config.dart';
-import '../common/settings_widgets.dart';
+import '../shared/settings_widgets.dart';
 import 'widgets/keybinding_recorder_dialog.dart';
 
 /// Predefined list of keybinding action metadata.

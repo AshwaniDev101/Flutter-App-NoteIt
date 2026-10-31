@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -21,8 +23,31 @@ part 'local_database.g.dart';
 /// guaranteeing underlying SQLite file locks are cleanly released during app teardown or testing.
 
 final localDatabaseProvider = Provider((ref) {
-  return LocalDatabase();
+  final db = LocalDatabase();
+  ref.onDispose(() {
+    db.close();
+  });
+  return db;
 });
+
+/// Physically deletes the SQLite database files (`note_it_db*`) from the
+/// application support directory.
+Future<void> deleteDatabaseFiles() async {
+  try {
+    final dir = await getApplicationSupportDirectory();
+    final dbDir = Directory(dir.path);
+    if (await dbDir.exists()) {
+      final entities = dbDir.listSync();
+      for (final entity in entities) {
+        if (entity is File && entity.path.contains('note_it_db')) {
+          try {
+            await entity.delete();
+          } catch (_) {}
+        }
+      }
+    }
+  } catch (_) {}
+}
 
 // 2. Add Folders and FoldersDao to the annotation
 @DriftDatabase(

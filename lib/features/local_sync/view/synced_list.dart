@@ -47,7 +47,44 @@ class SyncedDevicesListView extends ConsumerWidget {
       body: devicesAsyncValue.when(
         data: (devices) {
           if (devices.isEmpty) {
-            return const Center(child: Text('No devices found.'));
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.devices_other,
+                      size: 64,
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No Paired Devices Yet',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Devices you pair over local Wi-Fi will appear here.',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.localSync);
+                      },
+                      icon: const Icon(Icons.add_link),
+                      label: const Text('Pair a Device'),
+                    ),
+                  ],
+                ),
+              ),
+            );
           }
 
           return Center(

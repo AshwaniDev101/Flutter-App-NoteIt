@@ -26,8 +26,13 @@ import 'package:noteit/features/archive/view/archive_page.dart';
 import 'package:noteit/features/folders/view/move_to_folder_page.dart';
 import 'package:noteit/features/trash/view/trash_page.dart';
 import 'package:noteit/features/reminder/reminder_settings_page.dart';
-import 'package:noteit/features/settings/settings.dart';
 import 'package:noteit/features/themes/view/theme_page.dart';
+
+import '../../../../settings/default_layout/default_settings_page.dart';
+import '../../../../settings/keybindings/keybinding_settings_page.dart';
+import '../../../../settings/note_editor/note_editor_settings_page.dart';
+import '../../../../settings/settings_page.dart';
+import '../../../../settings/time_format/time_settings_page.dart';
 
 class DesktopContentPanel extends ConsumerWidget {
   final NoteWithFolder? activeNoteWithFolder;

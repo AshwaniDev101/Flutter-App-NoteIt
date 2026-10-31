@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:noteit/core/router/router.dart';
 import 'package:noteit/core/helpers/platform_helper.dart';
+import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
 import 'package:noteit/features/home/core/providers.dart';
 
 // To Navigate to Any page use
@@ -22,17 +23,27 @@ class DrawerNavigationController {
       Navigator.of(context).pop(); // Close the drawer
     }
 
-    if (option == RightPanelPageOptions.noteEditor) {
+    var targetOption = option;
+    if (option == RightPanelPageOptions.localSync) {
+      final role = ref.read(sharedPreferenceProvider).syncRole;
+      if (role == SyncRole.host) {
+        targetOption = RightPanelPageOptions.hostMode;
+      } else if (role == SyncRole.client) {
+        targetOption = RightPanelPageOptions.clientMode;
+      }
+    }
+
+    if (targetOption == RightPanelPageOptions.noteEditor) {
       if (PlatformHelper.isWideLayout(context)) {
-        ref.read(desktopRightPanelViewProvider.notifier).pushView(option);
+        ref.read(desktopRightPanelViewProvider.notifier).pushView(targetOption);
       }
       return;
     }
 
     if (PlatformHelper.isWideLayout(context)) {
-      ref.read(desktopRightPanelViewProvider.notifier).pushView(option);
+      ref.read(desktopRightPanelViewProvider.notifier).pushView(targetOption);
     } else {
-      context.push(option.route);
+      context.push(targetOption.route);
     }
   }
 

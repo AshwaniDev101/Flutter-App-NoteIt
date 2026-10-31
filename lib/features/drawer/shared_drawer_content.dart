@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/shared/widgets/app_switch.dart';
 
 import '../../core/config/app_env.dart';
 import '../../database/firebase/auth/firebase_provider.dart';
@@ -151,6 +152,7 @@ class _SharedDrawerContentState extends ConsumerState<SharedDrawerContent> {
           // --- 3. Unified Footer (Actions & Theme) ---
           Divider(height: 1, color: colorScheme.surfaceContainerHighest),
 
+          //'Sign Out' : 'Sign In',
           Container(
             color: colorScheme.surfaceContainerLowest, // Optional: slightly distinct footer background
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
@@ -194,10 +196,16 @@ class _SharedDrawerContentState extends ConsumerState<SharedDrawerContent> {
                       color: !isDarkMode ? colorScheme.primary : colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                     ),
                     const SizedBox(width: 8),
-                    Switch(
+                    AppSwitch(
                       value: isDarkMode,
                       inactiveThumbColor: colorScheme.surface,
                       inactiveTrackColor: colorScheme.surfaceContainerHighest,
+                      thumbIcon: WidgetStateProperty.resolveWith((states) {
+                        if (states.contains(WidgetState.selected)) {
+                          return Icon(Icons.dark_mode_rounded, size: 12, color: colorScheme.primary);
+                        }
+                        return Icon(Icons.light_mode_rounded, size: 12, color: colorScheme.onSurfaceVariant);
+                      }),
                       onChanged: (value) {
                         final newTheme = value ? AppThemeType.dark : AppThemeType.light;
                         ref.read(themeProvider.notifier).setTheme(newTheme);

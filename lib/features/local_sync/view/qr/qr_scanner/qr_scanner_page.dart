@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:noteit/core/config/config.dart';
 import 'package:noteit/features/local_sync/view/qr/qr_scanner/widgets/shaded_overlay.dart';
 
 import '../../../provider/sync_client_provider.dart';
@@ -48,6 +49,17 @@ class _QrScannerPageState extends ConsumerState<QrScannerPage> {
         final protocolVersion = vStr != null ? (int.tryParse(vStr) ?? 0) : 0;
         // ----------------------------------------------------------------
 
+        // --- PROTOCOL SAFETY CHECK ---
+        if (protocolVersion != AppConfig.syncProtocolVersion) {
+          SnackBarManager.show(
+            msg: 'Version mismatch! Please update NoteIt.',
+            type: SnackBarMessageType.suggestion,
+          );
+          setState(() => _isConnecting = false);
+          cameraController.start();
+          return;
+        }
+
         if (ip.isNotEmpty && port > 0 && hostUuid.isNotEmpty) {
 
           // Trigger the Riverpod provider with the raw ingredients AND new metadata
@@ -89,7 +101,32 @@ class _QrScannerPageState extends ConsumerState<QrScannerPage> {
       body: MobileScanner(
         controller: cameraController,
         onDetect: _onDetect,
-
+        errorBuilder: (context, error) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.videocam_off, size: 48, color: Colors.amber),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Camera unavailable or permission denied.',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.clientMode);
+                    },
+                    child: const Text('Use mDNS Search Instead'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
         overlayBuilder: (context, constraints) {
           return ShadedOverlay(
             boxConstraints: constraints,

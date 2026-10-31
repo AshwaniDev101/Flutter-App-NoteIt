@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/core/helpers/platform_helper.dart';
+import 'package:noteit/shared/widgets/app_switch.dart';
 
 import '../../../shared/overlays/app_scaffold.dart';
 import '../../home/view/desktop/content_panel/core/navigator.dart';
@@ -313,12 +315,15 @@ class SettingsSwitchTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDesktop = PlatformHelper.isDesktopScreen;
 
-    return SwitchListTile(
+    return ListTile(
+      dense: isDesktop,
+      visualDensity: isDesktop ? VisualDensity.compact : VisualDensity.standard,
       contentPadding: contentPadding,
       hoverColor: theme.colorScheme.primary.withValues(alpha: 0.04),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      secondary: icon != null
+      leading: icon != null
           ? Icon(icon, size: 20, color: theme.colorScheme.onSurfaceVariant)
           : null,
       title: Text(
@@ -335,8 +340,11 @@ class SettingsSwitchTile extends StatelessWidget {
               ),
             )
           : null,
-      value: value,
-      onChanged: onChanged,
+      trailing: AppSwitch(
+        value: value,
+        onChanged: onChanged,
+      ),
+      onTap: onChanged != null ? () => onChanged!(!value) : null,
     );
   }
 }

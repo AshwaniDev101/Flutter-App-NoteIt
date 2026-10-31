@@ -21,6 +21,8 @@ class SyncServerNotifier extends Notifier<HttpServer?> {
   String? _currentPin;
   bool _isBusy = false; // the lock state
 
+  bool get isBusy => _isBusy;
+
   @override
   HttpServer? build() {
     ref.onDispose(() => state?.close(force: true));
@@ -29,6 +31,12 @@ class SyncServerNotifier extends Notifier<HttpServer?> {
 
   void updatePin(String? pin) {
     _currentPin = pin;
+  }
+
+  void resetBusyLock() {
+    AppLogger.d("SyncServerNotifier: Resetting busy lock manually.");
+    _isBusy = false;
+    ref.read(localSyncServiceProvider.notifier).stop();
   }
 
   Future<int> startHosting({

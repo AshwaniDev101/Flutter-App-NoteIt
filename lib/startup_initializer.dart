@@ -10,6 +10,7 @@ import 'core/config/config.dart';
 import 'core/util/device_info.dart';
 import 'core/util/logger.dart';
 import 'database/drift/local_database.dart';
+import 'database/sync/local_sync_service.dart';
 import 'features/local_sync/auto_connect/mdns_broadcast.dart';
 import 'features/local_sync/auto_connect/mdns_searcher.dart';
 import 'features/local_sync/provider/sync_client_provider.dart';
@@ -22,6 +23,7 @@ final startupInitializerProvider = NotifierProvider<StartupInitializer, void>(()
 
 class StartupInitializer extends Notifier<void> {
   late final AppLifecycleListener _lifecycleListener;
+  bool _isEvaluating = false;
 
   @override
   void build() {
@@ -36,101 +38,108 @@ class StartupInitializer extends Notifier<void> {
   }
 
   void _evaluateSyncState() async {
-    AppLogger.d('StartupInitializer: Evaluating Sync State & Rearming Reminders...');
-
-    ReminderManager().rearmPendingReminders();
-
-    final spp = ref.read(sharedPreferenceProvider);
-    final engine = spp.currentEngine;
-
-    if (engine != SyncEngine.local) {
-      AppLogger.d('StartupInitializer: SyncEngine is $engine (not local). Skipping local sync startup.');
+    if (_isEvaluating) {
+      AppLogger.d('StartupInitializer: Sync state evaluation already in progress. Skipping duplicate.');
       return;
     }
+    _isEvaluating = true;
 
-    final syncRole = spp.syncRole;
+    try {
+      AppLogger.d('StartupInitializer: Evaluating Sync State & Rearming Reminders...');
 
-    switch (syncRole) {
-      case SyncRole.undefine:
-        AppLogger.d('StartupInitializer: SyncRole is undefine');
-        // Do nothing this is the first time user opened this app, or yet to user local sync function
-        break;
-      case SyncRole.host: // Last time this user was host
-        AppLogger.d('StartupInitializer: Sync Role: Host');
-        AppLogger.d('StartupInitializer: AutoSync [HOST]: Starting background engine...');
-        try {
-          await ref.read(serverHostingProvider.future);
-        } catch (e) {
-          AppLogger.d('StartupInitializer: AutoSync [HOST]: Failed to start engine - $e');
-        }
-        break;
-      case SyncRole.client:
-        AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Initializing connection protocol...');
+      ReminderManager().rearmPendingReminders();
 
-        final SyncedDevice? host = await ref.read(syncedDevicesDaoProvider).getMostRecentHost();
+      final spp = ref.read(sharedPreferenceProvider);
+      final engine = spp.currentEngine;
 
-        if (host == null) {
-          AppLogger.d('StartupInitializer: AutoSync [CLIENT]: No host found in DB.');
-          return;
-        }
+      if (engine != SyncEngine.local) {
+        AppLogger.d('StartupInitializer: SyncEngine is $engine (not local). Skipping local sync startup.');
+        return;
+      }
 
-        final clientNotifier = ref.read(syncClientProvider.notifier);
-        bool connected = false;
+      final syncRole = spp.syncRole;
 
-// Fast Reconnect (Try DB IP first)
-        if (host.lastKnownIp != null && host.lastKnownPort != null) {
-          AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Attempting Fast Reconnect to ${host.lastKnownIp}:${host.lastKnownPort}...');
+      switch (syncRole) {
+        case SyncRole.undefine:
+          AppLogger.d('StartupInitializer: SyncRole is undefine');
+          // Do nothing this is the first time user opened this app, or yet to user local sync function
+          break;
+        case SyncRole.host: // Last time this user was host
+          AppLogger.d('StartupInitializer: Sync Role: Host');
+          AppLogger.d('StartupInitializer: AutoSync [HOST]: Starting background engine...');
           try {
-            await clientNotifier.connectToHost(
-              ip: host.lastKnownIp!,
-              port: host.lastKnownPort!,
-              hostUuid: host.deviceUuid,
-              hostName: host.deviceName,
-              pin: null,
-              devicePlatform: host.deviceType ?? 'unknown',
-              protocolVersion: host.protocolVersion ?? 0,
-            );
-            connected = true;
+            await ref.read(serverHostingProvider.future);
           } catch (e) {
-            AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Fast Reconnect failed. Moving to mDNS fallback...');
+            AppLogger.d('StartupInitializer: AutoSync [HOST]: Failed to start engine - $e');
           }
-        }
+          break;
+        case SyncRole.client:
+          AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Initializing connection protocol...');
 
-        // mDNS Radar Fallback
-        if (!connected) {
-          AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Starting mDNS radar...');
-          final mdnsResult = await ref.read(mdnsSearcherProvider.notifier).findServer(host.deviceUuid);
+          final SyncedDevice? host = await ref.read(syncedDevicesDaoProvider).getMostRecentHost();
 
-          if (mdnsResult != null) {
-            AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Host found via mDNS at ${mdnsResult.ip}:${mdnsResult.port}.');
+          if (host == null) {
+            AppLogger.d('StartupInitializer: AutoSync [CLIENT]: No host found in DB.');
+            return;
+          }
 
-            // --- PROTOCOL SAFETY CHECK (Removed the != null check) ---
-            if (mdnsResult.protocolVersion != AppConfig.syncProtocolVersion) {
-              AppLogger.d('StartupInitializer: AutoSync [CLIENT]: BLOCKING CONNECTION - Version mismatch! Host is v${mdnsResult.protocolVersion}, we are v${AppConfig.syncProtocolVersion}.');
-              SnackBarManager.show(msg: "Please update NoteIt on your Device");
-              return;
-            }
-            // -----------------------------------
+          final clientNotifier = ref.read(syncClientProvider.notifier);
+          bool connected = false;
 
+          // Fast Reconnect (Try DB IP first)
+          if (host.lastKnownIp != null && host.lastKnownPort != null) {
+            AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Attempting Fast Reconnect to ${host.lastKnownIp}:${host.lastKnownPort}...');
             try {
               await clientNotifier.connectToHost(
-                ip: mdnsResult.ip,
-                port: mdnsResult.port,
+                ip: host.lastKnownIp!,
+                port: host.lastKnownPort!,
                 hostUuid: host.deviceUuid,
                 hostName: host.deviceName,
                 pin: null,
-                devicePlatform: mdnsResult.deviceType,
-                protocolVersion: mdnsResult.protocolVersion,
+                devicePlatform: host.deviceType ?? 'unknown',
+                protocolVersion: host.protocolVersion ?? 0,
               );
-              // Connection successful!
+              connected = true;
             } catch (e) {
-              AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Failed to connect after mDNS discovery: $e');
+              AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Fast Reconnect failed. Moving to mDNS fallback...');
             }
-          } else {
-            AppLogger.d('StartupInitializer: AutoSync [CLIENT]: mDNS Radar timed out. Host unreachable.');
           }
-        }
-        break;
+
+          // mDNS Radar Fallback
+          if (!connected) {
+            AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Starting mDNS radar...');
+            final mdnsResult = await ref.read(mdnsSearcherProvider.notifier).findServer(host.deviceUuid);
+
+            if (mdnsResult != null) {
+              AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Host found via mDNS at ${mdnsResult.ip}:${mdnsResult.port}.');
+
+              if (mdnsResult.protocolVersion != AppConfig.syncProtocolVersion) {
+                AppLogger.d('StartupInitializer: AutoSync [CLIENT]: BLOCKING CONNECTION - Version mismatch! Host is v${mdnsResult.protocolVersion}, we are v${AppConfig.syncProtocolVersion}.');
+                SnackBarManager.show(msg: "Please update NoteIt on your Device");
+                return;
+              }
+
+              try {
+                await clientNotifier.connectToHost(
+                  ip: mdnsResult.ip,
+                  port: mdnsResult.port,
+                  hostUuid: host.deviceUuid,
+                  hostName: host.deviceName,
+                  pin: null,
+                  devicePlatform: mdnsResult.deviceType,
+                  protocolVersion: mdnsResult.protocolVersion,
+                );
+              } catch (e) {
+                AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Failed to connect after mDNS discovery: $e');
+              }
+            } else {
+              AppLogger.d('StartupInitializer: AutoSync [CLIENT]: mDNS Radar timed out. Host unreachable.');
+            }
+          }
+          break;
+      }
+    } finally {
+      _isEvaluating = false;
     }
   }
 
@@ -180,16 +189,18 @@ class StartupInitializer extends Notifier<void> {
       _evaluateSyncState();
     } else if (syncRole == SyncRole.client) {
       // CLIENT LOGIC
-      // Check if the OS killed our WebSocket connection while we were asleep
-      final currentConnection = ref.read(syncClientProvider);
+      // Perform active ping probe to check if OS/radio killed TCP socket in background
+      final localSync = ref.read(localSyncServiceProvider.notifier);
 
-      if (currentConnection == null) {
-        AppLogger.d('StartupInitializer: AutoSync [CLIENT]: WebSocket was killed in background. Reconnecting...');
-        // Run the Fast Reconnect / mDNS Radar logic again
-        _evaluateSyncState();
-      } else {
-        AppLogger.d('StartupInitializer: AutoSync [CLIENT]: WebSocket survived the background pause!');
-      }
+      localSync.probeConnection(timeout: const Duration(seconds: 2)).then((isAlive) {
+        if (!isAlive) {
+          AppLogger.w('StartupInitializer: AutoSync [CLIENT]: Ghost connection or dropped socket detected on resume. Reconnecting...');
+          ref.read(syncClientProvider.notifier).disconnect();
+          _evaluateSyncState();
+        } else {
+          AppLogger.d('StartupInitializer: AutoSync [CLIENT]: WebSocket connection verified active via ping probe!');
+        }
+      });
     }
   }
 }

@@ -39,20 +39,24 @@ class MdnsSearcherNotifier extends Notifier<MdnsState> {
     }
   }
 
-  /// Helper to filter out invalid services and our own ghost broadcasts
+  /// Helper to filter out invalid services, our own ghost broadcasts, and deduplicate by host UUID
   List<Service> _getValidServices(List<Service> rawServices, String myUuid) {
-    return rawServices.where((s) {
-      if (s.port == null) return false;
+    final Map<String, Service> uniqueByUuid = {};
+
+    for (final s in rawServices) {
+      if (s.port == null) continue;
 
       // Extract UUID from the discovered service
       final discoveredUuid = _decodeTxt(s.txt, 'uuid');
 
-      // IGNORE OUR OWN GHOST BROADCASTS
-      // MUST FILTER HERE TOO!
-      if (discoveredUuid == null || discoveredUuid == myUuid) return false;
+      // IGNORE OUR OWN BROADCASTS
+      if (discoveredUuid == null || discoveredUuid == myUuid) continue;
 
-      return true;
-    }).toList();
+      // Deduplicate: Keep single entry per unique host UUID
+      uniqueByUuid[discoveredUuid] = s;
+    }
+
+    return uniqueByUuid.values.toList();
   }
 
   /// RADAR MODE: Finds ALL NoteIt devices for the SearchNearBy UI (No UUID needed)

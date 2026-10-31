@@ -19,25 +19,16 @@ final mdnsBroadcastProvider =
     });
 
 class MdnsBroadcastNotifier extends Notifier<Registration?> {
-  // Sets the initial state when the provider is first created.
-  // Default is null (server is not broadcasting yet).
-
-  // It is for tracking the background task
-  Registration? _activeRegistration;
+  // Use a static reference so that hot-restarts or provider rebuilds
+  // retain knowledge of the active native Registration and unregister it cleanly.
+  static Registration? _globalActiveRegistration;
 
   @override
   Registration? build() {
     ref.onDispose(() {
-      // This completely bypasses Riverpod's strict teardown locks.
-      if (_activeRegistration != null) {
-        unregister(_activeRegistration!).then((_) {
-          AppLogger.d('MdnsBroadcastNotifier: Stopped broadcasting (auto-disposed)');
-        }).catchError((e) {
-          AppLogger.e('MdnsBroadcastNotifier: Cleanup error', error: e);
-        });
-      }
+      stopBroadcasting();
     });
-    return null;
+    return _globalActiveRegistration;
   }
 
   Future<void> startBroadcasting({
@@ -45,21 +36,24 @@ class MdnsBroadcastNotifier extends Notifier<Registration?> {
     required String uuid,
     required String deviceName,
   }) async {
-
     // --- POLICE CODE ---
     AppLogger.d('MdnsBroadcastNotifier: Stopping any active scans before broadcasting.');
     ref.read(mdnsSearcherProvider.notifier).stopScan();
     // -------------------
-    if (_activeRegistration != null) return; // If server is already broadcasting, do nothing
+
+    // ALWAYS unregister prior registration before starting a new broadcast
+    if (_globalActiveRegistration != null) {
+      AppLogger.d('MdnsBroadcastNotifier: Unregistering prior active broadcast before starting new broadcast.');
+      await stopBroadcasting();
+    }
 
     // Creates the service
     try {
       // Fetch your local device type
       final BaseDeviceInfo info = await ref.read(deviceInfoProvider.future);
-      final myDeviceType = info.extractPlatform; //  'windows', 'android'
+      final myDeviceType = info.extractPlatform; // 'windows', 'android'
 
-
-      //Inject them into the TXT record
+      // Inject them into the TXT record
       final service = Service(
         name: deviceName,
         type: AppConfig.mdnsServiceType,
@@ -75,8 +69,8 @@ class MdnsBroadcastNotifier extends Notifier<Registration?> {
       final registration = await register(service);
       AppLogger.d('MdnsBroadcastNotifier: Broadcasting as ${registration.service.name} on port $port');
 
-      // Save the registration object to state so we can cancel it later
-      _activeRegistration = registration;
+      // Save the registration object statically so we can cancel it cleanly
+      _globalActiveRegistration = registration;
       state = registration;
     } catch (e, st) {
       AppLogger.e('MdnsBroadcastNotifier: Host Error', error: e, stack: st);
@@ -86,15 +80,18 @@ class MdnsBroadcastNotifier extends Notifier<Registration?> {
   /// Call this ONLY if you need a manual button to stop syncing while staying on the page.
   /// (The onDispose block handles the automatic cleanup when leaving the page).
   Future<void> stopBroadcasting() async {
-    if (_activeRegistration != null) {
-      final regToCancel = _activeRegistration!;
+    if (_globalActiveRegistration != null) {
+      final regToCancel = _globalActiveRegistration!;
 
-      // Clear both references
-      _activeRegistration = null;
+      _globalActiveRegistration = null;
       state = null;
 
-      await unregister(regToCancel);
-      AppLogger.d('MdnsBroadcastNotifier: Stopped broadcasting manually');
+      try {
+        await unregister(regToCancel);
+        AppLogger.d('MdnsBroadcastNotifier: Stopped broadcasting successfully');
+      } catch (e) {
+        AppLogger.e('MdnsBroadcastNotifier: Unregister error', error: e);
+      }
     }
   }
 }

@@ -7,13 +7,15 @@ import '../../../../local_sync/provider/sync_server_provider.dart';
 
 /// Represents the high-level WebSocket connection lifecycle states.
 enum WebSocketActivity {
-  disconnected( color: Colors.transparent, tooltip: null),
+  disconnected(color: Colors.transparent, tooltip: null),
   hosting(
     color: Colors.greenAccent,
     tooltip: 'Host server running, waiting for client...',
   ),
-
-
+  reconnecting(
+    color: Colors.amberAccent,
+    tooltip: 'Reconnecting / Probing sync connection...',
+  ),
   connected(color: Colors.greenAccent, tooltip: 'Devices connected over Wi-Fi');
 
   final Color color;
@@ -21,14 +23,14 @@ enum WebSocketActivity {
 
   const WebSocketActivity({required this.color, this.tooltip});
 
-
-  // Evaluate the icon dynamically at runtime using a getter
   IconData get icon {
     switch (this) {
       case WebSocketActivity.disconnected:
         return Icons.circle;
       case WebSocketActivity.hosting:
         return Icons.circle_outlined;
+      case WebSocketActivity.reconnecting:
+        return Icons.sync_problem;
       case WebSocketActivity.connected:
         return PlatformHelper.isDesktopScreen ? Icons.phone_iphone_sharp : Icons.monitor;
     }
@@ -36,8 +38,14 @@ enum WebSocketActivity {
 
   bool get isVisible => this != WebSocketActivity.disconnected;
 
-  static WebSocketActivity resolve({required bool isHosting, required bool isConnected}) {
-    if (isConnected) return WebSocketActivity.connected;
+  static WebSocketActivity resolve({
+    required bool isHosting,
+    required SyncConnectionState syncState,
+  }) {
+    if (syncState == SyncConnectionState.connected) return WebSocketActivity.connected;
+    if (syncState == SyncConnectionState.reconnecting || syncState == SyncConnectionState.ghostDetected) {
+      return WebSocketActivity.reconnecting;
+    }
     if (isHosting) return WebSocketActivity.hosting;
     return WebSocketActivity.disconnected;
   }
@@ -49,9 +57,9 @@ class WebSocketConnectionIndicator extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final bool isHosting = ref.watch(syncServerProvider) != null;
-    final bool isConnected = ref.watch(localSyncServiceProvider) == SyncConnectionState.connected;
+    final SyncConnectionState syncState = ref.watch(localSyncServiceProvider);
 
-    final activity = WebSocketActivity.resolve(isHosting: isHosting, isConnected: isConnected);
+    final activity = WebSocketActivity.resolve(isHosting: isHosting, syncState: syncState);
 
     Widget content = Container(
       width: 32,

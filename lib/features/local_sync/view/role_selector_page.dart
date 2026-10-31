@@ -1,200 +1,201 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/helpers/platform_helper.dart';
+import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
 import 'package:noteit/shared/overlays/app_scaffold.dart';
 
-class RoleSelectorPage extends ConsumerWidget {
+class RoleSelectorPage extends ConsumerStatefulWidget {
   const RoleSelectorPage({super.key});
 
   @override
-  Widget build(BuildContext context, ref) {
-    // Detect if the app is running on a desktop platform
-    final isDesktop = PlatformHelper.isNativeDesktop;
+  ConsumerState<RoleSelectorPage> createState() => _RoleSelectorPageState();
+}
 
-    final clientTile = RoleTile(
-      title: "Connect to a Host",
-      roleBadge: "Client Mode",
-      description:
-      "Find and join a sync session on your local network. Best for mobile phones and tablets.",
-      icons: const [Icons.phone_android, Icons.tablet_mac],
-      color: Colors.blue,
-      isRecommended: !isDesktop, // Recommended if on Mobile
-      onTap: () {
-        // context.push(AppRoutes.searchNearBy);
-        ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.clientMode);
-      },
-    );
+class _RoleSelectorPageState extends ConsumerState<RoleSelectorPage> {
+  late bool _isClient;
 
-    final hostTile = RoleTile(
-      title: "Host a Sync Session",
-      roleBadge: "Host Mode",
-      description:
-      "Create a local server that other devices can discover and join. Best for desktops and laptops.",
-      icons: const [Icons.desktop_windows_outlined, Icons.laptop],
-      color: Colors.green,
-      isRecommended: isDesktop, // Recommended if on Desktop
-      onTap: () {
-        ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.hostMode);
-      },
-    );
+  @override
+  void initState() {
+    super.initState();
+    // Default to 'Client' on mobile and 'Host' on desktop
+    _isClient = !PlatformHelper.isNativeDesktop;
+
+    // Immediately save initial device role preference
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(sharedPreferenceProvider).setSyncRole(
+            _isClient ? SyncRole.client : SyncRole.host,
+          );
+    });
+  }
+
+  void _updateRole(bool isClient) {
+    setState(() {
+      _isClient = isClient;
+    });
+    ref.read(sharedPreferenceProvider).setSyncRole(
+          isClient ? SyncRole.client : SyncRole.host,
+        );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     return AppScaffold.rightPanel(
       option: RightPanelPageOptions.localSync,
       body: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 600),
-          child: ListView(
-            padding: const EdgeInsets.all(24.0),
-            shrinkWrap: true,
-            children: [
-              Text(
-                'Choose Device Role',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.displaySmall?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'How do you want to connect this device?',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-              ),
-              const SizedBox(height: 32),
-
-              ElevatedButton(onPressed: (){
-                ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.syncedList);
-              }, child: Text("Synced List")),
-              const SizedBox(height: 16),
-              // Dynamically reorder based on the device type
-              if (isDesktop) ...[
-                hostTile,
-                const SizedBox(height: 16),
-                clientTile,
-              ] else ...[
-                clientTile,
-                const SizedBox(height: 16),
-                hostTile,
-              ],
-            ],
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+            child: _buildSelectionState(context, colorScheme, textTheme),
           ),
         ),
       ),
     );
   }
-}
 
-class RoleTile extends StatelessWidget {
-  final String title;
-  final String roleBadge;
-  final String description;
-  final List<IconData> icons;
-  final Color color;
-  final VoidCallback onTap;
-  final bool isRecommended;
-
-  const RoleTile({
-    super.key,
-    required this.title,
-    required this.roleBadge,
-    required this.description,
-    required this.icons,
-    required this.color,
-    required this.onTap,
-    this.isRecommended = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      margin: EdgeInsets.zero, // Keep spacing controlled by ListView
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        // Make the border slightly thicker and darker if it's the recommended option
-        side: BorderSide(
-          color: isRecommended ? color.withValues(alpha: 0.8) : color.withValues(alpha: 0.3),
-          width: isRecommended ? 2.0 : 1.5,
-        ),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        splashColor: color.withValues(alpha: 0.1),
-        highlightColor: color.withValues(alpha: 0.05),
-        child: Padding(
-          // Reduced outer padding from 20 to 16 for better mobile fit
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                // Shrunk icon slightly from 32 to 28 to give text more horizontal space
-                child: Icon(icons.first, color: color, size: 28),
-              ),
-              const SizedBox(width: 16), // Reduced gap from 20 to 16
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (isRecommended)
-                      Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: color.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          'RECOMMENDED',
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: color,
-                          ),
-                        ),
-                      ),
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      description,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.grey.shade600,
-                        height: 1.4,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Text(
-                          roleBadge,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: color,
-                          ),
-                        ),
-                        const Spacer(),
-                        ...icons.map((iconData) => Padding(
-                          padding: const EdgeInsets.only(left: 6),
-                          child: Icon(iconData, size: 18, color: Colors.grey.shade400),
-                        )),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
+  Widget _buildSelectionState(
+    BuildContext context,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+  ) {
+    return Column(
+      key: const ValueKey('selection_state'),
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // Title
+        Text(
+          'This Device is a ?',
+          textAlign: TextAlign.center,
+          style: textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface,
           ),
         ),
-      ),
+        const SizedBox(height: 32),
+
+        // Role Selector Row: Text 'Host' -> Switch -> Text 'Client'
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Host Label
+            MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: () => _updateRole(false),
+                behavior: HitTestBehavior.opaque,
+                child: AnimatedDefaultTextStyle(
+                  duration: const Duration(milliseconds: 200),
+                  style: (textTheme.titleMedium ?? const TextStyle()).copyWith(
+                    fontWeight: !_isClient ? FontWeight.bold : FontWeight.normal,
+                    color: !_isClient
+                        ? colorScheme.primary
+                        : colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                  ),
+                  child: const Text('Host'),
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            // Toggle Switch
+            Switch(
+              value: _isClient,
+              onChanged: (value) => _updateRole(value),
+            ),
+            const SizedBox(width: 16),
+            // Client Label
+            MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: () => _updateRole(true),
+                behavior: HitTestBehavior.opaque,
+                child: AnimatedDefaultTextStyle(
+                  duration: const Duration(milliseconds: 200),
+                  style: (textTheme.titleMedium ?? const TextStyle()).copyWith(
+                    fontWeight: _isClient ? FontWeight.bold : FontWeight.normal,
+                    color: _isClient
+                        ? colorScheme.primary
+                        : colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                  ),
+                  child: const Text('Client'),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+
+        // Brief, professional helper text explaining active role
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 250),
+          child: SizedBox(
+            key: ValueKey<bool>(_isClient),
+            height: 48,
+            child: Center(
+              child: Text(
+                _isClient
+                    ? 'Client mode enables this device to search the local network and sync with an active host.'
+                    : 'Host mode allows this device to broadcast on the local network and share notes with client devices.',
+                textAlign: TextAlign.center,
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  height: 1.4,
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 32),
+
+        // Action Button
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 250),
+          child: FilledButton.icon(
+            key: ValueKey<bool>(_isClient),
+            onPressed: () {
+              ref.read(sharedPreferenceProvider).setSyncRole(
+                    _isClient ? SyncRole.client : SyncRole.host,
+                  );
+
+              final option = _isClient
+                  ? RightPanelPageOptions.clientMode
+                  : RightPanelPageOptions.hostMode;
+              ref.read(drawerNavigationProvider).navigate(context, option);
+            },
+            icon: Icon(_isClient ? Icons.search_rounded : Icons.wifi_tethering_rounded),
+            label: Text(_isClient ? 'Find Host' : 'Start Hosting'),
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // History Button
+        OutlinedButton.icon(
+          onPressed: () {
+            ref.read(drawerNavigationProvider).navigate(
+                  context,
+                  RightPanelPageOptions.syncedList,
+                );
+          },
+          icon: const Icon(Icons.history_rounded, size: 18),
+          label: const Text('History'),
+          style: OutlinedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

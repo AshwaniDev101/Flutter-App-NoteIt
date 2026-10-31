@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../home/view/desktop/content_panel/core/navigator.dart';
-import '../common/settings_widgets.dart';
+import '../shared/settings_widgets.dart';
 import 'time_preferences_provider.dart';
 
 /// Main settings page allowing users to configure date and time display preferences.

@@ -84,36 +84,45 @@ class SyncClientNotifier extends Notifier<WebSocketChannel?> {
       // Initiate Connection
       final channel = WebSocketChannel.connect(finalUri);
 
-      // Wait for connection with a strict 2-second timeout
-      await channel.ready.timeout(
-        const Duration(seconds: 2),
-        onTimeout: () {
-          // This triggers if we hit a ghost IP or the host is unreachable
-          throw TimeoutException('Ghost IP or Host unreachable');
-        },
-      );
+      try {
+        // Wait for connection with a strict 2-second timeout
+        await channel.ready.timeout(
+          const Duration(seconds: 2),
+          onTimeout: () {
+            // Close channel sink on timeout to release socket resources
+            channel.sink.close();
+            throw TimeoutException('Ghost IP or Host unreachable');
+          },
+        );
 
-      AppLogger.d('SyncClientNotifier: Connection Confirmed!');
+        AppLogger.d('SyncClientNotifier: Connection Confirmed!');
 
-      // Ensure SyncEngine is set to local and SyncRole is client when connection succeeds
-      ref.read(syncEngineProvider.notifier).setEngine(SyncEngine.local);
-      ref.read(sharedPreferenceProvider).setSyncRole(SyncRole.client);
+        // Ensure SyncEngine is set to local and SyncRole is client when connection succeeds
+        ref.read(syncEngineProvider.notifier).setEngine(SyncEngine.local);
+        ref.read(sharedPreferenceProvider).setSyncRole(SyncRole.client);
 
-      await ref.read(syncedDevicesDaoProvider).upsertDeviceAsHost(
-        uuid: hostUuid,
-        name: hostName,
-        lastKnownIp: ip,
-        lastKnownPort: port,
-        deviceType: devicePlatform,
-        protocolVersion: protocolVersion,
-      );
-      AppLogger.d('SyncClientNotifier: Saved Host $hostName to Drift DB.');
+        await ref.read(syncedDevicesDaoProvider).upsertDeviceAsHost(
+          uuid: hostUuid,
+          name: hostName,
+          lastKnownIp: ip,
+          lastKnownPort: port,
+          deviceType: devicePlatform,
+          protocolVersion: protocolVersion,
+        );
+        AppLogger.d('SyncClientNotifier: Saved Host $hostName to Drift DB.');
 
-      // Save the connection to the state
-      state = channel;
+        // Save the connection to the state
+        state = channel;
 
-      // Pass to traffic controller
-      ref.read(localSyncServiceProvider.notifier).setActiveConnection(channel);
+        // Pass to traffic controller
+        ref.read(localSyncServiceProvider.notifier).setActiveConnection(channel);
+      } catch (_) {
+        // If connection setup failed before assigning state, ensure channel is closed
+        if (state != channel) {
+          channel.sink.close();
+        }
+        rethrow;
+      }
 
     } on TimeoutException catch (e) {
       // Caught the Ghost IP timeout specifically

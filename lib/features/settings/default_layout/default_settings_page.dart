@@ -11,7 +11,7 @@ import '../../home/core/db_sorting_filtering.dart';
 import '../../home/core/providers.dart';
 import '../../home/view/desktop/content_panel/core/navigator.dart';
 import '../../trash/providers/trash_providers.dart';
-import '../common/settings_widgets.dart';
+import '../shared/settings_widgets.dart';
 
 /// Settings page for configuring default page views (List vs Grid), sorting criteria,
 /// middle panel width, and desktop application window sizes.

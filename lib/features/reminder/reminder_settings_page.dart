@@ -13,6 +13,7 @@ import '../../shared/overlays/app_scaffold.dart';
 import '../../shared/overlays/snack_bar_manager.dart';
 import '../home/core/providers.dart';
 import '../home/view/desktop/content_panel/core/navigator.dart';
+import '../settings/shared/settings_widgets.dart';
 import 'reminder_manager.dart';
 
 class ReminderSettingsPage extends ConsumerStatefulWidget {
@@ -472,12 +473,12 @@ class _ReminderSettingsPageState extends ConsumerState<ReminderSettingsPage> {
                         ValueListenableBuilder<bool>(
                           valueListenable: _prefs.reminderSoundListenable,
                           builder: (context, soundEnabled, _) {
-                            return SwitchListTile(
-                              title: const Text('Enable Alarm Sound'),
-                              subtitle: const Text(
-                                  'Play audio ringer when reminder goes off'),
+                            return SettingsSwitchTile(
+                              title: 'Enable Alarm Sound',
+                              subtitle:
+                                  'Play audio ringer when reminder goes off',
                               value: soundEnabled,
-                              secondary: const Icon(Icons.volume_up_outlined),
+                              icon: Icons.volume_up_outlined,
                               onChanged: (val) async {
                                 await _prefs.setReminderSoundEnabled(val);
                               },
@@ -485,12 +486,12 @@ class _ReminderSettingsPageState extends ConsumerState<ReminderSettingsPage> {
                           },
                         ),
                         const Divider(height: 1),
-                        SwitchListTile(
-                          title: const Text('Enable Device Vibration'),
-                          subtitle: const Text(
-                              'Vibrate phone or supported hardware'),
+                        SettingsSwitchTile(
+                          title: 'Enable Device Vibration',
+                          subtitle:
+                              'Vibrate phone or supported hardware',
                           value: _vibrationEnabled,
-                          secondary: const Icon(Icons.vibration_outlined),
+                          icon: Icons.vibration_outlined,
                           onChanged: (val) async {
                             setState(() => _vibrationEnabled = val);
                             await _prefs.setReminderVibrationEnabled(val);

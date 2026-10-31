@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/core/helpers/platform_helper.dart';
 import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
 
 import 'app_typography.dart';
@@ -40,15 +41,61 @@ class ThemeNotifier extends Notifier<AppThemeType> {
 class Themes {
   /// Resolves the unified ThemeData package based on the active state selection
   static ThemeData getThemeData(AppThemeType type) {
+    ThemeData theme;
     switch (type) {
       case AppThemeType.light:
-        return _lightThemeData;
+        theme = _lightThemeData;
+        break;
       case AppThemeType.dark:
-        return _darkThemeData;
+        theme = _darkThemeData;
+        break;
       case AppThemeType.amoled:
-        return _amoledThemeData;
+        theme = _amoledThemeData;
+        break;
       case AppThemeType.sepia:
-        return _sepiaThemeData;
+        theme = _sepiaThemeData;
+        break;
     }
+
+    if (PlatformHelper.isDesktopScreen) {
+      final colorScheme = theme.colorScheme;
+      return theme.copyWith(
+        visualDensity: VisualDensity.compact,
+        switchTheme: SwitchThemeData(
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          mouseCursor: const WidgetStatePropertyAll(SystemMouseCursors.click),
+          overlayColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.hovered)) {
+              return colorScheme.primary.withValues(alpha: 0.08);
+            }
+            if (states.contains(WidgetState.focused)) {
+              return colorScheme.primary.withValues(alpha: 0.12);
+            }
+            return null;
+          }),
+          trackOutlineWidth: const WidgetStatePropertyAll(1.0),
+          trackOutlineColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return colorScheme.primary;
+            }
+            return colorScheme.outline;
+          }),
+          thumbColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return colorScheme.onPrimary;
+            }
+            return colorScheme.outline;
+          }),
+          trackColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return colorScheme.primary;
+            }
+            return colorScheme.surfaceContainerHighest;
+          }),
+        ),
+      );
+    }
+
+    return theme;
   }
 }

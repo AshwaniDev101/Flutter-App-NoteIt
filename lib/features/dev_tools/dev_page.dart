@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/core/helpers/platform_helper.dart';
+import 'package:noteit/database/drift/local_database.dart';
+import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
 import 'package:noteit/features/lock/lock_manger/lock_manager.dart';
 import 'package:noteit/shared/overlays/app_scaffold.dart';
 import 'package:noteit/shared/overlays/snack_bar_manager.dart';
+import 'package:noteit/shared/widgets/app_switch.dart';
 
 class DevPage extends ConsumerWidget {
   const DevPage({super.key});
@@ -45,7 +49,7 @@ class DevPage extends ConsumerWidget {
                   const SizedBox(height: 40),
 
                   // ==================== GROUP A ====================
-                  _SectionHeader(title: 'Group A', colorScheme: colorScheme, textTheme: textTheme),
+                  _SectionHeader(title: 'Storage & Reset Actions', colorScheme: colorScheme, textTheme: textTheme),
                   Card(
                     margin: const EdgeInsets.only(bottom: 24.0),
                     elevation: 0,
@@ -72,14 +76,59 @@ class DevPage extends ConsumerWidget {
                           },
                         ),
                         _buildDivider(colorScheme),
-                        DevActionSwitchTile(
-                          icon: Icons.looks_two_rounded,
-                          iconColor: Colors.orange,
-                          title: 'Action 2',
-                          subtitle: 'Action 2 description placeholder',
-                          value: isActionTwoEnabled,
-                          enabled: false, // Disabled
-                          onChanged: (bool value) {},
+                        DevActionTile(
+                          icon: Icons.cleaning_services_rounded,
+                          iconColor: Colors.amber.shade700,
+                          title: 'Clear SharedPreferences',
+                          subtitle: 'Wipes all stored app preferences and settings',
+                          enabled: true,
+                          onTap: () async {
+                            final confirmed = await _showConfirmationDialog(
+                              context: context,
+                              title: 'Clear SharedPreferences?',
+                              content: 'This will wipe all stored app settings and preferences. Continue?',
+                              confirmLabel: 'Clear All',
+                              confirmColor: Colors.amber.shade800,
+                            );
+                            if (confirmed && context.mounted) {
+                              await ref.read(sharedPreferenceProvider).clearAll();
+                              if (context.mounted) {
+                                SnackBarManager.show(
+                                  msg: 'SharedPreferences successfully wiped.',
+                                  type: SnackBarMessageType.acknowledgment,
+                                );
+                              }
+                            }
+                          },
+                        ),
+                        _buildDivider(colorScheme),
+                        DevActionTile(
+                          icon: Icons.delete_forever_rounded,
+                          iconColor: Colors.red.shade700,
+                          title: 'Wipe Drift DB File',
+                          subtitle: 'Physically deletes note_it_db.sqlite and recreates database',
+                          enabled: true,
+                          onTap: () async {
+                            final confirmed = await _showConfirmationDialog(
+                              context: context,
+                              title: 'Wipe Drift Database?',
+                              content: 'This will physically delete the note_it_db.sqlite file. All local notes, folders, and keybindings will be lost. Continue?',
+                              confirmLabel: 'Delete DB File',
+                              confirmColor: Colors.red,
+                            );
+                            if (confirmed && context.mounted) {
+                              final db = ref.read(localDatabaseProvider);
+                              await db.close();
+                              await deleteDatabaseFiles();
+                              ref.invalidate(localDatabaseProvider);
+                              if (context.mounted) {
+                                SnackBarManager.show(
+                                  msg: 'Drift database file physically deleted and recreated.',
+                                  type: SnackBarMessageType.acknowledgment,
+                                );
+                              }
+                            }
+                          },
                         ),
                       ],
                     ),
@@ -156,6 +205,39 @@ class DevPage extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Future<bool> _showConfirmationDialog({
+    required BuildContext context,
+    required String title,
+    required String content,
+    required String confirmLabel,
+    Color? confirmColor,
+  }) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        final theme = Theme.of(ctx);
+        return AlertDialog(
+          title: Text(title, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+          content: Text(content, style: theme.textTheme.bodyMedium),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: confirmColor ?? theme.colorScheme.error,
+              ),
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: Text(confirmLabel),
+            ),
+          ],
+        );
+      },
+    );
+    return result ?? false;
   }
 
   Widget _buildDivider(ColorScheme colorScheme) {
@@ -277,14 +359,17 @@ class DevActionSwitchTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDesktop = PlatformHelper.isDesktopScreen;
 
     return Opacity(
       opacity: enabled ? 1.0 : 0.4, // Visually disables the entire tile
-      child: SwitchListTile(
+      child: ListTile(
+        dense: isDesktop,
+        visualDensity: isDesktop ? VisualDensity.compact : VisualDensity.standard,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
         hoverColor: theme.colorScheme.primary.withValues(alpha: 0.04),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        secondary: Container(
+        leading: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
             color: enabled ? iconColor.withValues(alpha: 0.1) : theme.colorScheme.onSurface.withValues(alpha: 0.1),
@@ -303,8 +388,11 @@ class DevActionSwitchTile extends StatelessWidget {
             style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
           ),
         ),
-        value: value,
-        onChanged: enabled ? onChanged : null, // Prevent toggling if disabled
+        trailing: AppSwitch(
+          value: value,
+          onChanged: enabled ? onChanged : null,
+        ),
+        onTap: (enabled && onChanged != null) ? () => onChanged!(!value) : null,
       ),
     );
   }

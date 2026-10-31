@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../database/sync/sync_engine.dart';
-import '../../../../database/sync/sync_orchestrator.dart';
-import '../../keybinding/keybindings_provider.dart';
-import '../../lock/lock_manger/lock_manager.dart';
-import '../../lock/password_prompt_helper.dart';
-import '../../home/view/desktop/content_panel/core/navigator.dart';
-import '../common/settings_widgets.dart';
+import '../../../database/sync/sync_engine.dart';
+import '../../../database/sync/sync_orchestrator.dart';
+import '../keybinding/keybindings_provider.dart';
+import '../lock/lock_manger/lock_manager.dart';
+import '../lock/password_prompt_helper.dart';
+import '../home/view/desktop/content_panel/core/navigator.dart';
+import 'shared/settings_widgets.dart';
 
 /// Main Settings Page hub providing top-level configuration sections for
 /// Synchronization, General Security, Interface & Keyboard, and Data Management.

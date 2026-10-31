@@ -23,7 +23,7 @@ import '../../features/note_editor/screens/view/mobile_edit_page.dart';
 import '../../features/reminder/reminder_settings_page.dart';
 import '../../features/settings/default_layout/default_settings_page.dart';
 import '../../features/settings/keybindings/keybinding_settings_page.dart';
-import '../../features/settings/main/settings_page.dart';
+import '../../features/settings/settings_page.dart';
 import '../../features/settings/note_editor/note_editor_settings_page.dart';
 import '../../features/settings/time_format/time_settings_page.dart';
 import '../../features/themes/view/theme_page.dart';
@@ -148,7 +148,16 @@ final routerProvider = Provider((ref) {
           return const QrScannerPage();
         },
       ),
-      GoRoute(path: AppRoutes.pin, builder: (context, state) => const PinEntryDialog()),
+      GoRoute(
+        path: AppRoutes.pin,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return PinEntryDialog(
+            hostName: extra?['hostName'] as String?,
+            hostIp: extra?['hostIp'] as String?,
+          );
+        },
+      ),
 
       GoRoute(path: AppRoutes.export, builder: (context, state) => const ExportNotesPage()),
       GoRoute(path: AppRoutes.import, builder: (context, state) => const ImportNotesPage()),

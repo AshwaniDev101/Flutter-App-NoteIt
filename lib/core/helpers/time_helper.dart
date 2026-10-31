@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
-import 'package:noteit/features/settings/settings.dart';
+import '../../features/settings/time_format/time_preferences_provider.dart';
 
 /// Riverpod provider supplying a date-time formatting function reflecting active user preferences.
 ///
