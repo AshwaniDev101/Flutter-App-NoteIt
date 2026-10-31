@@ -18,15 +18,15 @@ class _RoleSelectorPageState extends ConsumerState<RoleSelectorPage> {
   @override
   void initState() {
     super.initState();
-    // Default to 'Client' on mobile and 'Host' on desktop
-    _isClient = !PlatformHelper.isNativeDesktop;
-
-    // Immediately save initial device role preference
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(sharedPreferenceProvider).setSyncRole(
-            _isClient ? SyncRole.client : SyncRole.host,
-          );
-    });
+    final currentRole = ref.read(sharedPreferenceProvider).syncRole;
+    if (currentRole == SyncRole.client) {
+      _isClient = true;
+    } else if (currentRole == SyncRole.host) {
+      _isClient = false;
+    } else {
+      // Default to 'Client' on mobile and 'Host' on desktop if undefined
+      _isClient = !PlatformHelper.isNativeDesktop;
+    }
   }
 
   void _updateRole(bool isClient) {

@@ -77,28 +77,22 @@ class _HostBroadcastPageState extends ConsumerState<HostBroadcastPage> {
                       children: [
                         Row(
                           children: [
-                            Container(
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                color: colorScheme.primary,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
+                            Icon(Icons.wifi),
                             const SizedBox(width: 8),
                             Text(
-                              'This Device is a Server',
+                              'Start Server',
                               style: textTheme.labelLarge?.copyWith(
-                                color: colorScheme.primary,
+                                // color: colorScheme.primary,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                           ],
                         ),
-                        TextButton.icon(
+                        OutlinedButton.icon(
                           onPressed: () async {
                             ref.read(sharedPreferenceProvider).setSyncRole(SyncRole.undefine);
                             await ref.read(sharedPreferenceProvider).setCurrentEngine(SyncEngine.offline);
+                            await ref.read(syncEngineProvider.notifier).setEngine(SyncEngine.offline);
                             ref.read(localSyncServiceProvider.notifier).stop();
                             if (context.mounted) {
                               ref.read(drawerNavigationProvider).pop(context);
@@ -106,8 +100,16 @@ class _HostBroadcastPageState extends ConsumerState<HostBroadcastPage> {
                           },
                           icon: const Icon(Icons.stop_circle_outlined, size: 18),
                           label: const Text('Stop Server'),
-                          style: TextButton.styleFrom(
+                          style: OutlinedButton.styleFrom(
                             foregroundColor: colorScheme.error,
+                            side: BorderSide(
+                              color: colorScheme.error.withValues(alpha: 0.5),
+                              width: 1.2,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                             visualDensity: VisualDensity.compact,
                           ),
                         ),
@@ -223,40 +225,32 @@ class _HostBroadcastPageState extends ConsumerState<HostBroadcastPage> {
                     const SizedBox(height: 20),
 
                     // --- INSTRUCTION HELP BOX (OUTSIDE PIN BOX) ---
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.3)),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(Icons.info_outline_rounded, size: 18, color: colorScheme.primary),
-                              const SizedBox(width: 8),
-                              Text(
-                                'To Sync:',
-                                style: textTheme.labelLarge?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: colorScheme.onSurface,
-                                ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.info_outline_rounded, size: 18),
+                            const SizedBox(width: 8),
+                            Text(
+                              'To Sync:',
+                              style: textTheme.labelLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: colorScheme.onSurface,
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            '1. Install this app on your other device.\n'
-                            '2. Go to: Drawer → Local Sync → Connect as Client.',
-                            style: textTheme.bodySmall?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
-                              height: 1.5,
                             ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '1. Install this app on your other device.\n'
+                          '2. Go to: Drawer → Local Sync → Connect as Client.',
+                          style: textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                            height: 1.5,
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

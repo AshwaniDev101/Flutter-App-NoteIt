@@ -21,6 +21,7 @@ final mdnsSearcherProvider = NotifierProvider<MdnsSearcherNotifier, MdnsState>((
 
 class MdnsSearcherNotifier extends Notifier<MdnsState> {
   Discovery? _discovery;
+  Timer? _scanTimer;
 
   @override
   MdnsState build() {
@@ -59,15 +60,21 @@ class MdnsSearcherNotifier extends Notifier<MdnsState> {
     return uniqueByUuid.values.toList();
   }
 
-  /// RADAR MODE: Finds ALL NoteIt devices for the SearchNearBy UI (No UUID needed)
-  Future<void> startRadar() async {
+  /// RADAR MODE: Finds ALL NoteIt devices for the SearchNearBy UI (No UUID needed).
+  /// Initial scan defaults to 3 seconds. User-triggered retries pass 10 seconds.
+  Future<void> startRadar({Duration duration = const Duration(seconds: 3)}) async {
 
     // --- POLICE CODE ---
     AppLogger.d('MdnsSearcherNotifier: Stopping any active broadcasts before scanning.');
     ref.read(mdnsBroadcastProvider.notifier).stopBroadcasting();
     // -------------------
 
-    if (state.status == ScanStatus.scanning) return;
+    _scanTimer?.cancel();
+
+    if (_discovery != null) {
+      stopDiscovery(_discovery!);
+      _discovery = null;
+    }
 
     state = (status: ScanStatus.scanning, devices: []);
 
@@ -79,22 +86,42 @@ class MdnsSearcherNotifier extends Notifier<MdnsState> {
       _discovery = await startDiscovery(AppConfig.mdnsServiceType, ipLookupType: IpLookupType.any);
 
       // We don't want to crash if _discovery drops instantly
-      if (_discovery == null) return;
+      if (_discovery == null) {
+        state = (status: ScanStatus.error, devices: []);
+        return;
+      }
 
       final myUuid = ref.read(sharedPreferenceProvider).hostUuid;
 
       // IMMEDIATELY populate the state in case it found devices instantly
       // Filter out invalid services before they hit the state
-      state = (status: ScanStatus.scanning, devices: _getValidServices(_discovery!.services, myUuid));
+      final foundServices = _getValidServices(_discovery!.services, myUuid);
+      state = (status: ScanStatus.scanning, devices: foundServices);
 
       _discovery!.addListener(() {
-
         // The listener fires even when devices disconnect.
         // If _discovery is suddenly null here, abort.
         if (_discovery == null) return;
 
         // Update the state with the live list of all found devices
-        state = (status: ScanStatus.scanning, devices: _getValidServices(_discovery!.services, myUuid));
+        final liveServices = _getValidServices(_discovery!.services, myUuid);
+        state = (status: ScanStatus.scanning, devices: liveServices);
+      });
+
+      // Automatically complete scan after requested duration
+      _scanTimer = Timer(duration, () {
+        if (state.status == ScanStatus.scanning) {
+          final currentDevices = state.devices;
+          AppLogger.d('MdnsSearcherNotifier: Radar scan finished after ${duration.inSeconds}s. Found ${currentDevices.length} devices.');
+          if (_discovery != null) {
+            stopDiscovery(_discovery!);
+            _discovery = null;
+          }
+          state = (
+            status: currentDevices.isNotEmpty ? ScanStatus.found : ScanStatus.idle,
+            devices: currentDevices,
+          );
+        }
       });
     } catch (e, st) {
       AppLogger.e('MdnsSearcherNotifier: Radar Error', error: e, stack: st);
@@ -186,6 +213,8 @@ class MdnsSearcherNotifier extends Notifier<MdnsState> {
   }
 
   void stopScan() {
+    _scanTimer?.cancel();
+    _scanTimer = null;
     if (_discovery != null) {
       stopDiscovery(_discovery!);
       _discovery = null;
