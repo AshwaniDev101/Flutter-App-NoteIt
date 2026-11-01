@@ -69,7 +69,7 @@ class _RoleSelectorPageState extends ConsumerState<RoleSelectorPage> {
       children: [
         // Title
         Text(
-          'This Device is a ?',
+          'What is this Device?',
           textAlign: TextAlign.center,
           style: textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.w600,

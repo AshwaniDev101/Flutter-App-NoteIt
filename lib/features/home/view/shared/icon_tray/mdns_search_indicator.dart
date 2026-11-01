@@ -25,7 +25,7 @@ class MdnsSearchIndicator extends ConsumerWidget {
               // Outer soft glow
               BoxShadow(color: Colors.blueAccent.withValues(alpha: 0.3), blurRadius: 4, spreadRadius: 1),],
           ),
-          child: const Icon(Icons.search, color: Colors.blueAccent, size: 16),
+          child: const Icon(Icons.wifi_find_rounded, color: Colors.white, size: 16),
         ),
       ),
     );

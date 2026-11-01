@@ -17,10 +17,16 @@ class HostBroadcastPage extends ConsumerStatefulWidget {
 
 class _HostBroadcastPageState extends ConsumerState<HostBroadcastPage> {
   bool _showPinOverride = false;
+  final ScrollController _scrollController = ScrollController(); // Added controller
+
+  @override
+  void dispose() {
+    _scrollController.dispose(); // Dispose to prevent memory leaks
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Watching this provider automatically starts the server and mDNS broadcast.
     final sessionAsync = ref.watch(syncSessionProvider);
     final syncState = ref.watch(localSyncServiceProvider);
     final isConnected = syncState == SyncConnectionState.connected;
@@ -33,22 +39,24 @@ class _HostBroadcastPageState extends ConsumerState<HostBroadcastPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               CircularProgressIndicator(),
-              SizedBox(height: 16),
+              SizedBox(height: 24),
               Text('Starting server and broadcasting...'),
             ],
           ),
         ),
         error: (error, stack) => Center(
           child: Padding(
-            padding: const EdgeInsets.all(24.0),
+            padding: const EdgeInsets.all(32.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                Icon(Icons.wifi_off_rounded, color: Theme.of(context).colorScheme.error, size: 48),
                 const SizedBox(height: 16),
-                Text('Failed to host: $error', textAlign: TextAlign.center),
-                const SizedBox(height: 16),
-                ElevatedButton(
+                Text('Failed to host', style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: 8),
+                Text(error.toString(), textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
+                const SizedBox(height: 24),
+                FilledButton.tonal(
                   onPressed: () => ref.invalidate(syncSessionProvider),
                   child: const Text('Retry'),
                 ),
@@ -59,235 +67,229 @@ class _HostBroadcastPageState extends ConsumerState<HostBroadcastPage> {
         data: (hostData) {
           final colorScheme = Theme.of(context).colorScheme;
           final textTheme = Theme.of(context).textTheme;
-
           final shouldShowPin = !isConnected || _showPinOverride;
 
-          return Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 440),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // --- NON-CHANGEABLE SERVER LABEL & STOP BUTTON ---
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.wifi),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Start Server',
-                              style: textTheme.labelLarge?.copyWith(
-                                // color: colorScheme.primary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                        OutlinedButton.icon(
-                          onPressed: () async {
-                            ref.read(sharedPreferenceProvider).setSyncRole(SyncRole.undefine);
-                            await ref.read(sharedPreferenceProvider).setCurrentEngine(SyncEngine.offline);
-                            await ref.read(syncEngineProvider.notifier).setEngine(SyncEngine.offline);
-                            ref.read(localSyncServiceProvider.notifier).stop();
-                            if (context.mounted) {
-                              ref.read(drawerNavigationProvider).pop(context);
-                            }
-                          },
-                          icon: const Icon(Icons.stop_circle_outlined, size: 18),
-                          label: const Text('Stop Server'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: colorScheme.error,
-                            side: BorderSide(
-                              color: colorScheme.error.withValues(alpha: 0.5),
-                              width: 1.2,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            visualDensity: VisualDensity.compact,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    // --- FLAT HOST DETAILS CARD ---
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
+          return LayoutBuilder(
+              builder: (context, constraints) {
+                return Scrollbar(
+                  controller: _scrollController, // Attach controller to Scrollbar
+                  child: SingleChildScrollView(
+                    controller: _scrollController, // Attach SAME controller to ScrollView
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: constraints.maxHeight,
+                        minWidth: constraints.maxWidth,
                       ),
-                      child: Column(
-                        children: [
-                          _buildDetailRow(
-                            context,
-                            icon: Icons.laptop_rounded,
-                            label: 'Host Name',
-                            value: hostData.deviceName,
-                          ),
-                          const Divider(height: 16),
-                          _buildDetailRow(
-                            context,
-                            icon: Icons.wifi_rounded,
-                            label: 'Host IP',
-                            value: hostData.ip,
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // --- CONNECTION STATUS & PAIRING PIN CARD ---
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-                      decoration: BoxDecoration(
-                        color: colorScheme.surface,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
-                      ),
-                      child: Column(
-                        children: [
-                          // Connected status message
-                          if (isConnected) ...[
-                            Row(
+                      child: Center(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 48.0),
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 420),
+                            child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                const Icon(
-                                  Icons.check_circle_rounded,
-                                  color: Colors.green,
-                                  size: 18,
+                                // --- HEADER ---
+                                Icon(
+                                  isConnected ? Icons.check_circle_rounded : Icons.wifi_tethering_rounded,
+                                  size: 48,
+                                  color: isConnected ? Colors.green : colorScheme.primary,
                                 ),
-                                const SizedBox(width: 8),
+                                const SizedBox(height: 16),
                                 Text(
-                                  'At least 1 device is connected',
-                                  style: textTheme.titleMedium?.copyWith(
-                                    color: Colors.green.shade800,
-                                    fontWeight: FontWeight.bold,
+                                  isConnected ? 'Device Connected' : 'Ready to Sync',
+                                  textAlign: TextAlign.center,
+                                  style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
+                                ),
+                                const SizedBox(height: 8),
+                                SelectableText(
+                                  "${hostData.deviceName} • ${hostData.ip}",
+                                  textAlign: TextAlign.center,
+                                  style: textTheme.bodyMedium?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
                                   ),
+                                ),
+                                const SizedBox(height: 40),
+
+                                // --- PIN CARD ---
+                                AnimatedContainer(
+                                  duration: const Duration(milliseconds: 300),
+                                  padding: const EdgeInsets.all(32),
+                                  decoration: BoxDecoration(
+                                    color: isConnected
+                                        ? Colors.green.withValues(alpha: 0.1)
+                                        : colorScheme.primaryContainer.withValues(alpha: 0.5),
+                                    borderRadius: BorderRadius.circular(24),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      if (shouldShowPin) ...[
+                                        Text(
+                                          'PAIRING PIN',
+                                          style: textTheme.labelSmall?.copyWith(
+                                            letterSpacing: 2,
+                                            fontWeight: FontWeight.bold,
+                                            color: colorScheme.primary,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 16),
+                                        FittedBox(
+                                          fit: BoxFit.scaleDown,
+                                          child: Text(
+                                            hostData.pin,
+                                            style: textTheme.displayMedium?.copyWith(
+                                              letterSpacing: 12,
+                                              fontWeight: FontWeight.w700,
+                                              color: colorScheme.onPrimaryContainer,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                      if (isConnected && !shouldShowPin)
+                                        Text(
+                                          'Syncing in progress...',
+                                          style: textTheme.titleMedium?.copyWith(
+                                            color: Colors.green.shade700,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      if (isConnected) ...[
+                                        const SizedBox(height: 16),
+                                        TextButton.icon(
+                                          onPressed: () => setState(() => _showPinOverride = !_showPinOverride),
+                                          icon: Icon(
+                                            _showPinOverride ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                                            size: 18,
+                                          ),
+                                          label: Text(_showPinOverride ? 'Hide PIN' : 'Reveal PIN'),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 40),
+
+                                // --- INSTRUCTIONS ---
+                                Container(
+                                  padding: const EdgeInsets.all(24),
+                                  decoration: BoxDecoration(
+                                    color: colorScheme.surface,
+                                    border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Icon(Icons.info_outline_rounded, size: 20, color: colorScheme.onSurfaceVariant),
+                                          const SizedBox(width: 8),
+                                          Flexible(
+                                            child: Text(
+                                              'How to connect',
+                                              style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 16),
+                                      _buildInstructionStep(context, '1', 'Install this app on your other device.'),
+                                      const SizedBox(height: 12),
+                                      _buildInstructionStep(context, '2', 'Go to Drawer → Local Sync → Connect as Client.'),
+                                      const SizedBox(height: 12),
+                                      _buildInstructionStep(context, '3', 'Select this host name and enter the PIN.'),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 40),
+
+                                // --- ACTIONS ---
+                                Wrap(
+                                  alignment: WrapAlignment.center,
+                                  spacing: 16,
+                                  runSpacing: 16,
+                                  children: [
+                                    OutlinedButton.icon(
+                                      onPressed: () {
+                                        ref.read(drawerNavigationProvider).navigate(
+                                          context,
+                                          RightPanelPageOptions.syncedList,
+                                        );
+                                      },
+                                      icon: const Icon(Icons.history_rounded, size: 18),
+                                      label: const Text('History'),
+                                      style: OutlinedButton.styleFrom(
+                                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                      ),
+                                    ),
+                                    FilledButton.tonalIcon(
+                                      onPressed: () async {
+                                        ref.read(sharedPreferenceProvider).setSyncRole(SyncRole.undefine);
+                                        await ref.read(sharedPreferenceProvider).setCurrentEngine(SyncEngine.offline);
+                                        await ref.read(syncEngineProvider.notifier).setEngine(SyncEngine.offline);
+                                        ref.read(localSyncServiceProvider.notifier).stop();
+                                        if (context.mounted) {
+                                          ref.read(drawerNavigationProvider).pop(context);
+                                        }
+                                      },
+                                      icon: const Icon(Icons.stop_rounded, size: 20),
+                                      label: const Text('Stop Server'),
+                                      style: FilledButton.styleFrom(
+                                        backgroundColor: colorScheme.errorContainer,
+                                        foregroundColor: colorScheme.onErrorContainer,
+                                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 16),
-                          ],
-
-                          // Pairing PIN (Shown if not connected OR if user taps Show PIN)
-                          if (shouldShowPin) ...[
-                            Text(
-                              'PAIRING PIN',
-                              style: textTheme.labelMedium?.copyWith(
-                                letterSpacing: 2,
-                                color: colorScheme.primary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              hostData.pin,
-                              style: textTheme.displayMedium?.copyWith(
-                                fontSize: 40,
-                                letterSpacing: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-
-                          // Show PIN toggle button when device is connected
-                          if (isConnected) ...[
-                            const SizedBox(height: 8),
-                            TextButton.icon(
-                              onPressed: () {
-                                setState(() {
-                                  _showPinOverride = !_showPinOverride;
-                                });
-                              },
-                              icon: Icon(
-                                _showPinOverride
-                                    ? Icons.visibility_off_rounded
-                                    : Icons.visibility_rounded,
-                                size: 18,
-                              ),
-                              label: Text(_showPinOverride ? 'Hide PIN' : 'Show PIN'),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // --- INSTRUCTION HELP BOX (OUTSIDE PIN BOX) ---
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.info_outline_rounded, size: 18),
-                            const SizedBox(width: 8),
-                            Text(
-                              'To Sync:',
-                              style: textTheme.labelLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: colorScheme.onSurface,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          '1. Install this app on your other device.\n'
-                          '2. Go to: Drawer → Local Sync → Connect as Client.',
-                          style: textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                            height: 1.5,
                           ),
                         ),
-                      ],
+                      ),
                     ),
-                  ],
-                ),
-              ),
-            ),
+                  ),
+                );
+              }
           );
         },
       ),
     );
   }
 
-  Widget _buildDetailRow(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required String value,
-  }) {
-    final textTheme = Theme.of(context).textTheme;
+  Widget _buildInstructionStep(BuildContext context, String number, String text) {
     final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 20, color: colorScheme.primary),
-        const SizedBox(width: 12),
-        Text(
-          label,
-          style: textTheme.bodyMedium?.copyWith(
-            color: colorScheme.onSurfaceVariant,
-            fontWeight: FontWeight.w500,
+        Container(
+          width: 24,
+          height: 24,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerHighest,
+            shape: BoxShape.circle,
+          ),
+          child: Text(
+            number,
+            style: textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold),
           ),
         ),
-        const Spacer(),
-        SelectableText(
-          value,
-          style: textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: colorScheme.onSurface,
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            text,
+            style: textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+              height: 1.4,
+            ),
           ),
         ),
       ],
