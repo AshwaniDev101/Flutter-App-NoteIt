@@ -23,5 +23,8 @@ class AppConfig {
   /// It must start with an underscore, have a short name, and end with '._tcp' (or '._udp').
   static const String mdnsServiceType = '_noteitsync._tcp';
 
-
+  /// The default fixed TCP port for NoteIt Local Wi-Fi Sync server.
+  /// Using a fixed port allows Windows Firewall to permit connections consistently
+  /// and enables Direct IP reconnect even if mDNS multicast is blocked by the network router.
+  static const int defaultSyncPort = 34215;
 }

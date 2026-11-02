@@ -387,23 +387,34 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
                     _buildMetaDataRow(padding: 16.0),
                   ],
                   Expanded(
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () {
-                        if (!_contentFocusNode.hasFocus && !_titleFocusNode.hasFocus) {
-                          _contentFocusNode.requestFocus();
-                        }
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        return SingleChildScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          child: ConstrainedBox(
+                            // Forces the scroll view content to always fill the available screen height
+                            constraints: BoxConstraints(
+                              minHeight: constraints.maxHeight,
+                            ),
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () {
+                                if (_contentVersion != ContentVersion.checklist) {
+                                  _contentFocusNode.requestFocus();
+                                }
+                              },
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildContentField(padding: 16.0),
+
+                                  const SizedBox(height: 100),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
                       },
-                      child: SingleChildScrollView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildContentField(padding: 16.0),
-                            const SizedBox(height: 300),
-                          ],
-                        ),
-                      ),
                     ),
                   ),
                 ],

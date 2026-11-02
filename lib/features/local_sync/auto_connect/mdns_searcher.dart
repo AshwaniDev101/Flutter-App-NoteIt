@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -108,6 +109,22 @@ class MdnsSearcherNotifier extends Notifier<MdnsState> {
         state = (status: ScanStatus.scanning, devices: liveServices);
       });
 
+      // Trigger parallel subnet probe fallback for Windows / Firewalled environments
+      _probeSubnetForHosts(myUuid).then((subnetServices) {
+        if (subnetServices.isNotEmpty) {
+          final merged = List<Service>.from(state.devices);
+          for (var s in subnetServices) {
+            if (!merged.any((existing) => existing.host == s.host)) {
+              merged.add(s);
+            }
+          }
+          state = (
+            status: state.status == ScanStatus.scanning ? ScanStatus.scanning : ScanStatus.found,
+            devices: merged,
+          );
+        }
+      });
+
       // Automatically complete scan after requested duration
       _scanTimer = Timer(duration, () {
         if (state.status == ScanStatus.scanning) {
@@ -195,6 +212,25 @@ class MdnsSearcherNotifier extends Notifier<MdnsState> {
         }
       });
 
+      // Trigger parallel subnet probe fallback for targeted server lookup
+      _probeSubnetForHosts(ref.read(sharedPreferenceProvider).hostUuid).then((subnetServices) {
+        for (var service in subnetServices) {
+          final ip = service.host;
+          final port = service.port;
+          if (ip != null && port != null && !completer.isCompleted) {
+            AppLogger.d('MdnsSearcherNotifier: Found host via direct subnet probe at $ip:$port!');
+            stopScan();
+            completer.complete((
+              ip: ip,
+              port: port,
+              deviceType: 'unknown',
+              protocolVersion: AppConfig.syncProtocolVersion,
+            ));
+            return;
+          }
+        }
+      });
+
       Future.delayed(const Duration(seconds: 3), () {
         if (!completer.isCompleted) {
           AppLogger.d('MdnsSearcherNotifier: Scan timed out.');
@@ -212,6 +248,70 @@ class MdnsSearcherNotifier extends Notifier<MdnsState> {
     return completer.future;
   }
 
+  /// Probes local Wi-Fi subnet (/24) on default sync port (34215)
+  /// as a bulletproof fallback when mDNS is blocked by Windows Firewall or router isolation.
+  Future<List<Service>> _probeSubnetForHosts(String myUuid) async {
+    try {
+      final interfaces = await NetworkInterface.list(type: InternetAddressType.IPv4);
+      String? localIp;
+      for (var interface in interfaces) {
+        for (var addr in interface.addresses) {
+          if (!addr.isLoopback &&
+              (addr.address.startsWith('192.168.') ||
+                  addr.address.startsWith('10.') ||
+                  addr.address.startsWith('172.'))) {
+            localIp = addr.address;
+            break;
+          }
+        }
+        if (localIp != null) break;
+      }
+
+      if (localIp == null) return [];
+
+      final parts = localIp.split('.');
+      if (parts.length != 4) return [];
+      final prefix = '${parts[0]}.${parts[1]}.${parts[2]}.';
+
+      final discoveredServices = <Service>[];
+      final futures = <Future<void>>[];
+
+      for (int i = 1; i <= 254; i++) {
+        final targetIp = '$prefix$i';
+        if (targetIp == localIp) continue;
+
+        futures.add(
+          Socket.connect(
+            targetIp,
+            AppConfig.defaultSyncPort,
+            timeout: const Duration(milliseconds: 300),
+          ).then((socket) {
+            socket.destroy();
+            AppLogger.d('MdnsSearcherNotifier: Subnet probe found active host at $targetIp:${AppConfig.defaultSyncPort}');
+
+            final service = Service(
+              name: 'NoteIt Host ($targetIp)',
+              type: AppConfig.mdnsServiceType,
+              port: AppConfig.defaultSyncPort,
+              host: targetIp,
+              txt: {
+                'uuid': utf8.encode('subnet-$targetIp'),
+                'type': utf8.encode('unknown'),
+                'v': utf8.encode(AppConfig.syncProtocolVersion.toString()),
+              },
+            );
+            discoveredServices.add(service);
+          }).catchError((_) {}),
+        );
+      }
+
+      await Future.wait(futures);
+      return discoveredServices;
+    } catch (e) {
+      return [];
+    }
+  }
+
   void stopScan() {
     _scanTimer?.cancel();
     _scanTimer = null;
@@ -219,6 +319,10 @@ class MdnsSearcherNotifier extends Notifier<MdnsState> {
       stopDiscovery(_discovery!);
       _discovery = null;
     }
-    state = (status: ScanStatus.idle, devices: []);
+    if (state.status != ScanStatus.idle || state.devices.isNotEmpty) {
+      Future.microtask(() {
+        state = (status: ScanStatus.idle, devices: const []);
+      });
+    }
   }
 }

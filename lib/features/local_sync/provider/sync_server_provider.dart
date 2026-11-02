@@ -90,7 +90,13 @@ class SyncServerNotifier extends Notifier<HttpServer?> {
 
     final authHandler = _createAuthHandler(wsHandler);
 
-    final HttpServer server = await shelf_io.serve(authHandler, ip, 0);
+    HttpServer server;
+    try {
+      server = await shelf_io.serve(authHandler, ip, AppConfig.defaultSyncPort);
+    } catch (e) {
+      AppLogger.w('SyncServerNotifier: Default port ${AppConfig.defaultSyncPort} in use ($e). Falling back to dynamic port...');
+      server = await shelf_io.serve(authHandler, ip, 0);
+    }
     AppLogger.d('SyncServerNotifier: Sync server hosting at ws://${server.address.host}:${server.port}');
 
     state = server;

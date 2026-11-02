@@ -2,7 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/helpers/platform_helper.dart';
 import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
+import 'package:noteit/database/sync/sync_engine.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
+import 'package:noteit/features/local_sync/auto_connect/mdns_broadcast.dart';
+import 'package:noteit/features/local_sync/auto_connect/mdns_searcher.dart';
+import 'package:noteit/features/local_sync/provider/sync_client_provider.dart';
+import 'package:noteit/features/local_sync/provider/sync_server_provider.dart';
+import 'package:noteit/features/local_sync/provider/sync_session_provider.dart';
 import 'package:noteit/shared/overlays/app_scaffold.dart';
 
 class RoleSelectorPage extends ConsumerStatefulWidget {
@@ -156,15 +162,30 @@ class _RoleSelectorPageState extends ConsumerState<RoleSelectorPage> {
           duration: const Duration(milliseconds: 250),
           child: FilledButton.icon(
             key: ValueKey<bool>(_isClient),
-            onPressed: () {
-              ref.read(sharedPreferenceProvider).setSyncRole(
-                    _isClient ? SyncRole.client : SyncRole.host,
-                  );
+            onPressed: () async {
+              if (_isClient) {
+                // CLIENT MODE: Stop any active Host server & mDNS broadcasting
+                ref.read(syncServerProvider.notifier).stopHosting();
+                ref.read(mdnsBroadcastProvider.notifier).stopBroadcasting();
+                ref.read(sharedPreferenceProvider).setSyncRole(SyncRole.client);
 
-              final option = _isClient
-                  ? RightPanelPageOptions.clientMode
-                  : RightPanelPageOptions.hostMode;
-              ref.read(drawerNavigationProvider).navigate(context, option);
+                final option = RightPanelPageOptions.clientMode;
+                ref.read(drawerNavigationProvider).navigate(context, option);
+              } else {
+                // HOST MODE: Stop any active Client dialer & mDNS scanning
+                ref.read(syncClientProvider.notifier).disconnect();
+                ref.read(mdnsSearcherProvider.notifier).stopScan();
+
+                ref.read(sharedPreferenceProvider).setSyncRole(SyncRole.host);
+                await ref.read(syncEngineProvider.notifier).setEngine(SyncEngine.local);
+
+                // Re-evaluate host server and mDNS broadcast cleanly
+                ref.invalidate(syncSessionProvider);
+                ref.invalidate(serverHostingProvider);
+
+                if (!context.mounted) return;
+                ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.hostMode);
+              }
             },
             icon: Icon(_isClient ? Icons.search_rounded : Icons.wifi_tethering_rounded),
             label: Text(_isClient ? 'Find Host' : 'Start Hosting'),

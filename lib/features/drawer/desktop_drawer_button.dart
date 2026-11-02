@@ -41,7 +41,7 @@ class _DrawerMenuButtonState extends ConsumerState<DrawerMenuButton> {
       ),
       builder: (BuildContext context, MenuController controller, Widget? child) {
         return IconButton(
-          tooltip: 'Open Menu',
+          tooltip: 'Main Menu',
           onPressed: () {
             if (controller.isOpen) {
               controller.close();

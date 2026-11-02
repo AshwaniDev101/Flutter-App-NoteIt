@@ -79,7 +79,9 @@ class LocalSyncNotifier extends Notifier<SyncConnectionState> {
       _activeChannel = null;
     }
 
-    state = reason;
+    if (state != reason) {
+      state = reason;
+    }
   }
 
   void setActiveConnection(WebSocketChannel channel) {

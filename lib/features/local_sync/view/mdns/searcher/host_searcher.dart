@@ -26,6 +26,7 @@ class HostSearcher extends ConsumerStatefulWidget {
 
 class _SearchNearByState extends ConsumerState<HostSearcher> {
   late final MdnsSearcherNotifier _mdnsNotifier;
+  late final HostConnectionController _hostConnectionController;
   final ScrollController _scrollController = ScrollController(); // Explicit controller for scrollbar
 
   @override
@@ -33,26 +34,89 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
     super.initState();
 
     _mdnsNotifier = ref.read(mdnsSearcherProvider.notifier);
+    _hostConnectionController = ref.read(hostConnectionControllerProvider.notifier);
 
     // Start radar scanning immediately upon opening (3 seconds initial scan)
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(mdnsSearcherProvider.notifier).startRadar(duration: const Duration(seconds: 3));
+      if (!mounted) return;
+      _mdnsNotifier.startRadar(duration: const Duration(seconds: 3));
     });
   }
 
   @override
   void dispose() {
     _scrollController.dispose(); // Prevent memory leak
-    Future.microtask(() {
-      _mdnsNotifier.stopScan();
-      ref.read(hostConnectionControllerProvider.notifier).reset();
-    });
-
+    _mdnsNotifier.stopScan();
+    _hostConnectionController.reset();
     super.dispose();
   }
 
   void _triggerRetryScan() {
-    ref.read(mdnsSearcherProvider.notifier).startRadar(duration: const Duration(seconds: 3));
+    _mdnsNotifier.startRadar(duration: const Duration(seconds: 3));
+  }
+
+  void _showConnectByIpDialog(BuildContext context) {
+    final ipController = TextEditingController(text: '192.168.1.');
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Connect to Host IP'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Enter the IP address displayed on your Host device screen:'),
+              const SizedBox(height: 16),
+              TextField(
+                controller: ipController,
+                autofocus: true,
+                keyboardType: TextInputType.text,
+                decoration: const InputDecoration(
+                  labelText: 'Host IP Address',
+                  hintText: 'e.g. 192.168.1.5',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.wifi_rounded),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final enteredIp = ipController.text.trim();
+                Navigator.of(dialogContext).pop();
+
+                if (enteredIp.isEmpty) return;
+
+                SnackBarManager.show(
+                  msg: 'Connecting to $enteredIp...',
+                  type: SnackBarMessageType.info,
+                );
+
+                ref.read(hostConnectionControllerProvider.notifier).connect(
+                      ip: enteredIp,
+                      port: AppConfig.defaultSyncPort,
+                      hostUuid: 'manual-$enteredIp',
+                      hostName: 'Host ($enteredIp)',
+                      devicePlatform: 'unknown',
+                      protocolVersion: AppConfig.syncProtocolVersion,
+                      requestPin: () => context.push<String>(
+                        AppRoutes.pin,
+                        extra: {'hostName': 'Host ($enteredIp)', 'hostIp': enteredIp},
+                      ),
+                    );
+              },
+              child: const Text('Connect'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _changeRole() async {
@@ -63,12 +127,14 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
     await ref.read(syncEngineProvider.notifier).setEngine(SyncEngine.offline);
     ref.read(syncClientProvider.notifier).disconnect();
 
-    if (!mounted) return;
-    if (PlatformHelper.isWideLayout(context)) {
-      ref.read(desktopRightPanelViewProvider.notifier).setView(RightPanelPageOptions.localSync);
-    } else {
-      context.pushReplacement(RightPanelPageOptions.localSync.route);
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (PlatformHelper.isWideLayout(context)) {
+        ref.read(desktopRightPanelViewProvider.notifier).setView(RightPanelPageOptions.localSync);
+      } else {
+        context.pushReplacement(RightPanelPageOptions.localSync.route);
+      }
+    });
   }
 
   @override
@@ -80,7 +146,14 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
           type: SnackBarMessageType.error,
         );
       } else if (next.status == ConnectionStatus.success) {
-        context.pop(); // Safely close the screen
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!context.mounted) return;
+          if (PlatformHelper.isWideLayout(context)) {
+            ref.read(desktopRightPanelViewProvider.notifier).setView(RightPanelPageOptions.localSync);
+          } else if (GoRouter.of(context).canPop()) {
+            context.pop();
+          }
+        });
       }
     });
 
@@ -305,11 +378,10 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
                                     final ip = service.host ?? service.addresses?.firstOrNull?.address;
                                     final port = service.port;
 
-                                    return Container(
-                                      decoration: BoxDecoration(
-                                        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                                        borderRadius: BorderRadius.circular(16),
-                                      ),
+                                    return Material(
+                                      color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                                      borderRadius: BorderRadius.circular(16),
+                                      clipBehavior: Clip.antiAlias,
                                       child: ListTile(
                                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                         leading: Container(
@@ -420,7 +492,7 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
                                       ),
                                       const SizedBox(height: 8),
                                       Text(
-                                        'Ensure the host has server mode active and both devices are on the same Wi-Fi.',
+                                        'Ensure both devices are on the same Wi-Fi network (no internet required).',
                                         style: textTheme.bodySmall?.copyWith(
                                           color: colorScheme.onSurfaceVariant,
                                           height: 1.4,
@@ -428,10 +500,22 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
                                         textAlign: TextAlign.center,
                                       ),
                                       const SizedBox(height: 24),
-                                      FilledButton.tonalIcon(
-                                        onPressed: _triggerRetryScan,
-                                        icon: const Icon(Icons.refresh_rounded, size: 20),
-                                        label: const Text('Search Again'),
+                                      Wrap(
+                                        spacing: 12,
+                                        runSpacing: 12,
+                                        alignment: WrapAlignment.center,
+                                        children: [
+                                          FilledButton.tonalIcon(
+                                            onPressed: _triggerRetryScan,
+                                            icon: const Icon(Icons.refresh_rounded, size: 20),
+                                            label: const Text('Search Again'),
+                                          ),
+                                          OutlinedButton.icon(
+                                            onPressed: () => _showConnectByIpDialog(context),
+                                            icon: const Icon(Icons.lan_rounded, size: 20),
+                                            label: const Text('Connect by IP'),
+                                          ),
+                                        ],
                                       ),
                                     ],
                                   ),
@@ -456,6 +540,8 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
                                   const SizedBox(height: 40),
                                 ]
                             ],
+
+                          const SizedBox(height: 40),
 
                           // --- INSTRUCTIONS ---
                           Container(
@@ -482,11 +568,43 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
                                   ],
                                 ),
                                 const SizedBox(height: 16),
-                                _buildInstructionStep(context, '1', 'Open Drawer → Local Sync → Host Server on host device.'),
+
+                                // Step 1
+                                _buildInstructionStep(context, '1', 'Install this app on your other device.'),
                                 const SizedBox(height: 12),
-                                _buildInstructionStep(context, '2', 'Connect both devices to the same Wi-Fi.'),
+
+                                // Step 2
+                                _buildRichInstructionStep(context, '2', <InlineSpan>[
+                                  const TextSpan(text: 'Go to Main Menu '),
+                                  WidgetSpan(
+                                    alignment: PlaceholderAlignment.middle,
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                                      child: Icon(Icons.menu, size: 20, color: colorScheme.primary),
+                                    ),
+                                  ),
+                                  const TextSpan(text: '\n → Local Sync → Select \'Host\' → \'Start hosting\''),
+                                ]),
                                 const SizedBox(height: 12),
-                                _buildInstructionStep(context, '3', 'Select the host device above and enter the PIN.'),
+
+                                // Step 3 (Updated with bold emphasis)
+                                _buildRichInstructionStep(context, '3', const <InlineSpan>[
+                                  TextSpan(text: 'Once the host is active, note the '),
+                                  TextSpan(text: 'Host Name', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  TextSpan(text: ' and '),
+                                  TextSpan(text: 'PIN', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  TextSpan(text: ', then refresh this page.'),
+                                ]),
+                                const SizedBox(height: 12),
+
+                                // Step 4 (Updated with bold emphasis)
+                                _buildRichInstructionStep(context, '4', const <InlineSpan>[
+                                  TextSpan(text: 'Select the '),
+                                  TextSpan(text: 'host name', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  TextSpan(text: ' from the list and enter the '),
+                                  TextSpan(text: 'PIN', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  TextSpan(text: ' to connect.'),
+                                ]),
                               ],
                             ),
                           ),
@@ -568,6 +686,31 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
               color: colorScheme.onSurfaceVariant,
               height: 1.4,
             ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRichInstructionStep(BuildContext context, String number, List<InlineSpan> spans) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 24,
+          height: 24,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(color: colorScheme.surfaceContainerHighest, shape: BoxShape.circle),
+          child: Text(number, style: textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold)),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text.rich(
+            TextSpan(children: spans),
+            style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant, height: 1.4),
           ),
         ),
       ],

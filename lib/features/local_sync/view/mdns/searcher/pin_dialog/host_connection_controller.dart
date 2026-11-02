@@ -85,6 +85,8 @@ class HostConnectionController extends Notifier<ConnectionState> {
 
   // Optional: A helper to reset the state when the screen closes
   void reset() {
-    state = const ConnectionState(status: ConnectionStatus.initial);
+    if (state.status != ConnectionStatus.initial || state.errorMessage != null) {
+      state = const ConnectionState(status: ConnectionStatus.initial);
+    }
   }
 }

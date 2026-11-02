@@ -86,13 +86,14 @@ class StartupInitializer extends Notifier<void> {
           final clientNotifier = ref.read(syncClientProvider.notifier);
           bool connected = false;
 
-          // Fast Reconnect (Try DB IP first)
-          if (host.lastKnownIp != null && host.lastKnownPort != null) {
-            AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Attempting Fast Reconnect to ${host.lastKnownIp}:${host.lastKnownPort}...');
+          // Fast Reconnect (Try DB IP and default port first)
+          if (host.lastKnownIp != null) {
+            final targetPort = host.lastKnownPort ?? AppConfig.defaultSyncPort;
+            AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Attempting Fast Reconnect to ${host.lastKnownIp}:$targetPort...');
             try {
               await clientNotifier.connectToHost(
                 ip: host.lastKnownIp!,
-                port: host.lastKnownPort!,
+                port: targetPort,
                 hostUuid: host.deviceUuid,
                 hostName: host.deviceName,
                 pin: null,
@@ -101,7 +102,22 @@ class StartupInitializer extends Notifier<void> {
               );
               connected = true;
             } catch (e) {
-              AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Fast Reconnect failed. Moving to mDNS fallback...');
+              AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Fast Reconnect to $targetPort failed.');
+              if (targetPort != AppConfig.defaultSyncPort) {
+                try {
+                  AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Trying default port ${AppConfig.defaultSyncPort}...');
+                  await clientNotifier.connectToHost(
+                    ip: host.lastKnownIp!,
+                    port: AppConfig.defaultSyncPort,
+                    hostUuid: host.deviceUuid,
+                    hostName: host.deviceName,
+                    pin: null,
+                    devicePlatform: host.deviceType ?? 'unknown',
+                    protocolVersion: host.protocolVersion ?? 0,
+                  );
+                  connected = true;
+                } catch (_) {}
+              }
             }
           }
 
