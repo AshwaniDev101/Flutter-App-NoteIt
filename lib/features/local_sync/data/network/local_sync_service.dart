@@ -1,13 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:noteit/database/sync/sync_orchestrator.dart';
+import 'package:noteit/core/sync/sync_orchestrator.dart';
+import 'package:noteit/features/local_sync/data/processors/folder_sync_processor.dart';
+import 'package:noteit/features/local_sync/data/processors/note_sync_processor.dart';
+import 'package:noteit/features/local_sync/data/processors/sync_entity_processor.dart';
+import 'package:noteit/features/local_sync/data/providers/local_sync_session_manager.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
-import '../../core/util/logger.dart';
-import 'core/sync_entity_processor.dart';
-import 'entities/folder_sync_processor.dart';
-import 'entities/note_sync_processor.dart';
+import 'package:noteit/core/util/logger.dart';
 
 enum SyncConnectionState {
   disconnected,
@@ -193,6 +194,7 @@ class LocalSyncNotifier extends Notifier<SyncConnectionState> {
     }
 
     ref.read(isSyncingProvider.notifier).setSyncing(true);
+    ref.read(localSyncSessionProvider.notifier).setSyncing(true);
 
     try {
       for (final processor in _processors) {
@@ -214,6 +216,7 @@ class LocalSyncNotifier extends Notifier<SyncConnectionState> {
       stop();
     } finally {
       ref.read(isSyncingProvider.notifier).setSyncing(false);
+      ref.read(localSyncSessionProvider.notifier).setSyncing(false);
     }
   }
 
@@ -252,6 +255,7 @@ class LocalSyncNotifier extends Notifier<SyncConnectionState> {
         if (_lastPingSentTime != null) {
           _latencyMs = DateTime.now().difference(_lastPingSentTime!).inMilliseconds;
           _lastPingSentTime = null;
+          ref.read(localSyncSessionProvider.notifier).updateLatency(_latencyMs);
         }
 
         if (_probeCompleter != null && !_probeCompleter!.isCompleted) {

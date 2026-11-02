@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
+import 'package:noteit/core/sync/sync_engine.dart';
 import '../../shared/menus/view_menu_button.dart';
 import '../drift/notes/notes_dao.dart';
-import '../sync/sync_engine.dart';
 
 /// Enum representing the synchronization role of the device in a P2P / sync setup.
 enum SyncRole {

@@ -2,32 +2,27 @@ import 'dart:async';
 
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:noteit/database/sync/sync_engine.dart';
-import 'package:noteit/features/local_sync/provider/sync_server_provider.dart';
+import 'package:noteit/core/config/config.dart';
+import 'package:noteit/core/sync/sync_engine.dart';
+import 'package:noteit/core/util/device_info.dart';
+import 'package:noteit/core/util/logger.dart';
+import 'package:noteit/database/drift/synced_devices/synced_devices_dao.dart';
+import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
+import 'package:noteit/features/local_sync/data/network/local_sync_service.dart';
+import 'package:noteit/features/local_sync/data/network/mdns_broadcast.dart';
+import 'package:noteit/features/local_sync/data/providers/local_sync_session_manager.dart';
+import 'package:noteit/features/local_sync/data/providers/sync_server_provider.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
-
-import '../../../core/config/config.dart';
-import '../../../core/util/device_info.dart';
-import '../../../core/util/logger.dart';
-import '../../../database/drift/synced_devices/synced_devices_dao.dart';
-import '../../../database/shared_preference/shared_preference_manager.dart';
-import '../../../database/sync/local_sync_service.dart';
-import '../auto_connect/mdns_broadcast.dart';
 
 final syncClientProvider = NotifierProvider<SyncClientNotifier, WebSocketChannel?>(() {
   return SyncClientNotifier();
 });
 
-// Because LocalSyncNotifier is symmetrical, SyncClientNotifier essentially just acts as the dialer.
-// It picks up the phone (WebSocketChannel.connect), hands the receiver to LocalSyncNotifier,
-// and says, "Here, you talk." From that point on, the batching and ACK logic starts
 class SyncClientNotifier extends Notifier<WebSocketChannel?> {
   @override
   WebSocketChannel? build() {
-    // When the provider is destroyed, close the connection cleanly and disconnect everything
-    // 'state' is a built-in, special variable that holds the current data of your provider.
     ref.onDispose(disconnect);
-    return null; // Null means disconnected
+    return null;
   }
 
   Future<void> connectToHost({
@@ -35,26 +30,19 @@ class SyncClientNotifier extends Notifier<WebSocketChannel?> {
     required int port,
     required String hostUuid,
     required String hostName,
-    String? pin, // PIN stays nullable because fast auto-reconnects don't need a PIN
+    String? pin,
     required String devicePlatform,
     required int protocolVersion,
   }) async {
-
-
     // --- POLICE CODE: ENFORCE MUTUAL EXCLUSIVITY ---
-    // If we are currently running a Host server, shut it down.
     final isHostActive = ref.read(syncServerProvider) != null;
     if (isHostActive) {
       AppLogger.d('SyncClientNotifier: Device is hosting. Shutting down server before connecting as Client...');
       ref.read(syncServerProvider.notifier).stopHosting();
-
-      // Also ensure we stop shouting our presence on the network
       ref.read(mdnsBroadcastProvider.notifier).stopBroadcasting();
     }
     // -----------------------------------------------
 
-
-    // Close any existing connection first
     disconnect();
 
     AppLogger.d('SyncClientNotifier: Attempting to connect to Host at $ip:$port');
@@ -78,18 +66,14 @@ class SyncClientNotifier extends Notifier<WebSocketChannel?> {
         queryParams['pin'] = pin;
       }
 
-      // Safely construct the URI with all parameters
       final finalUri = Uri(scheme: 'ws', host: ip, port: port, queryParameters: queryParams);
 
-      // Initiate Connection
       final channel = WebSocketChannel.connect(finalUri);
 
       try {
-        // Wait for connection with a strict 2-second timeout
         await channel.ready.timeout(
           const Duration(seconds: 2),
           onTimeout: () {
-            // Close channel sink on timeout to release socket resources
             channel.sink.close();
             throw TimeoutException('Ghost IP or Host unreachable');
           },
@@ -97,7 +81,6 @@ class SyncClientNotifier extends Notifier<WebSocketChannel?> {
 
         AppLogger.d('SyncClientNotifier: Connection Confirmed!');
 
-        // Ensure SyncEngine is set to local and SyncRole is client when connection succeeds
         ref.read(syncEngineProvider.notifier).setEngine(SyncEngine.local);
         ref.read(sharedPreferenceProvider).setSyncRole(SyncRole.client);
 
@@ -111,13 +94,16 @@ class SyncClientNotifier extends Notifier<WebSocketChannel?> {
         );
         AppLogger.d('SyncClientNotifier: Saved Host $hostName to Drift DB.');
 
-        // Save the connection to the state
         state = channel;
 
-        // Pass to traffic controller
-        ref.read(localSyncServiceProvider.notifier).setActiveConnection(channel);
+        ref.read(localSyncSessionProvider.notifier).establishSession(
+          channel: channel,
+          role: SyncRole.client,
+          peerUuid: hostUuid,
+          peerName: hostName,
+          peerPlatform: devicePlatform,
+        );
       } catch (_) {
-        // If connection setup failed before assigning state, ensure channel is closed
         if (state != channel) {
           channel.sink.close();
         }
@@ -125,19 +111,16 @@ class SyncClientNotifier extends Notifier<WebSocketChannel?> {
       }
 
     } on TimeoutException catch (e) {
-      // Caught the Ghost IP timeout specifically
       AppLogger.w('SyncClientNotifier: Hit a Ghost IP or router blocked connection: $e');
       state = null;
       throw Exception('Host not found. Please try scanning the QR code.');
 
     } on WebSocketChannelException catch (e) {
-      // Caught a rejection (like a wrong PIN)
       AppLogger.w('SyncClientNotifier: Connection rejected by host. Wrong PIN? Error: $e');
       state = null;
       throw Exception('Connection rejected. Please check the PIN and try again.');
 
     } catch (e, st) {
-      // Caught any other random error
       AppLogger.e('SyncClientNotifier: Failed to connect to host', error: e, stack: st);
       state = null;
       throw Exception('Failed to connect to device.');
@@ -147,7 +130,6 @@ class SyncClientNotifier extends Notifier<WebSocketChannel?> {
   void disconnect() {
     if (state != null) {
       AppLogger.d("SyncClientNotifier: Disconnecting from host...");
-      // Make sure the central traffic controller also knows we are stopping
       ref.read(localSyncServiceProvider.notifier).stop();
 
       state?.sink.close();

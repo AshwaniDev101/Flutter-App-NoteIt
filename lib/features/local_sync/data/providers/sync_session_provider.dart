@@ -1,39 +1,31 @@
 import 'dart:math';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:noteit/features/local_sync/provider/sync_server_provider.dart';
+import 'package:noteit/core/config/config.dart';
+import 'package:noteit/core/util/device_info.dart';
+import 'package:noteit/core/util/logger.dart';
+import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
+import 'package:noteit/features/local_sync/data/network/mdns_broadcast.dart';
+import 'package:noteit/features/local_sync/data/providers/sync_server_provider.dart';
 
-import '../../../core/config/config.dart'; // <-- ADDED THIS FOR AppConfig
-import '../../../core/util/device_info.dart';
-import '../../../core/util/logger.dart';
-import '../../../database/shared_preference/shared_preference_manager.dart';
-import '../auto_connect/mdns_broadcast.dart';
-
-// Note: .autoDispose: when no shared_widgets are listening to this provider, destroy the cache
-// Without it you will get a same url and ip value you have already fetched before
 final syncSessionProvider = FutureProvider.autoDispose<({String ip, String qrUrl, String deviceName, String pin})>((
     ref,
     ) async {
-  // Wait for the background engine
   final hostData = await ref.watch(serverHostingProvider.future);
 
-  // Generate the UI PIN
   final String generatedPin = Random().nextInt(10000).toString().padLeft(4, '0');
 
   final serverNotifier = ref.read(syncServerProvider.notifier);
 
-  // Schedule the update for immediately AFTER the provider finishes building
   Future.microtask(() {
     serverNotifier.updatePin(generatedPin);
   });
 
-  // When the user closes the QR screen, erase the PIN from the server.
   ref.onDispose(() {
     AppLogger.d('SyncSessionProvider: QR Screen closed. Erasing PIN to lock down server.');
     serverNotifier.updatePin(null);
   });
 
-  // --- Fetch device info and safely build the QR Code URL ---
   final info = await ref.read(deviceInfoProvider.future);
 
   final queryParams = {
@@ -49,16 +41,10 @@ final syncSessionProvider = FutureProvider.autoDispose<({String ip, String qrUrl
     port: hostData.port,
     queryParameters: queryParams,
   ).toString();
-  // --------------------------------------------------------------
 
   return (ip: hostData.ip, qrUrl: qrUrl, deviceName: hostData.deviceName, pin: generatedPin);
 });
 
-/// Master setup provider for the Host screen. It handles 4 steps:
-/// 1. Fetches local IP, Device Name, and persistent UUID.
-/// 2. Starts the local WebSocket server (getting a dynamic port).
-/// 3. Broadcasts the server over mDNS so clients can auto-connect.
-/// 4. Returns the final connection URL and IP for the QR code UI.
 final serverHostingProvider = FutureProvider<({String ip, int port, String deviceName, String uuid})>((ref) async {
   final String? ip = await ref.watch(localIPProvide.future);
 
@@ -66,11 +52,9 @@ final serverHostingProvider = FutureProvider<({String ip, int port, String devic
     throw Exception('Please connect to Wi-Fi to host a sync session.');
   }
   final mdnsNotifier = ref.read(mdnsBroadcastProvider.notifier);
-  // ref.watch ties mDNS to this autoDispose provider. When this closes, mDNS dies with it.
   final String uuid = ref.read(sharedPreferenceProvider).hostUuid;
   final String deviceName = (await ref.watch(deviceInfoProvider.future)).extractName;
 
-  // Starts Hosting server and give us Port
   int? assignedPort;
 
   assignedPort = await ref
@@ -88,11 +72,6 @@ final serverHostingProvider = FutureProvider<({String ip, int port, String devic
       }
     },
   );
-
-  // mDNS (Multicast DNS) acts like a local loudspeaker on the Wi-Fi network.
-  // It constantly shouts our server's IP, dynamic port, and unique UUID
-  // so client devices can automatically discover us without scanning a QR code every time
-  // Start the mDNS Broadcast using the data we just gathered
 
   await mdnsNotifier.startBroadcasting(port: assignedPort, uuid: uuid, deviceName: deviceName);
 

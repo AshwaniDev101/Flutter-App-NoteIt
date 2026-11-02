@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../../../../local_sync/auto_connect/mdns_broadcast.dart';
+import 'package:noteit/features/local_sync/data/network/mdns_broadcast.dart';
 
 class MdnsBroadcastIndicator extends ConsumerWidget {
   const MdnsBroadcastIndicator({super.key});

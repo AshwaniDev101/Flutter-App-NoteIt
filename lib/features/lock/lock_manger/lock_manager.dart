@@ -1,11 +1,9 @@
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/core/sync/sync_orchestrator.dart';
 import 'package:noteit/core/util/logger.dart';
 import 'package:noteit/database/drift/notes/notes_dao.dart';
-
-import '../../../database/shared_preference/shared_preference_manager.dart';
-import '../../../database/sync/sync_orchestrator.dart';
+import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
 
 @immutable
 class LockState {

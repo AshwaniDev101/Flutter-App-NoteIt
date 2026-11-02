@@ -2,20 +2,21 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:noteit/core/config/config.dart';
 import 'package:noteit/core/helpers/platform_helper.dart';
 import 'package:noteit/core/router/router.dart';
+import 'package:noteit/core/sync/sync_engine.dart';
 import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
-import 'package:noteit/database/sync/sync_engine.dart';
 import 'package:noteit/features/home/core/providers.dart';
-
-import '../../../../../core/config/config.dart';
-import 'package:noteit/database/sync/local_sync_service.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
-import '../../../../../shared/overlays/app_scaffold.dart';
-import '../../../../../shared/overlays/snack_bar_manager.dart';
-import '../../../auto_connect/mdns_searcher.dart';
-import '../../../provider/sync_client_provider.dart';
-import 'pin_dialog/host_connection_controller.dart';
+import 'package:noteit/features/local_sync/data/network/mdns_searcher.dart';
+import 'package:noteit/features/local_sync/data/providers/local_sync_session_manager.dart';
+import 'package:noteit/features/local_sync/data/providers/sync_client_provider.dart';
+import 'package:noteit/features/local_sync/view/mdns/searcher/pin_dialog/host_connection_controller.dart';
+import 'package:noteit/shared/overlays/app_scaffold.dart';
+import 'package:noteit/shared/overlays/snack_bar_manager.dart';
+
+import '../../../../home/view/shared/icon_tray/icon_tray.dart';
 
 class HostSearcher extends ConsumerStatefulWidget {
   const HostSearcher({super.key});
@@ -32,11 +33,8 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
   @override
   void initState() {
     super.initState();
-
     _mdnsNotifier = ref.read(mdnsSearcherProvider.notifier);
     _hostConnectionController = ref.read(hostConnectionControllerProvider.notifier);
-
-    // Start radar scanning immediately upon opening (3 seconds initial scan)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _mdnsNotifier.startRadar(duration: const Duration(seconds: 3));
@@ -45,7 +43,7 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
 
   @override
   void dispose() {
-    _scrollController.dispose(); // Prevent memory leak
+    _scrollController.dispose();
     _mdnsNotifier.stopScan();
     _hostConnectionController.reset();
     super.dispose();
@@ -67,7 +65,7 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text('Enter the IP address displayed on your Host device screen:'),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               TextField(
                 controller: ipController,
                 autofocus: true,
@@ -90,7 +88,6 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
               onPressed: () {
                 final enteredIp = ipController.text.trim();
                 Navigator.of(dialogContext).pop();
-
                 if (enteredIp.isEmpty) return;
 
                 SnackBarManager.show(
@@ -99,17 +96,17 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
                 );
 
                 ref.read(hostConnectionControllerProvider.notifier).connect(
-                      ip: enteredIp,
-                      port: AppConfig.defaultSyncPort,
-                      hostUuid: 'manual-$enteredIp',
-                      hostName: 'Host ($enteredIp)',
-                      devicePlatform: 'unknown',
-                      protocolVersion: AppConfig.syncProtocolVersion,
-                      requestPin: () => context.push<String>(
-                        AppRoutes.pin,
-                        extra: {'hostName': 'Host ($enteredIp)', 'hostIp': enteredIp},
-                      ),
-                    );
+                  ip: enteredIp,
+                  port: AppConfig.defaultSyncPort,
+                  hostUuid: 'manual-$enteredIp',
+                  hostName: 'Host ($enteredIp)',
+                  devicePlatform: 'unknown',
+                  protocolVersion: AppConfig.syncProtocolVersion,
+                  requestPin: () => context.push<String>(
+                    AppRoutes.pin,
+                    extra: {'hostName': 'Host ($enteredIp)', 'hostIp': enteredIp},
+                  ),
+                );
               },
               child: const Text('Connect'),
             ),
@@ -121,7 +118,6 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
 
   Future<void> _changeRole() async {
     _mdnsNotifier.stopScan();
-
     ref.read(sharedPreferenceProvider).setSyncRole(SyncRole.undefine);
     await ref.read(sharedPreferenceProvider).setCurrentEngine(SyncEngine.offline);
     await ref.read(syncEngineProvider.notifier).setEngine(SyncEngine.offline);
@@ -161,9 +157,14 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
     final devices = searchState.devices;
     final isScanning = searchState.status == ScanStatus.scanning;
 
-    final isSyncConnected = ref.watch(localSyncServiceProvider) == SyncConnectionState.connected;
-    final isClientActive = ref.watch(syncClientProvider) != null;
-    final isConnectedToHost = isSyncConnected && isClientActive;
+    final activeSession = ref.watch(localSyncSessionProvider);
+    final isConnectedToHost = activeSession.isConnected;
+    final hostTitle = activeSession.peerName != null
+        ? 'Connected to ${activeSession.peerName}'
+        : 'Connected as Client';
+    final latencyText = activeSession.latencyMs > 0
+        ? 'Ping: ${activeSession.latencyMs}ms'
+        : 'Local Wi-Fi sync session is active.';
 
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
@@ -173,10 +174,9 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
       body: LayoutBuilder(
         builder: (context, constraints) {
           return Scrollbar(
-            controller: _scrollController, // Attach same controller
+            controller: _scrollController,
             child: SingleChildScrollView(
-              controller: _scrollController, // Attach same controller
-              // Padding moved to child to push scrollbar to the very edge
+              controller: _scrollController,
               child: ConstrainedBox(
                 constraints: BoxConstraints(
                   minHeight: constraints.maxHeight,
@@ -184,76 +184,75 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
                 ),
                 child: Center(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 48.0),
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 420),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-
                           // --- HERO HEADER ---
                           if (!isConnectedToHost) ...[
                             Icon(
                               searchState.status == ScanStatus.error
                                   ? Icons.wifi_off_rounded
                                   : (devices.isEmpty && !isScanning ? Icons.wifi_find_rounded : Icons.radar_rounded),
-                              size: 48,
+                              size: 36,
                               color: searchState.status == ScanStatus.error
                                   ? colorScheme.error
                                   : colorScheme.primary,
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 8),
                             Text(
                               'Connect to Server',
                               textAlign: TextAlign.center,
-                              style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
+                              style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
                             ),
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 4),
                             Text(
                               isScanning ? 'Searching local network...' : 'Ready to connect',
                               textAlign: TextAlign.center,
-                              style: textTheme.bodyMedium?.copyWith(
+                              style: textTheme.bodySmall?.copyWith(
                                 color: colorScheme.onSurfaceVariant,
                               ),
                             ),
-                            const SizedBox(height: 40),
+                            const SizedBox(height: 24),
                           ],
 
                           // --- STATE: CONNECTED ---
                           if (isConnectedToHost) ...[
                             AnimatedContainer(
                               duration: const Duration(milliseconds: 300),
-                              padding: const EdgeInsets.all(32),
+                              padding: const EdgeInsets.all(20),
                               decoration: BoxDecoration(
                                 color: Colors.green.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(24),
+                                borderRadius: BorderRadius.circular(16),
                               ),
                               child: Column(
                                 children: [
                                   const Icon(
                                     Icons.check_circle_rounded,
-                                    size: 48,
+                                    size: 36,
                                     color: Colors.green,
                                   ),
-                                  const SizedBox(height: 16),
+                                  const SizedBox(height: 12),
                                   Text(
-                                    'Connected as Client',
+                                    hostTitle,
                                     textAlign: TextAlign.center,
-                                    style: textTheme.headlineSmall?.copyWith(
+                                    style: textTheme.titleLarge?.copyWith(
                                       color: Colors.green.shade800,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
-                                  const SizedBox(height: 8),
+                                  const SizedBox(height: 4),
                                   Text(
-                                    'Local Wi-Fi sync session is active.',
-                                    style: textTheme.bodyMedium?.copyWith(
+                                    latencyText,
+                                    style: textTheme.bodySmall?.copyWith(
                                       color: Colors.green.shade800,
                                     ),
                                     textAlign: TextAlign.center,
                                   ),
-                                  const SizedBox(height: 24),
+                                  const SizedBox(height: 16),
                                   FilledButton.tonalIcon(
                                     onPressed: () {
                                       ref.read(syncClientProvider.notifier).disconnect();
@@ -262,61 +261,63 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
                                         type: SnackBarMessageType.info,
                                       );
                                     },
-                                    icon: const Icon(Icons.link_off_rounded, size: 20),
+                                    icon: const Icon(Icons.link_off_rounded, size: 18),
                                     label: const Text('Disconnect'),
                                     style: FilledButton.styleFrom(
                                       backgroundColor: Colors.green.withValues(alpha: 0.2),
                                       foregroundColor: Colors.green.shade900,
-                                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                            const SizedBox(height: 40),
+                            const SizedBox(height: 24),
                           ]
-
                           // --- STATE: ERROR ---
                           else if (searchState.status == ScanStatus.error) ...[
                             Container(
-                              padding: const EdgeInsets.all(32),
+                              padding: const EdgeInsets.all(20),
                               decoration: BoxDecoration(
                                 color: colorScheme.errorContainer.withValues(alpha: 0.5),
-                                borderRadius: BorderRadius.circular(24),
+                                borderRadius: BorderRadius.circular(16),
                               ),
                               child: Column(
                                 children: [
-                                  Icon(Icons.error_outline_rounded, size: 40, color: colorScheme.error),
-                                  const SizedBox(height: 16),
+                                  Icon(Icons.error_outline_rounded, size: 36, color: colorScheme.error),
+                                  const SizedBox(height: 12),
                                   Text(
                                     'Scan Failed',
                                     textAlign: TextAlign.center,
-                                    style: textTheme.titleLarge?.copyWith(
+                                    style: textTheme.titleMedium?.copyWith(
                                       color: colorScheme.error,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                  const SizedBox(height: 8),
+                                  const SizedBox(height: 4),
                                   Text(
                                     'Check your network connection and try again.',
-                                    style: textTheme.bodyMedium?.copyWith(color: colorScheme.onErrorContainer),
+                                    style: textTheme.bodySmall?.copyWith(color: colorScheme.onErrorContainer),
                                     textAlign: TextAlign.center,
                                   ),
-                                  const SizedBox(height: 24),
+                                  const SizedBox(height: 16),
                                   FilledButton.tonalIcon(
                                     onPressed: _triggerRetryScan,
-                                    icon: const Icon(Icons.refresh_rounded, size: 20),
+                                    icon: const Icon(Icons.refresh_rounded, size: 18),
                                     label: const Text('Retry Scan'),
+                                    style: FilledButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                    ),
                                   ),
                                 ],
                               ),
                             ),
-                            const SizedBox(height: 40),
+                            const SizedBox(height: 24),
                           ]
-
                           // --- STATE: SEARCHING & RESULTS ---
                           else ...[
-                              // Found Devices List
                               if (devices.isNotEmpty) ...[
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -334,8 +335,8 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
                                     ),
                                     if (isScanning)
                                       SizedBox(
-                                        width: 16,
-                                        height: 16,
+                                        width: 14,
+                                        height: 14,
                                         child: CircularProgressIndicator(
                                           strokeWidth: 2,
                                           color: colorScheme.primary,
@@ -344,18 +345,18 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
                                     else
                                       IconButton(
                                         onPressed: _triggerRetryScan,
-                                        icon: const Icon(Icons.refresh_rounded, size: 20),
+                                        icon: const Icon(Icons.refresh_rounded, size: 18),
                                         visualDensity: VisualDensity.compact,
                                         tooltip: 'Rescan',
                                       ),
                                   ],
                                 ),
-                                const SizedBox(height: 16),
+                                const SizedBox(height: 12),
                                 ListView.separated(
                                   shrinkWrap: true,
                                   physics: const NeverScrollableScrollPhysics(),
                                   itemCount: devices.length,
-                                  separatorBuilder: (context, index) => const SizedBox(height: 12),
+                                  separatorBuilder: (context, index) => const SizedBox(height: 8),
                                   itemBuilder: (itemContext, index) {
                                     final service = devices[index];
                                     final deviceName = service.name ?? 'Unknown Host';
@@ -380,12 +381,12 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
 
                                     return Material(
                                       color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                                      borderRadius: BorderRadius.circular(16),
+                                      borderRadius: BorderRadius.circular(12),
                                       clipBehavior: Clip.antiAlias,
                                       child: ListTile(
-                                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                                         leading: Container(
-                                          padding: const EdgeInsets.all(10),
+                                          padding: const EdgeInsets.all(8),
                                           decoration: BoxDecoration(
                                             color: colorScheme.surface,
                                             shape: BoxShape.circle,
@@ -393,34 +394,34 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
                                           child: Icon(
                                             Icons.laptop_rounded,
                                             color: colorScheme.primary,
-                                            size: 20,
+                                            size: 18,
                                           ),
                                         ),
                                         title: Text(
                                           deviceName,
-                                          style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                                          style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                         subtitle: Text(
-                                          ip != null ? '$ip • $devicePlatform' : 'Resolving IP...',
+                                          ip != null ? '$ip\n$devicePlatform' : 'Resolving IP...',
                                           style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                         trailing: Container(
-                                          padding: const EdgeInsets.all(8),
+                                          padding: const EdgeInsets.all(6),
                                           decoration: BoxDecoration(
                                             color: colorScheme.primaryContainer,
-                                            borderRadius: BorderRadius.circular(12),
+                                            borderRadius: BorderRadius.circular(10),
                                           ),
                                           child: Icon(
                                             Icons.chevron_right_rounded,
                                             color: colorScheme.onPrimaryContainer,
-                                            size: 20,
+                                            size: 18,
                                           ),
                                         ),
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                         onTap: () {
                                           if (ip == null || port == null || hostUuid.isEmpty) {
                                             SnackBarManager.show(
@@ -443,9 +444,7 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
                                             type: SnackBarMessageType.info,
                                           );
 
-                                          ref
-                                              .read(hostConnectionControllerProvider.notifier)
-                                              .connect(
+                                          ref.read(hostConnectionControllerProvider.notifier).connect(
                                             ip: ip,
                                             port: port,
                                             hostUuid: hostUuid,
@@ -462,101 +461,103 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
                                     );
                                   },
                                 ),
-                                const SizedBox(height: 40),
-                              ]
-
-                              // Empty State
-                              else if (!isScanning) ...[
+                                const SizedBox(height: 24),
+                              ] else if (!isScanning) ...[
                                 Container(
-                                  padding: const EdgeInsets.all(32),
+                                  padding: const EdgeInsets.all(20),
                                   decoration: BoxDecoration(
                                     color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                                    borderRadius: BorderRadius.circular(24),
+                                    borderRadius: BorderRadius.circular(16),
                                     border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.3)),
                                   ),
                                   child: Column(
                                     children: [
                                       Icon(
                                         Icons.devices_outlined,
-                                        size: 40,
+                                        size: 36,
                                         color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                                       ),
-                                      const SizedBox(height: 16),
+                                      const SizedBox(height: 12),
                                       Text(
                                         'No Hosts Found',
                                         textAlign: TextAlign.center,
-                                        style: textTheme.titleMedium?.copyWith(
+                                        style: textTheme.titleSmall?.copyWith(
                                           fontWeight: FontWeight.bold,
                                           color: colorScheme.onSurface,
                                         ),
                                       ),
-                                      const SizedBox(height: 8),
+                                      const SizedBox(height: 4),
                                       Text(
                                         'Ensure both devices are on the same Wi-Fi network (no internet required).',
                                         style: textTheme.bodySmall?.copyWith(
                                           color: colorScheme.onSurfaceVariant,
-                                          height: 1.4,
+                                          height: 1.3,
                                         ),
                                         textAlign: TextAlign.center,
                                       ),
-                                      const SizedBox(height: 24),
+                                      const SizedBox(height: 16),
                                       Wrap(
-                                        spacing: 12,
-                                        runSpacing: 12,
+                                        spacing: 8,
+                                        runSpacing: 8,
                                         alignment: WrapAlignment.center,
                                         children: [
                                           FilledButton.tonalIcon(
                                             onPressed: _triggerRetryScan,
-                                            icon: const Icon(Icons.refresh_rounded, size: 20),
+                                            icon: const Icon(Icons.refresh_rounded, size: 18),
                                             label: const Text('Search Again'),
+                                            style: FilledButton.styleFrom(
+                                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                            ),
                                           ),
                                           OutlinedButton.icon(
                                             onPressed: () => _showConnectByIpDialog(context),
-                                            icon: const Icon(Icons.lan_rounded, size: 20),
+                                            icon: const Icon(Icons.lan_rounded, size: 18),
                                             label: const Text('Connect by IP'),
+                                            style: OutlinedButton.styleFrom(
+                                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                            ),
                                           ),
                                         ],
                                       ),
                                     ],
                                   ),
                                 ),
-                                const SizedBox(height: 40),
-                              ]
-                              // Loading Indicator (only if empty and scanning)
-                              else ...[
-                                  Container(
-                                    padding: const EdgeInsets.all(32),
-                                    decoration: BoxDecoration(
-                                      color: colorScheme.primaryContainer.withValues(alpha: 0.2),
-                                      borderRadius: BorderRadius.circular(24),
-                                    ),
-                                    child: Center(
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 3,
-                                        color: colorScheme.primary,
-                                      ),
+                                const SizedBox(height: 24),
+                              ] else ...[
+                                Container(
+                                  padding: const EdgeInsets.all(20),
+                                  decoration: BoxDecoration(
+                                    color: colorScheme.primaryContainer.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Center(
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: colorScheme.primary,
                                     ),
                                   ),
-                                  const SizedBox(height: 40),
-                                ]
+                                ),
+                                const SizedBox(height: 24),
+                              ]
                             ],
-
-                          const SizedBox(height: 40),
+                          const SizedBox(height: 24),
 
                           // --- INSTRUCTIONS ---
                           Container(
-                            padding: const EdgeInsets.all(24),
+                            padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
                               color: colorScheme.surface,
                               border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
-                              borderRadius: BorderRadius.circular(16),
+                              borderRadius: BorderRadius.circular(12),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Row(
                                   children: [
-                                    Icon(Icons.info_outline_rounded, size: 20, color: colorScheme.onSurfaceVariant),
+                                    Icon(Icons.info_outline_rounded, size: 18, color: colorScheme.onSurfaceVariant),
                                     const SizedBox(width: 8),
                                     Flexible(
                                       child: Text(
@@ -567,27 +568,21 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 16),
-
-                                // Step 1
-                                _buildInstructionStep(context, '1', 'Install this app on your other device.'),
                                 const SizedBox(height: 12),
-
-                                // Step 2
+                                _buildInstructionStep(context, '1', 'Install this app on your other device.'),
+                                const SizedBox(height: 8),
                                 _buildRichInstructionStep(context, '2', <InlineSpan>[
                                   const TextSpan(text: 'Go to Main Menu '),
                                   WidgetSpan(
                                     alignment: PlaceholderAlignment.middle,
                                     child: Padding(
                                       padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                                      child: Icon(Icons.menu, size: 20, color: colorScheme.primary),
+                                      child: Icon(Icons.menu, size: 16, color: colorScheme.primary),
                                     ),
                                   ),
                                   const TextSpan(text: '\n → Local Sync → Select \'Host\' → \'Start hosting\''),
                                 ]),
-                                const SizedBox(height: 12),
-
-                                // Step 3 (Updated with bold emphasis)
+                                const SizedBox(height: 8),
                                 _buildRichInstructionStep(context, '3', const <InlineSpan>[
                                   TextSpan(text: 'Once the host is active, note the '),
                                   TextSpan(text: 'Host Name', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -595,9 +590,7 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
                                   TextSpan(text: 'PIN', style: TextStyle(fontWeight: FontWeight.bold)),
                                   TextSpan(text: ', then refresh this page.'),
                                 ]),
-                                const SizedBox(height: 12),
-
-                                // Step 4 (Updated with bold emphasis)
+                                const SizedBox(height: 8),
                                 _buildRichInstructionStep(context, '4', const <InlineSpan>[
                                   TextSpan(text: 'Select the '),
                                   TextSpan(text: 'host name', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -608,15 +601,14 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
                               ],
                             ),
                           ),
-                          const SizedBox(height: 40),
+                          const SizedBox(height: 24),
 
                           // --- ACTIONS ---
                           Wrap(
                             alignment: WrapAlignment.center,
-                            spacing: 16,
-                            runSpacing: 16,
+                            spacing: 12,
+                            runSpacing: 12,
                             children: [
-                              // History Button
                               OutlinedButton.icon(
                                 onPressed: () {
                                   ref.read(drawerNavigationProvider).navigate(
@@ -627,20 +619,23 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
                                 icon: const Icon(Icons.history_rounded, size: 18),
                                 label: const Text('History'),
                                 style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(10),
                                   ),
                                 ),
                               ),
                               FilledButton.tonalIcon(
                                 onPressed: _changeRole,
-                                icon: const Icon(Icons.stop, size: 20),
+                                icon: const Icon(Icons.stop, size: 18),
                                 label: const Text('Stop'),
                                 style: FilledButton.styleFrom(
                                   backgroundColor: colorScheme.errorContainer,
                                   foregroundColor: colorScheme.onErrorContainer,
-                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
                                 ),
                               ),
                             ],
@@ -655,6 +650,10 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
           );
         },
       ),
+      actions: [
+        if(!PlatformHelper.isWideLayout(context))
+          IconTray(),
+      ],
     );
   }
 
@@ -666,8 +665,8 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          width: 24,
-          height: 24,
+          width: 20,
+          height: 20,
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: colorScheme.surfaceContainerHighest,
@@ -675,16 +674,16 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
           ),
           child: Text(
             number,
-            style: textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold),
+            style: textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold, fontSize: 10),
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 10),
         Expanded(
           child: Text(
             text,
-            style: textTheme.bodyMedium?.copyWith(
+            style: textTheme.bodySmall?.copyWith(
               color: colorScheme.onSurfaceVariant,
-              height: 1.4,
+              height: 1.3,
             ),
           ),
         ),
@@ -700,17 +699,17 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          width: 24,
-          height: 24,
+          width: 20,
+          height: 20,
           alignment: Alignment.center,
           decoration: BoxDecoration(color: colorScheme.surfaceContainerHighest, shape: BoxShape.circle),
-          child: Text(number, style: textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold)),
+          child: Text(number, style: textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold, fontSize: 10)),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 10),
         Expanded(
           child: Text.rich(
             TextSpan(children: spans),
-            style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant, height: 1.4),
+            style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant, height: 1.3),
           ),
         ),
       ],

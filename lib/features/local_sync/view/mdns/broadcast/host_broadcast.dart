@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/helpers/platform_helper.dart';
-
+import 'package:noteit/core/sync/sync_engine.dart';
 import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
-import 'package:noteit/database/sync/local_sync_service.dart';
-import 'package:noteit/database/sync/sync_engine.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
-import '../../../../../shared/overlays/app_scaffold.dart';
-import '../../../../home/view/shared/icon_tray/icon_tray.dart';
-import '../../../provider/sync_session_provider.dart';
+import 'package:noteit/features/home/view/shared/icon_tray/icon_tray.dart';
+import 'package:noteit/features/local_sync/data/network/local_sync_service.dart';
+import 'package:noteit/features/local_sync/data/providers/local_sync_session_manager.dart';
+import 'package:noteit/features/local_sync/data/providers/sync_session_provider.dart';
+import 'package:noteit/shared/overlays/app_scaffold.dart';
 
 class HostBroadcastPage extends ConsumerStatefulWidget {
   const HostBroadcastPage({super.key});
@@ -19,7 +19,7 @@ class HostBroadcastPage extends ConsumerStatefulWidget {
 
 class _HostBroadcastPageState extends ConsumerState<HostBroadcastPage> {
   bool _showPinOverride = false;
-  final ScrollController _scrollController = ScrollController(); // Added controller
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void dispose() {
@@ -30,8 +30,10 @@ class _HostBroadcastPageState extends ConsumerState<HostBroadcastPage> {
   @override
   Widget build(BuildContext context) {
     final sessionAsync = ref.watch(syncSessionProvider);
-    final syncState = ref.watch(localSyncServiceProvider);
-    final isConnected = syncState == SyncConnectionState.connected;
+    final activeSession = ref.watch(localSyncSessionProvider);
+    final isConnected = activeSession.isConnected;
+    final peerTitle = activeSession.peerName != null ? 'Connected to ${activeSession.peerName}' : '1 Device Connected';
+    final latencyStr = activeSession.latencyMs > 0 ? ' • ${activeSession.latencyMs}ms' : '';
 
     return AppScaffold.rightPanel(
       option: RightPanelPageOptions.hostMode,
@@ -39,21 +41,21 @@ class _HostBroadcastPageState extends ConsumerState<HostBroadcastPage> {
         loading: () => const Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: [CircularProgressIndicator(), SizedBox(height: 24), Text('Starting server and broadcasting...')],
+            children: [CircularProgressIndicator(), SizedBox(height: 16), Text('Starting server and broadcasting...')],
           ),
         ),
         error: (error, stack) => Center(
           child: Padding(
-            padding: const EdgeInsets.all(32.0),
+            padding: const EdgeInsets.all(24.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.wifi_off_rounded, color: Theme.of(context).colorScheme.error, size: 48),
-                const SizedBox(height: 16),
+                Icon(Icons.wifi_off_rounded, color: Theme.of(context).colorScheme.error, size: 36),
+                const SizedBox(height: 12),
                 Text('Failed to host', style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 8),
+                const SizedBox(height: 4),
                 Text(error.toString(), textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
                 FilledButton.tonal(onPressed: () => ref.invalidate(syncSessionProvider), child: const Text('Retry')),
               ],
             ),
@@ -74,7 +76,7 @@ class _HostBroadcastPageState extends ConsumerState<HostBroadcastPage> {
                     constraints: BoxConstraints(minHeight: constraints.maxHeight, minWidth: constraints.maxWidth),
                     child: Center(
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 48.0),
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
                         child: ConstrainedBox(
                           constraints: const BoxConstraints(maxWidth: 420),
                           child: Column(
@@ -82,13 +84,13 @@ class _HostBroadcastPageState extends ConsumerState<HostBroadcastPage> {
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               // --- HEADER ---
-                              Icon(
+                              const Icon(
                                 Icons.wifi_tethering_rounded,
-                                size: 48,
+                                size: 36,
                                 // color: colorScheme.primary,
                               ),
 
-                              const SizedBox(height: 8),
+                              const SizedBox(height: 4),
                               SelectableText(
                                 "Host: ${hostData.deviceName}",
                                 textAlign: TextAlign.center,
@@ -100,22 +102,28 @@ class _HostBroadcastPageState extends ConsumerState<HostBroadcastPage> {
                               SelectableText(
                                 "IP: ${hostData.ip}",
                                 textAlign: TextAlign.center,
-                                style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+                                style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
                               ),
 
-                              const SizedBox(height: 16),
+                              const SizedBox(height: 12),
 
                               if (isConnected) ...[
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
-                                    Icon(Icons.check_circle, color: Colors.greenAccent),
-                                    SizedBox(width: 8,),
-                                    Text(
-                                      "1 Device Connected",
-                                      textAlign: TextAlign.center,
-                                      style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600,color: Colors.greenAccent),
+                                    const Icon(Icons.check_circle, color: Colors.greenAccent, size: 20),
+                                    const SizedBox(width: 6),
+                                    Flexible(
+                                      child: Text(
+                                        "$peerTitle$latencyStr",
+                                        textAlign: TextAlign.center,
+                                        style: textTheme.titleSmall?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.greenAccent,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -123,19 +131,19 @@ class _HostBroadcastPageState extends ConsumerState<HostBroadcastPage> {
                                 Text(
                                   'Ready to Sync',
                                   textAlign: TextAlign.center,
-                                  style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
+                                  style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
                                 ),
                               ],
 
-                              const SizedBox(height: 40),
+                              const SizedBox(height: 24),
 
                               // --- PIN CARD ---
                               AnimatedContainer(
                                 duration: const Duration(milliseconds: 300),
-                                padding: const EdgeInsets.all(32),
+                                padding: const EdgeInsets.all(20),
                                 decoration: BoxDecoration(
                                   color: colorScheme.primaryContainer.withValues(alpha: 0.5),
-                                  borderRadius: BorderRadius.circular(24),
+                                  borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: Column(
                                   children: [
@@ -148,13 +156,13 @@ class _HostBroadcastPageState extends ConsumerState<HostBroadcastPage> {
                                           color: colorScheme.primary,
                                         ),
                                       ),
-                                      const SizedBox(height: 16),
+                                      const SizedBox(height: 8),
                                       FittedBox(
                                         fit: BoxFit.scaleDown,
                                         child: Text(
                                           hostData.pin,
-                                          style: textTheme.displayMedium?.copyWith(
-                                            letterSpacing: 12,
+                                          style: textTheme.headlineLarge?.copyWith(
+                                            letterSpacing: 8,
                                             fontWeight: FontWeight.w700,
                                             color: colorScheme.onPrimaryContainer,
                                           ),
@@ -171,12 +179,15 @@ class _HostBroadcastPageState extends ConsumerState<HostBroadcastPage> {
                                     //     textAlign: TextAlign.center,
                                     //   ),
                                     if (isConnected) ...[
-                                      const SizedBox(height: 16),
+                                      const SizedBox(height: 8),
                                       TextButton.icon(
                                         onPressed: () => setState(() => _showPinOverride = !_showPinOverride),
+                                        style: TextButton.styleFrom(
+                                          visualDensity: VisualDensity.compact,
+                                        ),
                                         icon: Icon(
                                           _showPinOverride ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                                          size: 18,
+                                          size: 16,
                                         ),
                                         label: Text(_showPinOverride ? 'Hide PIN' : 'Reveal PIN'),
                                       ),
@@ -184,22 +195,22 @@ class _HostBroadcastPageState extends ConsumerState<HostBroadcastPage> {
                                   ],
                                 ),
                               ),
-                              const SizedBox(height: 40),
+                              const SizedBox(height: 24),
 
                               // --- INSTRUCTIONS ---
                               Container(
-                                padding: const EdgeInsets.all(24),
+                                padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
                                   color: colorScheme.surface,
                                   border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Row(
                                       children: [
-                                        Icon(Icons.info_outline_rounded, size: 20, color: colorScheme.onSurfaceVariant),
+                                        Icon(Icons.info_outline_rounded, size: 18, color: colorScheme.onSurfaceVariant),
                                         const SizedBox(width: 8),
                                         Flexible(
                                           child: Text(
@@ -210,24 +221,23 @@ class _HostBroadcastPageState extends ConsumerState<HostBroadcastPage> {
                                         ),
                                       ],
                                     ),
-                                    const SizedBox(height: 16),
-                                    _buildInstructionStep(context, '1', 'Install this app on your other device.'),
                                     const SizedBox(height: 12),
+                                    _buildInstructionStep(context, '1', 'Install this app on your other device.'),
+                                    const SizedBox(height: 8),
 
-                                    // Step 2 updated to use rich text with an inline WidgetSpan for the Icon
                                     _buildRichInstructionStep(context, '2', <InlineSpan>[
                                       const TextSpan(text: 'Go to Main Menu '),
                                       WidgetSpan(
                                         alignment: PlaceholderAlignment.middle, // Aligns icon with the text vertically
                                         child: Padding(
                                           padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                                          child: Icon(Icons.menu, size: 20, color: colorScheme.primary),
+                                          child: Icon(Icons.menu, size: 16, color: colorScheme.primary),
                                         ),
                                       ),
                                       const TextSpan(text: '\n → Local Sync → Select \'Client\' → \'Find Host\''),
                                     ]),
 
-                                    const SizedBox(height: 12),
+                                    const SizedBox(height: 8),
 
                                     // Step 3
                                     _buildRichInstructionStep(context, '3', <InlineSpan>[
@@ -246,13 +256,13 @@ class _HostBroadcastPageState extends ConsumerState<HostBroadcastPage> {
                                   ],
                                 ),
                               ),
-                              const SizedBox(height: 40),
+                              const SizedBox(height: 24),
 
                               // --- ACTIONS ---
                               Wrap(
                                 alignment: WrapAlignment.center,
-                                spacing: 16,
-                                runSpacing: 16,
+                                spacing: 12,
+                                runSpacing: 12,
                                 children: [
                                   OutlinedButton.icon(
                                     onPressed: () {
@@ -263,8 +273,8 @@ class _HostBroadcastPageState extends ConsumerState<HostBroadcastPage> {
                                     icon: const Icon(Icons.history_rounded, size: 18),
                                     label: const Text('History'),
                                     style: OutlinedButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                     ),
                                   ),
                                   FilledButton.tonalIcon(
@@ -277,12 +287,13 @@ class _HostBroadcastPageState extends ConsumerState<HostBroadcastPage> {
                                         ref.read(drawerNavigationProvider).pop(context);
                                       }
                                     },
-                                    icon: const Icon(Icons.stop_rounded, size: 20),
+                                    icon: const Icon(Icons.stop_rounded, size: 18),
                                     label: const Text('Stop Hosting'),
                                     style: FilledButton.styleFrom(
                                       backgroundColor: colorScheme.errorContainer,
                                       foregroundColor: colorScheme.onErrorContainer,
-                                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                     ),
                                   ),
                                 ],
@@ -314,15 +325,15 @@ class _HostBroadcastPageState extends ConsumerState<HostBroadcastPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          width: 24,
-          height: 24,
+          width: 20,
+          height: 20,
           alignment: Alignment.center,
           decoration: BoxDecoration(color: colorScheme.surfaceContainerHighest, shape: BoxShape.circle),
-          child: Text(number, style: textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold)),
+          child: Text(number, style: textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold, fontSize: 10)),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 10),
         Expanded(
-          child: Text(text, style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant, height: 1.4)),
+          child: Text(text, style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant, height: 1.3)),
         ),
       ],
     );
@@ -336,17 +347,17 @@ class _HostBroadcastPageState extends ConsumerState<HostBroadcastPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          width: 24,
-          height: 24,
+          width: 20,
+          height: 20,
           alignment: Alignment.center,
           decoration: BoxDecoration(color: colorScheme.surfaceContainerHighest, shape: BoxShape.circle),
-          child: Text(number, style: textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold)),
+          child: Text(number, style: textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold, fontSize: 10)),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 10),
         Expanded(
           child: Text.rich(
             TextSpan(children: spans),
-            style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant, height: 1.4),
+            style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant, height: 1.3),
           ),
         ),
       ],

@@ -3,11 +3,10 @@ import 'dart:convert';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/config/config.dart';
+import 'package:noteit/core/util/device_info.dart';
+import 'package:noteit/core/util/logger.dart';
+import 'package:noteit/features/local_sync/data/network/mdns_searcher.dart';
 import 'package:nsd/nsd.dart';
-
-import '../../../core/util/device_info.dart';
-import '../../../core/util/logger.dart';
-import 'mdns_searcher.dart';
 
 // ==== Server side ===
 

@@ -1,21 +1,20 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/core/config/config.dart';
+import 'package:noteit/core/sync/sync_engine.dart';
+import 'package:noteit/core/util/device_info.dart';
+import 'package:noteit/core/util/logger.dart';
+import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/database/drift/synced_devices/synced_devices_dao.dart';
 import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
-import 'package:noteit/database/sync/sync_engine.dart';
-import 'package:noteit/features/local_sync/provider/sync_session_provider.dart';
+import 'package:noteit/features/local_sync/data/network/local_sync_service.dart';
+import 'package:noteit/features/local_sync/data/network/mdns_broadcast.dart';
+import 'package:noteit/features/local_sync/data/network/mdns_searcher.dart';
+import 'package:noteit/features/local_sync/data/providers/sync_client_provider.dart';
+import 'package:noteit/features/local_sync/data/providers/sync_server_provider.dart';
+import 'package:noteit/features/local_sync/data/providers/sync_session_provider.dart';
+import 'package:noteit/features/reminder/reminder_manager.dart';
 import 'package:noteit/shared/overlays/snack_bar_manager.dart';
-
-import 'core/config/config.dart';
-import 'core/util/device_info.dart';
-import 'core/util/logger.dart';
-import 'database/drift/local_database.dart';
-import 'database/sync/local_sync_service.dart';
-import 'features/local_sync/auto_connect/mdns_broadcast.dart';
-import 'features/local_sync/auto_connect/mdns_searcher.dart';
-import 'features/local_sync/provider/sync_client_provider.dart';
-import 'features/local_sync/provider/sync_server_provider.dart';
-import 'features/reminder/reminder_manager.dart';
 
 final startupInitializerProvider = NotifierProvider<StartupInitializer, void>(() {
   return StartupInitializer();

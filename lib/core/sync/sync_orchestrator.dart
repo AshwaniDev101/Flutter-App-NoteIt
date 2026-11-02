@@ -1,15 +1,12 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/core/sync/sync_engine.dart';
+import 'package:noteit/core/util/logger.dart';
+import 'package:noteit/database/firebase/auth/firebase_provider.dart';
 import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
-import 'package:noteit/database/sync/sync_engine.dart';
-import 'package:noteit/features/local_sync/auto_connect/mdns_broadcast.dart';
-import 'package:noteit/features/local_sync/auto_connect/mdns_searcher.dart';
-import 'package:noteit/features/local_sync/provider/sync_client_provider.dart';
-import 'package:noteit/features/local_sync/provider/sync_server_provider.dart';
-import '../firebase/auth/firebase_provider.dart';
-import '../../core/util/logger.dart';
-import 'cloud_sync_service.dart';
-import 'local_sync_service.dart';
+import 'package:noteit/features/cloud_sync/data/cloud_sync_service.dart';
+import 'package:noteit/features/local_sync/data/network/local_sync_service.dart';
+import 'package:noteit/features/local_sync/data/providers/local_sync_session_manager.dart';
 
 final isSyncingProvider = NotifierProvider<IsSyncingNotifier, bool>(() {
   return IsSyncingNotifier();
@@ -57,11 +54,7 @@ class SyncOrchestrator with WidgetsBindingObserver {
 
   void _stopAllLocalSyncServices() {
     AppLogger.d("SyncOrchestrator: Stopping all Local Wi-Fi Sync services...");
-    ref.read(localSyncServiceProvider.notifier).stop();
-    ref.read(syncServerProvider.notifier).stopHosting();
-    ref.read(mdnsBroadcastProvider.notifier).stopBroadcasting();
-    ref.read(mdnsSearcherProvider.notifier).stopScan();
-    ref.read(syncClientProvider.notifier).disconnect();
+    ref.read(localSyncSessionProvider.notifier).endSession();
     ref.read(sharedPreferenceProvider).setSyncRole(SyncRole.undefine);
   }
 

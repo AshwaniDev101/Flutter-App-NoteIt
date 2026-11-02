@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../../../core/util/logger.dart';
-import '../../../../../../database/drift/synced_devices/synced_devices_dao.dart';
-import '../../../../provider/sync_client_provider.dart';
+import 'package:noteit/core/util/logger.dart';
+import 'package:noteit/database/drift/synced_devices/synced_devices_dao.dart';
+import 'package:noteit/features/local_sync/data/providers/sync_client_provider.dart';
 
 enum ConnectionStatus { initial, connecting, success, error }
 

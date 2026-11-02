@@ -4,12 +4,11 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/core/config/config.dart';
+import 'package:noteit/core/util/logger.dart';
+import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
+import 'package:noteit/features/local_sync/data/network/mdns_broadcast.dart';
 import 'package:nsd/nsd.dart';
-
-import '../../../core/config/config.dart';
-import '../../../core/util/logger.dart';
-import '../../../database/shared_preference/shared_preference_manager.dart';
-import 'mdns_broadcast.dart';
 
 // ==== Client side ===
 enum ScanStatus { idle, scanning, found, error }

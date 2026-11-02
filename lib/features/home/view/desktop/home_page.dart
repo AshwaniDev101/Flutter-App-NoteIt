@@ -8,9 +8,9 @@ import 'package:noteit/features/home/core/note_tap_handler.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../../../database/drift/keybindings/keybindings_dao.dart';
-import '../../../../database/drift/notes/notes_dao.dart';
-import '../../../../database/sync/sync_orchestrator.dart';
+import 'package:noteit/core/sync/sync_orchestrator.dart';
+import 'package:noteit/database/drift/keybindings/keybindings_dao.dart';
+import 'package:noteit/database/drift/notes/notes_dao.dart';
 import '../../../folders/core/providers.dart';
 import '../../../keybinding/shortcut_config.dart';
 import 'package:noteit/features/home/core/providers.dart';

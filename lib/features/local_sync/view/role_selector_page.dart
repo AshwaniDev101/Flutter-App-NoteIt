@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/helpers/platform_helper.dart';
+import 'package:noteit/core/sync/sync_engine.dart';
 import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
-import 'package:noteit/database/sync/sync_engine.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
-import 'package:noteit/features/local_sync/auto_connect/mdns_broadcast.dart';
-import 'package:noteit/features/local_sync/auto_connect/mdns_searcher.dart';
-import 'package:noteit/features/local_sync/provider/sync_client_provider.dart';
-import 'package:noteit/features/local_sync/provider/sync_server_provider.dart';
-import 'package:noteit/features/local_sync/provider/sync_session_provider.dart';
+import 'package:noteit/features/local_sync/data/network/mdns_broadcast.dart';
+import 'package:noteit/features/local_sync/data/network/mdns_searcher.dart';
+import 'package:noteit/features/local_sync/data/providers/sync_client_provider.dart';
+import 'package:noteit/features/local_sync/data/providers/sync_server_provider.dart';
+import 'package:noteit/features/local_sync/data/providers/sync_session_provider.dart';
 import 'package:noteit/shared/overlays/app_scaffold.dart';
 
 class RoleSelectorPage extends ConsumerStatefulWidget {

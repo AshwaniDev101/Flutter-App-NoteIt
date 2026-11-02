@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/core/sync/sync_engine.dart';
+import 'package:noteit/core/sync/sync_orchestrator.dart';
 import 'package:noteit/database/firebase/auth/firebase_provider.dart';
-import 'package:noteit/database/sync/local_sync_service.dart';
 import 'package:noteit/features/home/view/shared/icon_tray/spinning_sync_icon.dart';
 import 'package:noteit/features/home/view/shared/icon_tray/websocket_connection_indicator.dart';
-
-import '../../../../../database/sync/sync_engine.dart';
-import '../../../../../database/sync/sync_orchestrator.dart';
-import '../../../../../shared/overlays/snack_bar_manager.dart';
+import 'package:noteit/features/local_sync/data/network/local_sync_service.dart';
+import 'package:noteit/shared/overlays/snack_bar_manager.dart';
 import 'mdns_broadcast_indicator.dart';
 import 'mdns_search_indicator.dart';
 

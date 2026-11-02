@@ -2,11 +2,11 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/helpers/platform_helper.dart';
-import '../../../database/drift/folders/folders_dao.dart';
-import '../../../database/drift/local_database.dart';
-import '../../../database/drift/notes/notes_dao.dart';
-import '../../../database/sync/sync_orchestrator.dart';
+import 'package:noteit/core/helpers/platform_helper.dart';
+import 'package:noteit/core/sync/sync_orchestrator.dart';
+import 'package:noteit/database/drift/folders/folders_dao.dart';
+import 'package:noteit/database/drift/local_database.dart';
+import 'package:noteit/database/drift/notes/notes_dao.dart';
 import '../../../shared/app_bars/app_search_bar.dart';
 import '../../../shared/app_bars/top_select_mode_appbar.dart';
 import '../../../shared/menus/sort_menu_button.dart';

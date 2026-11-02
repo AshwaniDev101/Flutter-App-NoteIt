@@ -1,13 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-// Core utilities
-import 'package:noteit/core/util/logger.dart';
 import 'package:noteit/core/helpers/platform_helper.dart';
+import 'package:noteit/core/sync/sync_orchestrator.dart';
 import 'package:noteit/core/util/device_info.dart';
-
-// Database and Sync
+import 'package:noteit/core/util/logger.dart';
 import 'package:noteit/database/drift/notes/notes_dao.dart';
-import 'package:noteit/database/sync/sync_orchestrator.dart';
 
 // Features
 import 'package:noteit/features/note_editor/screens/view/desktop_edit_page.dart';

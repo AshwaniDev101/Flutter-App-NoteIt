@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../../../database/sync/sync_engine.dart';
-import '../../../database/sync/sync_orchestrator.dart';
+import 'package:noteit/core/sync/sync_engine.dart';
+import 'package:noteit/core/sync/sync_orchestrator.dart';
 import '../keybinding/keybindings_provider.dart';
 import '../lock/lock_manger/lock_manager.dart';
 import '../lock/password_prompt_helper.dart';

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../../../../local_sync/auto_connect/mdns_searcher.dart';
+import 'package:noteit/features/local_sync/data/network/mdns_searcher.dart';
 
 class MdnsSearchIndicator extends ConsumerWidget {
   const MdnsSearchIndicator({super.key});

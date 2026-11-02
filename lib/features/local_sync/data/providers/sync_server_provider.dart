@@ -1,17 +1,17 @@
 import 'dart:io';
 import 'dart:ui';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:noteit/database/sync/sync_engine.dart';
-import 'package:noteit/features/local_sync/provider/sync_client_provider.dart';
+import 'package:noteit/core/config/config.dart';
+import 'package:noteit/core/sync/sync_engine.dart';
+import 'package:noteit/core/util/logger.dart';
+import 'package:noteit/database/drift/synced_devices/synced_devices_dao.dart';
+import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
+import 'package:noteit/features/local_sync/data/network/local_sync_service.dart';
+import 'package:noteit/features/local_sync/data/providers/local_sync_session_manager.dart';
+import 'package:noteit/features/local_sync/data/providers/sync_client_provider.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_web_socket/shelf_web_socket.dart';
-
-import '../../../core/config/config.dart';
-import '../../../core/util/logger.dart';
-import '../../../database/drift/synced_devices/synced_devices_dao.dart';
-import '../../../database/shared_preference/shared_preference_manager.dart';
-import '../../../database/sync/local_sync_service.dart';
 
 final syncServerProvider = NotifierProvider<SyncServerNotifier, HttpServer?>(() {
   return SyncServerNotifier();
@@ -20,6 +20,10 @@ final syncServerProvider = NotifierProvider<SyncServerNotifier, HttpServer?>(() 
 class SyncServerNotifier extends Notifier<HttpServer?> {
   String? _currentPin;
   bool _isBusy = false; // the lock state
+
+  String? _connectingClientUuid;
+  String? _connectingClientName;
+  String? _connectingClientPlatform;
 
   bool get isBusy => _isBusy;
 
@@ -69,7 +73,13 @@ class SyncServerNotifier extends Notifier<HttpServer?> {
       AppLogger.d('SyncServerNotifier: A Client has connected to the Host!');
       _isBusy = true; // LOCK THE DOOR: Host is now occupied
 
-      ref.read(localSyncServiceProvider.notifier).setActiveConnection(webSocketChannel);
+      ref.read(localSyncSessionProvider.notifier).establishSession(
+        channel: webSocketChannel,
+        role: SyncRole.host,
+        peerUuid: _connectingClientUuid ?? 'unknown-client',
+        peerName: _connectingClientName ?? 'Client Device',
+        peerPlatform: _connectingClientPlatform ?? 'unknown',
+      );
 
       onClientConnected?.call();
 
@@ -135,6 +145,10 @@ class SyncServerNotifier extends Notifier<HttpServer?> {
         return Response.forbidden('Version mismatch. Please update NoteIt.');
       }
       // -----------------------------
+
+      _connectingClientUuid = clientUuid;
+      _connectingClientName = clientName ?? 'Unknown Device';
+      _connectingClientPlatform = clientPlatform;
 
       final syncedDevicesDao = ref.read(syncedDevicesDaoProvider);
       final isKnown = await syncedDevicesDao.isDeviceKnown(clientUuid);

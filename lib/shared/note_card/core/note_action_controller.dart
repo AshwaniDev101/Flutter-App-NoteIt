@@ -2,10 +2,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:drift/drift.dart';
 
+import 'package:noteit/core/sync/sync_orchestrator.dart';
 import 'package:noteit/core/util/logger.dart';
 import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/database/firebase/firebase_database.dart';
-import 'package:noteit/database/sync/sync_orchestrator.dart';
 import 'package:noteit/features/home/core/providers.dart';
 
 import '../../../database/drift/notes/notes_dao.dart';

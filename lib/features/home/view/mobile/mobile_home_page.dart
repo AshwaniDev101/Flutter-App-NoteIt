@@ -8,10 +8,10 @@ import 'package:window_manager/window_manager.dart';
 
 import '../../../../shared/app_bars/desktop_window_controls.dart';
 
-import '../../../../core/router/router.dart';
-import '../../../../core/helpers/platform_helper.dart';
-import '../../../../database/drift/notes/notes_dao.dart';
-import '../../../../database/sync/sync_orchestrator.dart';
+import 'package:noteit/core/helpers/platform_helper.dart';
+import 'package:noteit/core/router/router.dart';
+import 'package:noteit/core/sync/sync_orchestrator.dart';
+import 'package:noteit/database/drift/notes/notes_dao.dart';
 import '../../../../shared/app_bars/mobile_bottom_control_bar.dart';
 import '../../../../shared/app_bars/top_select_mode_appbar.dart';
 import '../../../../shared/note_card/dynamic_notes_layout.dart';
