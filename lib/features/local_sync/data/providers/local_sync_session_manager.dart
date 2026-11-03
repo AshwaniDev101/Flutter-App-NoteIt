@@ -53,13 +53,6 @@ class LocalSyncSessionManager extends Notifier<LocalSyncSession> {
     ref.read(localSyncServiceProvider.notifier).setActiveConnection(channel);
   }
 
-  /// Updates live ping latency in milliseconds
-  void updateLatency(int latencyMs) {
-    if (state.latencyMs != latencyMs) {
-      state = state.copyWith(latencyMs: latencyMs);
-    }
-  }
-
   /// Updates sync activity status (active note/folder payloads transferring)
   void setSyncing(bool isSyncing) {
     if (state.isSyncing != isSyncing) {

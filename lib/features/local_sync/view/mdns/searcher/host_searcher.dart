@@ -6,7 +6,6 @@ import 'package:noteit/core/config/config.dart';
 import 'package:noteit/core/helpers/platform_helper.dart';
 import 'package:noteit/core/router/router.dart';
 import 'package:noteit/core/sync/sync_engine.dart';
-import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
 import 'package:noteit/features/home/core/providers.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
 import 'package:noteit/features/local_sync/data/network/mdns_searcher.dart';
@@ -18,6 +17,7 @@ import 'package:noteit/shared/overlays/app_scaffold.dart';
 import 'package:noteit/shared/overlays/snack_bar_manager.dart';
 
 import '../../../../home/view/shared/icon_tray/icon_tray.dart';
+import '../../../../home/view/shared/sync_state_widget.dart';
 
 class HostSearcher extends ConsumerStatefulWidget {
   const HostSearcher({super.key});
@@ -117,10 +117,15 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
     );
   }
 
-  Future<void> _changeRole() async {
+  Future<void> _performDisconnectAndExit() async {
     _mdnsNotifier.stopScan();
     await ref.read(syncModeProvider.notifier).setMode(SyncMode.offline);
     ref.read(syncClientProvider.notifier).disconnect();
+
+    SnackBarManager.show(
+      msg: 'Disconnected from host.',
+      type: SnackBarMessageType.info,
+    );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -132,7 +137,7 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
     });
   }
 
-  void _confirmAndDisconnect(BuildContext context) {
+  void _disconnectAndExit(BuildContext context) {
     final activeSession = ref.read(localSyncSessionProvider);
     if (activeSession.isSyncing) {
       showDialog(
@@ -149,7 +154,7 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
               style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
               onPressed: () {
                 Navigator.of(dialogContext).pop();
-                _performDisconnect();
+                _performDisconnectAndExit();
               },
               child: const Text('Disconnect'),
             ),
@@ -157,44 +162,7 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
         ),
       );
     } else {
-      _performDisconnect();
-    }
-  }
-
-  void _performDisconnect() {
-    ref.read(syncClientProvider.notifier).disconnect();
-    SnackBarManager.show(
-      msg: 'Disconnected from host.',
-      type: SnackBarMessageType.info,
-    );
-  }
-
-  void _confirmAndChangeRole(BuildContext context) {
-    final activeSession = ref.read(localSyncSessionProvider);
-    if (activeSession.isSyncing) {
-      showDialog(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: const Text('Sync in Progress'),
-          content: const Text('Data transfer is currently active. Are you sure you want to disconnect and change role?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-                _changeRole();
-              },
-              child: const Text('Disconnect & Change Role'),
-            ),
-          ],
-        ),
-      );
-    } else {
-      _changeRole();
+      _performDisconnectAndExit();
     }
   }
 
@@ -227,9 +195,7 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
     final hostTitle = activeSession.peerName != null
         ? 'Connected to ${activeSession.peerName}'
         : 'Connected as Client';
-    final latencyText = activeSession.latencyMs > 0
-        ? 'Ping: ${activeSession.latencyMs}ms'
-        : 'Local Wi-Fi sync session is active.';
+    final subTitle = 'Local Wi-Fi sync session is active.';
 
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
@@ -311,7 +277,7 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    latencyText,
+                                    subTitle,
                                     style: textTheme.bodySmall?.copyWith(
                                       color: Colors.green.shade800,
                                     ),
@@ -319,12 +285,12 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
                                   ),
                                   const SizedBox(height: 16),
                                   FilledButton.tonalIcon(
-                                    onPressed: () => _confirmAndDisconnect(context),
+                                    onPressed: () => _disconnectAndExit(context),
                                     icon: const Icon(Icons.link_off_rounded, size: 18),
                                     label: const Text('Disconnect'),
                                     style: FilledButton.styleFrom(
-                                      backgroundColor: Colors.green.withValues(alpha: 0.2),
-                                      foregroundColor: Colors.green.shade900,
+                                      backgroundColor: colorScheme.errorContainer,
+                                      foregroundColor: colorScheme.onErrorContainer,
                                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                     ),
@@ -670,7 +636,7 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
                             children: [
                               const SyncHistoryButton(),
                               FilledButton.tonalIcon(
-                                onPressed: () => _confirmAndChangeRole(context),
+                                onPressed: () => _disconnectAndExit(context),
                                 icon: const Icon(Icons.tune_rounded, size: 18),
                                 label: const Text('Change Role'),
                                 style: FilledButton.styleFrom(
@@ -694,7 +660,8 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
       ),
       actions: [
         if(!PlatformHelper.isWideLayout(context))...[
-          IconTray(),
+          SyncStateWidget(),
+          // IconTray(),
         ]
       ],
     );

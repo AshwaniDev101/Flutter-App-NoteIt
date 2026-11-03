@@ -9,7 +9,6 @@ class LocalSyncSession {
   final String? peerName;
   final String? peerPlatform;
   final DateTime? connectedAt;
-  final int latencyMs;
   final bool isSyncing;
   final String? errorMessage;
 
@@ -20,7 +19,6 @@ class LocalSyncSession {
     this.peerName,
     this.peerPlatform,
     this.connectedAt,
-    this.latencyMs = 0,
     this.isSyncing = false,
     this.errorMessage,
   });
@@ -37,7 +35,6 @@ class LocalSyncSession {
     String? peerName,
     String? peerPlatform,
     DateTime? connectedAt,
-    int? latencyMs,
     bool? isSyncing,
     String? errorMessage,
   }) {
@@ -48,7 +45,6 @@ class LocalSyncSession {
       peerName: peerName ?? this.peerName,
       peerPlatform: peerPlatform ?? this.peerPlatform,
       connectedAt: connectedAt ?? this.connectedAt,
-      latencyMs: latencyMs ?? this.latencyMs,
       isSyncing: isSyncing ?? this.isSyncing,
       errorMessage: errorMessage ?? this.errorMessage,
     );
@@ -65,7 +61,6 @@ class LocalSyncSession {
           peerName == other.peerName &&
           peerPlatform == other.peerPlatform &&
           connectedAt == other.connectedAt &&
-          latencyMs == other.latencyMs &&
           isSyncing == other.isSyncing &&
           errorMessage == other.errorMessage;
 
@@ -77,12 +72,11 @@ class LocalSyncSession {
       peerName.hashCode ^
       peerPlatform.hashCode ^
       connectedAt.hashCode ^
-      latencyMs.hashCode ^
       isSyncing.hashCode ^
       errorMessage.hashCode;
 
   @override
   String toString() {
-    return 'LocalSyncSession(state: $connectionState, role: $activeRole, peer: $peerName ($peerPlatform), latency: ${latencyMs}ms, syncing: $isSyncing)';
+    return 'LocalSyncSession(state: $connectionState, role: $activeRole, peer: $peerName ($peerPlatform), syncing: $isSyncing)';
   }
 }

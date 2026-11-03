@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:noteit/features/home/view/shared/icon_tray/icon_tray.dart';
+import 'package:noteit/features/home/view/shared/sync_state_widget.dart';
 import 'package:noteit/shared/app_bars/bottom_select_mode_appbar.dart';
 
 import 'package:window_manager/window_manager.dart';
@@ -19,6 +19,7 @@ import '../../../drawer/mobile_app_drawer.dart';
 import '../../core/note_tap_handler.dart';
 import '../../core/providers.dart';
 import '../../viewmodel/viewmodel.dart';
+import '../shared/icon_tray/icon_tray.dart';
 
 // ==========================================
 // MOBILE HOME PAGE
@@ -103,7 +104,8 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> with WidgetsBin
       elevation: 0,
       scrolledUnderElevation: PlatformHelper.isNativeDesktop ? 0.0 : null,
       actions: const [
-        IconTray(),
+        // IconTray(),
+        SyncStateWidget(),
         DesktopWindowControls(),
       ],
     );

@@ -34,6 +34,7 @@ class SyncServerNotifier extends Notifier<HttpServer?> {
   }
 
   void updatePin(String? pin) {
+    if (_currentPin == pin) return;
     _currentPin = pin;
   }
 

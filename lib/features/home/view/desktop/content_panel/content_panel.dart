@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/features/home/view/shared/icon_tray/icon_tray.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'package:noteit/shared/app_bars/desktop_window_controls.dart';
@@ -12,7 +13,7 @@ import 'package:noteit/features/backup/import_page.dart';
 import 'package:noteit/features/dev_tools/dev_page.dart';
 import 'package:noteit/features/home/core/providers.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
-import 'package:noteit/features/home/view/shared/icon_tray/icon_tray.dart';
+import 'package:noteit/features/home/view/shared/sync_state_widget.dart';
 import 'package:noteit/features/local_sync/view/mdns/broadcast/host_broadcast.dart';
 import 'package:noteit/features/local_sync/view/mdns/searcher/host_searcher.dart';
 import 'package:noteit/features/local_sync/view/mdns/searcher/pin_dialog/pin_entry_dialog.dart';
@@ -64,7 +65,8 @@ class DesktopContentPanel extends ConsumerWidget {
             elevation: 0,
             scrolledUnderElevation: PlatformHelper.isWideLayout(context) ? 0.0 : null,
             actions: const [
-              IconTray(),
+              // IconTray(),
+              SyncStateWidget(),
               DesktopWindowControls(),
             ],
           ),

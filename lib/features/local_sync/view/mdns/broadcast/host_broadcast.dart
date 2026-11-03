@@ -16,6 +16,8 @@ import 'package:noteit/features/local_sync/data/providers/sync_session_provider.
 import 'package:noteit/features/local_sync/view/widgets/sync_history_button.dart';
 import 'package:noteit/shared/overlays/app_scaffold.dart';
 
+import '../../../../home/view/shared/sync_state_widget.dart';
+
 class HostBroadcastPage extends ConsumerStatefulWidget {
   const HostBroadcastPage({super.key});
 
@@ -113,7 +115,6 @@ class _HostBroadcastPageState extends ConsumerState<HostBroadcastPage> {
     final isConnected = activeSession.isConnected;
     _isConnected = isConnected;
     final peerTitle = activeSession.peerName != null ? 'Connected to ${activeSession.peerName}' : '1 Device Connected';
-    final latencyStr = activeSession.latencyMs > 0 ? ' • ${activeSession.latencyMs}ms' : '';
 
     return AppScaffold.rightPanel(
       option: RightPanelPageOptions.hostMode,
@@ -196,7 +197,7 @@ class _HostBroadcastPageState extends ConsumerState<HostBroadcastPage> {
                                     const SizedBox(width: 6),
                                     Flexible(
                                       child: Text(
-                                        "$peerTitle$latencyStr",
+                                        peerTitle,
                                         textAlign: TextAlign.center,
                                         style: textTheme.titleSmall?.copyWith(
                                           fontWeight: FontWeight.w600,
@@ -372,7 +373,8 @@ class _HostBroadcastPageState extends ConsumerState<HostBroadcastPage> {
       ),
       actions: [
         if(!PlatformHelper.isWideLayout(context))
-          IconTray(),
+          // IconTray(),
+          SyncStateWidget(),
       ],
     );
   }

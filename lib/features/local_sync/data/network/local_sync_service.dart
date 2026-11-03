@@ -255,7 +255,6 @@ class LocalSyncNotifier extends Notifier<SyncConnectionState> {
         if (_lastPingSentTime != null) {
           _latencyMs = DateTime.now().difference(_lastPingSentTime!).inMilliseconds;
           _lastPingSentTime = null;
-          ref.read(localSyncSessionProvider.notifier).updateLatency(_latencyMs);
         }
 
         if (_probeCompleter != null && !_probeCompleter!.isCompleted) {

@@ -123,7 +123,9 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
 
   @override
   void dispose() {
-    _executeSave(isManualSave: false);
+    if (!_hasTriggeredFinalSave) {
+      _executeSave(isManualSave: false);
+    }
 
     _contentController.searchQuery = '';
     _contentController.removeListener(_syncTitleFromContent);
@@ -260,9 +262,9 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
     }
   }
 
-  void _handleMobileBack() {
+  Future<void> _handleMobileBack() async {
     FocusManager.instance.primaryFocus?.unfocus();
-    _executeSave(isManualSave: false);
+    await _executeSave(isManualSave: false);
     if (mounted) context.pop();
   }
 

@@ -22,6 +22,7 @@ final mdnsSearcherProvider = NotifierProvider<MdnsSearcherNotifier, MdnsState>((
 class MdnsSearcherNotifier extends Notifier<MdnsState> {
   Discovery? _discovery;
   Timer? _scanTimer;
+  Timer? _heartbeatTimer;
 
   @override
   MdnsState build() {
@@ -37,6 +38,25 @@ class MdnsSearcherNotifier extends Notifier<MdnsState> {
       return utf8.decode(List<int>.from(txt[key]!));
     } catch (_) {
       return null;
+    }
+  }
+
+  /// Fast socket health check (300ms timeout) to verify server port is open
+  Future<bool> _isHostAlive(Service service) async {
+    final ip = service.host ?? service.addresses?.firstOrNull?.address;
+    final port = service.port;
+    if (ip == null || port == null) return false;
+
+    try {
+      final socket = await Socket.connect(
+        ip,
+        port,
+        timeout: const Duration(milliseconds: 300),
+      );
+      socket.destroy();
+      return true;
+    } catch (_) {
+      return false;
     }
   }
 
@@ -60,8 +80,27 @@ class MdnsSearcherNotifier extends Notifier<MdnsState> {
     return uniqueByUuid.values.toList();
   }
 
+  /// Filters a list of services to retain only active, deduplicated, non-self services whose port is listening
+  Future<List<Service>> _getValidActiveServices(List<Service> rawServices, String myUuid) async {
+    final validServices = _getValidServices(rawServices, myUuid);
+    if (validServices.isEmpty) return [];
+
+    final activeServices = <Service>[];
+    await Future.wait(
+      validServices.map((service) async {
+        if (await _isHostAlive(service)) {
+          activeServices.add(service);
+        } else {
+          AppLogger.d('MdnsSearcherNotifier: Filtered out stale/ghost host: ${service.name}');
+        }
+      }),
+    );
+
+    return activeServices;
+  }
+
   /// RADAR MODE: Finds ALL NoteIt devices for the SearchNearBy UI (No UUID needed).
-  /// Initial scan defaults to 3 seconds. User-triggered retries pass 10 seconds.
+  /// Runs continuous real-time mDNS discovery + periodic health checks while open.
   Future<void> startRadar({Duration duration = const Duration(seconds: 3)}) async {
 
     // --- POLICE CODE ---
@@ -70,6 +109,7 @@ class MdnsSearcherNotifier extends Notifier<MdnsState> {
     // -------------------
 
     _scanTimer?.cancel();
+    _heartbeatTimer?.cancel();
 
     if (_discovery != null) {
       stopDiscovery(_discovery!);
@@ -93,49 +133,56 @@ class MdnsSearcherNotifier extends Notifier<MdnsState> {
 
       final myUuid = ref.read(sharedPreferenceProvider).hostUuid;
 
+      Future<void> updateActiveServices(List<Service> rawServices) async {
+        final activeServices = await _getValidActiveServices(rawServices, myUuid);
+        if (_discovery == null) return;
+        state = (
+          status: ScanStatus.scanning,
+          devices: activeServices,
+        );
+      }
+
       // IMMEDIATELY populate the state in case it found devices instantly
-      // Filter out invalid services before they hit the state
-      final foundServices = _getValidServices(_discovery!.services, myUuid);
-      state = (status: ScanStatus.scanning, devices: foundServices);
+      // Filter out invalid and stale services before they hit the state
+      updateActiveServices(_discovery!.services);
 
       _discovery!.addListener(() {
         // The listener fires even when devices disconnect.
         // If _discovery is suddenly null here, abort.
         if (_discovery == null) return;
 
-        // Update the state with the live list of all found devices
-        final liveServices = _getValidServices(_discovery!.services, myUuid);
-        state = (status: ScanStatus.scanning, devices: liveServices);
+        // Update the state with the live list of all active found devices
+        updateActiveServices(_discovery!.services);
       });
 
       // Trigger parallel subnet probe fallback for Windows / Firewalled environments
-      _probeSubnetForHosts(myUuid).then((subnetServices) {
-        if (subnetServices.isNotEmpty) {
+      _probeSubnetForHosts(myUuid).then((subnetServices) async {
+        if (subnetServices.isNotEmpty && _discovery != null) {
           final merged = List<Service>.from(state.devices);
           for (var s in subnetServices) {
             if (!merged.any((existing) => existing.host == s.host)) {
               merged.add(s);
             }
           }
-          state = (
-            status: state.status == ScanStatus.scanning ? ScanStatus.scanning : ScanStatus.found,
-            devices: merged,
-          );
+          final activeMerged = await _getValidActiveServices(merged, myUuid);
+          if (_discovery != null) {
+            state = (
+              status: ScanStatus.scanning,
+              devices: activeMerged,
+            );
+          }
         }
       });
 
-      // Automatically complete scan after requested duration
-      _scanTimer = Timer(duration, () {
-        if (state.status == ScanStatus.scanning) {
-          final currentDevices = state.devices;
-          AppLogger.d('MdnsSearcherNotifier: Radar scan finished after ${duration.inSeconds}s. Found ${currentDevices.length} devices.');
-          if (_discovery != null) {
-            stopDiscovery(_discovery!);
-            _discovery = null;
-          }
+      // Periodic 2-second real-time health tick to verify and auto-purge dead hosts
+      _heartbeatTimer = Timer.periodic(const Duration(seconds: 2), (_) async {
+        if (_discovery == null) return;
+        final candidateServices = _discovery!.services;
+        final verifiedServices = await _getValidActiveServices(candidateServices, myUuid);
+        if (_discovery != null) {
           state = (
-            status: currentDevices.isNotEmpty ? ScanStatus.found : ScanStatus.idle,
-            devices: currentDevices,
+            status: ScanStatus.scanning,
+            devices: verifiedServices,
           );
         }
       });
@@ -314,6 +361,8 @@ class MdnsSearcherNotifier extends Notifier<MdnsState> {
   void stopScan() {
     _scanTimer?.cancel();
     _scanTimer = null;
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = null;
     if (_discovery != null) {
       stopDiscovery(_discovery!);
       _discovery = null;
