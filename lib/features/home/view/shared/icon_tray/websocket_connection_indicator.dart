@@ -6,31 +6,31 @@ import 'package:noteit/features/local_sync/data/providers/sync_server_provider.d
 
 /// Represents the high-level WebSocket connection lifecycle states.
 enum WebSocketActivity {
-  disconnected(color: Colors.transparent, tooltip: null),
+  disconnected(icon: Icons.signal_wifi_connected_no_internet_4, color: Colors.transparent, tooltip: "Disconnected"),
   hosting(
-    color: Colors.greenAccent,
+    icon: Icons.wifi_tethering_rounded,
+    color: Colors.white,
     tooltip: 'Host server running, waiting for client...',
   ),
   reconnecting(
+    icon: Icons.change_circle_outlined,
     color: Colors.amberAccent,
     tooltip: 'Connection lost, attempting fast reconnect...',
   ),
-  connected(color: Colors.greenAccent, tooltip: 'Sync connected!');
+  connected(icon: Icons.check_circle, color: Colors.greenAccent, tooltip: 'Sync connected!');
 
+  final IconData icon;
   final Color color;
-  final String? tooltip;
+  final String tooltip;
 
-  const WebSocketActivity({required this.color, this.tooltip});
+  const WebSocketActivity({required this.icon, required this.color, required this.tooltip});
 }
 
 class WebSocketConnectionIndicator extends ConsumerWidget {
   const WebSocketConnectionIndicator({super.key});
 
   /// Master Rule Evaluator for Connection Dot Status
-  static WebSocketActivity evaluateActivity({
-    required bool isHosting,
-    required SyncConnectionState syncState,
-  }) {
+  static WebSocketActivity evaluateActivity({required bool isHosting, required SyncConnectionState syncState}) {
     if (syncState == SyncConnectionState.connected) return WebSocketActivity.connected;
     if (syncState == SyncConnectionState.reconnecting) return WebSocketActivity.reconnecting;
     if (isHosting) return WebSocketActivity.hosting;
@@ -43,10 +43,7 @@ class WebSocketConnectionIndicator extends ConsumerWidget {
     final bool isHosting = ref.watch(syncServerProvider) != null;
     final SyncConnectionState syncState = ref.watch(localSyncServiceProvider);
 
-    final activity = evaluateActivity(
-      isHosting: isHosting,
-      syncState: syncState,
-    );
+    final activity = evaluateActivity(isHosting: isHosting, syncState: syncState);
 
     if (activity == WebSocketActivity.disconnected) {
       return const SizedBox.shrink();
@@ -54,35 +51,30 @@ class WebSocketConnectionIndicator extends ConsumerWidget {
 
     final isWide = PlatformHelper.isWideLayout(context);
 
-    Widget dot = Container(
-      width: 10,
-      height: 10,
-      decoration: BoxDecoration(
-        color: activity.color,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: activity.color.withValues(alpha: 0.6),
-            blurRadius: 4,
-            spreadRadius: 1,
-          ),
-        ],
-      ),
-    );
+    Widget dot = Icon(activity.icon, color: activity.color);
+    // Widget dot = Container(
+    //   width: 10,
+    //   height: 10,
+    //   decoration: BoxDecoration(
+    //     color: activity.color,
+    //     shape: BoxShape.circle,
+    //     boxShadow: [
+    //       BoxShadow(
+    //         color: activity.color.withValues(alpha: 0.6),
+    //         blurRadius: 4,
+    //         spreadRadius: 1,
+    //       ),
+    //     ],
+    //   ),
+    // );
 
     if (isWide) {
       return Tooltip(
-        message: activity.tooltip ?? '',
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 6.0),
-          child: dot,
-        ),
+        message: activity.tooltip,
+        child: Padding(padding: const EdgeInsets.symmetric(horizontal: 6.0), child: dot),
       );
     }
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 6.0),
-      child: dot,
-    );
+    return Padding(padding: const EdgeInsets.symmetric(horizontal: 6.0), child: dot);
   }
 }

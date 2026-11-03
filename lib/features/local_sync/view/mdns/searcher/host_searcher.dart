@@ -133,6 +133,72 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
     });
   }
 
+  void _confirmAndDisconnect(BuildContext context) {
+    final activeSession = ref.read(localSyncSessionProvider);
+    if (activeSession.isSyncing) {
+      showDialog(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Sync in Progress'),
+          content: const Text('Data transfer is currently active. Are you sure you want to disconnect?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                _performDisconnect();
+              },
+              child: const Text('Disconnect'),
+            ),
+          ],
+        ),
+      );
+    } else {
+      _performDisconnect();
+    }
+  }
+
+  void _performDisconnect() {
+    ref.read(syncClientProvider.notifier).disconnect();
+    SnackBarManager.show(
+      msg: 'Disconnected from host.',
+      type: SnackBarMessageType.info,
+    );
+  }
+
+  void _confirmAndChangeRole(BuildContext context) {
+    final activeSession = ref.read(localSyncSessionProvider);
+    if (activeSession.isSyncing) {
+      showDialog(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Sync in Progress'),
+          content: const Text('Data transfer is currently active. Are you sure you want to disconnect and change role?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                _changeRole();
+              },
+              child: const Text('Disconnect & Change Role'),
+            ),
+          ],
+        ),
+      );
+    } else {
+      _changeRole();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     ref.listen(hostConnectionControllerProvider, (previous, next) {
@@ -204,13 +270,13 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Connect to Server',
+                              'Searching for Host',
                               textAlign: TextAlign.center,
                               style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              isScanning ? 'Searching local network...' : 'Ready to connect',
+                              isScanning ? 'Searching local network...' : '',
                               textAlign: TextAlign.center,
                               style: textTheme.bodySmall?.copyWith(
                                 color: colorScheme.onSurfaceVariant,
@@ -254,13 +320,7 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
                                   ),
                                   const SizedBox(height: 16),
                                   FilledButton.tonalIcon(
-                                    onPressed: () {
-                                      ref.read(syncClientProvider.notifier).disconnect();
-                                      SnackBarManager.show(
-                                        msg: 'Disconnected from host.',
-                                        type: SnackBarMessageType.info,
-                                      );
-                                    },
+                                    onPressed: () => _confirmAndDisconnect(context),
                                     icon: const Icon(Icons.link_off_rounded, size: 18),
                                     label: const Text('Disconnect'),
                                     style: FilledButton.styleFrom(
@@ -626,12 +686,10 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
                                 ),
                               ),
                               FilledButton.tonalIcon(
-                                onPressed: _changeRole,
-                                icon: const Icon(Icons.stop, size: 18),
-                                label: const Text('Stop'),
+                                onPressed: () => _confirmAndChangeRole(context),
+                                icon: const Icon(Icons.tune_rounded, size: 18),
+                                label: const Text('Change Role'),
                                 style: FilledButton.styleFrom(
-                                  backgroundColor: colorScheme.errorContainer,
-                                  foregroundColor: colorScheme.onErrorContainer,
                                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(10),
@@ -651,8 +709,9 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
         },
       ),
       actions: [
-        if(!PlatformHelper.isWideLayout(context))
+        if(!PlatformHelper.isWideLayout(context))...[
           IconTray(),
+        ]
       ],
     );
   }

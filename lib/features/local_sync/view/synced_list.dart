@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:noteit/core/sync/sync_engine.dart';
+import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
+import 'package:noteit/features/local_sync/data/network/local_sync_service.dart';
+import 'package:noteit/features/local_sync/data/network/mdns_broadcast.dart';
+import 'package:noteit/features/local_sync/data/providers/sync_server_provider.dart';
+
 import '../../../core/helpers/time_helper.dart';
 import '../../../database/drift/synced_devices/synced_devices_dao.dart';
 import '../../../shared/overlays/snack_bar_manager.dart';
@@ -182,7 +188,22 @@ class SyncedDevicesListView extends ConsumerWidget {
                                   final dao = ref.read(syncedDevicesDaoProvider);
                                   await dao.deleteDevice(device.deviceUuid);
 
-                                  if (context.mounted) {
+                                  final hasPaired = await dao.hasPairedDevices();
+                                  if (!hasPaired) {
+                                    ref.read(syncServerProvider.notifier).stopHosting();
+                                    ref.read(mdnsBroadcastProvider.notifier).stopBroadcasting();
+                                    ref.read(sharedPreferenceProvider).setSyncRole(SyncRole.undefine);
+                                    await ref.read(sharedPreferenceProvider).setCurrentEngine(SyncEngine.offline);
+                                    await ref.read(syncEngineProvider.notifier).setEngine(SyncEngine.offline);
+                                    ref.read(localSyncServiceProvider.notifier).stop();
+
+                                    if (context.mounted) {
+                                      SnackBarManager.show(
+                                        msg: '${device.deviceName} deleted. All paired devices removed — hosting stopped.',
+                                        type: SnackBarMessageType.info,
+                                      );
+                                    }
+                                  } else if (context.mounted) {
                                     SnackBarManager.show(
                                       msg: '${device.deviceName} deleted',
                                       type: SnackBarMessageType.acknowledgment,

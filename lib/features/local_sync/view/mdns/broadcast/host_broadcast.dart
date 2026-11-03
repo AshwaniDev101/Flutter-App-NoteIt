@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:noteit/core/helpers/platform_helper.dart';
 import 'package:noteit/core/sync/sync_engine.dart';
+import 'package:noteit/database/drift/synced_devices/synced_devices_dao.dart';
 import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
+import 'package:noteit/features/home/core/providers.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
 import 'package:noteit/features/home/view/shared/icon_tray/icon_tray.dart';
 import 'package:noteit/features/local_sync/data/network/local_sync_service.dart';
+import 'package:noteit/features/local_sync/data/network/mdns_broadcast.dart';
 import 'package:noteit/features/local_sync/data/providers/local_sync_session_manager.dart';
+import 'package:noteit/features/local_sync/data/providers/sync_server_provider.dart';
 import 'package:noteit/features/local_sync/data/providers/sync_session_provider.dart';
 import 'package:noteit/shared/overlays/app_scaffold.dart';
 
@@ -19,12 +24,91 @@ class HostBroadcastPage extends ConsumerStatefulWidget {
 
 class _HostBroadcastPageState extends ConsumerState<HostBroadcastPage> {
   bool _showPinOverride = false;
+  bool _isConnected = false;
   final ScrollController _scrollController = ScrollController();
+
+  late final SyncedDevicesDao _syncedDevicesDao;
+  late final SyncServerNotifier _syncServerNotifier;
+  late final MdnsBroadcastNotifier _mdnsBroadcastNotifier;
+  late final SharedPreferenceManager _sharedPreferenceManager;
+  late final SyncEngineNotifier _syncEngineNotifier;
+  late final LocalSyncNotifier _localSyncNotifier;
+
+  @override
+  void initState() {
+    super.initState();
+    _syncedDevicesDao = ref.read(syncedDevicesDaoProvider);
+    _syncServerNotifier = ref.read(syncServerProvider.notifier);
+    _mdnsBroadcastNotifier = ref.read(mdnsBroadcastProvider.notifier);
+    _sharedPreferenceManager = ref.read(sharedPreferenceProvider);
+    _syncEngineNotifier = ref.read(syncEngineProvider.notifier);
+    _localSyncNotifier = ref.read(localSyncServiceProvider.notifier);
+  }
 
   @override
   void dispose() {
     _scrollController.dispose(); // Dispose to prevent memory leaks
+    _checkAndAutoStopUnpairedHost();
     super.dispose();
+  }
+
+  void _checkAndAutoStopUnpairedHost() async {
+    if (_isConnected) return; // Keep server running if actively connected
+
+    final hasPaired = await _syncedDevicesDao.hasPairedDevices();
+    if (!hasPaired) {
+      // Unpaired exploration session: stop server and reset role
+      _syncServerNotifier.stopHosting();
+      _mdnsBroadcastNotifier.stopBroadcasting();
+      _sharedPreferenceManager.setSyncRole(SyncRole.undefine);
+      await _sharedPreferenceManager.setCurrentEngine(SyncEngine.offline);
+      await _syncEngineNotifier.setEngine(SyncEngine.offline);
+      _localSyncNotifier.stop();
+    }
+  }
+
+  void _confirmAndStopHosting(BuildContext context) {
+    final activeSession = ref.read(localSyncSessionProvider);
+    if (activeSession.isSyncing) {
+      showDialog(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Sync in Progress'),
+          content: const Text('Data transfer is currently active. Are you sure you want to stop hosting?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                _stopHosting();
+              },
+              child: const Text('Stop Hosting'),
+            ),
+          ],
+        ),
+      );
+    } else {
+      _stopHosting();
+    }
+  }
+
+  Future<void> _stopHosting() async {
+    ref.read(syncServerProvider.notifier).stopHosting();
+    ref.read(mdnsBroadcastProvider.notifier).stopBroadcasting();
+    ref.read(sharedPreferenceProvider).setSyncRole(SyncRole.undefine);
+    await ref.read(sharedPreferenceProvider).setCurrentEngine(SyncEngine.offline);
+    await ref.read(syncEngineProvider.notifier).setEngine(SyncEngine.offline);
+    ref.read(localSyncServiceProvider.notifier).stop();
+    if (!mounted) return;
+    if (PlatformHelper.isWideLayout(context)) {
+      ref.read(desktopRightPanelViewProvider.notifier).setView(RightPanelPageOptions.localSync);
+    } else {
+      context.pushReplacement(RightPanelPageOptions.localSync.route);
+    }
   }
 
   @override
@@ -32,6 +116,7 @@ class _HostBroadcastPageState extends ConsumerState<HostBroadcastPage> {
     final sessionAsync = ref.watch(syncSessionProvider);
     final activeSession = ref.watch(localSyncSessionProvider);
     final isConnected = activeSession.isConnected;
+    _isConnected = isConnected;
     final peerTitle = activeSession.peerName != null ? 'Connected to ${activeSession.peerName}' : '1 Device Connected';
     final latencyStr = activeSession.latencyMs > 0 ? ' • ${activeSession.latencyMs}ms' : '';
 
@@ -278,15 +363,7 @@ class _HostBroadcastPageState extends ConsumerState<HostBroadcastPage> {
                                     ),
                                   ),
                                   FilledButton.tonalIcon(
-                                    onPressed: () async {
-                                      ref.read(sharedPreferenceProvider).setSyncRole(SyncRole.undefine);
-                                      await ref.read(sharedPreferenceProvider).setCurrentEngine(SyncEngine.offline);
-                                      await ref.read(syncEngineProvider.notifier).setEngine(SyncEngine.offline);
-                                      ref.read(localSyncServiceProvider.notifier).stop();
-                                      if (context.mounted) {
-                                        ref.read(drawerNavigationProvider).pop(context);
-                                      }
-                                    },
+                                    onPressed: () => _confirmAndStopHosting(context),
                                     icon: const Icon(Icons.stop_rounded, size: 18),
                                     label: const Text('Stop Hosting'),
                                     style: FilledButton.styleFrom(

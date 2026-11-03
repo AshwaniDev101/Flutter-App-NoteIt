@@ -65,6 +65,14 @@ class StartupInitializer extends Notifier<void> {
           break;
         case SyncRole.host: // Last time this user was host
           AppLogger.d('StartupInitializer: Sync Role: Host');
+          final hasPaired = await ref.read(syncedDevicesDaoProvider).hasPairedDevices();
+          if (!hasPaired) {
+            AppLogger.d('StartupInitializer: AutoSync [HOST]: No paired devices in DB. Resetting role to undefine.');
+            spp.setSyncRole(SyncRole.undefine);
+            await spp.setCurrentEngine(SyncEngine.offline);
+            await ref.read(syncEngineProvider.notifier).setEngine(SyncEngine.offline);
+            return;
+          }
           AppLogger.d('StartupInitializer: AutoSync [HOST]: Starting background engine...');
           try {
             await ref.read(serverHostingProvider.future);

@@ -190,4 +190,16 @@ class SyncedDevicesDao extends DatabaseAccessor<LocalDatabase>
 
     return (result ?? 0) > 0;
   }
+
+  /// Checks if at least one active (non-deleted) paired device exists in local history.
+  Future<bool> hasPairedDevices() async {
+    final countExp = syncedDevices.deviceUuid.count();
+    final query = selectOnly(syncedDevices)
+      ..addColumns([countExp])
+      ..where(syncedDevices.deletedAt.isNull());
+
+    final result = await query.map((row) => row.read(countExp)).getSingle();
+
+    return (result ?? 0) > 0;
+  }
 }

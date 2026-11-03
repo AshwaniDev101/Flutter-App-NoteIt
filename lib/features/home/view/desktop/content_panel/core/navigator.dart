@@ -7,6 +7,9 @@ import 'package:noteit/core/helpers/platform_helper.dart';
 import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
 import 'package:noteit/features/home/core/providers.dart';
 
+import 'package:noteit/features/local_sync/data/providers/local_sync_session_manager.dart';
+import 'package:noteit/features/local_sync/data/providers/sync_server_provider.dart';
+
 // To Navigate to Any page use
 // ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.noteEditor);
 
@@ -26,10 +29,16 @@ class DrawerNavigationController {
     var targetOption = option;
     if (option == RightPanelPageOptions.localSync) {
       final role = ref.read(sharedPreferenceProvider).syncRole;
-      if (role == SyncRole.host) {
-        targetOption = RightPanelPageOptions.hostMode;
-      } else if (role == SyncRole.client) {
+      final activeSession = ref.read(localSyncSessionProvider);
+      final isConnected = activeSession.isConnected;
+      final isHosting = ref.read(syncServerProvider) != null;
+
+      if (role == SyncRole.client && isConnected) {
         targetOption = RightPanelPageOptions.clientMode;
+      } else if (role == SyncRole.host && (isHosting || isConnected)) {
+        targetOption = RightPanelPageOptions.hostMode;
+      } else {
+        targetOption = RightPanelPageOptions.localSync;
       }
     }
 
