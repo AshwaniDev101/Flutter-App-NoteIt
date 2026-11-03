@@ -49,28 +49,26 @@ class StartupInitializer extends Notifier<void> {
       ReminderManager().rearmPendingReminders();
 
       final spp = ref.read(sharedPreferenceProvider);
-      final engine = spp.currentEngine;
+      final mode = spp.syncMode;
 
-      if (engine != SyncEngine.local) {
-        AppLogger.d('StartupInitializer: SyncEngine is $engine (not local). Skipping local sync startup.');
+      if (!mode.isLocal) {
+        AppLogger.d('StartupInitializer: SyncMode is $mode (not local). Skipping local sync startup.');
         return;
       }
 
-      final syncRole = spp.syncRole;
-
-      switch (syncRole) {
-        case SyncRole.undefine:
-          AppLogger.d('StartupInitializer: SyncRole is undefine');
-          // Do nothing this is the first time user opened this app, or yet to user local sync function
+      switch (mode) {
+        case SyncMode.localUndefined:
+        case SyncMode.offline:
+        case SyncMode.cloud:
+          AppLogger.d('StartupInitializer: SyncMode is $mode. No auto local initialization required.');
           break;
-        case SyncRole.host: // Last time this user was host
+        case SyncMode.localHost: // Last time this user was host
           AppLogger.d('StartupInitializer: Sync Role: Host');
           final hasPaired = await ref.read(syncedDevicesDaoProvider).hasPairedDevices();
           if (!hasPaired) {
-            AppLogger.d('StartupInitializer: AutoSync [HOST]: No paired devices in DB. Resetting role to undefine.');
-            spp.setSyncRole(SyncRole.undefine);
-            await spp.setCurrentEngine(SyncEngine.offline);
-            await ref.read(syncEngineProvider.notifier).setEngine(SyncEngine.offline);
+            AppLogger.d('StartupInitializer: AutoSync [HOST]: No paired devices in DB. Resetting mode to offline.');
+            await spp.setSyncMode(SyncMode.offline);
+            await ref.read(syncModeProvider.notifier).setMode(SyncMode.offline);
             return;
           }
           AppLogger.d('StartupInitializer: AutoSync [HOST]: Starting background engine...');
@@ -80,7 +78,7 @@ class StartupInitializer extends Notifier<void> {
             AppLogger.d('StartupInitializer: AutoSync [HOST]: Failed to start engine - $e');
           }
           break;
-        case SyncRole.client:
+        case SyncMode.localClient:
           AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Initializing connection protocol...');
 
           final SyncedDevice? host = await ref.read(syncedDevicesDaoProvider).getMostRecentHost();
@@ -170,13 +168,12 @@ class StartupInitializer extends Notifier<void> {
     AppLogger.d('StartupInitializer: App went to the background');
 
     final spp = ref.read(sharedPreferenceProvider);
-    if (spp.currentEngine != SyncEngine.local) {
+    final mode = spp.syncMode;
+    if (!mode.isLocal) {
       return;
     }
 
-    final syncRole = spp.syncRole;
-
-    if (syncRole == SyncRole.host) {
+    if (mode.isHost) {
       // Stop the server and unregister mDNS immediately
       // before the OS suspends us and freezes the network state.
       ref.read(syncServerProvider.notifier).stopHosting();
@@ -192,13 +189,12 @@ class StartupInitializer extends Notifier<void> {
     ReminderManager().rearmPendingReminders();
 
     final spp = ref.read(sharedPreferenceProvider);
-    if (spp.currentEngine != SyncEngine.local) {
+    final mode = spp.syncMode;
+    if (!mode.isLocal) {
       return;
     }
 
-    final syncRole = spp.syncRole;
-
-    if (syncRole == SyncRole.host) {
+    if (mode.isHost) {
       // HOST LOGIC
       // The user might have connected to a different Wi-Fi network while the app was paused.
       // By invalidating the IP provider, Riverpod fetches the fresh IP.
@@ -210,7 +206,7 @@ class StartupInitializer extends Notifier<void> {
 
       // Re-trigger the state evaluation to ensure everything is running smoothly
       _evaluateSyncState();
-    } else if (syncRole == SyncRole.client) {
+    } else if (mode.isClient) {
       // CLIENT LOGIC
       // Perform active ping probe to check if OS/radio killed TCP socket in background
       final localSync = ref.read(localSyncServiceProvider.notifier);

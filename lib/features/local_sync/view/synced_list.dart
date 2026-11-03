@@ -192,9 +192,7 @@ class SyncedDevicesListView extends ConsumerWidget {
                                   if (!hasPaired) {
                                     ref.read(syncServerProvider.notifier).stopHosting();
                                     ref.read(mdnsBroadcastProvider.notifier).stopBroadcasting();
-                                    ref.read(sharedPreferenceProvider).setSyncRole(SyncRole.undefine);
-                                    await ref.read(sharedPreferenceProvider).setCurrentEngine(SyncEngine.offline);
-                                    await ref.read(syncEngineProvider.notifier).setEngine(SyncEngine.offline);
+                                    await ref.read(syncModeProvider.notifier).setMode(SyncMode.offline);
                                     ref.read(localSyncServiceProvider.notifier).stop();
 
                                     if (context.mounted) {

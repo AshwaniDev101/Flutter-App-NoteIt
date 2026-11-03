@@ -25,10 +25,10 @@ class _RoleSelectorPageState extends ConsumerState<RoleSelectorPage> {
   @override
   void initState() {
     super.initState();
-    final currentRole = ref.read(sharedPreferenceProvider).syncRole;
-    if (currentRole == SyncRole.client) {
+    final mode = ref.read(sharedPreferenceProvider).syncMode;
+    if (mode.isClient) {
       _isClient = true;
-    } else if (currentRole == SyncRole.host) {
+    } else if (mode.isHost) {
       _isClient = false;
     } else {
       // Default to 'Client' on mobile and 'Host' on desktop if undefined
@@ -40,8 +40,8 @@ class _RoleSelectorPageState extends ConsumerState<RoleSelectorPage> {
     setState(() {
       _isClient = isClient;
     });
-    ref.read(sharedPreferenceProvider).setSyncRole(
-          isClient ? SyncRole.client : SyncRole.host,
+    ref.read(sharedPreferenceProvider).setSyncMode(
+          isClient ? SyncMode.localClient : SyncMode.localHost,
         );
   }
 
@@ -168,7 +168,7 @@ class _RoleSelectorPageState extends ConsumerState<RoleSelectorPage> {
                 // CLIENT MODE: Stop any active Host server & mDNS broadcasting
                 ref.read(syncServerProvider.notifier).stopHosting();
                 ref.read(mdnsBroadcastProvider.notifier).stopBroadcasting();
-                ref.read(sharedPreferenceProvider).setSyncRole(SyncRole.client);
+                await ref.read(syncModeProvider.notifier).setMode(SyncMode.localClient);
 
                 final option = RightPanelPageOptions.clientMode;
                 ref.read(drawerNavigationProvider).navigate(context, option);
@@ -177,8 +177,7 @@ class _RoleSelectorPageState extends ConsumerState<RoleSelectorPage> {
                 ref.read(syncClientProvider.notifier).disconnect();
                 ref.read(mdnsSearcherProvider.notifier).stopScan();
 
-                ref.read(sharedPreferenceProvider).setSyncRole(SyncRole.host);
-                await ref.read(syncEngineProvider.notifier).setEngine(SyncEngine.local);
+                await ref.read(syncModeProvider.notifier).setMode(SyncMode.localHost);
 
                 // Re-evaluate host server and mDNS broadcast cleanly
                 ref.invalidate(syncSessionProvider);

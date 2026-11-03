@@ -28,7 +28,7 @@ class IconTray extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final syncEngine = ref.watch(syncEngineProvider);
+    final syncMode = ref.watch(syncModeProvider);
     final isSyncing = ref.watch(isSyncingProvider);
     final isLocalConnected = ref.watch(localSyncServiceProvider) == SyncConnectionState.connected;
     final isAuthenticated = ref.watch(authStateProvider).value != null;
@@ -38,8 +38,8 @@ class IconTray extends ConsumerWidget {
     // 1. In Local Sync mode: ONLY if actively connected to a peer over WebSocket.
     // 2. In Cloud Sync mode: ONLY if user is authenticated with Firebase.
     // 3. Or if a sync is currently in progress (so the user sees the spinner).
-    final bool canTriggerSync = (syncEngine == SyncEngine.cloud && isAuthenticated) ||
-        (syncEngine == SyncEngine.local && isLocalConnected);
+    final bool canTriggerSync = (syncMode.isCloud && isAuthenticated) ||
+        (syncMode.isLocal && isLocalConnected);
 
     final bool showSyncButton = canTriggerSync || isSyncing;
 
@@ -47,7 +47,7 @@ class IconTray extends ConsumerWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         // mDNS Activity & WebSocket Status - Strictly relevant in Local Sync mode
-        if (syncEngine == SyncEngine.local) ...[
+        if (syncMode.isLocal) ...[
           const MdnsBroadcastIndicator(),
           const MdnsSearchIndicator(),
           const WebSocketConnectionIndicator(),

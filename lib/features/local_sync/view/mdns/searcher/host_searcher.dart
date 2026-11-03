@@ -119,9 +119,7 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
 
   Future<void> _changeRole() async {
     _mdnsNotifier.stopScan();
-    ref.read(sharedPreferenceProvider).setSyncRole(SyncRole.undefine);
-    await ref.read(sharedPreferenceProvider).setCurrentEngine(SyncEngine.offline);
-    await ref.read(syncEngineProvider.notifier).setEngine(SyncEngine.offline);
+    await ref.read(syncModeProvider.notifier).setMode(SyncMode.offline);
     ref.read(syncClientProvider.notifier).disconnect();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {

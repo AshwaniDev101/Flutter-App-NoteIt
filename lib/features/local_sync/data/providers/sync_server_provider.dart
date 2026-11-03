@@ -111,8 +111,7 @@ class SyncServerNotifier extends Notifier<HttpServer?> {
 
     state = server;
 
-    ref.read(syncEngineProvider.notifier).setEngine(SyncEngine.local);
-    ref.read(sharedPreferenceProvider).setSyncRole(SyncRole.host);
+    await ref.read(syncModeProvider.notifier).setMode(SyncMode.localHost);
     return state!.port;
   }
 

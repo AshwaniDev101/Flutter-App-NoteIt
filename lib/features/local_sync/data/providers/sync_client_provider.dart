@@ -81,8 +81,7 @@ class SyncClientNotifier extends Notifier<WebSocketChannel?> {
 
         AppLogger.d('SyncClientNotifier: Connection Confirmed!');
 
-        ref.read(syncEngineProvider.notifier).setEngine(SyncEngine.local);
-        ref.read(sharedPreferenceProvider).setSyncRole(SyncRole.client);
+        await ref.read(syncModeProvider.notifier).setMode(SyncMode.localClient);
 
         await ref.read(syncedDevicesDaoProvider).upsertDeviceAsHost(
           uuid: hostUuid,

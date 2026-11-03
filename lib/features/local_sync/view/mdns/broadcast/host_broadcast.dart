@@ -32,7 +32,6 @@ class _HostBroadcastPageState extends ConsumerState<HostBroadcastPage> {
   late final SyncServerNotifier _syncServerNotifier;
   late final MdnsBroadcastNotifier _mdnsBroadcastNotifier;
   late final SharedPreferenceManager _sharedPreferenceManager;
-  late final SyncEngineNotifier _syncEngineNotifier;
   late final LocalSyncNotifier _localSyncNotifier;
 
   @override
@@ -42,7 +41,6 @@ class _HostBroadcastPageState extends ConsumerState<HostBroadcastPage> {
     _syncServerNotifier = ref.read(syncServerProvider.notifier);
     _mdnsBroadcastNotifier = ref.read(mdnsBroadcastProvider.notifier);
     _sharedPreferenceManager = ref.read(sharedPreferenceProvider);
-    _syncEngineNotifier = ref.read(syncEngineProvider.notifier);
     _localSyncNotifier = ref.read(localSyncServiceProvider.notifier);
   }
 
@@ -61,9 +59,7 @@ class _HostBroadcastPageState extends ConsumerState<HostBroadcastPage> {
       // Unpaired exploration session: stop server and reset role
       _syncServerNotifier.stopHosting();
       _mdnsBroadcastNotifier.stopBroadcasting();
-      _sharedPreferenceManager.setSyncRole(SyncRole.undefine);
-      await _sharedPreferenceManager.setCurrentEngine(SyncEngine.offline);
-      await _syncEngineNotifier.setEngine(SyncEngine.offline);
+      await ref.read(syncModeProvider.notifier).setMode(SyncMode.offline);
       _localSyncNotifier.stop();
     }
   }
@@ -100,9 +96,7 @@ class _HostBroadcastPageState extends ConsumerState<HostBroadcastPage> {
   Future<void> _stopHosting() async {
     ref.read(syncServerProvider.notifier).stopHosting();
     ref.read(mdnsBroadcastProvider.notifier).stopBroadcasting();
-    ref.read(sharedPreferenceProvider).setSyncRole(SyncRole.undefine);
-    await ref.read(sharedPreferenceProvider).setCurrentEngine(SyncEngine.offline);
-    await ref.read(syncEngineProvider.notifier).setEngine(SyncEngine.offline);
+    await ref.read(syncModeProvider.notifier).setMode(SyncMode.offline);
     ref.read(localSyncServiceProvider.notifier).stop();
     if (!mounted) return;
     if (PlatformHelper.isWideLayout(context)) {

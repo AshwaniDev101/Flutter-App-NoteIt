@@ -47,13 +47,9 @@ class SharedPreferenceManager {
 
   // --- Sync & P2P Keys ---
 
-  /// Key for storing the active synchronization engine mode.
-  /// Enum: [SyncEngine] (`cloud`, `local`, `offline`).
-  static const String _keySyncEngine = 'sync_engine';
-
-  /// Key for storing the device's synchronization role.
-  /// Enum: [SyncRole] (`0` = `undefine`, `1` = `host`, `2` = `client`).
-  static const String _keySyncRole = 'sync_role';
+  /// Key for storing the unified synchronization mode.
+  /// Enum: [SyncMode] (`offline`, `cloud`, `localHost`, `localClient`, `localUndefined`).
+  static const String _keySyncMode = 'sync_mode';
 
   /// Key for storing the unique Host UUID for P2P connection.
   /// Value: String (UUID v4 generated when device becomes a host).
@@ -229,15 +225,35 @@ class SharedPreferenceManager {
   // 1. SYNC & P2P METHODS
   // =========================================================================
 
-  /// Retrieves the active [SyncEngine], defaulting to [SyncEngine.offline].
-  SyncEngine get currentEngine {
-    final engineName = _prefs.getString(_keySyncEngine) ?? SyncEngine.offline.name;
-    return SyncEngine.values.firstWhere((e) => e.name == engineName, orElse: () => SyncEngine.offline);
+  /// Retrieves the unified active [SyncMode], defaulting to [SyncMode.offline].
+  SyncMode get syncMode {
+    final modeName = _prefs.getString(_keySyncMode) ?? SyncMode.offline.name;
+    return SyncMode.values.firstWhere((e) => e.name == modeName, orElse: () => SyncMode.offline);
   }
 
-  /// Sets the active [SyncEngine].
+  /// Sets the active [SyncMode].
+  Future<bool> setSyncMode(SyncMode mode) async {
+    return await _prefs.setString(_keySyncMode, mode.name);
+  }
+
+  /// Retrieves the active [SyncEngine] derived from [syncMode].
+  SyncEngine get currentEngine {
+    if (syncMode.isCloud) return SyncEngine.cloud;
+    if (syncMode.isLocal) return SyncEngine.local;
+    return SyncEngine.offline;
+  }
+
+  /// Sets the active [SyncEngine], updating [syncMode].
   Future<bool> setCurrentEngine(SyncEngine engine) async {
-    return await _prefs.setString(_keySyncEngine, engine.name);
+    switch (engine) {
+      case SyncEngine.cloud:
+        return await setSyncMode(SyncMode.cloud);
+      case SyncEngine.offline:
+        return await setSyncMode(SyncMode.offline);
+      case SyncEngine.local:
+        if (syncMode.isLocal) return true;
+        return await setSyncMode(SyncMode.localUndefined);
+    }
   }
 
   /// Retrieves the persistent Host UUID, generating a new UUID v4 on first access.
@@ -250,31 +266,24 @@ class SharedPreferenceManager {
     return uuid;
   }
 
-  /// Retrieves the device's [SyncRole] in P2P mode.
+  /// Retrieves the device's [SyncRole] derived from [syncMode].
   SyncRole get syncRole {
-    final role = _prefs.getInt(_keySyncRole) ?? 0;
-    switch (role) {
-      case 0:
-        return SyncRole.undefine;
-      case 1:
-        return SyncRole.host;
-      case 2:
-        return SyncRole.client;
-    }
+    if (syncMode.isHost) return SyncRole.host;
+    if (syncMode.isClient) return SyncRole.client;
     return SyncRole.undefine;
   }
 
-  /// Sets the device's [SyncRole] in P2P mode.
+  /// Sets the device's [SyncRole], updating [syncMode].
   void setSyncRole(SyncRole role) {
     switch (role) {
       case SyncRole.undefine:
-        _prefs.setInt(_keySyncRole, 0);
+        if (syncMode.isLocal) setSyncMode(SyncMode.localUndefined);
         break;
       case SyncRole.host:
-        _prefs.setInt(_keySyncRole, 1);
+        setSyncMode(SyncMode.localHost);
         break;
       case SyncRole.client:
-        _prefs.setInt(_keySyncRole, 2);
+        setSyncMode(SyncMode.localClient);
         break;
     }
   }

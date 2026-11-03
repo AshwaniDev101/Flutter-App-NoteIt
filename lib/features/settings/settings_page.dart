@@ -20,7 +20,10 @@ class SettingsPage extends ConsumerWidget {
 
     // Watch states
     final lockState = ref.watch(lockManagerProvider);
-    final currentEngine = ref.watch(syncEngineProvider);
+    final syncMode = ref.watch(syncModeProvider);
+    final currentEngine = syncMode.isCloud
+        ? SyncEngine.cloud
+        : (syncMode.isLocal ? SyncEngine.local : SyncEngine.offline);
 
     // Watch shortcut preferences
     final shortcutPrefs = ref.watch(shortcutPreferencesProvider);
@@ -56,10 +59,22 @@ class SettingsPage extends ConsumerWidget {
               ],
               selected: {currentEngine},
               onSelectionChanged: (Set<SyncEngine> newSelection) async {
-                final selectedMode = newSelection.first;
+                final selectedEngine = newSelection.first;
+                SyncMode targetMode;
+                switch (selectedEngine) {
+                  case SyncEngine.cloud:
+                    targetMode = SyncMode.cloud;
+                    break;
+                  case SyncEngine.local:
+                    targetMode = syncMode.isLocal ? syncMode : SyncMode.localUndefined;
+                    break;
+                  case SyncEngine.offline:
+                    targetMode = SyncMode.offline;
+                    break;
+                }
                 final bool success = await ref
-                    .read(syncEngineProvider.notifier)
-                    .requestEngineChange(selectedMode);
+                    .read(syncModeProvider.notifier)
+                    .requestModeChange(targetMode);
 
                 if (success) {
                   ref.read(syncOrchestratorProvider).triggerSync();

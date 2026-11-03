@@ -28,14 +28,14 @@ class DrawerNavigationController {
 
     var targetOption = option;
     if (option == RightPanelPageOptions.localSync) {
-      final role = ref.read(sharedPreferenceProvider).syncRole;
+      final mode = ref.read(sharedPreferenceProvider).syncMode;
       final activeSession = ref.read(localSyncSessionProvider);
       final isConnected = activeSession.isConnected;
       final isHosting = ref.read(syncServerProvider) != null;
 
-      if (role == SyncRole.client && isConnected) {
+      if (mode.isClient && isConnected) {
         targetOption = RightPanelPageOptions.clientMode;
-      } else if (role == SyncRole.host && (isHosting || isConnected)) {
+      } else if (mode.isHost && (isHosting || isConnected)) {
         targetOption = RightPanelPageOptions.hostMode;
       } else {
         targetOption = RightPanelPageOptions.localSync;

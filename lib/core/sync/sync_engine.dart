@@ -3,54 +3,137 @@ import 'package:noteit/core/util/logger.dart';
 import 'package:noteit/database/firebase/auth/firebase_provider.dart';
 import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
 
+/// Legacy enum kept for backwards compatibility during migration.
 enum SyncEngine { cloud, local, offline }
 
+/// Unified synchronization mode of the application.
+enum SyncMode {
+  /// Local-only mode; background syncing is disabled.
+  offline,
+
+  /// Cloud backend sync (e.g. Firebase / Google Drive).
+  cloud,
+
+  /// Local P2P sync acting as a Host (WebSocket Server / mDNS Broadcaster).
+  localHost,
+
+  /// Local P2P sync acting as a Client (WebSocket Client / mDNS Searcher).
+  localClient,
+
+  /// Local P2P sync enabled, but role (Host vs Client) is pending selection.
+  localUndefined;
+
+  /// Whether local P2P sync is active (Host, Client, or Undefined).
+  bool get isLocal => this == SyncMode.localHost || this == SyncMode.localClient || this == SyncMode.localUndefined;
+
+  /// Whether the device operates as a local P2P Host.
+  bool get isHost => this == SyncMode.localHost;
+
+  /// Whether the device operates as a local P2P Client.
+  bool get isClient => this == SyncMode.localClient;
+
+  /// Whether cloud sync is active.
+  bool get isCloud => this == SyncMode.cloud;
+
+  /// Whether offline mode is active.
+  bool get isOffline => this == SyncMode.offline;
+
+  /// Whether any remote or P2P sync is enabled.
+  bool get isSyncing => this != SyncMode.offline;
+}
+
+/// Unified Provider for accessing and modifying the active [SyncMode].
+final syncModeProvider = NotifierProvider<SyncModeNotifier, SyncMode>(() {
+  return SyncModeNotifier();
+});
+
+/// Legacy provider for backwards compatibility.
 final syncEngineProvider = NotifierProvider<SyncEngineNotifier, SyncEngine>(() {
   return SyncEngineNotifier();
 });
 
-class SyncEngineNotifier extends Notifier<SyncEngine> {
+class SyncModeNotifier extends Notifier<SyncMode> {
   @override
-  SyncEngine build() {
-    // Grab the initial saved value when the app boots
-    return ref.watch(sharedPreferenceProvider).currentEngine;
+  SyncMode build() {
+    return ref.watch(sharedPreferenceProvider).syncMode;
   }
 
-  Future<void> setEngine(SyncEngine newEngine) async {
-    // Save to the physical device disk
-    await ref.read(sharedPreferenceProvider).setCurrentEngine(newEngine);
-    // Update the Riverpod state to instantly trigger Firebase/UI listeners
-    state = newEngine;
+  Future<void> setMode(SyncMode newMode) async {
+    await ref.read(sharedPreferenceProvider).setSyncMode(newMode);
+    state = newMode;
   }
 
-  /// Attempts to switch sync engine mode with an Auth Guard.
-  /// If [SyncEngine.cloud] is requested and the user is unauthenticated,
+  /// Attempts to switch sync mode with an Auth Guard.
+  /// If [SyncMode.cloud] is requested and the user is unauthenticated,
   /// prompts Google Sign-In via [AuthRepository].
   /// Returns `true` if mode was successfully updated, or `false` if cancelled/failed.
-  Future<bool> requestEngineChange(SyncEngine requestedEngine) async {
-    if (requestedEngine != SyncEngine.cloud) {
-      await setEngine(requestedEngine);
+  Future<bool> requestModeChange(SyncMode requestedMode) async {
+    if (requestedMode != SyncMode.cloud) {
+      await setMode(requestedMode);
       return true;
     }
 
     final authRepo = ref.read(authRepositoryProvider);
 
     if (authRepo.isSignedIn) {
-      AppLogger.d("SyncEngineNotifier: User is already signed in. Switching to Cloud Engine.");
-      await setEngine(SyncEngine.cloud);
+      AppLogger.d("SyncModeNotifier: User is already signed in. Switching to Cloud Mode.");
+      await setMode(SyncMode.cloud);
       return true;
     }
 
-    AppLogger.d("SyncEngineNotifier: Cloud Engine requested but user is unauthenticated. Prompting Google Sign-In...");
+    AppLogger.d("SyncModeNotifier: Cloud Mode requested but user is unauthenticated. Prompting Google Sign-In...");
     final user = await authRepo.signInWithGoogle();
 
     if (user != null) {
-      AppLogger.d("SyncEngineNotifier: Google Sign-In successful. Switching to Cloud Engine.");
-      await setEngine(SyncEngine.cloud);
+      AppLogger.d("SyncModeNotifier: Google Sign-In successful. Switching to Cloud Mode.");
+      await setMode(SyncMode.cloud);
       return true;
     } else {
-      AppLogger.w("SyncEngineNotifier: Google Sign-In failed or cancelled. Reverting/keeping current Engine.");
+      AppLogger.w("SyncModeNotifier: Google Sign-In failed or cancelled. Reverting/keeping current Mode.");
       return false;
+    }
+  }
+}
+
+class SyncEngineNotifier extends Notifier<SyncEngine> {
+  @override
+  SyncEngine build() {
+    final mode = ref.watch(syncModeProvider);
+    if (mode.isCloud) return SyncEngine.cloud;
+    if (mode.isLocal) return SyncEngine.local;
+    return SyncEngine.offline;
+  }
+
+  Future<void> setEngine(SyncEngine newEngine) async {
+    switch (newEngine) {
+      case SyncEngine.cloud:
+        await ref.read(syncModeProvider.notifier).setMode(SyncMode.cloud);
+        break;
+      case SyncEngine.offline:
+        await ref.read(syncModeProvider.notifier).setMode(SyncMode.offline);
+        break;
+      case SyncEngine.local:
+        final current = ref.read(syncModeProvider);
+        if (!current.isLocal) {
+          await ref.read(syncModeProvider.notifier).setMode(SyncMode.localUndefined);
+        }
+        break;
+    }
+  }
+
+  Future<bool> requestEngineChange(SyncEngine requestedEngine) async {
+    switch (requestedEngine) {
+      case SyncEngine.cloud:
+        return await ref.read(syncModeProvider.notifier).requestModeChange(SyncMode.cloud);
+      case SyncEngine.offline:
+        await ref.read(syncModeProvider.notifier).setMode(SyncMode.offline);
+        return true;
+      case SyncEngine.local:
+        final current = ref.read(syncModeProvider);
+        if (!current.isLocal) {
+          await ref.read(syncModeProvider.notifier).setMode(SyncMode.localUndefined);
+        }
+        return true;
     }
   }
 }

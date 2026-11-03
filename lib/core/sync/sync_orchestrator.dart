@@ -41,8 +41,8 @@ class SyncOrchestrator with WidgetsBindingObserver {
       _evaluateState();
     });
 
-    // Listen for Engine Mode Swaps (Cloud vs Local vs Offline)
-    ref.listen(syncEngineProvider, (previous, next) {
+    // Listen for Sync Mode Swaps (Cloud vs Local vs Offline)
+    ref.listen(syncModeProvider, (previous, next) {
       _evaluateState();
     });
 
@@ -55,20 +55,20 @@ class SyncOrchestrator with WidgetsBindingObserver {
   void _stopAllLocalSyncServices() {
     AppLogger.d("SyncOrchestrator: Stopping all Local Wi-Fi Sync services...");
     ref.read(localSyncSessionProvider.notifier).endSession();
-    ref.read(sharedPreferenceProvider).setSyncRole(SyncRole.undefine);
+    ref.read(sharedPreferenceProvider).setSyncMode(SyncMode.offline);
   }
 
   // The Master Switchboard: Turns background listeners on or off
   void _evaluateState() {
-    final engine = ref.read(syncEngineProvider);
+    final mode = ref.read(syncModeProvider);
     final user = ref.read(authStateProvider).value;
 
     final cloudWorker = ref.read(cloudSyncServiceProvider);
 
-    if (engine == SyncEngine.cloud && user != null) {
+    if (mode.isCloud && user != null) {
       _stopAllLocalSyncServices();
       cloudWorker.start();
-    } else if (engine == SyncEngine.local) {
+    } else if (mode.isLocal) {
       cloudWorker.stop();
     } else {
       // Offline mode, or user logged out
@@ -81,7 +81,7 @@ class SyncOrchestrator with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     // Only fire Firebase delta syncs on resume if Cloud is actively selected
     if (state == AppLifecycleState.resumed) {
-      if (ref.read(syncEngineProvider) == SyncEngine.cloud) {
+      if (ref.read(syncModeProvider).isCloud) {
         AppLogger.d("SyncOrchestrator: App resumed. Triggering Cloud Delta Sync...");
         ref.read(cloudSyncServiceProvider).executeFullSync();
       }
@@ -90,12 +90,12 @@ class SyncOrchestrator with WidgetsBindingObserver {
 
   // When EditNoteViewModel calls this, it routes the data to the correct engine.
   void triggerSync() {
-    final engine = ref.read(syncEngineProvider);
+    final mode = ref.read(syncModeProvider);
 
-    if (engine == SyncEngine.cloud) {
+    if (mode.isCloud) {
       AppLogger.d("SyncOrchestrator: UI triggered sync. Routing to Cloud Engine.");
       ref.read(cloudSyncServiceProvider).executeFullSync();
-    } else if (engine == SyncEngine.local) {
+    } else if (mode.isLocal) {
       AppLogger.d("SyncOrchestrator: UI triggered sync. Routing to Local Wi-Fi Engine.");
       ref.read(localSyncServiceProvider.notifier).broadcastLocalChanges();
     } else {
