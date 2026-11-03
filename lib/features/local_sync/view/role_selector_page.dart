@@ -9,6 +9,7 @@ import 'package:noteit/features/local_sync/data/network/mdns_searcher.dart';
 import 'package:noteit/features/local_sync/data/providers/sync_client_provider.dart';
 import 'package:noteit/features/local_sync/data/providers/sync_server_provider.dart';
 import 'package:noteit/features/local_sync/data/providers/sync_session_provider.dart';
+import 'package:noteit/features/local_sync/view/widgets/sync_history_button.dart';
 import 'package:noteit/shared/overlays/app_scaffold.dart';
 
 class RoleSelectorPage extends ConsumerStatefulWidget {
@@ -200,22 +201,7 @@ class _RoleSelectorPageState extends ConsumerState<RoleSelectorPage> {
         const SizedBox(height: 12),
 
         // History Button
-        OutlinedButton.icon(
-          onPressed: () {
-            ref.read(drawerNavigationProvider).navigate(
-                  context,
-                  RightPanelPageOptions.syncedList,
-                );
-          },
-          icon: const Icon(Icons.history_rounded, size: 18),
-          label: const Text('History'),
-          style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        ),
+        const SyncHistoryButton(),
       ],
     );
   }

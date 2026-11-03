@@ -13,6 +13,7 @@ import 'package:noteit/features/local_sync/data/network/mdns_broadcast.dart';
 import 'package:noteit/features/local_sync/data/providers/local_sync_session_manager.dart';
 import 'package:noteit/features/local_sync/data/providers/sync_server_provider.dart';
 import 'package:noteit/features/local_sync/data/providers/sync_session_provider.dart';
+import 'package:noteit/features/local_sync/view/widgets/sync_history_button.dart';
 import 'package:noteit/shared/overlays/app_scaffold.dart';
 
 class HostBroadcastPage extends ConsumerStatefulWidget {
@@ -349,19 +350,7 @@ class _HostBroadcastPageState extends ConsumerState<HostBroadcastPage> {
                                 spacing: 12,
                                 runSpacing: 12,
                                 children: [
-                                  OutlinedButton.icon(
-                                    onPressed: () {
-                                      ref
-                                          .read(drawerNavigationProvider)
-                                          .navigate(context, RightPanelPageOptions.syncedList);
-                                    },
-                                    icon: const Icon(Icons.history_rounded, size: 18),
-                                    label: const Text('History'),
-                                    style: OutlinedButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                    ),
-                                  ),
+                                  const SyncHistoryButton(),
                                   FilledButton.tonalIcon(
                                     onPressed: () => _confirmAndStopHosting(context),
                                     icon: const Icon(Icons.stop_rounded, size: 18),
