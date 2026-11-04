@@ -29,14 +29,14 @@ enum _SyncDisplayState {
   ),
   hosting(
     label: 'Hosting...',
-    icon: Icons.wifi_tethering_rounded,
+    icon: Icons.wifi,
     color: Colors.white,
     tooltip: 'Host server running, waiting for peer...',
     isActionable: false,
   ),
   searching(
-    label: 'Searching...',
-    icon: Icons.radar_rounded,
+    label: 'Scanning...',
+    icon: Icons.search_rounded,
     color: Colors.cyanAccent,
     tooltip: 'Searching local network for Hosts...',
     isActionable: false,

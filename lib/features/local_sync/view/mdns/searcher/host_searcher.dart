@@ -579,17 +579,83 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
                                 ),
                                 const SizedBox(height: 24),
                               ] else ...[
+                                // Container(
+                                //   padding: const EdgeInsets.all(20),
+                                //   decoration: BoxDecoration(
+                                //     color: colorScheme.primaryContainer.withValues(alpha: 0.2),
+                                //     borderRadius: BorderRadius.circular(16),
+                                //   ),
+                                //   child: Center(
+                                //     child: Row(
+                                //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                //       // crossAxisAlignment: CrossAxisAlignment.stretch,
+                                //       children: [
+                                //
+                                //         Column(
+                                //           children: [
+                                //             Text("Host not found.", style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 12),),
+                                //             Text("Make sure other Device is hosting!", style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 12),),
+                                //           ],
+                                //         ),
+                                //
+                                //         SizedBox(width: 16,),
+                                //         SizedBox(
+                                //           height: 14,
+                                //           width: 14,
+                                //           child: CircularProgressIndicator(
+                                //             strokeWidth: 2,
+                                //             color: colorScheme.primary,
+                                //           ),
+                                //         ),
+                                //       ],
+                                //     ),
+                                //   ),
+                                // ),
+
                                 Container(
-                                  padding: const EdgeInsets.all(20),
+                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                                   decoration: BoxDecoration(
                                     color: colorScheme.primaryContainer.withValues(alpha: 0.2),
                                     borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  child: Center(
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: colorScheme.primary,
+                                    border: Border.all(
+                                      color: colorScheme.primary.withValues(alpha: 0.2),
                                     ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      // 1. Expanded prevents text overflow on smaller screens
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start, // 2. Left-aligns the text
+                                          children: [
+                                            Text(
+                                              "Scanning for hosts...",
+                                              style: textTheme.titleSmall?.copyWith(
+                                                color: colorScheme.onSurface,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              "Make sure the other device is actively hosting.",
+                                              style: textTheme.bodySmall?.copyWith(
+                                                color: colorScheme.onSurfaceVariant,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      // 3. Slightly bumped up the size for better visibility
+                                      SizedBox(
+                                        height: 20,
+                                        width: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2.5,
+                                          color: colorScheme.primary,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                                 const SizedBox(height: 24),

@@ -2681,6 +2681,17 @@ class $SyncedDevicesTable extends SyncedDevices
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _deviceTypeMeta = const VerificationMeta(
+    'deviceType',
+  );
+  @override
+  late final GeneratedColumn<String> deviceType = GeneratedColumn<String>(
+    'device_type',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _lastKnownIpMeta = const VerificationMeta(
     'lastKnownIp',
   );
@@ -2701,6 +2712,28 @@ class $SyncedDevicesTable extends SyncedDevices
     aliasedName,
     true,
     type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _protocolVersionMeta = const VerificationMeta(
+    'protocolVersion',
+  );
+  @override
+  late final GeneratedColumn<int> protocolVersion = GeneratedColumn<int>(
+    'protocol_version',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _authKeyMeta = const VerificationMeta(
+    'authKey',
+  );
+  @override
+  late final GeneratedColumn<String> authKey = GeneratedColumn<String>(
+    'auth_key',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
   static const VerificationMeta _lastSeenAsHostAtMeta = const VerificationMeta(
@@ -2739,139 +2772,19 @@ class $SyncedDevicesTable extends SyncedDevices
         requiredDuringInsert: false,
         defaultValue: currentDateAndTime,
       );
-  static const VerificationMeta _blockedAtMeta = const VerificationMeta(
-    'blockedAt',
-  );
-  @override
-  late final GeneratedColumn<DateTime> blockedAt = GeneratedColumn<DateTime>(
-    'blocked_at',
-    aliasedName,
-    true,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _publicKeyMeta = const VerificationMeta(
-    'publicKey',
-  );
-  @override
-  late final GeneratedColumn<String> publicKey = GeneratedColumn<String>(
-    'public_key',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _authKeyMeta = const VerificationMeta(
-    'authKey',
-  );
-  @override
-  late final GeneratedColumn<String> authKey = GeneratedColumn<String>(
-    'auth_key',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _schemaVersionMeta = const VerificationMeta(
-    'schemaVersion',
-  );
-  @override
-  late final GeneratedColumn<int> schemaVersion = GeneratedColumn<int>(
-    'schema_version',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultValue: const Constant(1),
-  );
-  static const VerificationMeta _deviceTypeMeta = const VerificationMeta(
-    'deviceType',
-  );
-  @override
-  late final GeneratedColumn<String> deviceType = GeneratedColumn<String>(
-    'device_type',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _protocolVersionMeta = const VerificationMeta(
-    'protocolVersion',
-  );
-  @override
-  late final GeneratedColumn<int> protocolVersion = GeneratedColumn<int>(
-    'protocol_version',
-    aliasedName,
-    true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _lastSuccessfulSyncAtMeta =
-      const VerificationMeta('lastSuccessfulSyncAt');
-  @override
-  late final GeneratedColumn<DateTime> lastSuccessfulSyncAt =
-      GeneratedColumn<DateTime>(
-        'last_successful_sync_at',
-        aliasedName,
-        true,
-        type: DriftSqlType.dateTime,
-        requiredDuringInsert: false,
-      );
-  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
-    'updatedAt',
-  );
-  @override
-  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
-    'updated_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: false,
-    defaultValue: currentDateAndTime,
-  );
-  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
-    'deletedAt',
-  );
-  @override
-  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
-    'deleted_at',
-    aliasedName,
-    true,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _updateCounterMeta = const VerificationMeta(
-    'updateCounter',
-  );
-  @override
-  late final GeneratedColumn<int> updateCounter = GeneratedColumn<int>(
-    'update_counter',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultValue: const Constant(1),
-  );
   @override
   List<GeneratedColumn> get $columns => [
     deviceUuid,
     deviceName,
     customAlias,
+    deviceType,
     lastKnownIp,
     lastKnownPort,
+    protocolVersion,
+    authKey,
     lastSeenAsHostAt,
     lastSeenAsClientAt,
     firstPairedAt,
-    blockedAt,
-    publicKey,
-    authKey,
-    schemaVersion,
-    deviceType,
-    protocolVersion,
-    lastSuccessfulSyncAt,
-    updatedAt,
-    deletedAt,
-    updateCounter,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2910,6 +2823,12 @@ class $SyncedDevicesTable extends SyncedDevices
         ),
       );
     }
+    if (data.containsKey('device_type')) {
+      context.handle(
+        _deviceTypeMeta,
+        deviceType.isAcceptableOrUnknown(data['device_type']!, _deviceTypeMeta),
+      );
+    }
     if (data.containsKey('last_known_ip')) {
       context.handle(
         _lastKnownIpMeta,
@@ -2926,6 +2845,21 @@ class $SyncedDevicesTable extends SyncedDevices
           data['last_known_port']!,
           _lastKnownPortMeta,
         ),
+      );
+    }
+    if (data.containsKey('protocol_version')) {
+      context.handle(
+        _protocolVersionMeta,
+        protocolVersion.isAcceptableOrUnknown(
+          data['protocol_version']!,
+          _protocolVersionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('auth_key')) {
+      context.handle(
+        _authKeyMeta,
+        authKey.isAcceptableOrUnknown(data['auth_key']!, _authKeyMeta),
       );
     }
     if (data.containsKey('last_seen_as_host_at')) {
@@ -2955,78 +2889,6 @@ class $SyncedDevicesTable extends SyncedDevices
         ),
       );
     }
-    if (data.containsKey('blocked_at')) {
-      context.handle(
-        _blockedAtMeta,
-        blockedAt.isAcceptableOrUnknown(data['blocked_at']!, _blockedAtMeta),
-      );
-    }
-    if (data.containsKey('public_key')) {
-      context.handle(
-        _publicKeyMeta,
-        publicKey.isAcceptableOrUnknown(data['public_key']!, _publicKeyMeta),
-      );
-    }
-    if (data.containsKey('auth_key')) {
-      context.handle(
-        _authKeyMeta,
-        authKey.isAcceptableOrUnknown(data['auth_key']!, _authKeyMeta),
-      );
-    }
-    if (data.containsKey('schema_version')) {
-      context.handle(
-        _schemaVersionMeta,
-        schemaVersion.isAcceptableOrUnknown(
-          data['schema_version']!,
-          _schemaVersionMeta,
-        ),
-      );
-    }
-    if (data.containsKey('device_type')) {
-      context.handle(
-        _deviceTypeMeta,
-        deviceType.isAcceptableOrUnknown(data['device_type']!, _deviceTypeMeta),
-      );
-    }
-    if (data.containsKey('protocol_version')) {
-      context.handle(
-        _protocolVersionMeta,
-        protocolVersion.isAcceptableOrUnknown(
-          data['protocol_version']!,
-          _protocolVersionMeta,
-        ),
-      );
-    }
-    if (data.containsKey('last_successful_sync_at')) {
-      context.handle(
-        _lastSuccessfulSyncAtMeta,
-        lastSuccessfulSyncAt.isAcceptableOrUnknown(
-          data['last_successful_sync_at']!,
-          _lastSuccessfulSyncAtMeta,
-        ),
-      );
-    }
-    if (data.containsKey('updated_at')) {
-      context.handle(
-        _updatedAtMeta,
-        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
-      );
-    }
-    if (data.containsKey('deleted_at')) {
-      context.handle(
-        _deletedAtMeta,
-        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
-      );
-    }
-    if (data.containsKey('update_counter')) {
-      context.handle(
-        _updateCounterMeta,
-        updateCounter.isAcceptableOrUnknown(
-          data['update_counter']!,
-          _updateCounterMeta,
-        ),
-      );
-    }
     return context;
   }
 
@@ -3048,6 +2910,10 @@ class $SyncedDevicesTable extends SyncedDevices
         DriftSqlType.string,
         data['${effectivePrefix}custom_alias'],
       ),
+      deviceType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}device_type'],
+      ),
       lastKnownIp: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}last_known_ip'],
@@ -3055,6 +2921,14 @@ class $SyncedDevicesTable extends SyncedDevices
       lastKnownPort: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}last_known_port'],
+      ),
+      protocolVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}protocol_version'],
+      ),
+      authKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}auth_key'],
       ),
       lastSeenAsHostAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
@@ -3067,46 +2941,6 @@ class $SyncedDevicesTable extends SyncedDevices
       firstPairedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}first_paired_at'],
-      )!,
-      blockedAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}blocked_at'],
-      ),
-      publicKey: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}public_key'],
-      ),
-      authKey: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}auth_key'],
-      ),
-      schemaVersion: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}schema_version'],
-      )!,
-      deviceType: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}device_type'],
-      ),
-      protocolVersion: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}protocol_version'],
-      ),
-      lastSuccessfulSyncAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}last_successful_sync_at'],
-      ),
-      updatedAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}updated_at'],
-      )!,
-      deletedAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}deleted_at'],
-      ),
-      updateCounter: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}update_counter'],
       )!,
     );
   }
@@ -3121,40 +2955,26 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
   final String deviceUuid;
   final String deviceName;
   final String? customAlias;
+  final String? deviceType;
   final String? lastKnownIp;
   final int? lastKnownPort;
+  final int? protocolVersion;
+  final String? authKey;
   final DateTime? lastSeenAsHostAt;
   final DateTime? lastSeenAsClientAt;
   final DateTime firstPairedAt;
-  final DateTime? blockedAt;
-  final String? publicKey;
-  final String? authKey;
-  final int schemaVersion;
-  final String? deviceType;
-  final int? protocolVersion;
-  final DateTime? lastSuccessfulSyncAt;
-  final DateTime updatedAt;
-  final DateTime? deletedAt;
-  final int updateCounter;
   const SyncedDevice({
     required this.deviceUuid,
     required this.deviceName,
     this.customAlias,
+    this.deviceType,
     this.lastKnownIp,
     this.lastKnownPort,
+    this.protocolVersion,
+    this.authKey,
     this.lastSeenAsHostAt,
     this.lastSeenAsClientAt,
     required this.firstPairedAt,
-    this.blockedAt,
-    this.publicKey,
-    this.authKey,
-    required this.schemaVersion,
-    this.deviceType,
-    this.protocolVersion,
-    this.lastSuccessfulSyncAt,
-    required this.updatedAt,
-    this.deletedAt,
-    required this.updateCounter,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3164,11 +2984,20 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
     if (!nullToAbsent || customAlias != null) {
       map['custom_alias'] = Variable<String>(customAlias);
     }
+    if (!nullToAbsent || deviceType != null) {
+      map['device_type'] = Variable<String>(deviceType);
+    }
     if (!nullToAbsent || lastKnownIp != null) {
       map['last_known_ip'] = Variable<String>(lastKnownIp);
     }
     if (!nullToAbsent || lastKnownPort != null) {
       map['last_known_port'] = Variable<int>(lastKnownPort);
+    }
+    if (!nullToAbsent || protocolVersion != null) {
+      map['protocol_version'] = Variable<int>(protocolVersion);
+    }
+    if (!nullToAbsent || authKey != null) {
+      map['auth_key'] = Variable<String>(authKey);
     }
     if (!nullToAbsent || lastSeenAsHostAt != null) {
       map['last_seen_as_host_at'] = Variable<DateTime>(lastSeenAsHostAt);
@@ -3177,30 +3006,6 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
       map['last_seen_as_client_at'] = Variable<DateTime>(lastSeenAsClientAt);
     }
     map['first_paired_at'] = Variable<DateTime>(firstPairedAt);
-    if (!nullToAbsent || blockedAt != null) {
-      map['blocked_at'] = Variable<DateTime>(blockedAt);
-    }
-    if (!nullToAbsent || publicKey != null) {
-      map['public_key'] = Variable<String>(publicKey);
-    }
-    if (!nullToAbsent || authKey != null) {
-      map['auth_key'] = Variable<String>(authKey);
-    }
-    map['schema_version'] = Variable<int>(schemaVersion);
-    if (!nullToAbsent || deviceType != null) {
-      map['device_type'] = Variable<String>(deviceType);
-    }
-    if (!nullToAbsent || protocolVersion != null) {
-      map['protocol_version'] = Variable<int>(protocolVersion);
-    }
-    if (!nullToAbsent || lastSuccessfulSyncAt != null) {
-      map['last_successful_sync_at'] = Variable<DateTime>(lastSuccessfulSyncAt);
-    }
-    map['updated_at'] = Variable<DateTime>(updatedAt);
-    if (!nullToAbsent || deletedAt != null) {
-      map['deleted_at'] = Variable<DateTime>(deletedAt);
-    }
-    map['update_counter'] = Variable<int>(updateCounter);
     return map;
   }
 
@@ -3211,12 +3016,21 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
       customAlias: customAlias == null && nullToAbsent
           ? const Value.absent()
           : Value(customAlias),
+      deviceType: deviceType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deviceType),
       lastKnownIp: lastKnownIp == null && nullToAbsent
           ? const Value.absent()
           : Value(lastKnownIp),
       lastKnownPort: lastKnownPort == null && nullToAbsent
           ? const Value.absent()
           : Value(lastKnownPort),
+      protocolVersion: protocolVersion == null && nullToAbsent
+          ? const Value.absent()
+          : Value(protocolVersion),
+      authKey: authKey == null && nullToAbsent
+          ? const Value.absent()
+          : Value(authKey),
       lastSeenAsHostAt: lastSeenAsHostAt == null && nullToAbsent
           ? const Value.absent()
           : Value(lastSeenAsHostAt),
@@ -3224,30 +3038,6 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
           ? const Value.absent()
           : Value(lastSeenAsClientAt),
       firstPairedAt: Value(firstPairedAt),
-      blockedAt: blockedAt == null && nullToAbsent
-          ? const Value.absent()
-          : Value(blockedAt),
-      publicKey: publicKey == null && nullToAbsent
-          ? const Value.absent()
-          : Value(publicKey),
-      authKey: authKey == null && nullToAbsent
-          ? const Value.absent()
-          : Value(authKey),
-      schemaVersion: Value(schemaVersion),
-      deviceType: deviceType == null && nullToAbsent
-          ? const Value.absent()
-          : Value(deviceType),
-      protocolVersion: protocolVersion == null && nullToAbsent
-          ? const Value.absent()
-          : Value(protocolVersion),
-      lastSuccessfulSyncAt: lastSuccessfulSyncAt == null && nullToAbsent
-          ? const Value.absent()
-          : Value(lastSuccessfulSyncAt),
-      updatedAt: Value(updatedAt),
-      deletedAt: deletedAt == null && nullToAbsent
-          ? const Value.absent()
-          : Value(deletedAt),
-      updateCounter: Value(updateCounter),
     );
   }
 
@@ -3260,8 +3050,11 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
       deviceUuid: serializer.fromJson<String>(json['deviceUuid']),
       deviceName: serializer.fromJson<String>(json['deviceName']),
       customAlias: serializer.fromJson<String?>(json['customAlias']),
+      deviceType: serializer.fromJson<String?>(json['deviceType']),
       lastKnownIp: serializer.fromJson<String?>(json['lastKnownIp']),
       lastKnownPort: serializer.fromJson<int?>(json['lastKnownPort']),
+      protocolVersion: serializer.fromJson<int?>(json['protocolVersion']),
+      authKey: serializer.fromJson<String?>(json['authKey']),
       lastSeenAsHostAt: serializer.fromJson<DateTime?>(
         json['lastSeenAsHostAt'],
       ),
@@ -3269,18 +3062,6 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
         json['lastSeenAsClientAt'],
       ),
       firstPairedAt: serializer.fromJson<DateTime>(json['firstPairedAt']),
-      blockedAt: serializer.fromJson<DateTime?>(json['blockedAt']),
-      publicKey: serializer.fromJson<String?>(json['publicKey']),
-      authKey: serializer.fromJson<String?>(json['authKey']),
-      schemaVersion: serializer.fromJson<int>(json['schemaVersion']),
-      deviceType: serializer.fromJson<String?>(json['deviceType']),
-      protocolVersion: serializer.fromJson<int?>(json['protocolVersion']),
-      lastSuccessfulSyncAt: serializer.fromJson<DateTime?>(
-        json['lastSuccessfulSyncAt'],
-      ),
-      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
-      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
-      updateCounter: serializer.fromJson<int>(json['updateCounter']),
     );
   }
   @override
@@ -3290,23 +3071,14 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
       'deviceUuid': serializer.toJson<String>(deviceUuid),
       'deviceName': serializer.toJson<String>(deviceName),
       'customAlias': serializer.toJson<String?>(customAlias),
+      'deviceType': serializer.toJson<String?>(deviceType),
       'lastKnownIp': serializer.toJson<String?>(lastKnownIp),
       'lastKnownPort': serializer.toJson<int?>(lastKnownPort),
+      'protocolVersion': serializer.toJson<int?>(protocolVersion),
+      'authKey': serializer.toJson<String?>(authKey),
       'lastSeenAsHostAt': serializer.toJson<DateTime?>(lastSeenAsHostAt),
       'lastSeenAsClientAt': serializer.toJson<DateTime?>(lastSeenAsClientAt),
       'firstPairedAt': serializer.toJson<DateTime>(firstPairedAt),
-      'blockedAt': serializer.toJson<DateTime?>(blockedAt),
-      'publicKey': serializer.toJson<String?>(publicKey),
-      'authKey': serializer.toJson<String?>(authKey),
-      'schemaVersion': serializer.toJson<int>(schemaVersion),
-      'deviceType': serializer.toJson<String?>(deviceType),
-      'protocolVersion': serializer.toJson<int?>(protocolVersion),
-      'lastSuccessfulSyncAt': serializer.toJson<DateTime?>(
-        lastSuccessfulSyncAt,
-      ),
-      'updatedAt': serializer.toJson<DateTime>(updatedAt),
-      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
-      'updateCounter': serializer.toJson<int>(updateCounter),
     };
   }
 
@@ -3314,29 +3086,27 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
     String? deviceUuid,
     String? deviceName,
     Value<String?> customAlias = const Value.absent(),
+    Value<String?> deviceType = const Value.absent(),
     Value<String?> lastKnownIp = const Value.absent(),
     Value<int?> lastKnownPort = const Value.absent(),
+    Value<int?> protocolVersion = const Value.absent(),
+    Value<String?> authKey = const Value.absent(),
     Value<DateTime?> lastSeenAsHostAt = const Value.absent(),
     Value<DateTime?> lastSeenAsClientAt = const Value.absent(),
     DateTime? firstPairedAt,
-    Value<DateTime?> blockedAt = const Value.absent(),
-    Value<String?> publicKey = const Value.absent(),
-    Value<String?> authKey = const Value.absent(),
-    int? schemaVersion,
-    Value<String?> deviceType = const Value.absent(),
-    Value<int?> protocolVersion = const Value.absent(),
-    Value<DateTime?> lastSuccessfulSyncAt = const Value.absent(),
-    DateTime? updatedAt,
-    Value<DateTime?> deletedAt = const Value.absent(),
-    int? updateCounter,
   }) => SyncedDevice(
     deviceUuid: deviceUuid ?? this.deviceUuid,
     deviceName: deviceName ?? this.deviceName,
     customAlias: customAlias.present ? customAlias.value : this.customAlias,
+    deviceType: deviceType.present ? deviceType.value : this.deviceType,
     lastKnownIp: lastKnownIp.present ? lastKnownIp.value : this.lastKnownIp,
     lastKnownPort: lastKnownPort.present
         ? lastKnownPort.value
         : this.lastKnownPort,
+    protocolVersion: protocolVersion.present
+        ? protocolVersion.value
+        : this.protocolVersion,
+    authKey: authKey.present ? authKey.value : this.authKey,
     lastSeenAsHostAt: lastSeenAsHostAt.present
         ? lastSeenAsHostAt.value
         : this.lastSeenAsHostAt,
@@ -3344,20 +3114,6 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
         ? lastSeenAsClientAt.value
         : this.lastSeenAsClientAt,
     firstPairedAt: firstPairedAt ?? this.firstPairedAt,
-    blockedAt: blockedAt.present ? blockedAt.value : this.blockedAt,
-    publicKey: publicKey.present ? publicKey.value : this.publicKey,
-    authKey: authKey.present ? authKey.value : this.authKey,
-    schemaVersion: schemaVersion ?? this.schemaVersion,
-    deviceType: deviceType.present ? deviceType.value : this.deviceType,
-    protocolVersion: protocolVersion.present
-        ? protocolVersion.value
-        : this.protocolVersion,
-    lastSuccessfulSyncAt: lastSuccessfulSyncAt.present
-        ? lastSuccessfulSyncAt.value
-        : this.lastSuccessfulSyncAt,
-    updatedAt: updatedAt ?? this.updatedAt,
-    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
-    updateCounter: updateCounter ?? this.updateCounter,
   );
   SyncedDevice copyWithCompanion(SyncedDevicesCompanion data) {
     return SyncedDevice(
@@ -3370,12 +3126,19 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
       customAlias: data.customAlias.present
           ? data.customAlias.value
           : this.customAlias,
+      deviceType: data.deviceType.present
+          ? data.deviceType.value
+          : this.deviceType,
       lastKnownIp: data.lastKnownIp.present
           ? data.lastKnownIp.value
           : this.lastKnownIp,
       lastKnownPort: data.lastKnownPort.present
           ? data.lastKnownPort.value
           : this.lastKnownPort,
+      protocolVersion: data.protocolVersion.present
+          ? data.protocolVersion.value
+          : this.protocolVersion,
+      authKey: data.authKey.present ? data.authKey.value : this.authKey,
       lastSeenAsHostAt: data.lastSeenAsHostAt.present
           ? data.lastSeenAsHostAt.value
           : this.lastSeenAsHostAt,
@@ -3385,26 +3148,6 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
       firstPairedAt: data.firstPairedAt.present
           ? data.firstPairedAt.value
           : this.firstPairedAt,
-      blockedAt: data.blockedAt.present ? data.blockedAt.value : this.blockedAt,
-      publicKey: data.publicKey.present ? data.publicKey.value : this.publicKey,
-      authKey: data.authKey.present ? data.authKey.value : this.authKey,
-      schemaVersion: data.schemaVersion.present
-          ? data.schemaVersion.value
-          : this.schemaVersion,
-      deviceType: data.deviceType.present
-          ? data.deviceType.value
-          : this.deviceType,
-      protocolVersion: data.protocolVersion.present
-          ? data.protocolVersion.value
-          : this.protocolVersion,
-      lastSuccessfulSyncAt: data.lastSuccessfulSyncAt.present
-          ? data.lastSuccessfulSyncAt.value
-          : this.lastSuccessfulSyncAt,
-      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
-      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
-      updateCounter: data.updateCounter.present
-          ? data.updateCounter.value
-          : this.updateCounter,
     );
   }
 
@@ -3414,21 +3157,14 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
           ..write('deviceUuid: $deviceUuid, ')
           ..write('deviceName: $deviceName, ')
           ..write('customAlias: $customAlias, ')
+          ..write('deviceType: $deviceType, ')
           ..write('lastKnownIp: $lastKnownIp, ')
           ..write('lastKnownPort: $lastKnownPort, ')
+          ..write('protocolVersion: $protocolVersion, ')
+          ..write('authKey: $authKey, ')
           ..write('lastSeenAsHostAt: $lastSeenAsHostAt, ')
           ..write('lastSeenAsClientAt: $lastSeenAsClientAt, ')
-          ..write('firstPairedAt: $firstPairedAt, ')
-          ..write('blockedAt: $blockedAt, ')
-          ..write('publicKey: $publicKey, ')
-          ..write('authKey: $authKey, ')
-          ..write('schemaVersion: $schemaVersion, ')
-          ..write('deviceType: $deviceType, ')
-          ..write('protocolVersion: $protocolVersion, ')
-          ..write('lastSuccessfulSyncAt: $lastSuccessfulSyncAt, ')
-          ..write('updatedAt: $updatedAt, ')
-          ..write('deletedAt: $deletedAt, ')
-          ..write('updateCounter: $updateCounter')
+          ..write('firstPairedAt: $firstPairedAt')
           ..write(')'))
         .toString();
   }
@@ -3438,21 +3174,14 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
     deviceUuid,
     deviceName,
     customAlias,
+    deviceType,
     lastKnownIp,
     lastKnownPort,
+    protocolVersion,
+    authKey,
     lastSeenAsHostAt,
     lastSeenAsClientAt,
     firstPairedAt,
-    blockedAt,
-    publicKey,
-    authKey,
-    schemaVersion,
-    deviceType,
-    protocolVersion,
-    lastSuccessfulSyncAt,
-    updatedAt,
-    deletedAt,
-    updateCounter,
   );
   @override
   bool operator ==(Object other) =>
@@ -3461,83 +3190,55 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
           other.deviceUuid == this.deviceUuid &&
           other.deviceName == this.deviceName &&
           other.customAlias == this.customAlias &&
+          other.deviceType == this.deviceType &&
           other.lastKnownIp == this.lastKnownIp &&
           other.lastKnownPort == this.lastKnownPort &&
+          other.protocolVersion == this.protocolVersion &&
+          other.authKey == this.authKey &&
           other.lastSeenAsHostAt == this.lastSeenAsHostAt &&
           other.lastSeenAsClientAt == this.lastSeenAsClientAt &&
-          other.firstPairedAt == this.firstPairedAt &&
-          other.blockedAt == this.blockedAt &&
-          other.publicKey == this.publicKey &&
-          other.authKey == this.authKey &&
-          other.schemaVersion == this.schemaVersion &&
-          other.deviceType == this.deviceType &&
-          other.protocolVersion == this.protocolVersion &&
-          other.lastSuccessfulSyncAt == this.lastSuccessfulSyncAt &&
-          other.updatedAt == this.updatedAt &&
-          other.deletedAt == this.deletedAt &&
-          other.updateCounter == this.updateCounter);
+          other.firstPairedAt == this.firstPairedAt);
 }
 
 class SyncedDevicesCompanion extends UpdateCompanion<SyncedDevice> {
   final Value<String> deviceUuid;
   final Value<String> deviceName;
   final Value<String?> customAlias;
+  final Value<String?> deviceType;
   final Value<String?> lastKnownIp;
   final Value<int?> lastKnownPort;
+  final Value<int?> protocolVersion;
+  final Value<String?> authKey;
   final Value<DateTime?> lastSeenAsHostAt;
   final Value<DateTime?> lastSeenAsClientAt;
   final Value<DateTime> firstPairedAt;
-  final Value<DateTime?> blockedAt;
-  final Value<String?> publicKey;
-  final Value<String?> authKey;
-  final Value<int> schemaVersion;
-  final Value<String?> deviceType;
-  final Value<int?> protocolVersion;
-  final Value<DateTime?> lastSuccessfulSyncAt;
-  final Value<DateTime> updatedAt;
-  final Value<DateTime?> deletedAt;
-  final Value<int> updateCounter;
   final Value<int> rowid;
   const SyncedDevicesCompanion({
     this.deviceUuid = const Value.absent(),
     this.deviceName = const Value.absent(),
     this.customAlias = const Value.absent(),
+    this.deviceType = const Value.absent(),
     this.lastKnownIp = const Value.absent(),
     this.lastKnownPort = const Value.absent(),
+    this.protocolVersion = const Value.absent(),
+    this.authKey = const Value.absent(),
     this.lastSeenAsHostAt = const Value.absent(),
     this.lastSeenAsClientAt = const Value.absent(),
     this.firstPairedAt = const Value.absent(),
-    this.blockedAt = const Value.absent(),
-    this.publicKey = const Value.absent(),
-    this.authKey = const Value.absent(),
-    this.schemaVersion = const Value.absent(),
-    this.deviceType = const Value.absent(),
-    this.protocolVersion = const Value.absent(),
-    this.lastSuccessfulSyncAt = const Value.absent(),
-    this.updatedAt = const Value.absent(),
-    this.deletedAt = const Value.absent(),
-    this.updateCounter = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   SyncedDevicesCompanion.insert({
     required String deviceUuid,
     required String deviceName,
     this.customAlias = const Value.absent(),
+    this.deviceType = const Value.absent(),
     this.lastKnownIp = const Value.absent(),
     this.lastKnownPort = const Value.absent(),
+    this.protocolVersion = const Value.absent(),
+    this.authKey = const Value.absent(),
     this.lastSeenAsHostAt = const Value.absent(),
     this.lastSeenAsClientAt = const Value.absent(),
     this.firstPairedAt = const Value.absent(),
-    this.blockedAt = const Value.absent(),
-    this.publicKey = const Value.absent(),
-    this.authKey = const Value.absent(),
-    this.schemaVersion = const Value.absent(),
-    this.deviceType = const Value.absent(),
-    this.protocolVersion = const Value.absent(),
-    this.lastSuccessfulSyncAt = const Value.absent(),
-    this.updatedAt = const Value.absent(),
-    this.deletedAt = const Value.absent(),
-    this.updateCounter = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : deviceUuid = Value(deviceUuid),
        deviceName = Value(deviceName);
@@ -3545,44 +3246,29 @@ class SyncedDevicesCompanion extends UpdateCompanion<SyncedDevice> {
     Expression<String>? deviceUuid,
     Expression<String>? deviceName,
     Expression<String>? customAlias,
+    Expression<String>? deviceType,
     Expression<String>? lastKnownIp,
     Expression<int>? lastKnownPort,
+    Expression<int>? protocolVersion,
+    Expression<String>? authKey,
     Expression<DateTime>? lastSeenAsHostAt,
     Expression<DateTime>? lastSeenAsClientAt,
     Expression<DateTime>? firstPairedAt,
-    Expression<DateTime>? blockedAt,
-    Expression<String>? publicKey,
-    Expression<String>? authKey,
-    Expression<int>? schemaVersion,
-    Expression<String>? deviceType,
-    Expression<int>? protocolVersion,
-    Expression<DateTime>? lastSuccessfulSyncAt,
-    Expression<DateTime>? updatedAt,
-    Expression<DateTime>? deletedAt,
-    Expression<int>? updateCounter,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (deviceUuid != null) 'device_uuid': deviceUuid,
       if (deviceName != null) 'device_name': deviceName,
       if (customAlias != null) 'custom_alias': customAlias,
+      if (deviceType != null) 'device_type': deviceType,
       if (lastKnownIp != null) 'last_known_ip': lastKnownIp,
       if (lastKnownPort != null) 'last_known_port': lastKnownPort,
+      if (protocolVersion != null) 'protocol_version': protocolVersion,
+      if (authKey != null) 'auth_key': authKey,
       if (lastSeenAsHostAt != null) 'last_seen_as_host_at': lastSeenAsHostAt,
       if (lastSeenAsClientAt != null)
         'last_seen_as_client_at': lastSeenAsClientAt,
       if (firstPairedAt != null) 'first_paired_at': firstPairedAt,
-      if (blockedAt != null) 'blocked_at': blockedAt,
-      if (publicKey != null) 'public_key': publicKey,
-      if (authKey != null) 'auth_key': authKey,
-      if (schemaVersion != null) 'schema_version': schemaVersion,
-      if (deviceType != null) 'device_type': deviceType,
-      if (protocolVersion != null) 'protocol_version': protocolVersion,
-      if (lastSuccessfulSyncAt != null)
-        'last_successful_sync_at': lastSuccessfulSyncAt,
-      if (updatedAt != null) 'updated_at': updatedAt,
-      if (deletedAt != null) 'deleted_at': deletedAt,
-      if (updateCounter != null) 'update_counter': updateCounter,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -3591,42 +3277,28 @@ class SyncedDevicesCompanion extends UpdateCompanion<SyncedDevice> {
     Value<String>? deviceUuid,
     Value<String>? deviceName,
     Value<String?>? customAlias,
+    Value<String?>? deviceType,
     Value<String?>? lastKnownIp,
     Value<int?>? lastKnownPort,
+    Value<int?>? protocolVersion,
+    Value<String?>? authKey,
     Value<DateTime?>? lastSeenAsHostAt,
     Value<DateTime?>? lastSeenAsClientAt,
     Value<DateTime>? firstPairedAt,
-    Value<DateTime?>? blockedAt,
-    Value<String?>? publicKey,
-    Value<String?>? authKey,
-    Value<int>? schemaVersion,
-    Value<String?>? deviceType,
-    Value<int?>? protocolVersion,
-    Value<DateTime?>? lastSuccessfulSyncAt,
-    Value<DateTime>? updatedAt,
-    Value<DateTime?>? deletedAt,
-    Value<int>? updateCounter,
     Value<int>? rowid,
   }) {
     return SyncedDevicesCompanion(
       deviceUuid: deviceUuid ?? this.deviceUuid,
       deviceName: deviceName ?? this.deviceName,
       customAlias: customAlias ?? this.customAlias,
+      deviceType: deviceType ?? this.deviceType,
       lastKnownIp: lastKnownIp ?? this.lastKnownIp,
       lastKnownPort: lastKnownPort ?? this.lastKnownPort,
+      protocolVersion: protocolVersion ?? this.protocolVersion,
+      authKey: authKey ?? this.authKey,
       lastSeenAsHostAt: lastSeenAsHostAt ?? this.lastSeenAsHostAt,
       lastSeenAsClientAt: lastSeenAsClientAt ?? this.lastSeenAsClientAt,
       firstPairedAt: firstPairedAt ?? this.firstPairedAt,
-      blockedAt: blockedAt ?? this.blockedAt,
-      publicKey: publicKey ?? this.publicKey,
-      authKey: authKey ?? this.authKey,
-      schemaVersion: schemaVersion ?? this.schemaVersion,
-      deviceType: deviceType ?? this.deviceType,
-      protocolVersion: protocolVersion ?? this.protocolVersion,
-      lastSuccessfulSyncAt: lastSuccessfulSyncAt ?? this.lastSuccessfulSyncAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-      deletedAt: deletedAt ?? this.deletedAt,
-      updateCounter: updateCounter ?? this.updateCounter,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -3643,11 +3315,20 @@ class SyncedDevicesCompanion extends UpdateCompanion<SyncedDevice> {
     if (customAlias.present) {
       map['custom_alias'] = Variable<String>(customAlias.value);
     }
+    if (deviceType.present) {
+      map['device_type'] = Variable<String>(deviceType.value);
+    }
     if (lastKnownIp.present) {
       map['last_known_ip'] = Variable<String>(lastKnownIp.value);
     }
     if (lastKnownPort.present) {
       map['last_known_port'] = Variable<int>(lastKnownPort.value);
+    }
+    if (protocolVersion.present) {
+      map['protocol_version'] = Variable<int>(protocolVersion.value);
+    }
+    if (authKey.present) {
+      map['auth_key'] = Variable<String>(authKey.value);
     }
     if (lastSeenAsHostAt.present) {
       map['last_seen_as_host_at'] = Variable<DateTime>(lastSeenAsHostAt.value);
@@ -3659,38 +3340,6 @@ class SyncedDevicesCompanion extends UpdateCompanion<SyncedDevice> {
     }
     if (firstPairedAt.present) {
       map['first_paired_at'] = Variable<DateTime>(firstPairedAt.value);
-    }
-    if (blockedAt.present) {
-      map['blocked_at'] = Variable<DateTime>(blockedAt.value);
-    }
-    if (publicKey.present) {
-      map['public_key'] = Variable<String>(publicKey.value);
-    }
-    if (authKey.present) {
-      map['auth_key'] = Variable<String>(authKey.value);
-    }
-    if (schemaVersion.present) {
-      map['schema_version'] = Variable<int>(schemaVersion.value);
-    }
-    if (deviceType.present) {
-      map['device_type'] = Variable<String>(deviceType.value);
-    }
-    if (protocolVersion.present) {
-      map['protocol_version'] = Variable<int>(protocolVersion.value);
-    }
-    if (lastSuccessfulSyncAt.present) {
-      map['last_successful_sync_at'] = Variable<DateTime>(
-        lastSuccessfulSyncAt.value,
-      );
-    }
-    if (updatedAt.present) {
-      map['updated_at'] = Variable<DateTime>(updatedAt.value);
-    }
-    if (deletedAt.present) {
-      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
-    }
-    if (updateCounter.present) {
-      map['update_counter'] = Variable<int>(updateCounter.value);
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -3704,21 +3353,14 @@ class SyncedDevicesCompanion extends UpdateCompanion<SyncedDevice> {
           ..write('deviceUuid: $deviceUuid, ')
           ..write('deviceName: $deviceName, ')
           ..write('customAlias: $customAlias, ')
+          ..write('deviceType: $deviceType, ')
           ..write('lastKnownIp: $lastKnownIp, ')
           ..write('lastKnownPort: $lastKnownPort, ')
+          ..write('protocolVersion: $protocolVersion, ')
+          ..write('authKey: $authKey, ')
           ..write('lastSeenAsHostAt: $lastSeenAsHostAt, ')
           ..write('lastSeenAsClientAt: $lastSeenAsClientAt, ')
           ..write('firstPairedAt: $firstPairedAt, ')
-          ..write('blockedAt: $blockedAt, ')
-          ..write('publicKey: $publicKey, ')
-          ..write('authKey: $authKey, ')
-          ..write('schemaVersion: $schemaVersion, ')
-          ..write('deviceType: $deviceType, ')
-          ..write('protocolVersion: $protocolVersion, ')
-          ..write('lastSuccessfulSyncAt: $lastSuccessfulSyncAt, ')
-          ..write('updatedAt: $updatedAt, ')
-          ..write('deletedAt: $deletedAt, ')
-          ..write('updateCounter: $updateCounter, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4568,14 +4210,6 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
     'idx_folders_active',
     'CREATE INDEX idx_folders_active ON folders (deleted_at)',
   );
-  late final Index idxSyncedDevicesUpdatedAt = Index(
-    'idx_synced_devices_updated_at',
-    'CREATE INDEX idx_synced_devices_updated_at ON synced_devices (updated_at)',
-  );
-  late final Index idxSyncedDevicesDeletedAt = Index(
-    'idx_synced_devices_deleted_at',
-    'CREATE INDEX idx_synced_devices_deleted_at ON synced_devices (deleted_at)',
-  );
   late final Index idxKeybindingsUpdatedAt = Index(
     'idx_keybindings_updated_at',
     'CREATE INDEX idx_keybindings_updated_at ON app_keybindings (updated_at)',
@@ -4606,8 +4240,6 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
     idxNotesFolder,
     idxFoldersUpdatedAt,
     idxFoldersActive,
-    idxSyncedDevicesUpdatedAt,
-    idxSyncedDevicesDeletedAt,
     idxKeybindingsUpdatedAt,
     idxKeybindingsDeletedAt,
   ];
@@ -5744,21 +5376,14 @@ typedef $$SyncedDevicesTableCreateCompanionBuilder =
       required String deviceUuid,
       required String deviceName,
       Value<String?> customAlias,
+      Value<String?> deviceType,
       Value<String?> lastKnownIp,
       Value<int?> lastKnownPort,
+      Value<int?> protocolVersion,
+      Value<String?> authKey,
       Value<DateTime?> lastSeenAsHostAt,
       Value<DateTime?> lastSeenAsClientAt,
       Value<DateTime> firstPairedAt,
-      Value<DateTime?> blockedAt,
-      Value<String?> publicKey,
-      Value<String?> authKey,
-      Value<int> schemaVersion,
-      Value<String?> deviceType,
-      Value<int?> protocolVersion,
-      Value<DateTime?> lastSuccessfulSyncAt,
-      Value<DateTime> updatedAt,
-      Value<DateTime?> deletedAt,
-      Value<int> updateCounter,
       Value<int> rowid,
     });
 typedef $$SyncedDevicesTableUpdateCompanionBuilder =
@@ -5766,21 +5391,14 @@ typedef $$SyncedDevicesTableUpdateCompanionBuilder =
       Value<String> deviceUuid,
       Value<String> deviceName,
       Value<String?> customAlias,
+      Value<String?> deviceType,
       Value<String?> lastKnownIp,
       Value<int?> lastKnownPort,
+      Value<int?> protocolVersion,
+      Value<String?> authKey,
       Value<DateTime?> lastSeenAsHostAt,
       Value<DateTime?> lastSeenAsClientAt,
       Value<DateTime> firstPairedAt,
-      Value<DateTime?> blockedAt,
-      Value<String?> publicKey,
-      Value<String?> authKey,
-      Value<int> schemaVersion,
-      Value<String?> deviceType,
-      Value<int?> protocolVersion,
-      Value<DateTime?> lastSuccessfulSyncAt,
-      Value<DateTime> updatedAt,
-      Value<DateTime?> deletedAt,
-      Value<int> updateCounter,
       Value<int> rowid,
     });
 
@@ -5808,6 +5426,11 @@ class $$SyncedDevicesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get deviceType => $composableBuilder(
+    column: $table.deviceType,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<String> get lastKnownIp => $composableBuilder(
     column: $table.lastKnownIp,
     builder: (column) => ColumnFilters(column),
@@ -5815,6 +5438,16 @@ class $$SyncedDevicesTableFilterComposer
 
   ColumnFilters<int> get lastKnownPort => $composableBuilder(
     column: $table.lastKnownPort,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get protocolVersion => $composableBuilder(
+    column: $table.protocolVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get authKey => $composableBuilder(
+    column: $table.authKey,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5830,56 +5463,6 @@ class $$SyncedDevicesTableFilterComposer
 
   ColumnFilters<DateTime> get firstPairedAt => $composableBuilder(
     column: $table.firstPairedAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get blockedAt => $composableBuilder(
-    column: $table.blockedAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get publicKey => $composableBuilder(
-    column: $table.publicKey,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get authKey => $composableBuilder(
-    column: $table.authKey,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get schemaVersion => $composableBuilder(
-    column: $table.schemaVersion,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get deviceType => $composableBuilder(
-    column: $table.deviceType,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get protocolVersion => $composableBuilder(
-    column: $table.protocolVersion,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get lastSuccessfulSyncAt => $composableBuilder(
-    column: $table.lastSuccessfulSyncAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
-    column: $table.updatedAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
-    column: $table.deletedAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get updateCounter => $composableBuilder(
-    column: $table.updateCounter,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -5908,6 +5491,11 @@ class $$SyncedDevicesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get deviceType => $composableBuilder(
+    column: $table.deviceType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get lastKnownIp => $composableBuilder(
     column: $table.lastKnownIp,
     builder: (column) => ColumnOrderings(column),
@@ -5915,6 +5503,16 @@ class $$SyncedDevicesTableOrderingComposer
 
   ColumnOrderings<int> get lastKnownPort => $composableBuilder(
     column: $table.lastKnownPort,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get protocolVersion => $composableBuilder(
+    column: $table.protocolVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get authKey => $composableBuilder(
+    column: $table.authKey,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -5930,56 +5528,6 @@ class $$SyncedDevicesTableOrderingComposer
 
   ColumnOrderings<DateTime> get firstPairedAt => $composableBuilder(
     column: $table.firstPairedAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get blockedAt => $composableBuilder(
-    column: $table.blockedAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get publicKey => $composableBuilder(
-    column: $table.publicKey,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get authKey => $composableBuilder(
-    column: $table.authKey,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get schemaVersion => $composableBuilder(
-    column: $table.schemaVersion,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get deviceType => $composableBuilder(
-    column: $table.deviceType,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get protocolVersion => $composableBuilder(
-    column: $table.protocolVersion,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get lastSuccessfulSyncAt => $composableBuilder(
-    column: $table.lastSuccessfulSyncAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
-    column: $table.updatedAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
-    column: $table.deletedAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get updateCounter => $composableBuilder(
-    column: $table.updateCounter,
     builder: (column) => ColumnOrderings(column),
   );
 }
@@ -6008,6 +5556,11 @@ class $$SyncedDevicesTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get deviceType => $composableBuilder(
+    column: $table.deviceType,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get lastKnownIp => $composableBuilder(
     column: $table.lastKnownIp,
     builder: (column) => column,
@@ -6017,6 +5570,14 @@ class $$SyncedDevicesTableAnnotationComposer
     column: $table.lastKnownPort,
     builder: (column) => column,
   );
+
+  GeneratedColumn<int> get protocolVersion => $composableBuilder(
+    column: $table.protocolVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get authKey =>
+      $composableBuilder(column: $table.authKey, builder: (column) => column);
 
   GeneratedColumn<DateTime> get lastSeenAsHostAt => $composableBuilder(
     column: $table.lastSeenAsHostAt,
@@ -6030,46 +5591,6 @@ class $$SyncedDevicesTableAnnotationComposer
 
   GeneratedColumn<DateTime> get firstPairedAt => $composableBuilder(
     column: $table.firstPairedAt,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<DateTime> get blockedAt =>
-      $composableBuilder(column: $table.blockedAt, builder: (column) => column);
-
-  GeneratedColumn<String> get publicKey =>
-      $composableBuilder(column: $table.publicKey, builder: (column) => column);
-
-  GeneratedColumn<String> get authKey =>
-      $composableBuilder(column: $table.authKey, builder: (column) => column);
-
-  GeneratedColumn<int> get schemaVersion => $composableBuilder(
-    column: $table.schemaVersion,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get deviceType => $composableBuilder(
-    column: $table.deviceType,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<int> get protocolVersion => $composableBuilder(
-    column: $table.protocolVersion,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<DateTime> get lastSuccessfulSyncAt => $composableBuilder(
-    column: $table.lastSuccessfulSyncAt,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<DateTime> get updatedAt =>
-      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get deletedAt =>
-      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
-
-  GeneratedColumn<int> get updateCounter => $composableBuilder(
-    column: $table.updateCounter,
     builder: (column) => column,
   );
 }
@@ -6110,41 +5631,27 @@ class $$SyncedDevicesTableTableManager
                 Value<String> deviceUuid = const Value.absent(),
                 Value<String> deviceName = const Value.absent(),
                 Value<String?> customAlias = const Value.absent(),
+                Value<String?> deviceType = const Value.absent(),
                 Value<String?> lastKnownIp = const Value.absent(),
                 Value<int?> lastKnownPort = const Value.absent(),
+                Value<int?> protocolVersion = const Value.absent(),
+                Value<String?> authKey = const Value.absent(),
                 Value<DateTime?> lastSeenAsHostAt = const Value.absent(),
                 Value<DateTime?> lastSeenAsClientAt = const Value.absent(),
                 Value<DateTime> firstPairedAt = const Value.absent(),
-                Value<DateTime?> blockedAt = const Value.absent(),
-                Value<String?> publicKey = const Value.absent(),
-                Value<String?> authKey = const Value.absent(),
-                Value<int> schemaVersion = const Value.absent(),
-                Value<String?> deviceType = const Value.absent(),
-                Value<int?> protocolVersion = const Value.absent(),
-                Value<DateTime?> lastSuccessfulSyncAt = const Value.absent(),
-                Value<DateTime> updatedAt = const Value.absent(),
-                Value<DateTime?> deletedAt = const Value.absent(),
-                Value<int> updateCounter = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SyncedDevicesCompanion(
                 deviceUuid: deviceUuid,
                 deviceName: deviceName,
                 customAlias: customAlias,
+                deviceType: deviceType,
                 lastKnownIp: lastKnownIp,
                 lastKnownPort: lastKnownPort,
+                protocolVersion: protocolVersion,
+                authKey: authKey,
                 lastSeenAsHostAt: lastSeenAsHostAt,
                 lastSeenAsClientAt: lastSeenAsClientAt,
                 firstPairedAt: firstPairedAt,
-                blockedAt: blockedAt,
-                publicKey: publicKey,
-                authKey: authKey,
-                schemaVersion: schemaVersion,
-                deviceType: deviceType,
-                protocolVersion: protocolVersion,
-                lastSuccessfulSyncAt: lastSuccessfulSyncAt,
-                updatedAt: updatedAt,
-                deletedAt: deletedAt,
-                updateCounter: updateCounter,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -6152,41 +5659,27 @@ class $$SyncedDevicesTableTableManager
                 required String deviceUuid,
                 required String deviceName,
                 Value<String?> customAlias = const Value.absent(),
+                Value<String?> deviceType = const Value.absent(),
                 Value<String?> lastKnownIp = const Value.absent(),
                 Value<int?> lastKnownPort = const Value.absent(),
+                Value<int?> protocolVersion = const Value.absent(),
+                Value<String?> authKey = const Value.absent(),
                 Value<DateTime?> lastSeenAsHostAt = const Value.absent(),
                 Value<DateTime?> lastSeenAsClientAt = const Value.absent(),
                 Value<DateTime> firstPairedAt = const Value.absent(),
-                Value<DateTime?> blockedAt = const Value.absent(),
-                Value<String?> publicKey = const Value.absent(),
-                Value<String?> authKey = const Value.absent(),
-                Value<int> schemaVersion = const Value.absent(),
-                Value<String?> deviceType = const Value.absent(),
-                Value<int?> protocolVersion = const Value.absent(),
-                Value<DateTime?> lastSuccessfulSyncAt = const Value.absent(),
-                Value<DateTime> updatedAt = const Value.absent(),
-                Value<DateTime?> deletedAt = const Value.absent(),
-                Value<int> updateCounter = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SyncedDevicesCompanion.insert(
                 deviceUuid: deviceUuid,
                 deviceName: deviceName,
                 customAlias: customAlias,
+                deviceType: deviceType,
                 lastKnownIp: lastKnownIp,
                 lastKnownPort: lastKnownPort,
+                protocolVersion: protocolVersion,
+                authKey: authKey,
                 lastSeenAsHostAt: lastSeenAsHostAt,
                 lastSeenAsClientAt: lastSeenAsClientAt,
                 firstPairedAt: firstPairedAt,
-                blockedAt: blockedAt,
-                publicKey: publicKey,
-                authKey: authKey,
-                schemaVersion: schemaVersion,
-                deviceType: deviceType,
-                protocolVersion: protocolVersion,
-                lastSuccessfulSyncAt: lastSuccessfulSyncAt,
-                updatedAt: updatedAt,
-                deletedAt: deletedAt,
-                updateCounter: updateCounter,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

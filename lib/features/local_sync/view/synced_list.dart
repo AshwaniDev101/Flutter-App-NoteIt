@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:noteit/core/sync/sync_engine.dart';
-import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
 import 'package:noteit/features/local_sync/data/network/local_sync_service.dart';
 import 'package:noteit/features/local_sync/data/network/mdns_broadcast.dart';
 import 'package:noteit/features/local_sync/data/providers/sync_server_provider.dart';
@@ -15,8 +14,6 @@ import '../../../shared/overlays/app_scaffold.dart';
 
 class SyncedDevicesListView extends ConsumerWidget {
   const SyncedDevicesListView({super.key});
-
-
 
   IconData _getPlatformIcon(String? platform) {
     switch (platform?.toLowerCase()) {
@@ -109,7 +106,7 @@ class SyncedDevicesListView extends ConsumerWidget {
                     margin: const EdgeInsets.only(bottom: 12.0),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha:0.2)),
+                      side: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: 0.2)),
                     ),
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
@@ -127,7 +124,7 @@ class SyncedDevicesListView extends ConsumerWidget {
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Text(
-                                  device.deviceName,
+                                  device.customAlias ?? device.deviceName,
                                   style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
@@ -136,48 +133,7 @@ class SyncedDevicesListView extends ConsumerWidget {
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                              if (device.blockedAt != null) ...[
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  margin: const EdgeInsets.only(right: 6),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(color: Colors.red.withValues(alpha: 0.5)),
-                                  ),
-                                  child: const Text(
-                                    'Blocked',
-                                    style: TextStyle(fontSize: 10, color: Colors.red, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ],
                               _RoleBadge(role: lastRole),
-                              // const SizedBox(width: 8),
-                              // IconButton(
-                              //   icon: Icon(
-                              //     device.blockedAt != null ? Icons.block : Icons.shield_outlined,
-                              //     size: 20,
-                              //     color: device.blockedAt != null ? Colors.red : null,
-                              //   ),
-                              //   tooltip: device.blockedAt != null ? 'Unblock device' : 'Block device',
-                              //   splashRadius: 20,
-                              //   constraints: const BoxConstraints(),
-                              //   padding: EdgeInsets.zero,
-                              //   onPressed: () async {
-                              //     final dao = ref.read(syncedDevicesDaoProvider);
-                              //     final willBlock = device.blockedAt == null;
-                              //     await dao.setDeviceBlocked(device.deviceUuid, isBlocked: willBlock);
-                              //
-                              //     if (context.mounted) {
-                              //       SnackBarManager.show(
-                              //         msg: willBlock
-                              //             ? '${device.deviceName} blocked'
-                              //             : '${device.deviceName} unblocked',
-                              //         type: SnackBarMessageType.acknowledgment,
-                              //       );
-                              //     }
-                              //   },
-                              // ),
                               const SizedBox(width: 8),
                               IconButton(
                                 icon: const Icon(Icons.delete_outline, size: 20),
@@ -223,7 +179,6 @@ class SyncedDevicesListView extends ConsumerWidget {
                                 label: 'UUID',
                                 value: device.deviceUuid,
                               ),
-                              // Conditional rendering for IP/Port
                               if (device.lastKnownIp != null || device.lastKnownPort != null)
                                 _CompactDetail(
                                   icon: Icons.network_check,
@@ -325,9 +280,9 @@ class _RoleBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha:0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha:0.5)),
+        border: Border.all(color: color.withValues(alpha: 0.5)),
       ),
       child: Text(
         role,
