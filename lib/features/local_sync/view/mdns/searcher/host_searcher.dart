@@ -16,7 +16,6 @@ import 'package:noteit/features/local_sync/view/widgets/sync_history_button.dart
 import 'package:noteit/shared/overlays/app_scaffold.dart';
 import 'package:noteit/shared/overlays/snack_bar_manager.dart';
 
-import '../../../../home/view/shared/icon_tray/icon_tray.dart';
 import '../../../../home/view/shared/sync_state_widget.dart';
 
 class HostSearcher extends ConsumerStatefulWidget {
@@ -254,46 +253,74 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
                           if (isConnectedToHost) ...[
                             AnimatedContainer(
                               duration: const Duration(milliseconds: 300),
-                              padding: const EdgeInsets.all(20),
+                              padding: const EdgeInsets.all(24),
                               decoration: BoxDecoration(
-                                color: Colors.green.withValues(alpha: 0.1),
+                                color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
                                 borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: Colors.green.withValues(alpha: 0.3),
+                                  width: 1.5,
+                                ),
                               ),
                               child: Column(
                                 children: [
-                                  const Icon(
-                                    Icons.check_circle_rounded,
-                                    size: 36,
-                                    color: Colors.green,
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.green.withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Container(
+                                          width: 8,
+                                          height: 8,
+                                          decoration: const BoxDecoration(
+                                            color: Colors.green,
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          'ACTIVE SESSION',
+                                          style: textTheme.labelSmall?.copyWith(
+                                            letterSpacing: 1.2,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.green.shade700,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.green.withValues(alpha: 0.15),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.check_circle_rounded,
+                                      size: 32,
+                                      color: Colors.green,
+                                    ),
                                   ),
                                   const SizedBox(height: 12),
                                   Text(
                                     hostTitle,
                                     textAlign: TextAlign.center,
-                                    style: textTheme.titleLarge?.copyWith(
-                                      color: Colors.green.shade800,
-                                      fontWeight: FontWeight.w600,
+                                    style: textTheme.titleMedium?.copyWith(
+                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
                                     subTitle,
                                     style: textTheme.bodySmall?.copyWith(
-                                      color: Colors.green.shade800,
+                                      color: colorScheme.onSurfaceVariant,
                                     ),
                                     textAlign: TextAlign.center,
-                                  ),
-                                  const SizedBox(height: 16),
-                                  FilledButton.tonalIcon(
-                                    onPressed: () => _disconnectAndExit(context),
-                                    icon: const Icon(Icons.link_off_rounded, size: 18),
-                                    label: const Text('Disconnect'),
-                                    style: FilledButton.styleFrom(
-                                      backgroundColor: colorScheme.errorContainer,
-                                      foregroundColor: colorScheme.onErrorContainer,
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                    ),
                                   ),
                                 ],
                               ),
@@ -349,7 +376,7 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
                                   children: [
                                     Flexible(
                                       child: Text(
-                                        'DISCOVERED HOSTS',
+                                        'DISCOVERED HOSTS (${devices.length})',
                                         style: textTheme.labelSmall?.copyWith(
                                           letterSpacing: 2,
                                           fontWeight: FontWeight.bold,
@@ -438,10 +465,11 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
                                           padding: const EdgeInsets.all(6),
                                           decoration: BoxDecoration(
                                             color: colorScheme.primaryContainer,
-                                            borderRadius: BorderRadius.circular(10),
+                                            shape: BoxShape.circle,
+                                            // borderRadius: BorderRadius.circular(10),
                                           ),
                                           child: Icon(
-                                            Icons.chevron_right_rounded,
+                                            Icons.question_mark,
                                             color: colorScheme.onPrimaryContainer,
                                             size: 18,
                                           ),
@@ -637,9 +665,18 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
                               const SyncHistoryButton(),
                               FilledButton.tonalIcon(
                                 onPressed: () => _disconnectAndExit(context),
-                                icon: const Icon(Icons.tune_rounded, size: 18),
-                                label: const Text('Change Role'),
+                                icon: Icon(
+                                  isConnectedToHost ? Icons.link_off_rounded : Icons.tune_rounded,
+                                  size: 18,
+                                ),
+                                label: Text(isConnectedToHost ? 'Disconnect' : 'Change Role'),
                                 style: FilledButton.styleFrom(
+                                  backgroundColor: isConnectedToHost
+                                      ? colorScheme.errorContainer
+                                      : null,
+                                  foregroundColor: isConnectedToHost
+                                      ? colorScheme.onErrorContainer
+                                      : null,
                                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(10),
