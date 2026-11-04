@@ -4,6 +4,7 @@ import 'package:noteit/core/sync/sync_engine.dart';
 import 'package:noteit/core/sync/sync_orchestrator.dart';
 import 'package:noteit/core/util/logger.dart';
 import 'package:noteit/database/firebase/auth/firebase_provider.dart';
+import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
 import 'package:noteit/features/home/view/shared/icon_tray/spinning_sync_icon.dart';
 import 'package:noteit/features/local_sync/data/network/local_sync_service.dart';
 import 'package:noteit/features/local_sync/data/network/mdns_searcher.dart';
@@ -39,6 +40,13 @@ enum _SyncDisplayState {
     color: Colors.cyanAccent,
     tooltip: 'Searching local network for Hosts...',
     isActionable: false,
+  ),
+  disconnected(
+    label: 'Disconnected',
+    icon: Icons.link_off_rounded,
+    color: Colors.grey,
+    tooltip: 'Disconnected from Host. Tap to open Host Searcher.',
+    isActionable: true,
   ),
   reconnecting(
     label: 'Reconnecting...',
@@ -216,6 +224,9 @@ class SyncStateWidget extends ConsumerWidget {
       if (isSearching) {
         return _SyncDisplayState.searching;
       }
+      if (!isHosting && localSyncState == SyncConnectionState.disconnected) {
+        return _SyncDisplayState.disconnected;
+      }
       return _SyncDisplayState.offline;
     }
 
@@ -243,6 +254,11 @@ class SyncStateWidget extends ConsumerWidget {
     _SyncDisplayState displayState,
   ) {
     AppLogger.d('SyncStateWidget: User tapped badge in state ${displayState.name}');
+
+    if (displayState == _SyncDisplayState.disconnected) {
+      ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.clientMode);
+      return;
+    }
 
     if (displayState == _SyncDisplayState.unauthenticated) {
       SnackBarManager.show(

@@ -1,10 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:noteit/core/config/config.dart';
 import 'package:noteit/core/sync/sync_engine.dart';
 import 'package:noteit/core/util/device_info.dart';
 import 'package:noteit/core/util/logger.dart';
-import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/database/drift/synced_devices/synced_devices_dao.dart';
 import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
 import 'package:noteit/features/local_sync/data/network/local_sync_service.dart';
@@ -14,7 +12,6 @@ import 'package:noteit/features/local_sync/data/providers/sync_client_provider.d
 import 'package:noteit/features/local_sync/data/providers/sync_server_provider.dart';
 import 'package:noteit/features/local_sync/data/providers/sync_session_provider.dart';
 import 'package:noteit/features/reminder/reminder_manager.dart';
-import 'package:noteit/shared/overlays/snack_bar_manager.dart';
 
 final startupInitializerProvider = NotifierProvider<StartupInitializer, void>(() {
   return StartupInitializer();
@@ -80,83 +77,7 @@ class StartupInitializer extends Notifier<void> {
           break;
         case SyncMode.localClient:
           AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Initializing connection protocol...');
-
-          final SyncedDevice? host = await ref.read(syncedDevicesDaoProvider).getMostRecentHost();
-
-          if (host == null) {
-            AppLogger.d('StartupInitializer: AutoSync [CLIENT]: No host found in DB.');
-            return;
-          }
-
-          final clientNotifier = ref.read(syncClientProvider.notifier);
-          bool connected = false;
-
-          // Fast Reconnect (Try DB IP and default port first)
-          if (host.lastKnownIp != null) {
-            final targetPort = host.lastKnownPort ?? AppConfig.defaultSyncPort;
-            AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Attempting Fast Reconnect to ${host.lastKnownIp}:$targetPort...');
-            try {
-              await clientNotifier.connectToHost(
-                ip: host.lastKnownIp!,
-                port: targetPort,
-                hostUuid: host.deviceUuid,
-                hostName: host.deviceName,
-                pin: null,
-                devicePlatform: host.deviceType ?? 'unknown',
-                protocolVersion: host.protocolVersion ?? 0,
-              );
-              connected = true;
-            } catch (e) {
-              AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Fast Reconnect to $targetPort failed.');
-              if (targetPort != AppConfig.defaultSyncPort) {
-                try {
-                  AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Trying default port ${AppConfig.defaultSyncPort}...');
-                  await clientNotifier.connectToHost(
-                    ip: host.lastKnownIp!,
-                    port: AppConfig.defaultSyncPort,
-                    hostUuid: host.deviceUuid,
-                    hostName: host.deviceName,
-                    pin: null,
-                    devicePlatform: host.deviceType ?? 'unknown',
-                    protocolVersion: host.protocolVersion ?? 0,
-                  );
-                  connected = true;
-                } catch (_) {}
-              }
-            }
-          }
-
-          // mDNS Radar Fallback
-          if (!connected) {
-            AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Starting mDNS radar...');
-            final mdnsResult = await ref.read(mdnsSearcherProvider.notifier).findServer(host.deviceUuid);
-
-            if (mdnsResult != null) {
-              AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Host found via mDNS at ${mdnsResult.ip}:${mdnsResult.port}.');
-
-              if (mdnsResult.protocolVersion != AppConfig.syncProtocolVersion) {
-                AppLogger.d('StartupInitializer: AutoSync [CLIENT]: BLOCKING CONNECTION - Version mismatch! Host is v${mdnsResult.protocolVersion}, we are v${AppConfig.syncProtocolVersion}.');
-                SnackBarManager.show(msg: "Please update NoteIt on your Device");
-                return;
-              }
-
-              try {
-                await clientNotifier.connectToHost(
-                  ip: mdnsResult.ip,
-                  port: mdnsResult.port,
-                  hostUuid: host.deviceUuid,
-                  hostName: host.deviceName,
-                  pin: null,
-                  devicePlatform: mdnsResult.deviceType,
-                  protocolVersion: mdnsResult.protocolVersion,
-                );
-              } catch (e) {
-                AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Failed to connect after mDNS discovery: $e');
-              }
-            } else {
-              AppLogger.d('StartupInitializer: AutoSync [CLIENT]: mDNS Radar timed out. Host unreachable.');
-            }
-          }
+          await ref.read(syncClientProvider.notifier).autoConnectToPairedHost();
           break;
       }
     } finally {

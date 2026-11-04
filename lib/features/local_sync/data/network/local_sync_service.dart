@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/core/sync/sync_engine.dart';
 import 'package:noteit/core/sync/sync_orchestrator.dart';
 import 'package:noteit/features/local_sync/data/processors/folder_sync_processor.dart';
 import 'package:noteit/features/local_sync/data/processors/note_sync_processor.dart';
 import 'package:noteit/features/local_sync/data/processors/sync_entity_processor.dart';
 import 'package:noteit/features/local_sync/data/providers/local_sync_session_manager.dart';
+import 'package:noteit/features/local_sync/data/providers/sync_client_provider.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import 'package:noteit/core/util/logger.dart';
@@ -43,10 +45,7 @@ class LocalSyncNotifier extends Notifier<SyncConnectionState> {
 
   @override
   SyncConnectionState build() {
-    ref.onDispose(() {
-      stop();
-    });
-
+    ref.onDispose(() => stop());
     return SyncConnectionState.disconnected;
   }
 
@@ -83,6 +82,7 @@ class LocalSyncNotifier extends Notifier<SyncConnectionState> {
     if (state != reason) {
       state = reason;
     }
+    ref.read(localSyncSessionProvider.notifier).updateConnectionState(reason);
   }
 
   void setActiveConnection(WebSocketChannel channel) {
@@ -189,8 +189,18 @@ class LocalSyncNotifier extends Notifier<SyncConnectionState> {
   /// Broadcast pending local changes across all entity processors in dependency order (Folders -> Notes)
   Future<void> broadcastLocalChanges() async {
     if (_activeChannel == null) {
-      AppLogger.d("LocalSyncService: Save detected, but no active Wi-Fi connection. Waiting.");
-      return;
+      final isClientMode = ref.read(syncModeProvider).isClient;
+      if (isClientMode) {
+        AppLogger.d("LocalSyncService: Save detected while disconnected. Running auto-connect protocol...");
+        final reconnected = await ref.read(syncClientProvider.notifier).autoConnectToPairedHost();
+        if (!reconnected || _activeChannel == null) {
+          AppLogger.d("LocalSyncService: Save detected, but host unreachable. Saved locally.");
+          return;
+        }
+      } else {
+        AppLogger.d("LocalSyncService: Save detected, but no active Wi-Fi connection. Waiting.");
+        return;
+      }
     }
 
     ref.read(isSyncingProvider.notifier).setSyncing(true);
@@ -220,90 +230,97 @@ class LocalSyncNotifier extends Notifier<SyncConnectionState> {
     }
   }
 
-  /// Handle incoming network messages across entity processors
-  Future<void> _handleIncomingSyncPayload(dynamic message) async {
-    _lastActivityTime = DateTime.now();
-    ref.read(isSyncingProvider.notifier).setSyncing(true);
-
+  /// Process incoming JSON payload from host or peer
+  void _handleIncomingSyncPayload(dynamic rawMessage) async {
     try {
-      final decoded = jsonDecode(message as String) as Map<String, dynamic>;
-      final type = decoded['type'] as String?;
+      final Map<String, dynamic> message = jsonDecode(rawMessage.toString());
+      final type = message['type'] as String?;
 
-      if (type == null) return;
+      _lastActivityTime = DateTime.now();
 
-      // --- HEARTBEAT & LIFECYCLE HANDLERS ---
+      if (type == 'ping') {
+        // Peer sent a ping -> respond with a pong immediately
+        _sendPong(message['ts']);
+        return;
+      }
+
+      if (type == 'pong') {
+        // Peer responded to our ping -> calculate RTT latency
+        final sentTs = message['ts'] as int?;
+        if (sentTs != null) {
+          _latencyMs = DateTime.now().millisecondsSinceEpoch - sentTs;
+          _lastPingSentTime = null;
+          AppLogger.d("LocalSyncService: Ping response received. RTT: ${_latencyMs}ms");
+
+          if (_probeCompleter != null && !_probeCompleter!.isCompleted) {
+            _probeCompleter!.complete(true);
+          }
+        }
+        return;
+      }
+
       if (type == 'disconnect') {
         AppLogger.d("LocalSyncService: Peer sent disconnect notice. Closing local channel.");
         stop();
         return;
       }
 
-      if (type == 'ping') {
-        final pongPayload = jsonEncode({
-          'type': 'pong',
-          'ts': decoded['ts'],
-        });
-        _activeChannel?.sink.add(pongPayload);
-
-        if (_probeCompleter != null && !_probeCompleter!.isCompleted) {
-          _probeCompleter!.complete(true);
-        }
-        return;
-      }
-
-      if (type == 'pong') {
-        if (_lastPingSentTime != null) {
-          _latencyMs = DateTime.now().difference(_lastPingSentTime!).inMilliseconds;
-          _lastPingSentTime = null;
-        }
-
-        if (_probeCompleter != null && !_probeCompleter!.isCompleted) {
-          _probeCompleter!.complete(true);
-        }
-        return;
-      }
-
-      // If any other valid message arrived, probe is also satisfied
-      if (_probeCompleter != null && !_probeCompleter!.isCompleted) {
-        _probeCompleter!.complete(true);
-      }
-
-      // --- SCENARIO 1: Receiving a batch of items ---
+      // Delegate data payload to registered processor
       for (final processor in _processors) {
         if (processor.batchType == type) {
-          final incomingList = (decoded['data'] as List<dynamic>?) ?? [];
-          final uuidsToAck = await processor.processIncomingLocalBatch(incomingList);
+          ref.read(isSyncingProvider.notifier).setSyncing(true);
+          ref.read(localSyncSessionProvider.notifier).setSyncing(true);
 
-          AppLogger.d("LocalSyncService: Successfully merged ${uuidsToAck.length} '${processor.entityName}' items from Wi-Fi.");
+          try {
+            final dataList = (message['data'] as List).cast<Map<String, dynamic>>();
+            final syncedUuids = await processor.processIncomingLocalBatch(dataList);
 
-          final ackPayload = jsonEncode({
-            'type': processor.ackType,
-            'uuids': uuidsToAck,
-          });
-
-          _activeChannel?.sink.add(ackPayload);
+            // Send acknowledgment back to peer
+            _sendAck(processor.ackType, syncedUuids.map((id) => {'uuid': id}).toList());
+          } finally {
+            ref.read(isSyncingProvider.notifier).setSyncing(false);
+            ref.read(localSyncSessionProvider.notifier).setSyncing(false);
+          }
           return;
         }
-      }
 
-      // --- SCENARIO 2: Receiving an ACK for sent items ---
-      for (final processor in _processors) {
-        // Match processor's ackType OR legacy 'ack_batch' for notes
-        final isMatch = processor.ackType == type ||
-            (type == 'ack_batch' && processor.entityName == 'note');
-
-        if (isMatch) {
-          final ackUuids = List<String>.from(decoded['uuids'] as List? ?? []);
+        if (processor.ackType == type) {
+          final dataList = (message['data'] as List).cast<Map<String, dynamic>>();
+          final ackUuids = dataList.map((e) => e['uuid'] as String?).whereType<String>().toList();
           await processor.markAsLocalSynced(ackUuids);
-
-          AppLogger.d("LocalSyncService: Peer acknowledged ${ackUuids.length} '${processor.entityName}' items. Marked as synced.");
           return;
         }
       }
+
+      AppLogger.w("LocalSyncService: Unhandled payload type: $type");
     } catch (e, st) {
-      AppLogger.e('LocalSyncService: Failed to parse incoming payload', error: e, stack: st);
-    } finally {
-      ref.read(isSyncingProvider.notifier).setSyncing(false);
+      AppLogger.e("LocalSyncService: Error processing sync payload", error: e, stack: st);
+    }
+  }
+
+  void _sendPong(dynamic ts) {
+    if (_activeChannel == null) return;
+    try {
+      final pongPayload = jsonEncode({
+        'type': 'pong',
+        'ts': ts,
+      });
+      _activeChannel!.sink.add(pongPayload);
+    } catch (e) {
+      AppLogger.w("LocalSyncService: Failed to send pong: $e");
+    }
+  }
+
+  void _sendAck(String ackType, List<Map<String, dynamic>> items) {
+    if (_activeChannel == null) return;
+    try {
+      final ackPayload = jsonEncode({
+        'type': ackType,
+        'data': items,
+      });
+      _activeChannel!.sink.add(ackPayload);
+    } catch (e) {
+      AppLogger.w("LocalSyncService: Failed to send ACK: $e");
     }
   }
 }
