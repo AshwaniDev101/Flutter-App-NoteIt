@@ -53,8 +53,7 @@ class LocalSyncNotifier extends Notifier<SyncConnectionState> {
     state = status;
   }
 
-  void stop({SyncConnectionState reason = SyncConnectionState.disconnected}) {
-    AppLogger.d("LocalSyncService: Shutting down Local Wi-Fi Sync ($reason).");
+  void _closeActiveResources() {
     _heartbeatTimer?.cancel();
     _heartbeatTimer = null;
     _lastPingSentTime = null;
@@ -78,6 +77,11 @@ class LocalSyncNotifier extends Notifier<SyncConnectionState> {
       } catch (_) {}
       _activeChannel = null;
     }
+  }
+
+  void stop({SyncConnectionState reason = SyncConnectionState.disconnected}) {
+    AppLogger.d("LocalSyncService: Shutting down Local Wi-Fi Sync ($reason).");
+    _closeActiveResources();
 
     if (state != reason) {
       state = reason;
@@ -86,8 +90,8 @@ class LocalSyncNotifier extends Notifier<SyncConnectionState> {
   }
 
   void setActiveConnection(WebSocketChannel channel) {
-    // Clean up previous channel if any
-    stop();
+    // Clean up previous channel resources cleanly without triggering session teardown
+    _closeActiveResources();
 
     _activeChannel = channel;
     _lastActivityTime = DateTime.now();

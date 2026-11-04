@@ -7,7 +7,6 @@ import 'package:noteit/database/drift/synced_devices/synced_devices_dao.dart';
 import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
 import 'package:noteit/features/home/core/providers.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
-import 'package:noteit/features/home/view/shared/icon_tray/icon_tray.dart';
 import 'package:noteit/features/local_sync/data/network/local_sync_service.dart';
 import 'package:noteit/features/local_sync/data/network/mdns_broadcast.dart';
 import 'package:noteit/features/local_sync/data/providers/local_sync_session_manager.dart';
