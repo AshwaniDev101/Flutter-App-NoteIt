@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/sync/sync_orchestrator.dart';
 import '../../../database/drift/folders/folders_dao.dart';
 import '../../../database/drift/local_database.dart';
 import '../../../database/drift/notes/notes_dao.dart';
@@ -64,6 +65,7 @@ class _MoveToFolderPageState extends ConsumerState<MoveToFolderPage> {
         name: result['name'],
         colorIndex: result['colorIndex'],
       );
+      ref.read(syncOrchestratorProvider).triggerSync();
     }
   }
 
@@ -82,6 +84,10 @@ class _MoveToFolderPageState extends ConsumerState<MoveToFolderPage> {
       for (final uuid in targetUuids) {
         final success = await notesDao.updateNoteFolder(uuid, folder.uuid);
         if (success) updatedCount++;
+      }
+
+      if (updatedCount > 0) {
+        ref.read(syncOrchestratorProvider).triggerSync();
       }
 
       // Clear pending moving note IDs state
@@ -185,6 +191,7 @@ class _MoveToFolderPageState extends ConsumerState<MoveToFolderPage> {
 
       case 'pin':
         await dao.toggleFolderPinStatus(folder.uuid);
+        ref.read(syncOrchestratorProvider).triggerSync();
         break;
 
       case 'update':
@@ -202,6 +209,7 @@ class _MoveToFolderPageState extends ConsumerState<MoveToFolderPage> {
             name: result['name'],
             colorIndex: result['colorIndex'],
           );
+          ref.read(syncOrchestratorProvider).triggerSync();
         }
         break;
 
@@ -232,6 +240,7 @@ class _MoveToFolderPageState extends ConsumerState<MoveToFolderPage> {
 
         if (confirm == true && mounted) {
           await dao.softDeleteFolder(folder.uuid, platform: 'desktop');
+          ref.read(syncOrchestratorProvider).triggerSync();
         }
         break;
     }
@@ -462,6 +471,7 @@ class _FolderGridCardState extends ConsumerState<_FolderGridCard> {
                     GestureDetector(
                       onTap: () {
                         ref.read(foldersDaoProvider).toggleFolderPinStatus(folder.uuid);
+                        ref.read(syncOrchestratorProvider).triggerSync();
                       },
                       child: Padding(
                         padding: const EdgeInsets.all(2.0),

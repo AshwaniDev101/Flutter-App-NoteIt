@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/helpers/platform_helper.dart';
 import '../../../shared/app_bars/app_search_bar.dart';
 
+import '../../../core/sync/sync_orchestrator.dart';
 import '../../../database/drift/folders/folders_dao.dart';
 import '../../../database/drift/local_database.dart';
 import '../../../database/drift/notes/notes_dao.dart';
@@ -367,6 +368,7 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
 
       case 'pin':
         await dao.toggleFolderPinStatus(folder.uuid);
+        ref.read(syncOrchestratorProvider).triggerSync();
         break;
 
       case 'update':
@@ -384,6 +386,7 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
             name: result['name'],
             colorIndex: result['colorIndex'],
           );
+          ref.read(syncOrchestratorProvider).triggerSync();
 
           if (widget.selectedFolder?.uuid == folder.uuid) {
             final updatedFolder = (await dao.select(dao.folders).get()).firstWhere((f) => f.uuid == folder.uuid);
@@ -419,6 +422,7 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
 
         if (confirm == true && mounted) {
           await dao.softDeleteFolder(folder.uuid, platform: 'desktop');
+          ref.read(syncOrchestratorProvider).triggerSync();
           if (widget.selectedFolder?.uuid == folder.uuid) {
             widget.onFolderSelected(null);
           }
@@ -439,6 +443,7 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
         name: result['name'],
         colorIndex: result['colorIndex'],
       );
+      ref.read(syncOrchestratorProvider).triggerSync();
     }
   }
 

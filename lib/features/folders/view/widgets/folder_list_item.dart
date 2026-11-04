@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/sync/sync_orchestrator.dart';
 import '../../../../database/drift/folders/folders_dao.dart';
 
 class FolderListItem extends ConsumerStatefulWidget {
@@ -70,6 +71,7 @@ class _FolderListItemState extends ConsumerState<FolderListItem> {
                             ? IconButton(
                           onPressed: () {
                             ref.read(foldersDaoProvider).toggleFolderPinStatus(folderData.uuid);
+                            ref.read(syncOrchestratorProvider).triggerSync();
                           },
                           icon: Icon(
                             isPinned ? Icons.push_pin_rounded : Icons.push_pin_outlined,
