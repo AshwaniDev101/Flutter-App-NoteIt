@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart' hide RepeatMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/core/sync/sync_orchestrator.dart';
 import 'package:noteit/database/drift/notes/notes_dao.dart';
 import '../../core/helpers/time_helper.dart';
 import '../../shared/overlays/snack_bar_manager.dart';
@@ -334,6 +335,7 @@ class _ReminderPageState extends ConsumerState<ReminderPage> {
         repeatMode: saveRepeatModeStr,
         customDays: saveCustomDaysStr,
       );
+      ref.read(syncOrchestratorProvider).triggerSync();
 
       final formattedLabel = ReminderManager.formatReminderLabel(
         saveDate,
@@ -365,6 +367,7 @@ class _ReminderPageState extends ConsumerState<ReminderPage> {
 
       // 2. Clear database timestamp
       await ref.read(notesDaoProvider).updateNoteReminder(widget.noteUuid, null);
+      ref.read(syncOrchestratorProvider).triggerSync();
 
       SnackBarManager.show(
         msg: 'Reminder cleared',

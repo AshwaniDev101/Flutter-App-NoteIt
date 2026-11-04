@@ -9,6 +9,7 @@ import 'package:window_manager/window_manager.dart';
 
 import '../../../../core/helpers/platform_helper.dart';
 import '../../../../core/helpers/time_helper.dart';
+import '../../../../core/sync/sync_orchestrator.dart';
 import '../../../../database/drift/local_database.dart';
 import '../../../../database/drift/notes/notes_dao.dart';
 import '../../../../shared/app_bars/desktop_window_controls.dart';
@@ -561,6 +562,7 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
 
                           if (!_isNewNote && _currentNoteWithFolder != null) {
                             await ref.read(notesDaoProvider).updateNoteFolder(_currentNoteWithFolder!.note.uuid, newFolderId);
+                            ref.read(syncOrchestratorProvider).triggerSync();
                           }
 
                           setState(() {

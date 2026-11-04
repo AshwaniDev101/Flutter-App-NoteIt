@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/helpers/time_helper.dart';
+import '../../../../core/sync/sync_orchestrator.dart';
 import '../../../../core/util/device_info.dart';
 import '../../../../database/drift/local_database.dart';
 import '../../../../database/drift/notes/notes_dao.dart';
@@ -572,6 +573,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
 
               if (!_isNewNote && _currentNoteWithFolder != null) {
                 await ref.read(notesDaoProvider).updateNoteFolder(_currentNoteWithFolder!.note.uuid, newFolderId);
+                ref.read(syncOrchestratorProvider).triggerSync();
               }
 
               setState(() {

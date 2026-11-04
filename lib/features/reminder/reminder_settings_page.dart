@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/router/router.dart';
 import '../../core/helpers/platform_helper.dart';
+import '../../core/sync/sync_orchestrator.dart';
 import '../../database/drift/notes/notes_dao.dart';
 import '../../database/shared_preference/shared_preference_manager.dart';
 
@@ -270,6 +271,7 @@ class _ReminderSettingsPageState extends ConsumerState<ReminderSettingsPage> {
                               onPressed: () async {
                                 await ReminderManager().cancelForNote(note.uuid);
                                 await notesDao.updateNoteReminder(note.uuid, null);
+                                ref.read(syncOrchestratorProvider).triggerSync();
                                 modalSetState(() {
                                   pendingNotes.removeAt(index);
                                 });
