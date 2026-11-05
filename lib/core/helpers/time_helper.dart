@@ -211,7 +211,7 @@ class TimeHelper {
     return _formatterCache.putIfAbsent('MMM d, h:mm a', () => DateFormat('MMM d, h:mm a')).format(dt);
   }
 
-  /// Safely converts various date/timestamp formats (int epoch ms, double, String ISO, DateTime) into UTC DateTime
+  /// Safely converts various date/timestamp formats (int epoch ms, double, String ISO, DateTime, Firestore Timestamp) into UTC DateTime
   static DateTime? parseToUtcDateTime(dynamic input) {
     if (input == null) return null;
     if (input is DateTime) return input.toUtc();
@@ -221,6 +221,15 @@ class TimeHelper {
     if (input is double) {
       return DateTime.fromMillisecondsSinceEpoch(input.toInt(), isUtc: true);
     }
+
+    // Handles Firestore Timestamp objects (or objects with a .toDate() method)
+    try {
+      final dynamic d = input;
+      final res = d.toDate();
+      if (res is DateTime) {
+        return res.toUtc();
+      }
+    } catch (_) {}
 
     final str = input.toString().trim();
     if (str.isEmpty || str == 'null') return null;

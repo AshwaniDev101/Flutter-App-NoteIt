@@ -59,6 +59,10 @@ class SharedPreferenceManager {
   /// Value: int (Epoch timestamp in milliseconds).
   static const String _keyLastSyncTime = 'last_sync_time';
 
+  /// Key for storing the timestamp of the last successful Firebase Cloud sync.
+  /// Value: int (Epoch timestamp in milliseconds).
+  static const String _keyLastCloudSyncTime = 'last_cloud_sync_time';
+
   // --- Theme & Interface Keys ---
 
   /// Key for storing the overall theme mode.
@@ -299,6 +303,14 @@ class SharedPreferenceManager {
   /// Clears the saved sync timestamp.
   Future<bool> clearSyncTime() async {
     return await _prefs.remove(_keyLastSyncTime);
+  }
+
+  /// Timestamp of the last successful Firebase Cloud sync operation (in milliseconds).
+  int get lastCloudSyncTime => _prefs.getInt(_keyLastCloudSyncTime) ?? 0;
+
+  /// Saves the last Cloud sync timestamp.
+  Future<bool> setLastCloudSyncTime(int timestamp) async {
+    return await _prefs.setInt(_keyLastCloudSyncTime, timestamp);
   }
 
   // =========================================================================

@@ -55,7 +55,6 @@ class SyncOrchestrator with WidgetsBindingObserver {
   void _stopAllLocalSyncServices() {
     AppLogger.d("SyncOrchestrator: Stopping all Local Wi-Fi Sync services...");
     ref.read(localSyncSessionProvider.notifier).endSession();
-    ref.read(sharedPreferenceProvider).setSyncMode(SyncMode.offline);
   }
 
   // The Master Switchboard: Turns background listeners on or off
