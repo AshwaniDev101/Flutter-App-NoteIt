@@ -32,7 +32,7 @@ enum _SyncDisplayState {
     icon: Icons.wifi,
     color: Colors.white,
     tooltip: 'Host server running, waiting for peer...',
-    isActionable: false,
+    isActionable: true,
   ),
   searching(
     label: 'Scanning...',
@@ -85,30 +85,171 @@ enum _SyncDisplayState {
   });
 }
 
+/// Calculated visual display info including state enum and dynamic tooltip.
+@immutable
+class SyncDisplayInfo {
+  final _SyncDisplayState state;
+  final String tooltip;
+
+  const SyncDisplayInfo({
+    required this.state,
+    required this.tooltip,
+  });
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SyncDisplayInfo &&
+          runtimeType == other.runtimeType &&
+          state == other.state &&
+          tooltip == other.tooltip;
+
+  @override
+  int get hashCode => state.hashCode ^ tooltip.hashCode;
+}
+
+/// Pure state calculation function for sync display info.
+SyncDisplayInfo calculateSyncDisplayInfo({
+  required SyncMode syncMode,
+  required bool isAuthenticated,
+  required SyncConnectionState localSyncState,
+  required bool isHosting,
+  required bool isSyncing,
+  required bool isSearching,
+}) {
+  // 1. Offline Mode
+  if (syncMode.isOffline) {
+    return SyncDisplayInfo(
+      state: _SyncDisplayState.offline,
+      tooltip: _SyncDisplayState.offline.tooltip,
+    );
+  }
+
+  // 2. Cloud Mode
+  if (syncMode.isCloud) {
+    if (!isAuthenticated) {
+      return SyncDisplayInfo(
+        state: _SyncDisplayState.unauthenticated,
+        tooltip: _SyncDisplayState.unauthenticated.tooltip,
+      );
+    }
+    if (isSyncing) {
+      return const SyncDisplayInfo(
+        state: _SyncDisplayState.syncing,
+        tooltip: 'Synchronizing notes with Cloud...',
+      );
+    }
+    return const SyncDisplayInfo(
+      state: _SyncDisplayState.synced,
+      tooltip: 'All notes synced with Cloud. Tap to force sync.',
+    );
+  }
+
+  // 3. Local Mode
+  if (syncMode.isLocal) {
+    // 3a. Connection recovery takes highest priority over transfers
+    if (localSyncState == SyncConnectionState.reconnecting ||
+        localSyncState == SyncConnectionState.connecting ||
+        localSyncState == SyncConnectionState.ghostDetected) {
+      return SyncDisplayInfo(
+        state: _SyncDisplayState.reconnecting,
+        tooltip: _SyncDisplayState.reconnecting.tooltip,
+      );
+    }
+
+    // 3b. Active transfer (only when connection is healthy)
+    if (isSyncing) {
+      return const SyncDisplayInfo(
+        state: _SyncDisplayState.syncing,
+        tooltip: 'Synchronizing notes locally...',
+      );
+    }
+
+    // 3c. Host Role Handling
+    if (syncMode.isHost || isHosting) {
+      if (localSyncState == SyncConnectionState.connected) {
+        return const SyncDisplayInfo(
+          state: _SyncDisplayState.synced,
+          tooltip: 'Synced with local client. Tap to force sync.',
+        );
+      }
+      return SyncDisplayInfo(
+        state: _SyncDisplayState.hosting,
+        tooltip: _SyncDisplayState.hosting.tooltip,
+      );
+    }
+
+    // 3d. Client Role Handling
+    if (syncMode.isClient) {
+      if (localSyncState == SyncConnectionState.connected) {
+        return const SyncDisplayInfo(
+          state: _SyncDisplayState.synced,
+          tooltip: 'Synced with Host. Tap to force sync.',
+        );
+      }
+      if (isSearching) {
+        return SyncDisplayInfo(
+          state: _SyncDisplayState.searching,
+          tooltip: _SyncDisplayState.searching.tooltip,
+        );
+      }
+      return SyncDisplayInfo(
+        state: _SyncDisplayState.disconnected,
+        tooltip: _SyncDisplayState.disconnected.tooltip,
+      );
+    }
+
+    // 3e. Undefined Role Handling
+    if (syncMode == SyncMode.localUndefined) {
+      return const SyncDisplayInfo(
+        state: _SyncDisplayState.disconnected,
+        tooltip: 'Local Sync enabled. Tap to select Host or Client role.',
+      );
+    }
+  }
+
+  return SyncDisplayInfo(
+    state: _SyncDisplayState.offline,
+    tooltip: _SyncDisplayState.offline.tooltip,
+  );
+}
+
+/// Derived Riverpod provider computing [SyncDisplayInfo] with fine-grained reactivity filters.
+final syncDisplayInfoProvider = Provider<SyncDisplayInfo>((ref) {
+  final syncMode = ref.watch(syncModeProvider);
+  final isAuthenticated = ref.watch(authStateProvider.select((a) => a.value != null));
+  final localSyncState = ref.watch(localSyncServiceProvider);
+  final isHosting = ref.watch(syncServerProvider.select((s) => s != null));
+  final isSyncing = ref.watch(isSyncingProvider);
+  final isSearching = ref.watch(mdnsSearcherProvider.select((s) => s.status == ScanStatus.scanning));
+
+  final info = calculateSyncDisplayInfo(
+    syncMode: syncMode,
+    isAuthenticated: isAuthenticated,
+    localSyncState: localSyncState,
+    isHosting: isHosting,
+    isSyncing: isSyncing,
+    isSearching: isSearching,
+  );
+
+  AppLogger.d(
+    'SyncStateWidget: State -> ${info.state.name} [mode: $syncMode, auth: $isAuthenticated, localState: $localSyncState, hosting: $isHosting, syncing: $isSyncing, searching: $isSearching]',
+  );
+
+  return info;
+});
+
 /// Single self-contained status widget for note synchronization.
 class SyncStateWidget extends ConsumerWidget {
   const SyncStateWidget({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final syncMode = ref.watch(syncModeProvider);
-    final isAuthenticated = ref.watch(authStateProvider).value != null;
-    final localSyncState = ref.watch(localSyncServiceProvider);
-    final isHosting = ref.watch(syncServerProvider) != null;
-    final isSyncing = ref.watch(isSyncingProvider);
-    final isSearching = ref.watch(mdnsSearcherProvider).status == ScanStatus.scanning;
-
-    final displayState = _evaluateState(
-      syncMode: syncMode,
-      isAuthenticated: isAuthenticated,
-      localSyncState: localSyncState,
-      isHosting: isHosting,
-      isSyncing: isSyncing,
-      isSearching: isSearching,
-    );
+    final displayInfo = ref.watch(syncDisplayInfoProvider);
+    final displayState = displayInfo.state;
 
     return Tooltip(
-      message: displayState.tooltip,
+      message: displayInfo.tooltip,
       child: AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
         transitionBuilder: (child, animation) {
@@ -157,82 +298,6 @@ class SyncStateWidget extends ConsumerWidget {
     );
   }
 
-  _SyncDisplayState _evaluateState({
-    required SyncMode syncMode,
-    required bool isAuthenticated,
-    required SyncConnectionState localSyncState,
-    required bool isHosting,
-    required bool isSyncing,
-    required bool isSearching,
-  }) {
-    final state = _calculateState(
-      syncMode: syncMode,
-      isAuthenticated: isAuthenticated,
-      localSyncState: localSyncState,
-      isHosting: isHosting,
-      isSyncing: isSyncing,
-      isSearching: isSearching,
-    );
-
-    AppLogger.d(
-      'SyncStateWidget: State -> ${state.name} [mode: $syncMode, auth: $isAuthenticated, localState: $localSyncState, hosting: $isHosting, syncing: $isSyncing, searching: $isSearching]',
-    );
-
-    return state;
-  }
-
-  _SyncDisplayState _calculateState({
-    required SyncMode syncMode,
-    required bool isAuthenticated,
-    required SyncConnectionState localSyncState,
-    required bool isHosting,
-    required bool isSyncing,
-    required bool isSearching,
-  }) {
-    // 1. Offline Mode
-    if (syncMode.isOffline) {
-      return _SyncDisplayState.offline;
-    }
-
-    // 2. Cloud Mode
-    if (syncMode.isCloud) {
-      if (!isAuthenticated) {
-        return _SyncDisplayState.unauthenticated;
-      }
-      if (isSyncing) {
-        return _SyncDisplayState.syncing;
-      }
-      return _SyncDisplayState.synced;
-    }
-
-    // 3. Local Mode
-    if (syncMode.isLocal) {
-      if (isSyncing) {
-        return _SyncDisplayState.syncing;
-      }
-      if (localSyncState == SyncConnectionState.reconnecting ||
-          localSyncState == SyncConnectionState.connecting ||
-          localSyncState == SyncConnectionState.ghostDetected) {
-        return _SyncDisplayState.reconnecting;
-      }
-      if (isHosting && localSyncState != SyncConnectionState.connected) {
-        return _SyncDisplayState.hosting;
-      }
-      if (localSyncState == SyncConnectionState.connected) {
-        return _SyncDisplayState.synced;
-      }
-      if (isSearching) {
-        return _SyncDisplayState.searching;
-      }
-      if (!isHosting && localSyncState == SyncConnectionState.disconnected) {
-        return _SyncDisplayState.disconnected;
-      }
-      return _SyncDisplayState.offline;
-    }
-
-    return _SyncDisplayState.offline;
-  }
-
   Widget _buildIcon(_SyncDisplayState displayState) {
     if (displayState == _SyncDisplayState.syncing) {
       return SpinningSyncIcon(
@@ -253,13 +318,29 @@ class SyncStateWidget extends ConsumerWidget {
     WidgetRef ref,
     _SyncDisplayState displayState,
   ) {
-    AppLogger.d('SyncStateWidget: User tapped badge in state ${displayState.name}');
+    final syncMode = ref.read(syncModeProvider);
+    AppLogger.d('SyncStateWidget: User tapped badge in state ${displayState.name} (mode: $syncMode)');
 
+    // Undefined Role -> Role Selector Page
+    if (syncMode == SyncMode.localUndefined) {
+      ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.localSync);
+      return;
+    }
+
+    // Host waiting / Host error -> Host Broadcaster Screen
+    if (displayState == _SyncDisplayState.hosting ||
+        (syncMode.isHost && displayState == _SyncDisplayState.disconnected)) {
+      ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.hostMode);
+      return;
+    }
+
+    // Client disconnected / Client error -> Host Searcher Screen
     if (displayState == _SyncDisplayState.disconnected) {
       ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.clientMode);
       return;
     }
 
+    // Unauthenticated Cloud Mode -> Google Sign In
     if (displayState == _SyncDisplayState.unauthenticated) {
       SnackBarManager.show(
         msg: 'Please sign in with Google to enable Cloud Sync',
@@ -269,6 +350,7 @@ class SyncStateWidget extends ConsumerWidget {
       return;
     }
 
+    // Synced -> Force Sync
     if (displayState == _SyncDisplayState.synced) {
       ref.read(syncOrchestratorProvider).triggerSync();
       SnackBarManager.show(
@@ -279,3 +361,4 @@ class SyncStateWidget extends ConsumerWidget {
     }
   }
 }
+
