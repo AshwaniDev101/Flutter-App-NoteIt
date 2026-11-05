@@ -45,8 +45,7 @@ class StartupInitializer extends Notifier<void> {
 
       ReminderManager().rearmPendingReminders();
 
-      final spp = ref.read(sharedPreferenceProvider);
-      final mode = spp.syncMode;
+      final mode = ref.read(syncModeProvider);
 
       if (!mode.isLocal) {
         AppLogger.d('StartupInitializer: SyncMode is $mode (not local). Skipping local sync startup.');
@@ -64,7 +63,6 @@ class StartupInitializer extends Notifier<void> {
           final hasPaired = await ref.read(syncedDevicesDaoProvider).hasPairedDevices();
           if (!hasPaired) {
             AppLogger.d('StartupInitializer: AutoSync [HOST]: No paired devices in DB. Resetting mode to offline.');
-            await spp.setSyncMode(SyncMode.offline);
             await ref.read(syncModeProvider.notifier).setMode(SyncMode.offline);
             return;
           }
@@ -88,8 +86,7 @@ class StartupInitializer extends Notifier<void> {
   void onAppPaused() {
     AppLogger.d('StartupInitializer: App went to the background');
 
-    final spp = ref.read(sharedPreferenceProvider);
-    final mode = spp.syncMode;
+    final mode = ref.read(syncModeProvider);
     if (!mode.isLocal) {
       return;
     }
@@ -109,8 +106,7 @@ class StartupInitializer extends Notifier<void> {
 
     ReminderManager().rearmPendingReminders();
 
-    final spp = ref.read(sharedPreferenceProvider);
-    final mode = spp.syncMode;
+    final mode = ref.read(syncModeProvider);
     if (!mode.isLocal) {
       return;
     }

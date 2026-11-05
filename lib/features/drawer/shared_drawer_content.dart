@@ -127,75 +127,75 @@ class _SharedDrawerContentState extends ConsumerState<SharedDrawerContent> {
           Divider(height: 1, color: colorScheme.surfaceContainerHighest),
 
           //'Sign Out' : 'Sign In',
-          Container(
-            color: colorScheme.surfaceContainerLowest, // Optional: slightly distinct footer background
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-            child: Column(
-              children: [
-                // Auth Button
-                StreamBuilder<User?>(
-                  initialData: FirebaseAuth.instance.currentUser,
-                  stream: FirebaseAuth.instance.authStateChanges(),
-                  builder: (context, snapshot) {
-                    final user = snapshot.data;
-                    final isSignedIn = user != null;
-
-                    return _ActionContainer(
-                      title: isSignedIn ? 'Sign Out' : 'Sign In',
-                      subtitle: isSignedIn ? (user.displayName ?? 'Account') : 'Sync your data',
-                      icon: isSignedIn ? Icons.logout_rounded : Icons.login_rounded,
-                      backgroundColor: isSignedIn ? colorScheme.surfaceContainerHighest : colorScheme.primaryContainer,
-                      foregroundColor: isSignedIn ? colorScheme.onSurfaceVariant : colorScheme.onPrimaryContainer,
-                      onTap: () async {
-                        if (isSignedIn) {
-                          await ref.read(authRepositoryProvider).signOut();
-                        } else {
-                          await ref.read(authRepositoryProvider).signInWithGoogle();
-                        }
-                        widget.onClose();
-                      },
-                    );
-                  },
-                ),
-
-                const SizedBox(height: 20),
-
-                // Theme Toggle
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.light_mode_rounded,
-                      size: 18,
-                      color: !isDarkMode ? colorScheme.primary : colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-                    ),
-                    const SizedBox(width: 8),
-                    AppSwitch(
-                      value: isDarkMode,
-                      inactiveThumbColor: colorScheme.surface,
-                      inactiveTrackColor: colorScheme.surfaceContainerHighest,
-                      // thumbIcon: WidgetStateProperty.resolveWith((states) {
-                      //   if (states.contains(WidgetState.selected)) {
-                      //     return Icon(Icons.dark_mode_rounded, size: 12, color: colorScheme.primary);
-                      //   }
-                      //   return Icon(Icons.light_mode_rounded, size: 12, color: colorScheme.onSurfaceVariant);
-                      // }),
-                      onChanged: (value) {
-                        final newTheme = value ? AppThemeType.dark : AppThemeType.light;
-                        ref.read(themeProvider.notifier).setTheme(newTheme);
-                      },
-                    ),
-                    const SizedBox(width: 8),
-                    Icon(
-                      Icons.dark_mode_rounded,
-                      size: 18,
-                      color: isDarkMode ? colorScheme.primary : colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
+          // Container(
+          //   color: colorScheme.surfaceContainerLowest, // Optional: slightly distinct footer background
+          //   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          //   child: Column(
+          //     children: [
+          //       // Auth Button
+          //       StreamBuilder<User?>(
+          //         initialData: FirebaseAuth.instance.currentUser,
+          //         stream: FirebaseAuth.instance.authStateChanges(),
+          //         builder: (context, snapshot) {
+          //           final user = snapshot.data;
+          //           final isSignedIn = user != null;
+          //
+          //           return _ActionContainer(
+          //             title: isSignedIn ? 'Sign Out' : 'Sign In',
+          //             subtitle: isSignedIn ? (user.displayName ?? 'Account') : 'Sync your data',
+          //             icon: isSignedIn ? Icons.logout_rounded : Icons.login_rounded,
+          //             backgroundColor: isSignedIn ? colorScheme.surfaceContainerHighest : colorScheme.primaryContainer,
+          //             foregroundColor: isSignedIn ? colorScheme.onSurfaceVariant : colorScheme.onPrimaryContainer,
+          //             onTap: () async {
+          //               if (isSignedIn) {
+          //                 await ref.read(authRepositoryProvider).signOut();
+          //               } else {
+          //                 await ref.read(authRepositoryProvider).signInWithGoogle();
+          //               }
+          //               widget.onClose();
+          //             },
+          //           );
+          //         },
+          //       ),
+          //
+          //       const SizedBox(height: 20),
+          //
+          //       // Theme Toggle
+          //       Row(
+          //         mainAxisAlignment: MainAxisAlignment.center,
+          //         children: [
+          //           Icon(
+          //             Icons.light_mode_rounded,
+          //             size: 18,
+          //             color: !isDarkMode ? colorScheme.primary : colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+          //           ),
+          //           const SizedBox(width: 8),
+          //           AppSwitch(
+          //             value: isDarkMode,
+          //             inactiveThumbColor: colorScheme.surface,
+          //             inactiveTrackColor: colorScheme.surfaceContainerHighest,
+          //             // thumbIcon: WidgetStateProperty.resolveWith((states) {
+          //             //   if (states.contains(WidgetState.selected)) {
+          //             //     return Icon(Icons.dark_mode_rounded, size: 12, color: colorScheme.primary);
+          //             //   }
+          //             //   return Icon(Icons.light_mode_rounded, size: 12, color: colorScheme.onSurfaceVariant);
+          //             // }),
+          //             onChanged: (value) {
+          //               final newTheme = value ? AppThemeType.dark : AppThemeType.light;
+          //               ref.read(themeProvider.notifier).setTheme(newTheme);
+          //             },
+          //           ),
+          //           const SizedBox(width: 8),
+          //           Icon(
+          //             Icons.dark_mode_rounded,
+          //             size: 18,
+          //             color: isDarkMode ? colorScheme.primary : colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+          //           ),
+          //         ],
+          //       ),
+          //     ],
+          //   ),
+          // ),
         ],
       ),
     );

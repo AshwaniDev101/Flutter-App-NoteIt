@@ -3,7 +3,9 @@ import 'dart:io';
 
 import 'package:path_provider/path_provider.dart';
 
+import '../../core/sync/sync_engine.dart';
 import '../../core/util/logger.dart';
+import '../../database/shared_preference/shared_preference_manager.dart';
 import 'profile_model.dart';
 
 /// Centralized repository for creating, reading, updating, and deleting
@@ -71,6 +73,27 @@ class ProfileRepository {
     if (_profiles.isEmpty) {
       _profiles.add(defaultProfile);
       await _saveManifest();
+    }
+
+    // Migrate legacy global syncMode from SharedPreferences to default profile if necessary
+    await _migrateLegacySyncMode();
+  }
+
+  Future<void> _migrateLegacySyncMode() async {
+    try {
+      final legacyMode = SharedPreferenceManager.instance.syncMode;
+      if (legacyMode != SyncMode.offline) {
+        final defaultIndex = _profiles.indexWhere((p) => p.isDefault);
+        if (defaultIndex != -1 && _profiles[defaultIndex].syncMode == 'offline') {
+          _profiles[defaultIndex] = _profiles[defaultIndex].copyWith(
+            syncMode: legacyMode.name,
+          );
+          await _saveManifest();
+          AppLogger.d('ProfileRepository: Migrated legacy syncMode (${legacyMode.name}) to default profile.');
+        }
+      }
+    } catch (e) {
+      AppLogger.w('ProfileRepository: Failed to migrate legacy syncMode: $e');
     }
   }
 

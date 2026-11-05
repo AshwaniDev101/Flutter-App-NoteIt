@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/core/sync/sync_engine.dart';
 import 'package:noteit/core/util/logger.dart';
 import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
 import 'package:noteit/features/local_sync/data/network/local_sync_service.dart';
@@ -17,14 +18,35 @@ class LocalSyncSessionManager extends Notifier<LocalSyncSession> {
   @override
   LocalSyncSession build() {
     ref.onDispose(() {
-      endSession();
+      Future.microtask(() {
+        _cleanupResources(SyncConnectionState.disconnected);
+      });
     });
 
-    final currentRole = ref.watch(sharedPreferenceProvider).syncRole;
+    final mode = ref.watch(syncModeProvider);
+    final currentRole = mode.isHost
+        ? SyncRole.host
+        : (mode.isClient ? SyncRole.client : SyncRole.undefine);
     return LocalSyncSession(
       activeRole: currentRole,
       connectionState: SyncConnectionState.disconnected,
     );
+  }
+
+  /// Closes underlying sockets, channels, timers, searchers, and mDNS broadcasts.
+  /// Safe to call inside `ref.onDispose` as it does NOT modify [state].
+  void _cleanupResources(SyncConnectionState reason) {
+    AppLogger.d('LocalSyncSessionManager: Cleaning up session resources (Reason: $reason)...');
+
+    // 1. Stop traffic controller socket & timers
+    ref.read(localSyncServiceProvider.notifier).stop(reason: reason);
+
+    // 2. Shut down dialer channel if active
+    ref.read(syncClientProvider.notifier).disconnect();
+
+    // 3. Stop mDNS searcher & broadcast
+    ref.read(mdnsSearcherProvider.notifier).stopScan();
+    ref.read(mdnsBroadcastProvider.notifier).stopBroadcasting();
   }
 
   /// Called when a P2P WebSocket handshake completes successfully.
@@ -82,20 +104,16 @@ class LocalSyncSessionManager extends Notifier<LocalSyncSession> {
 
     AppLogger.d('LocalSyncSessionManager: Ending session (Reason: $reason)...');
 
-    // 1. Stop traffic controller socket & timers
-    ref.read(localSyncServiceProvider.notifier).stop(reason: reason);
-
-    // 2. Shut down dialer channel if active
-    ref.read(syncClientProvider.notifier).disconnect();
-
-    // 3. Stop mDNS searcher & broadcast
-    ref.read(mdnsSearcherProvider.notifier).stopScan();
-    ref.read(mdnsBroadcastProvider.notifier).stopBroadcasting();
+    _cleanupResources(reason);
 
     // 4. Reset immutable session state
+    final mode = ref.read(syncModeProvider);
+    final activeRole = mode.isHost
+        ? SyncRole.host
+        : (mode.isClient ? SyncRole.client : SyncRole.undefine);
     state = LocalSyncSession(
       connectionState: reason,
-      activeRole: ref.read(sharedPreferenceProvider).syncRole,
+      activeRole: activeRole,
     );
   }
 }

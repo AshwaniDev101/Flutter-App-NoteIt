@@ -19,7 +19,6 @@ import '../../../drawer/mobile_app_drawer.dart';
 import '../../core/note_tap_handler.dart';
 import '../../core/providers.dart';
 import '../../viewmodel/viewmodel.dart';
-import '../shared/icon_tray/icon_tray.dart';
 
 // ==========================================
 // MOBILE HOME PAGE

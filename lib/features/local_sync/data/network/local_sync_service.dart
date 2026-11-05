@@ -45,7 +45,7 @@ class LocalSyncNotifier extends Notifier<SyncConnectionState> {
 
   @override
   SyncConnectionState build() {
-    ref.onDispose(() => stop());
+    ref.onDispose(() => _closeActiveResources());
     return SyncConnectionState.disconnected;
   }
 
@@ -86,7 +86,6 @@ class LocalSyncNotifier extends Notifier<SyncConnectionState> {
     if (state != reason) {
       state = reason;
     }
-    ref.read(localSyncSessionProvider.notifier).updateConnectionState(reason);
   }
 
   void setActiveConnection(WebSocketChannel channel) {

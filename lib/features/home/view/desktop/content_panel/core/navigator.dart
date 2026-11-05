@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:noteit/core/router/router.dart';
 import 'package:noteit/core/helpers/platform_helper.dart';
-import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
+import 'package:noteit/core/sync/sync_engine.dart';
 import 'package:noteit/features/home/core/providers.dart';
 
 import 'package:noteit/features/local_sync/data/providers/local_sync_session_manager.dart';
@@ -28,7 +28,7 @@ class DrawerNavigationController {
 
     var targetOption = option;
     if (option == RightPanelPageOptions.localSync) {
-      final mode = ref.read(sharedPreferenceProvider).syncMode;
+      final mode = ref.read(syncModeProvider);
       final activeSession = ref.read(localSyncSessionProvider);
       final isConnected = activeSession.isConnected;
       final isHosting = ref.read(syncServerProvider) != null;

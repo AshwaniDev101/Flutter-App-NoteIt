@@ -25,7 +25,7 @@ class _RoleSelectorPageState extends ConsumerState<RoleSelectorPage> {
   @override
   void initState() {
     super.initState();
-    final mode = ref.read(sharedPreferenceProvider).syncMode;
+    final mode = ref.read(syncModeProvider);
     if (mode.isClient) {
       _isClient = true;
     } else if (mode.isHost) {
@@ -40,7 +40,7 @@ class _RoleSelectorPageState extends ConsumerState<RoleSelectorPage> {
     setState(() {
       _isClient = isClient;
     });
-    ref.read(sharedPreferenceProvider).setSyncMode(
+    ref.read(syncModeProvider.notifier).setMode(
           isClient ? SyncMode.localClient : SyncMode.localHost,
         );
   }
@@ -164,14 +164,17 @@ class _RoleSelectorPageState extends ConsumerState<RoleSelectorPage> {
           child: FilledButton.icon(
             key: ValueKey<bool>(_isClient),
             onPressed: () async {
+              final nav = ref.read(drawerNavigationProvider);
+              final currentContext = context;
               if (_isClient) {
                 // CLIENT MODE: Stop any active Host server & mDNS broadcasting
                 ref.read(syncServerProvider.notifier).stopHosting();
                 ref.read(mdnsBroadcastProvider.notifier).stopBroadcasting();
                 await ref.read(syncModeProvider.notifier).setMode(SyncMode.localClient);
 
+                if (!mounted) return;
                 final option = RightPanelPageOptions.clientMode;
-                ref.read(drawerNavigationProvider).navigate(context, option);
+                nav.navigate(currentContext, option);
               } else {
                 // HOST MODE: Stop any active Client dialer & mDNS scanning
                 ref.read(syncClientProvider.notifier).disconnect();
@@ -183,8 +186,8 @@ class _RoleSelectorPageState extends ConsumerState<RoleSelectorPage> {
                 ref.invalidate(syncSessionProvider);
                 ref.invalidate(serverHostingProvider);
 
-                if (!context.mounted) return;
-                ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.hostMode);
+                if (!mounted) return;
+                nav.navigate(currentContext, RightPanelPageOptions.hostMode);
               }
             },
             icon: Icon(_isClient ? Icons.search_rounded : Icons.wifi_tethering_rounded),

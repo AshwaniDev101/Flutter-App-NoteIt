@@ -56,7 +56,7 @@ class AppSwitch extends StatelessWidget {
       value: value,
       onChanged: onChanged != null ? _handleChanged : null,
       thumbIcon: thumbIcon,
-      activeColor: activeColor,
+      activeThumbColor: activeColor,
       inactiveThumbColor: inactiveThumbColor,
       inactiveTrackColor: inactiveTrackColor,
     );

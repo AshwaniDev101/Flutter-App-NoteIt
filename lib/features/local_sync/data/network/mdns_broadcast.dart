@@ -25,7 +25,7 @@ class MdnsBroadcastNotifier extends Notifier<Registration?> {
   @override
   Registration? build() {
     ref.onDispose(() {
-      stopBroadcasting();
+      _closeNativeRegistration();
     });
     return _globalActiveRegistration;
   }
@@ -76,21 +76,25 @@ class MdnsBroadcastNotifier extends Notifier<Registration?> {
     }
   }
 
-  /// Call this ONLY if you need a manual button to stop syncing while staying on the page.
-  /// (The onDispose block handles the automatic cleanup when leaving the page).
-  Future<void> stopBroadcasting() async {
+  void _closeNativeRegistration() {
     if (_globalActiveRegistration != null) {
       final regToCancel = _globalActiveRegistration!;
-
       _globalActiveRegistration = null;
-      state = null;
-
       try {
-        await unregister(regToCancel);
+        unregister(regToCancel);
         AppLogger.d('MdnsBroadcastNotifier: Stopped broadcasting successfully');
       } catch (e) {
         AppLogger.e('MdnsBroadcastNotifier: Unregister error', error: e);
       }
+    }
+  }
+
+  /// Call this ONLY if you need a manual button to stop syncing while staying on the page.
+  /// (The onDispose block handles the automatic cleanup when leaving the page).
+  Future<void> stopBroadcasting() async {
+    _closeNativeRegistration();
+    if (state != null) {
+      state = null;
     }
   }
 }

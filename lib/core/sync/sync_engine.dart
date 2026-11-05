@@ -1,9 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:noteit/feature/profiles/active_profile_provider.dart';
-import 'package:noteit/feature/profiles/profile_providers.dart';
 import 'package:noteit/core/util/logger.dart';
 import 'package:noteit/database/firebase/auth/firebase_provider.dart';
-import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
+
+import '../../features/profiles/active_profile_provider.dart';
+import '../../features/profiles/profile_providers.dart';
 
 /// Legacy enum kept for backwards compatibility during migration.
 enum SyncEngine { cloud, local, offline }
@@ -57,12 +57,20 @@ final syncEngineProvider = NotifierProvider<SyncEngineNotifier, SyncEngine>(() {
 class SyncModeNotifier extends Notifier<SyncMode> {
   @override
   SyncMode build() {
-    return ref.watch(sharedPreferenceProvider).syncMode;
+    final activeProfile = ref.watch(activeProfileProvider);
+    return SyncMode.values.firstWhere(
+      (e) => e.name == activeProfile.syncMode,
+      orElse: () => SyncMode.offline,
+    );
   }
 
   Future<void> setMode(SyncMode newMode) async {
-    await ref.read(sharedPreferenceProvider).setSyncMode(newMode);
-    state = newMode;
+    final activeProfile = ref.read(activeProfileProvider);
+    if (activeProfile.syncMode == newMode.name) return;
+
+    final updated = activeProfile.copyWith(syncMode: newMode.name);
+    await ref.read(profilesListProvider.notifier).updateProfile(updated);
+    ref.read(activeProfileProvider.notifier).updateActiveProfile(updated);
   }
 
   /// Attempts to switch sync mode with an Auth Guard.
@@ -83,10 +91,14 @@ class SyncModeNotifier extends Notifier<SyncMode> {
 
       if (activeProfile.linkedEmail == null) {
         // Automatically link current email to active profile upon cloud sync enable
-        final updated = activeProfile.copyWith(linkedEmail: userEmail);
+        final updated = activeProfile.copyWith(
+          linkedEmail: userEmail,
+          syncMode: SyncMode.cloud.name,
+        );
         await ref.read(profilesListProvider.notifier).updateProfile(updated);
-        ref.read(activeProfileProvider.notifier).state = updated;
-        AppLogger.d("SyncModeNotifier: Linked profile ${activeProfile.name} to $userEmail");
+        ref.read(activeProfileProvider.notifier).updateActiveProfile(updated);
+        AppLogger.d("SyncModeNotifier: Linked profile ${activeProfile.name} to $userEmail and set cloud mode");
+        return true;
       } else if (activeProfile.linkedEmail != userEmail) {
         AppLogger.w("SyncModeNotifier: Profile linked email (${activeProfile.linkedEmail}) differs from current account ($userEmail). Prompting Google Sign-In...");
         final user = await authRepo.signInWithGoogle();
@@ -105,12 +117,16 @@ class SyncModeNotifier extends Notifier<SyncMode> {
 
     if (user != null && user.email != null) {
       if (activeProfile.linkedEmail == null) {
-        final updated = activeProfile.copyWith(linkedEmail: user.email);
+        final updated = activeProfile.copyWith(
+          linkedEmail: user.email,
+          syncMode: SyncMode.cloud.name,
+        );
         await ref.read(profilesListProvider.notifier).updateProfile(updated);
-        ref.read(activeProfileProvider.notifier).state = updated;
+        ref.read(activeProfileProvider.notifier).updateActiveProfile(updated);
+      } else {
+        await setMode(SyncMode.cloud);
       }
       AppLogger.d("SyncModeNotifier: Google Sign-In successful. Switching to Cloud Mode.");
-      await setMode(SyncMode.cloud);
       return true;
     } else {
       AppLogger.w("SyncModeNotifier: Google Sign-In failed or cancelled. Reverting/keeping current Mode.");

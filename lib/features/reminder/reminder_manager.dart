@@ -9,7 +9,6 @@ import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:window_manager/window_manager.dart';
 
-import 'package:noteit/core/util/logger.dart';
 import '../../core/router/router.dart';
 import '../../core/helpers/platform_helper.dart';
 import '../../core/helpers/time_helper.dart';
