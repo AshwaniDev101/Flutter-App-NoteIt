@@ -55,6 +55,7 @@ class _ViewMenuButtonState extends State<ViewMenuButton> {
               ),
             ),
             const Divider(indent: 16, endIndent: 16),
+            _buildSectionHeader(context, 'LAYOUT'),
             ...NoteViewType.values.map(
               (view) => _buildViewTile(context, view, onTap: setModalState),
             ),
@@ -100,19 +101,38 @@ class _ViewMenuButtonState extends State<ViewMenuButton> {
           elevation: 2,
           margin: const EdgeInsets.all(4.0),
           child: SizedBox(
-            width: 220,
+            width: 250,
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
-                children: NoteViewType.values.map((view) {
-                  return _buildViewTile(context, view);
-                }).toList(),
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildSectionHeader(context, 'LAYOUT'),
+                  ...NoteViewType.values.map((view) {
+                    return _buildViewTile(context, view);
+                  }),
+                ],
               ),
             ),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildSectionHeader(BuildContext context, String title) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+      child: Text(
+        title,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: colorScheme.primary,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.0,
+            ),
+      ),
     );
   }
 
@@ -132,3 +152,4 @@ class _ViewMenuButtonState extends State<ViewMenuButton> {
     );
   }
 }
+

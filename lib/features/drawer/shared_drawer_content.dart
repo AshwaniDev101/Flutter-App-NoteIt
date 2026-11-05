@@ -200,12 +200,12 @@ class _SharedDrawerContentState extends ConsumerState<SharedDrawerContent> {
                       value: isDarkMode,
                       inactiveThumbColor: colorScheme.surface,
                       inactiveTrackColor: colorScheme.surfaceContainerHighest,
-                      thumbIcon: WidgetStateProperty.resolveWith((states) {
-                        if (states.contains(WidgetState.selected)) {
-                          return Icon(Icons.dark_mode_rounded, size: 12, color: colorScheme.primary);
-                        }
-                        return Icon(Icons.light_mode_rounded, size: 12, color: colorScheme.onSurfaceVariant);
-                      }),
+                      // thumbIcon: WidgetStateProperty.resolveWith((states) {
+                      //   if (states.contains(WidgetState.selected)) {
+                      //     return Icon(Icons.dark_mode_rounded, size: 12, color: colorScheme.primary);
+                      //   }
+                      //   return Icon(Icons.light_mode_rounded, size: 12, color: colorScheme.onSurfaceVariant);
+                      // }),
                       onChanged: (value) {
                         final newTheme = value ? AppThemeType.dark : AppThemeType.light;
                         ref.read(themeProvider.notifier).setTheme(newTheme);
