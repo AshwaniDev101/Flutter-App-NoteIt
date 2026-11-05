@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/helpers/platform_helper.dart';
+import 'package:noteit/database/drift/database_switcher.dart';
 import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
@@ -16,6 +17,7 @@ class DevPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final isTestDatabase = ref.watch(isTestDatabaseProvider);
 
     // Placeholder states for toggles
     final isActionTwoEnabled = true;
@@ -42,13 +44,52 @@ class DevPage extends ConsumerWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Placeholder layout for future developer tools and actions.',
+                    'Tools and environment settings for development and testing.',
                     textAlign: TextAlign.center,
                     style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
                   ),
                   const SizedBox(height: 40),
 
-                  // ==================== GROUP A ====================
+                  // ==================== DATABASE ENVIRONMENT ====================
+                  _SectionHeader(title: 'Database Environment', colorScheme: colorScheme, textTheme: textTheme),
+                  Card(
+                    margin: const EdgeInsets.only(bottom: 24.0),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                    ),
+                    child: Column(
+                      children: [
+                        DevActionSwitchTile(
+                          icon: Icons.storage_rounded,
+                          iconColor: isTestDatabase ? Colors.orange : colorScheme.primary,
+                          title: 'Test Database Mode',
+                          subtitle: isTestDatabase
+                              ? 'Active: note_it_db_test (Test Sandbox)'
+                              : 'Active: note_it_db (Production DB)',
+                          value: isTestDatabase,
+                          enabled: true,
+                          onChanged: (bool value) async {
+                            final targetDb = value
+                                ? ActiveDatabaseNameNotifier.testDatabaseName
+                                : ActiveDatabaseNameNotifier.mainDatabaseName;
+                            await ref.read(activeDatabaseNameProvider.notifier).setDatabaseName(targetDb);
+                            if (context.mounted) {
+                              SnackBarManager.show(
+                                msg: value
+                                    ? 'Switched to Test Database (note_it_db_test)'
+                                    : 'Switched to Main Production Database (note_it_db)',
+                                type: SnackBarMessageType.acknowledgment,
+                              );
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // ==================== STORAGE & RESET ACTIONS ====================
                   _SectionHeader(title: 'Storage & Reset Actions', colorScheme: colorScheme, textTheme: textTheme),
                   Card(
                     margin: const EdgeInsets.only(bottom: 24.0),
@@ -64,7 +105,7 @@ class DevPage extends ConsumerWidget {
                           iconColor: Colors.red,
                           title: 'Wipes Password',
                           subtitle: 'Force Wipes the Master Password',
-                          enabled: true, // This one remains active
+                          enabled: true,
                           onTap: () async {
                             await ref.read(lockManagerProvider.notifier).removeMasterPassword();
                             if (context.mounted) {
@@ -105,25 +146,60 @@ class DevPage extends ConsumerWidget {
                         DevActionTile(
                           icon: Icons.delete_forever_rounded,
                           iconColor: Colors.red.shade700,
-                          title: 'Wipe Drift DB File',
-                          subtitle: 'Physically deletes note_it_db.sqlite and recreates database',
+                          title: 'Wipe Main DB File',
+                          subtitle: 'Physically deletes note_it_db.sqlite',
                           enabled: true,
                           onTap: () async {
                             final confirmed = await _showConfirmationDialog(
                               context: context,
-                              title: 'Wipe Drift Database?',
-                              content: 'This will physically delete the note_it_db.sqlite file. All local notes, folders, and keybindings will be lost. Continue?',
-                              confirmLabel: 'Delete DB File',
+                              title: 'Wipe Main Database?',
+                              content: 'This will physically delete note_it_db.sqlite. All production notes will be lost. Continue?',
+                              confirmLabel: 'Delete Main DB',
                               confirmColor: Colors.red,
                             );
                             if (confirmed && context.mounted) {
-                              final db = ref.read(localDatabaseProvider);
-                              await db.close();
-                              await deleteDatabaseFiles();
+                              final isMainActive = ref.read(activeDatabaseNameProvider) == ActiveDatabaseNameNotifier.mainDatabaseName;
+                              if (isMainActive) {
+                                final db = ref.read(localDatabaseProvider);
+                                await db.close();
+                              }
+                              await deleteDatabaseFiles(specificDbName: 'note_it_db');
                               ref.invalidate(localDatabaseProvider);
                               if (context.mounted) {
                                 SnackBarManager.show(
-                                  msg: 'Drift database file physically deleted and recreated.',
+                                  msg: 'Main database file physically deleted.',
+                                  type: SnackBarMessageType.acknowledgment,
+                                );
+                              }
+                            }
+                          },
+                        ),
+                        _buildDivider(colorScheme),
+                        DevActionTile(
+                          icon: Icons.delete_sweep_rounded,
+                          iconColor: Colors.orange.shade800,
+                          title: 'Wipe Test DB File',
+                          subtitle: 'Physically deletes note_it_db_test.sqlite',
+                          enabled: true,
+                          onTap: () async {
+                            final confirmed = await _showConfirmationDialog(
+                              context: context,
+                              title: 'Wipe Test Database?',
+                              content: 'This will physically delete note_it_db_test.sqlite. All sandbox test notes will be lost. Continue?',
+                              confirmLabel: 'Delete Test DB',
+                              confirmColor: Colors.orange.shade800,
+                            );
+                            if (confirmed && context.mounted) {
+                              final isTestActive = ref.read(isTestDatabaseProvider);
+                              if (isTestActive) {
+                                final db = ref.read(localDatabaseProvider);
+                                await db.close();
+                              }
+                              await deleteDatabaseFiles(specificDbName: 'note_it_db_test');
+                              ref.invalidate(localDatabaseProvider);
+                              if (context.mounted) {
+                                SnackBarManager.show(
+                                  msg: 'Test database file physically deleted.',
                                   type: SnackBarMessageType.acknowledgment,
                                 );
                               }

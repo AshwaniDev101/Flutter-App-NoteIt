@@ -45,6 +45,12 @@ class SharedPreferenceManager {
   // SHARED PREFERENCE KEYS
   // =========================================================================
 
+  // --- Database & Dev Keys ---
+
+  /// Key for storing the active SQLite database filename.
+  /// Value: String (e.g. `'note_it_db'`, `'note_it_db_test'`).
+  static const String _keyActiveDatabaseName = 'active_database_name';
+
   // --- Sync & P2P Keys ---
 
   /// Key for storing the unified synchronization mode.
@@ -644,7 +650,17 @@ class SharedPreferenceManager {
   Future<bool> setTimeOrder(List<String> order) async => await _prefs.setStringList(_keyTimeOrder, order);
 
   // =========================================================================
-  // 9. GENERAL / LIFECYCLE METHODS
+  // 9. DATABASE SELECTION PREFERENCES
+  // =========================================================================
+
+  /// The active database filename (`'note_it_db'` for production, `'note_it_db_test'` for test sandbox).
+  String get activeDatabaseName => _prefs.getString(_keyActiveDatabaseName) ?? 'note_it_db';
+
+  /// Saves the active database filename preference.
+  Future<bool> setActiveDatabaseName(String value) async => await _prefs.setString(_keyActiveDatabaseName, value);
+
+  // =========================================================================
+  // 10. GENERAL / LIFECYCLE METHODS
   // =========================================================================
 
   /// Clears all keys stored in [SharedPreferences].

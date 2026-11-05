@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/database/drift/database_switcher.dart';
 import 'package:noteit/shared/widgets/app_switch.dart';
 
 import '../../core/config/app_env.dart';
@@ -38,6 +39,7 @@ class _SharedDrawerContentState extends ConsumerState<SharedDrawerContent> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDarkMode = theme.brightness == Brightness.dark;
+    final isTestDatabase = ref.watch(isTestDatabaseProvider);
 
     return SafeArea(
       child: Column(
@@ -72,6 +74,25 @@ class _SharedDrawerContentState extends ConsumerState<SharedDrawerContent> {
                     letterSpacing: 0.5,
                   ),
                 ),
+                if (isTestDatabase) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: Colors.orange.withValues(alpha: 0.5), width: 1),
+                    ),
+                    child: Text(
+                      'TEST DB',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: Colors.orange.shade800,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

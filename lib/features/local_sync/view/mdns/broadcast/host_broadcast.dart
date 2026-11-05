@@ -56,7 +56,7 @@ class _HostBroadcastPageState extends ConsumerState<HostBroadcastPage> {
     if (_isConnected) return; // Keep server running if actively connected
 
     final hasPaired = await _syncedDevicesDao.hasPairedDevices();
-    if (!hasPaired) {
+    if (!hasPaired && mounted) {
       // Unpaired exploration session: stop server and reset role
       _syncServerNotifier.stopHosting();
       _mdnsBroadcastNotifier.stopBroadcasting();

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
+import 'database_switcher.dart';
 import 'keybindings/keybindings_dao.dart';
 import 'keybindings/keybindings_table.dart';
 import 'synced_devices/synced_devices_dao.dart';
@@ -23,23 +24,25 @@ part 'local_database.g.dart';
 /// guaranteeing underlying SQLite file locks are cleanly released during app teardown or testing.
 
 final localDatabaseProvider = Provider((ref) {
-  final db = LocalDatabase();
-  ref.onDispose(() {
-    db.close();
+  final dbName = ref.watch(activeDatabaseNameProvider);
+  final db = LocalDatabase(dbName);
+  ref.onDispose(() async {
+    await db.close();
   });
   return db;
 });
 
-/// Physically deletes the SQLite database files (`note_it_db*`) from the
-/// application support directory.
-Future<void> deleteDatabaseFiles() async {
+/// Physically deletes SQLite database files (`note_it_db*` or a specific file name)
+/// from the application support directory.
+Future<void> deleteDatabaseFiles({String? specificDbName}) async {
   try {
     final dir = await getApplicationSupportDirectory();
     final dbDir = Directory(dir.path);
     if (await dbDir.exists()) {
       final entities = dbDir.listSync();
+      final targetPattern = specificDbName ?? 'note_it_db';
       for (final entity in entities) {
-        if (entity is File && entity.path.contains('note_it_db')) {
+        if (entity is File && entity.path.contains(targetPattern)) {
           try {
             await entity.delete();
           } catch (_) {}
@@ -55,10 +58,10 @@ Future<void> deleteDatabaseFiles() async {
     daos: [NotesDao, FoldersDao, SyncedDevicesDao, KeybindingsDao]
 )
 class LocalDatabase extends _$LocalDatabase {
-  LocalDatabase()
+  LocalDatabase([String dbName = 'note_it_db'])
       : super(
     driftDatabase(
-      name: 'note_it_db',
+      name: dbName,
       // Routes native persistent storage to the application's sandboxed support directory (`AppData` on Windows)
       // to comply with MSIX packaging and avoid OneDrive locking collisions.
       // Without this the 'my_notes_db' will be created in Windows Document folder
@@ -66,7 +69,9 @@ class LocalDatabase extends _$LocalDatabase {
 
       web: DriftWebOptions(sqlite3Wasm: Uri.parse('sqlite3.wasm'), driftWorker: Uri.parse('drift_worker.js')),
     ),
-  );
+  ) {
+    driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+  }
 
   @override
   int get schemaVersion => 2;
