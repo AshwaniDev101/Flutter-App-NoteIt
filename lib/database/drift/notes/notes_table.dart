@@ -22,6 +22,7 @@ import 'package:uuid/uuid.dart';
 @TableIndex(name: 'idx_notes_updated_at', columns: {#updatedAt})
 @TableIndex(name: 'idx_notes_active', columns: {#deletedAt, #archivedAt})
 @TableIndex(name: 'idx_notes_folder', columns: {#folderId})
+@TableIndex(name: 'idx_notes_hlc', columns: {#hlc})
 class Notes extends Table {
   // PRIMARY KEY
   // completely offline on multiple devices without ID collisions when they finally sync.
@@ -91,6 +92,10 @@ class Notes extends Table {
   // If two devices edit offline, the cloud uses this to know which payload has more
   // recent work, completely ignoring broken/inaccurate device system clocks.
   IntColumn get updateCounter => integer().withDefault(const Constant(1))();
+
+  // HYBRID LOGICAL CLOCK (HLC Checkpoint String)
+  // Monotonic ISO timestamp + update counter + device ID string
+  TextColumn get hlc => text().nullable()();
 
   // SYNC STATUS
   // Typically maps to an Enum (e.g., 0 = synced, 1 = pending, 2 = error).

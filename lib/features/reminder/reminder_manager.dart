@@ -9,6 +9,7 @@ import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:window_manager/window_manager.dart';
 
+import 'package:noteit/core/util/logger.dart';
 import '../../core/router/router.dart';
 import '../../core/helpers/platform_helper.dart';
 import '../../core/helpers/time_helper.dart';
@@ -395,6 +396,20 @@ class ReminderManager {
   Future<void> cancelForNote(String noteUuid) async {
     final int baseId = getNotificationId(noteUuid);
     await cancelReminder(baseId, noteUuid: noteUuid);
+  }
+
+  /// Cancels all scheduled local OS notifications and desktop audio timers.
+  Future<void> cancelAllNotifications() async {
+    try {
+      await _notificationsPlugin.cancelAll();
+      for (final timer in _desktopTimers.values) {
+        timer.cancel();
+      }
+      _desktopTimers.clear();
+      debugPrint('ReminderManager: Canceled all active system notifications and timers.');
+    } catch (e, st) {
+      debugPrint('ReminderManager: Failed to cancel all notifications: $e\n$st');
+    }
   }
 
   /// 3. Scheduling notifications

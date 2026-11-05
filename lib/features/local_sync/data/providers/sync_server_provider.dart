@@ -13,6 +13,8 @@ import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_web_socket/shelf_web_socket.dart';
 
+import '../../../profiles/active_profile_provider.dart';
+
 final syncServerProvider = NotifierProvider<SyncServerNotifier, HttpServer?>(() {
   return SyncServerNotifier();
 });
@@ -129,6 +131,8 @@ class SyncServerNotifier extends Notifier<HttpServer?> {
       final clientUuid = queryParams['client_uuid'];
       final clientName = queryParams['client_name'];
       final clientPin = queryParams['pin'];
+      final clientProfileName = queryParams['profile_name'];
+      final clientLinkedEmail = queryParams['linked_email'];
 
       final String clientPlatform = queryParams['client_platform'] ?? 'unknown';
 
@@ -144,7 +148,23 @@ class SyncServerNotifier extends Notifier<HttpServer?> {
         AppLogger.d("SyncServerNotifier: Connection rejected. Client is v$clientVersion, Host is v${AppConfig.syncProtocolVersion}.");
         return Response.forbidden('Version mismatch. Please update NoteIt.');
       }
-      // -----------------------------
+
+      // --- STRICT PROFILE MATCHING CHECK ---
+      final activeProfile = ref.read(activeProfileProvider);
+      final hostProfileNameNorm = activeProfile.name.trim().toLowerCase();
+      final clientProfileNameNorm = clientProfileName?.trim().toLowerCase();
+
+      final hostEmailNorm = activeProfile.linkedEmail?.trim().toLowerCase();
+      final clientEmailNorm = clientLinkedEmail?.trim().toLowerCase();
+
+      final bool isNameMatched = clientProfileNameNorm != null && clientProfileNameNorm == hostProfileNameNorm;
+      final bool isEmailMatched = hostEmailNorm != null && clientEmailNorm != null && hostEmailNorm == clientEmailNorm;
+
+      if (!isNameMatched && !isEmailMatched) {
+        AppLogger.d("SyncServerNotifier: Connection rejected. Client profile '$clientProfileName' ($clientLinkedEmail) does not match host profile '${activeProfile.name}' (${activeProfile.linkedEmail}).");
+        return Response.forbidden('Profile mismatch: $clientProfileName');
+      }
+      // -------------------------------------
 
       _connectingClientUuid = clientUuid;
       _connectingClientName = clientName ?? 'Unknown Device';

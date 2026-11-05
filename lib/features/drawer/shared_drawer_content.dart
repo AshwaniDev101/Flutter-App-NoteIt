@@ -1,13 +1,13 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:noteit/database/drift/database_switcher.dart';
 import 'package:noteit/shared/widgets/app_switch.dart';
 
 import '../../core/config/app_env.dart';
 import '../../database/firebase/auth/firebase_provider.dart';
 import '../../core/theme/app_theme.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
+import 'widgets/profile_header_card.dart';
 
 class SharedDrawerContent extends ConsumerStatefulWidget {
   final RightPanelPageOptions? selectedOption;
@@ -39,62 +39,15 @@ class _SharedDrawerContentState extends ConsumerState<SharedDrawerContent> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDarkMode = theme.brightness == Brightness.dark;
-    final isTestDatabase = ref.watch(isTestDatabaseProvider);
 
     return SafeArea(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // --- 1. Top Logo & App Identity ---
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-            child: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    'N', // NoteIt Logo Placeholder
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      color: colorScheme.onPrimaryContainer,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Text(
-                  'NoteIt',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                if (isTestDatabase) ...[
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: Colors.orange.withValues(alpha: 0.5), width: 1),
-                    ),
-                    child: Text(
-                      'TEST DB',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: Colors.orange.shade800,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 10,
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
+          // --- 1. Top Profile Switcher Header ---
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 16, 16, 12),
+            child: ProfileHeaderCard(),
           ),
 
           // --- 2. Scrollable Navigation ---

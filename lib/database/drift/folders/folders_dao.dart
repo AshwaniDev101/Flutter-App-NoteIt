@@ -148,6 +148,15 @@ class FoldersDao extends DatabaseAccessor<LocalDatabase> with _$FoldersDaoMixin 
     return (select(folders)..where((t) => t.localSyncStatus.equals(0))).get();
   }
 
+  /// HLC DELTA SYNC: Get all active or tombstoned folders modified since [lastSyncedHlc].
+  /// If [lastSyncedHlc] is null (e.g. brand new device), returns all folders for initial sync.
+  Future<List<Folder>> getFoldersModifiedSince(String? lastSyncedHlc) {
+    if (lastSyncedHlc == null || lastSyncedHlc.isEmpty) {
+      return select(folders).get();
+    }
+    return (select(folders)..where((t) => t.hlc.isBiggerThan(Variable(lastSyncedHlc)))).get();
+  }
+
   Future<void> markAsCloudSynced(Iterable<String> uuids) async {
     if (uuids.isEmpty) return;
     await (update(folders)..where((t) => t.uuid.isIn(uuids)))
@@ -188,6 +197,7 @@ class FoldersDao extends DatabaseAccessor<LocalDatabase> with _$FoldersDaoMixin 
       updatedAt: Value(incomingUpdatedAt),
       createdAt: Value(_parseNetworkTimestamp(incomingData['createdAt']) ?? DateTime.now().toUtc()),
       updateCounter: Value(incomingData['updateCounter'] as int? ?? 1),
+      hlc: Value(incomingData['hlc'] as String?),
       cloudSyncStatus: Value(isCloud ? 1 : 0),
       localSyncStatus: Value(isCloud ? 0 : 1),
     );

@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/feature/profiles/active_profile_provider.dart';
+import 'package:noteit/feature/profiles/profile_providers.dart';
 import 'package:noteit/core/util/logger.dart';
 import 'package:noteit/database/firebase/auth/firebase_provider.dart';
 import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
@@ -74,9 +76,26 @@ class SyncModeNotifier extends Notifier<SyncMode> {
     }
 
     final authRepo = ref.read(authRepositoryProvider);
+    final activeProfile = ref.read(activeProfileProvider);
 
-    if (authRepo.isSignedIn) {
-      AppLogger.d("SyncModeNotifier: User is already signed in. Switching to Cloud Mode.");
+    if (authRepo.isSignedIn && authRepo.currentUser?.email != null) {
+      final userEmail = authRepo.currentUser!.email!;
+
+      if (activeProfile.linkedEmail == null) {
+        // Automatically link current email to active profile upon cloud sync enable
+        final updated = activeProfile.copyWith(linkedEmail: userEmail);
+        await ref.read(profilesListProvider.notifier).updateProfile(updated);
+        ref.read(activeProfileProvider.notifier).state = updated;
+        AppLogger.d("SyncModeNotifier: Linked profile ${activeProfile.name} to $userEmail");
+      } else if (activeProfile.linkedEmail != userEmail) {
+        AppLogger.w("SyncModeNotifier: Profile linked email (${activeProfile.linkedEmail}) differs from current account ($userEmail). Prompting Google Sign-In...");
+        final user = await authRepo.signInWithGoogle();
+        if (user == null || user.email != activeProfile.linkedEmail) {
+          AppLogger.w("SyncModeNotifier: Google Sign-In failed or email mismatched.");
+          return false;
+        }
+      }
+
       await setMode(SyncMode.cloud);
       return true;
     }
@@ -84,7 +103,12 @@ class SyncModeNotifier extends Notifier<SyncMode> {
     AppLogger.d("SyncModeNotifier: Cloud Mode requested but user is unauthenticated. Prompting Google Sign-In...");
     final user = await authRepo.signInWithGoogle();
 
-    if (user != null) {
+    if (user != null && user.email != null) {
+      if (activeProfile.linkedEmail == null) {
+        final updated = activeProfile.copyWith(linkedEmail: user.email);
+        await ref.read(profilesListProvider.notifier).updateProfile(updated);
+        ref.read(activeProfileProvider.notifier).state = updated;
+      }
       AppLogger.d("SyncModeNotifier: Google Sign-In successful. Switching to Cloud Mode.");
       await setMode(SyncMode.cloud);
       return true;

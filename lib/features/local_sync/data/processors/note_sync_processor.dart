@@ -21,9 +21,11 @@ class NoteSyncProcessor extends SyncEntityProcessor {
   String get ackType => 'ack_batch';
 
   @override
-  Future<List<Map<String, dynamic>>> getPendingLocalChanges() async {
+  Future<List<Map<String, dynamic>>> getPendingLocalChanges({String? peerLastSyncedHlc}) async {
     final notesDao = ref.read(notesDaoProvider);
-    final pendingNotes = await notesDao.getPendingLocalNotes();
+    final pendingNotes = (peerLastSyncedHlc != null && peerLastSyncedHlc.isNotEmpty)
+        ? await notesDao.getNotesModifiedSince(peerLastSyncedHlc)
+        : await notesDao.getPendingLocalNotes();
     return pendingNotes.map((note) => note.toJson()).toList();
   }
 
@@ -65,8 +67,13 @@ class NoteSyncProcessor extends SyncEntityProcessor {
   }
 
   @override
-  Future<void> markAsLocalSynced(List<String> uuids) async {
+  Future<void> markAsLocalSynced(List<String> uuids, {String? peerUuid, String? maxBatchHlc}) async {
     final notesDao = ref.read(notesDaoProvider);
     await notesDao.markAsLocalSynced(uuids);
+
+    if (peerUuid != null && maxBatchHlc != null && maxBatchHlc.isNotEmpty) {
+      final syncedDevicesDao = ref.read(syncedDevicesDaoProvider);
+      await syncedDevicesDao.updateLastSyncedHlc(peerUuid, maxBatchHlc);
+    }
   }
 }

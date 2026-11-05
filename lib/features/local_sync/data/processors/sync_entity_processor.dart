@@ -16,11 +16,11 @@ abstract class SyncEntityProcessor {
   String get ackType;
 
   /// Fetches pending local database changes that need to be sent to peer
-  Future<List<Map<String, dynamic>>> getPendingLocalChanges();
+  Future<List<Map<String, dynamic>>> getPendingLocalChanges({String? peerLastSyncedHlc});
 
   /// Merges incoming peer payload list into local database and returns synced UUIDs
   Future<List<String>> processIncomingLocalBatch(List<dynamic> incomingList);
 
   /// Marks items as synced locally in database after receiving peer ACK
-  Future<void> markAsLocalSynced(List<String> uuids);
+  Future<void> markAsLocalSynced(List<String> uuids, {String? peerUuid, String? maxBatchHlc});
 }

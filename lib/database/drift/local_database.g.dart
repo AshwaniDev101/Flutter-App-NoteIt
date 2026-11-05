@@ -242,6 +242,15 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
     requiredDuringInsert: false,
     defaultValue: const Constant(1),
   );
+  static const VerificationMeta _hlcMeta = const VerificationMeta('hlc');
+  @override
+  late final GeneratedColumn<String> hlc = GeneratedColumn<String>(
+    'hlc',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _cloudSyncStatusMeta = const VerificationMeta(
     'cloudSyncStatus',
   );
@@ -355,6 +364,7 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
     updatedAt,
     deletedAt,
     updateCounter,
+    hlc,
     cloudSyncStatus,
     localSyncStatus,
     creationPlatform,
@@ -527,6 +537,12 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
         ),
       );
     }
+    if (data.containsKey('hlc')) {
+      context.handle(
+        _hlcMeta,
+        hlc.isAcceptableOrUnknown(data['hlc']!, _hlcMeta),
+      );
+    }
     if (data.containsKey('cloud_sync_status')) {
       context.handle(
         _cloudSyncStatusMeta,
@@ -692,6 +708,10 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
         DriftSqlType.int,
         data['${effectivePrefix}update_counter'],
       )!,
+      hlc: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}hlc'],
+      ),
       cloudSyncStatus: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}cloud_sync_status'],
@@ -755,6 +775,7 @@ class Note extends DataClass implements Insertable<Note> {
   final DateTime updatedAt;
   final DateTime? deletedAt;
   final int updateCounter;
+  final String? hlc;
   final int cloudSyncStatus;
   final int localSyncStatus;
   final String? creationPlatform;
@@ -785,6 +806,7 @@ class Note extends DataClass implements Insertable<Note> {
     required this.updatedAt,
     this.deletedAt,
     required this.updateCounter,
+    this.hlc,
     required this.cloudSyncStatus,
     required this.localSyncStatus,
     this.creationPlatform,
@@ -842,6 +864,9 @@ class Note extends DataClass implements Insertable<Note> {
       map['deleted_at'] = Variable<DateTime>(deletedAt);
     }
     map['update_counter'] = Variable<int>(updateCounter);
+    if (!nullToAbsent || hlc != null) {
+      map['hlc'] = Variable<String>(hlc);
+    }
     map['cloud_sync_status'] = Variable<int>(cloudSyncStatus);
     map['local_sync_status'] = Variable<int>(localSyncStatus);
     if (!nullToAbsent || creationPlatform != null) {
@@ -910,6 +935,7 @@ class Note extends DataClass implements Insertable<Note> {
           ? const Value.absent()
           : Value(deletedAt),
       updateCounter: Value(updateCounter),
+      hlc: hlc == null && nullToAbsent ? const Value.absent() : Value(hlc),
       cloudSyncStatus: Value(cloudSyncStatus),
       localSyncStatus: Value(localSyncStatus),
       creationPlatform: creationPlatform == null && nullToAbsent
@@ -968,6 +994,7 @@ class Note extends DataClass implements Insertable<Note> {
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
       updateCounter: serializer.fromJson<int>(json['updateCounter']),
+      hlc: serializer.fromJson<String?>(json['hlc']),
       cloudSyncStatus: serializer.fromJson<int>(json['cloudSyncStatus']),
       localSyncStatus: serializer.fromJson<int>(json['localSyncStatus']),
       creationPlatform: serializer.fromJson<String?>(json['creationPlatform']),
@@ -1005,6 +1032,7 @@ class Note extends DataClass implements Insertable<Note> {
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
       'updateCounter': serializer.toJson<int>(updateCounter),
+      'hlc': serializer.toJson<String?>(hlc),
       'cloudSyncStatus': serializer.toJson<int>(cloudSyncStatus),
       'localSyncStatus': serializer.toJson<int>(localSyncStatus),
       'creationPlatform': serializer.toJson<String?>(creationPlatform),
@@ -1038,6 +1066,7 @@ class Note extends DataClass implements Insertable<Note> {
     DateTime? updatedAt,
     Value<DateTime?> deletedAt = const Value.absent(),
     int? updateCounter,
+    Value<String?> hlc = const Value.absent(),
     int? cloudSyncStatus,
     int? localSyncStatus,
     Value<String?> creationPlatform = const Value.absent(),
@@ -1076,6 +1105,7 @@ class Note extends DataClass implements Insertable<Note> {
     updatedAt: updatedAt ?? this.updatedAt,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
     updateCounter: updateCounter ?? this.updateCounter,
+    hlc: hlc.present ? hlc.value : this.hlc,
     cloudSyncStatus: cloudSyncStatus ?? this.cloudSyncStatus,
     localSyncStatus: localSyncStatus ?? this.localSyncStatus,
     creationPlatform: creationPlatform.present
@@ -1138,6 +1168,7 @@ class Note extends DataClass implements Insertable<Note> {
       updateCounter: data.updateCounter.present
           ? data.updateCounter.value
           : this.updateCounter,
+      hlc: data.hlc.present ? data.hlc.value : this.hlc,
       cloudSyncStatus: data.cloudSyncStatus.present
           ? data.cloudSyncStatus.value
           : this.cloudSyncStatus,
@@ -1189,6 +1220,7 @@ class Note extends DataClass implements Insertable<Note> {
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
           ..write('updateCounter: $updateCounter, ')
+          ..write('hlc: $hlc, ')
           ..write('cloudSyncStatus: $cloudSyncStatus, ')
           ..write('localSyncStatus: $localSyncStatus, ')
           ..write('creationPlatform: $creationPlatform, ')
@@ -1224,6 +1256,7 @@ class Note extends DataClass implements Insertable<Note> {
     updatedAt,
     deletedAt,
     updateCounter,
+    hlc,
     cloudSyncStatus,
     localSyncStatus,
     creationPlatform,
@@ -1258,6 +1291,7 @@ class Note extends DataClass implements Insertable<Note> {
           other.updatedAt == this.updatedAt &&
           other.deletedAt == this.deletedAt &&
           other.updateCounter == this.updateCounter &&
+          other.hlc == this.hlc &&
           other.cloudSyncStatus == this.cloudSyncStatus &&
           other.localSyncStatus == this.localSyncStatus &&
           other.creationPlatform == this.creationPlatform &&
@@ -1290,6 +1324,7 @@ class NotesCompanion extends UpdateCompanion<Note> {
   final Value<DateTime> updatedAt;
   final Value<DateTime?> deletedAt;
   final Value<int> updateCounter;
+  final Value<String?> hlc;
   final Value<int> cloudSyncStatus;
   final Value<int> localSyncStatus;
   final Value<String?> creationPlatform;
@@ -1321,6 +1356,7 @@ class NotesCompanion extends UpdateCompanion<Note> {
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
     this.updateCounter = const Value.absent(),
+    this.hlc = const Value.absent(),
     this.cloudSyncStatus = const Value.absent(),
     this.localSyncStatus = const Value.absent(),
     this.creationPlatform = const Value.absent(),
@@ -1353,6 +1389,7 @@ class NotesCompanion extends UpdateCompanion<Note> {
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
     this.updateCounter = const Value.absent(),
+    this.hlc = const Value.absent(),
     this.cloudSyncStatus = const Value.absent(),
     this.localSyncStatus = const Value.absent(),
     this.creationPlatform = const Value.absent(),
@@ -1386,6 +1423,7 @@ class NotesCompanion extends UpdateCompanion<Note> {
     Expression<DateTime>? updatedAt,
     Expression<DateTime>? deletedAt,
     Expression<int>? updateCounter,
+    Expression<String>? hlc,
     Expression<int>? cloudSyncStatus,
     Expression<int>? localSyncStatus,
     Expression<String>? creationPlatform,
@@ -1422,6 +1460,7 @@ class NotesCompanion extends UpdateCompanion<Note> {
       if (updatedAt != null) 'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
       if (updateCounter != null) 'update_counter': updateCounter,
+      if (hlc != null) 'hlc': hlc,
       if (cloudSyncStatus != null) 'cloud_sync_status': cloudSyncStatus,
       if (localSyncStatus != null) 'local_sync_status': localSyncStatus,
       if (creationPlatform != null) 'creation_platform': creationPlatform,
@@ -1457,6 +1496,7 @@ class NotesCompanion extends UpdateCompanion<Note> {
     Value<DateTime>? updatedAt,
     Value<DateTime?>? deletedAt,
     Value<int>? updateCounter,
+    Value<String?>? hlc,
     Value<int>? cloudSyncStatus,
     Value<int>? localSyncStatus,
     Value<String?>? creationPlatform,
@@ -1489,6 +1529,7 @@ class NotesCompanion extends UpdateCompanion<Note> {
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
       updateCounter: updateCounter ?? this.updateCounter,
+      hlc: hlc ?? this.hlc,
       cloudSyncStatus: cloudSyncStatus ?? this.cloudSyncStatus,
       localSyncStatus: localSyncStatus ?? this.localSyncStatus,
       creationPlatform: creationPlatform ?? this.creationPlatform,
@@ -1569,6 +1610,9 @@ class NotesCompanion extends UpdateCompanion<Note> {
     if (updateCounter.present) {
       map['update_counter'] = Variable<int>(updateCounter.value);
     }
+    if (hlc.present) {
+      map['hlc'] = Variable<String>(hlc.value);
+    }
     if (cloudSyncStatus.present) {
       map['cloud_sync_status'] = Variable<int>(cloudSyncStatus.value);
     }
@@ -1623,6 +1667,7 @@ class NotesCompanion extends UpdateCompanion<Note> {
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
           ..write('updateCounter: $updateCounter, ')
+          ..write('hlc: $hlc, ')
           ..write('cloudSyncStatus: $cloudSyncStatus, ')
           ..write('localSyncStatus: $localSyncStatus, ')
           ..write('creationPlatform: $creationPlatform, ')
@@ -1746,6 +1791,15 @@ class $FoldersTable extends Folders with TableInfo<$FoldersTable, Folder> {
     requiredDuringInsert: false,
     defaultValue: const Constant(1),
   );
+  static const VerificationMeta _hlcMeta = const VerificationMeta('hlc');
+  @override
+  late final GeneratedColumn<String> hlc = GeneratedColumn<String>(
+    'hlc',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _cloudSyncStatusMeta = const VerificationMeta(
     'cloudSyncStatus',
   );
@@ -1847,6 +1901,7 @@ class $FoldersTable extends Folders with TableInfo<$FoldersTable, Folder> {
     deletedAt,
     pinnedAt,
     updateCounter,
+    hlc,
     cloudSyncStatus,
     localSyncStatus,
     creationPlatform,
@@ -1925,6 +1980,12 @@ class $FoldersTable extends Folders with TableInfo<$FoldersTable, Folder> {
           data['update_counter']!,
           _updateCounterMeta,
         ),
+      );
+    }
+    if (data.containsKey('hlc')) {
+      context.handle(
+        _hlcMeta,
+        hlc.isAcceptableOrUnknown(data['hlc']!, _hlcMeta),
       );
     }
     if (data.containsKey('cloud_sync_status')) {
@@ -2044,6 +2105,10 @@ class $FoldersTable extends Folders with TableInfo<$FoldersTable, Folder> {
         DriftSqlType.int,
         data['${effectivePrefix}update_counter'],
       )!,
+      hlc: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}hlc'],
+      ),
       cloudSyncStatus: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}cloud_sync_status'],
@@ -2095,6 +2160,7 @@ class Folder extends DataClass implements Insertable<Folder> {
   final DateTime? deletedAt;
   final DateTime? pinnedAt;
   final int updateCounter;
+  final String? hlc;
   final int cloudSyncStatus;
   final int localSyncStatus;
   final String? creationPlatform;
@@ -2113,6 +2179,7 @@ class Folder extends DataClass implements Insertable<Folder> {
     this.deletedAt,
     this.pinnedAt,
     required this.updateCounter,
+    this.hlc,
     required this.cloudSyncStatus,
     required this.localSyncStatus,
     this.creationPlatform,
@@ -2140,6 +2207,9 @@ class Folder extends DataClass implements Insertable<Folder> {
       map['pinned_at'] = Variable<DateTime>(pinnedAt);
     }
     map['update_counter'] = Variable<int>(updateCounter);
+    if (!nullToAbsent || hlc != null) {
+      map['hlc'] = Variable<String>(hlc);
+    }
     map['cloud_sync_status'] = Variable<int>(cloudSyncStatus);
     map['local_sync_status'] = Variable<int>(localSyncStatus);
     if (!nullToAbsent || creationPlatform != null) {
@@ -2180,6 +2250,7 @@ class Folder extends DataClass implements Insertable<Folder> {
           ? const Value.absent()
           : Value(pinnedAt),
       updateCounter: Value(updateCounter),
+      hlc: hlc == null && nullToAbsent ? const Value.absent() : Value(hlc),
       cloudSyncStatus: Value(cloudSyncStatus),
       localSyncStatus: Value(localSyncStatus),
       creationPlatform: creationPlatform == null && nullToAbsent
@@ -2218,6 +2289,7 @@ class Folder extends DataClass implements Insertable<Folder> {
       deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
       pinnedAt: serializer.fromJson<DateTime?>(json['pinnedAt']),
       updateCounter: serializer.fromJson<int>(json['updateCounter']),
+      hlc: serializer.fromJson<String?>(json['hlc']),
       cloudSyncStatus: serializer.fromJson<int>(json['cloudSyncStatus']),
       localSyncStatus: serializer.fromJson<int>(json['localSyncStatus']),
       creationPlatform: serializer.fromJson<String?>(json['creationPlatform']),
@@ -2243,6 +2315,7 @@ class Folder extends DataClass implements Insertable<Folder> {
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
       'pinnedAt': serializer.toJson<DateTime?>(pinnedAt),
       'updateCounter': serializer.toJson<int>(updateCounter),
+      'hlc': serializer.toJson<String?>(hlc),
       'cloudSyncStatus': serializer.toJson<int>(cloudSyncStatus),
       'localSyncStatus': serializer.toJson<int>(localSyncStatus),
       'creationPlatform': serializer.toJson<String?>(creationPlatform),
@@ -2264,6 +2337,7 @@ class Folder extends DataClass implements Insertable<Folder> {
     Value<DateTime?> deletedAt = const Value.absent(),
     Value<DateTime?> pinnedAt = const Value.absent(),
     int? updateCounter,
+    Value<String?> hlc = const Value.absent(),
     int? cloudSyncStatus,
     int? localSyncStatus,
     Value<String?> creationPlatform = const Value.absent(),
@@ -2282,6 +2356,7 @@ class Folder extends DataClass implements Insertable<Folder> {
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
     pinnedAt: pinnedAt.present ? pinnedAt.value : this.pinnedAt,
     updateCounter: updateCounter ?? this.updateCounter,
+    hlc: hlc.present ? hlc.value : this.hlc,
     cloudSyncStatus: cloudSyncStatus ?? this.cloudSyncStatus,
     localSyncStatus: localSyncStatus ?? this.localSyncStatus,
     creationPlatform: creationPlatform.present
@@ -2318,6 +2393,7 @@ class Folder extends DataClass implements Insertable<Folder> {
       updateCounter: data.updateCounter.present
           ? data.updateCounter.value
           : this.updateCounter,
+      hlc: data.hlc.present ? data.hlc.value : this.hlc,
       cloudSyncStatus: data.cloudSyncStatus.present
           ? data.cloudSyncStatus.value
           : this.cloudSyncStatus,
@@ -2357,6 +2433,7 @@ class Folder extends DataClass implements Insertable<Folder> {
           ..write('deletedAt: $deletedAt, ')
           ..write('pinnedAt: $pinnedAt, ')
           ..write('updateCounter: $updateCounter, ')
+          ..write('hlc: $hlc, ')
           ..write('cloudSyncStatus: $cloudSyncStatus, ')
           ..write('localSyncStatus: $localSyncStatus, ')
           ..write('creationPlatform: $creationPlatform, ')
@@ -2380,6 +2457,7 @@ class Folder extends DataClass implements Insertable<Folder> {
     deletedAt,
     pinnedAt,
     updateCounter,
+    hlc,
     cloudSyncStatus,
     localSyncStatus,
     creationPlatform,
@@ -2402,6 +2480,7 @@ class Folder extends DataClass implements Insertable<Folder> {
           other.deletedAt == this.deletedAt &&
           other.pinnedAt == this.pinnedAt &&
           other.updateCounter == this.updateCounter &&
+          other.hlc == this.hlc &&
           other.cloudSyncStatus == this.cloudSyncStatus &&
           other.localSyncStatus == this.localSyncStatus &&
           other.creationPlatform == this.creationPlatform &&
@@ -2422,6 +2501,7 @@ class FoldersCompanion extends UpdateCompanion<Folder> {
   final Value<DateTime?> deletedAt;
   final Value<DateTime?> pinnedAt;
   final Value<int> updateCounter;
+  final Value<String?> hlc;
   final Value<int> cloudSyncStatus;
   final Value<int> localSyncStatus;
   final Value<String?> creationPlatform;
@@ -2441,6 +2521,7 @@ class FoldersCompanion extends UpdateCompanion<Folder> {
     this.deletedAt = const Value.absent(),
     this.pinnedAt = const Value.absent(),
     this.updateCounter = const Value.absent(),
+    this.hlc = const Value.absent(),
     this.cloudSyncStatus = const Value.absent(),
     this.localSyncStatus = const Value.absent(),
     this.creationPlatform = const Value.absent(),
@@ -2461,6 +2542,7 @@ class FoldersCompanion extends UpdateCompanion<Folder> {
     this.deletedAt = const Value.absent(),
     this.pinnedAt = const Value.absent(),
     this.updateCounter = const Value.absent(),
+    this.hlc = const Value.absent(),
     this.cloudSyncStatus = const Value.absent(),
     this.localSyncStatus = const Value.absent(),
     this.creationPlatform = const Value.absent(),
@@ -2481,6 +2563,7 @@ class FoldersCompanion extends UpdateCompanion<Folder> {
     Expression<DateTime>? deletedAt,
     Expression<DateTime>? pinnedAt,
     Expression<int>? updateCounter,
+    Expression<String>? hlc,
     Expression<int>? cloudSyncStatus,
     Expression<int>? localSyncStatus,
     Expression<String>? creationPlatform,
@@ -2501,6 +2584,7 @@ class FoldersCompanion extends UpdateCompanion<Folder> {
       if (deletedAt != null) 'deleted_at': deletedAt,
       if (pinnedAt != null) 'pinned_at': pinnedAt,
       if (updateCounter != null) 'update_counter': updateCounter,
+      if (hlc != null) 'hlc': hlc,
       if (cloudSyncStatus != null) 'cloud_sync_status': cloudSyncStatus,
       if (localSyncStatus != null) 'local_sync_status': localSyncStatus,
       if (creationPlatform != null) 'creation_platform': creationPlatform,
@@ -2524,6 +2608,7 @@ class FoldersCompanion extends UpdateCompanion<Folder> {
     Value<DateTime?>? deletedAt,
     Value<DateTime?>? pinnedAt,
     Value<int>? updateCounter,
+    Value<String?>? hlc,
     Value<int>? cloudSyncStatus,
     Value<int>? localSyncStatus,
     Value<String?>? creationPlatform,
@@ -2544,6 +2629,7 @@ class FoldersCompanion extends UpdateCompanion<Folder> {
       deletedAt: deletedAt ?? this.deletedAt,
       pinnedAt: pinnedAt ?? this.pinnedAt,
       updateCounter: updateCounter ?? this.updateCounter,
+      hlc: hlc ?? this.hlc,
       cloudSyncStatus: cloudSyncStatus ?? this.cloudSyncStatus,
       localSyncStatus: localSyncStatus ?? this.localSyncStatus,
       creationPlatform: creationPlatform ?? this.creationPlatform,
@@ -2585,6 +2671,9 @@ class FoldersCompanion extends UpdateCompanion<Folder> {
     }
     if (updateCounter.present) {
       map['update_counter'] = Variable<int>(updateCounter.value);
+    }
+    if (hlc.present) {
+      map['hlc'] = Variable<String>(hlc.value);
     }
     if (cloudSyncStatus.present) {
       map['cloud_sync_status'] = Variable<int>(cloudSyncStatus.value);
@@ -2628,6 +2717,7 @@ class FoldersCompanion extends UpdateCompanion<Folder> {
           ..write('deletedAt: $deletedAt, ')
           ..write('pinnedAt: $pinnedAt, ')
           ..write('updateCounter: $updateCounter, ')
+          ..write('hlc: $hlc, ')
           ..write('cloudSyncStatus: $cloudSyncStatus, ')
           ..write('localSyncStatus: $localSyncStatus, ')
           ..write('creationPlatform: $creationPlatform, ')
@@ -2772,6 +2862,17 @@ class $SyncedDevicesTable extends SyncedDevices
         requiredDuringInsert: false,
         defaultValue: currentDateAndTime,
       );
+  static const VerificationMeta _lastSyncedHlcMeta = const VerificationMeta(
+    'lastSyncedHlc',
+  );
+  @override
+  late final GeneratedColumn<String> lastSyncedHlc = GeneratedColumn<String>(
+    'last_synced_hlc',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     deviceUuid,
@@ -2785,6 +2886,7 @@ class $SyncedDevicesTable extends SyncedDevices
     lastSeenAsHostAt,
     lastSeenAsClientAt,
     firstPairedAt,
+    lastSyncedHlc,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2889,6 +2991,15 @@ class $SyncedDevicesTable extends SyncedDevices
         ),
       );
     }
+    if (data.containsKey('last_synced_hlc')) {
+      context.handle(
+        _lastSyncedHlcMeta,
+        lastSyncedHlc.isAcceptableOrUnknown(
+          data['last_synced_hlc']!,
+          _lastSyncedHlcMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -2942,6 +3053,10 @@ class $SyncedDevicesTable extends SyncedDevices
         DriftSqlType.dateTime,
         data['${effectivePrefix}first_paired_at'],
       )!,
+      lastSyncedHlc: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_synced_hlc'],
+      ),
     );
   }
 
@@ -2963,6 +3078,7 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
   final DateTime? lastSeenAsHostAt;
   final DateTime? lastSeenAsClientAt;
   final DateTime firstPairedAt;
+  final String? lastSyncedHlc;
   const SyncedDevice({
     required this.deviceUuid,
     required this.deviceName,
@@ -2975,6 +3091,7 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
     this.lastSeenAsHostAt,
     this.lastSeenAsClientAt,
     required this.firstPairedAt,
+    this.lastSyncedHlc,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3006,6 +3123,9 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
       map['last_seen_as_client_at'] = Variable<DateTime>(lastSeenAsClientAt);
     }
     map['first_paired_at'] = Variable<DateTime>(firstPairedAt);
+    if (!nullToAbsent || lastSyncedHlc != null) {
+      map['last_synced_hlc'] = Variable<String>(lastSyncedHlc);
+    }
     return map;
   }
 
@@ -3038,6 +3158,9 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
           ? const Value.absent()
           : Value(lastSeenAsClientAt),
       firstPairedAt: Value(firstPairedAt),
+      lastSyncedHlc: lastSyncedHlc == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastSyncedHlc),
     );
   }
 
@@ -3062,6 +3185,7 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
         json['lastSeenAsClientAt'],
       ),
       firstPairedAt: serializer.fromJson<DateTime>(json['firstPairedAt']),
+      lastSyncedHlc: serializer.fromJson<String?>(json['lastSyncedHlc']),
     );
   }
   @override
@@ -3079,6 +3203,7 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
       'lastSeenAsHostAt': serializer.toJson<DateTime?>(lastSeenAsHostAt),
       'lastSeenAsClientAt': serializer.toJson<DateTime?>(lastSeenAsClientAt),
       'firstPairedAt': serializer.toJson<DateTime>(firstPairedAt),
+      'lastSyncedHlc': serializer.toJson<String?>(lastSyncedHlc),
     };
   }
 
@@ -3094,6 +3219,7 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
     Value<DateTime?> lastSeenAsHostAt = const Value.absent(),
     Value<DateTime?> lastSeenAsClientAt = const Value.absent(),
     DateTime? firstPairedAt,
+    Value<String?> lastSyncedHlc = const Value.absent(),
   }) => SyncedDevice(
     deviceUuid: deviceUuid ?? this.deviceUuid,
     deviceName: deviceName ?? this.deviceName,
@@ -3114,6 +3240,9 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
         ? lastSeenAsClientAt.value
         : this.lastSeenAsClientAt,
     firstPairedAt: firstPairedAt ?? this.firstPairedAt,
+    lastSyncedHlc: lastSyncedHlc.present
+        ? lastSyncedHlc.value
+        : this.lastSyncedHlc,
   );
   SyncedDevice copyWithCompanion(SyncedDevicesCompanion data) {
     return SyncedDevice(
@@ -3148,6 +3277,9 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
       firstPairedAt: data.firstPairedAt.present
           ? data.firstPairedAt.value
           : this.firstPairedAt,
+      lastSyncedHlc: data.lastSyncedHlc.present
+          ? data.lastSyncedHlc.value
+          : this.lastSyncedHlc,
     );
   }
 
@@ -3164,7 +3296,8 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
           ..write('authKey: $authKey, ')
           ..write('lastSeenAsHostAt: $lastSeenAsHostAt, ')
           ..write('lastSeenAsClientAt: $lastSeenAsClientAt, ')
-          ..write('firstPairedAt: $firstPairedAt')
+          ..write('firstPairedAt: $firstPairedAt, ')
+          ..write('lastSyncedHlc: $lastSyncedHlc')
           ..write(')'))
         .toString();
   }
@@ -3182,6 +3315,7 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
     lastSeenAsHostAt,
     lastSeenAsClientAt,
     firstPairedAt,
+    lastSyncedHlc,
   );
   @override
   bool operator ==(Object other) =>
@@ -3197,7 +3331,8 @@ class SyncedDevice extends DataClass implements Insertable<SyncedDevice> {
           other.authKey == this.authKey &&
           other.lastSeenAsHostAt == this.lastSeenAsHostAt &&
           other.lastSeenAsClientAt == this.lastSeenAsClientAt &&
-          other.firstPairedAt == this.firstPairedAt);
+          other.firstPairedAt == this.firstPairedAt &&
+          other.lastSyncedHlc == this.lastSyncedHlc);
 }
 
 class SyncedDevicesCompanion extends UpdateCompanion<SyncedDevice> {
@@ -3212,6 +3347,7 @@ class SyncedDevicesCompanion extends UpdateCompanion<SyncedDevice> {
   final Value<DateTime?> lastSeenAsHostAt;
   final Value<DateTime?> lastSeenAsClientAt;
   final Value<DateTime> firstPairedAt;
+  final Value<String?> lastSyncedHlc;
   final Value<int> rowid;
   const SyncedDevicesCompanion({
     this.deviceUuid = const Value.absent(),
@@ -3225,6 +3361,7 @@ class SyncedDevicesCompanion extends UpdateCompanion<SyncedDevice> {
     this.lastSeenAsHostAt = const Value.absent(),
     this.lastSeenAsClientAt = const Value.absent(),
     this.firstPairedAt = const Value.absent(),
+    this.lastSyncedHlc = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   SyncedDevicesCompanion.insert({
@@ -3239,6 +3376,7 @@ class SyncedDevicesCompanion extends UpdateCompanion<SyncedDevice> {
     this.lastSeenAsHostAt = const Value.absent(),
     this.lastSeenAsClientAt = const Value.absent(),
     this.firstPairedAt = const Value.absent(),
+    this.lastSyncedHlc = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : deviceUuid = Value(deviceUuid),
        deviceName = Value(deviceName);
@@ -3254,6 +3392,7 @@ class SyncedDevicesCompanion extends UpdateCompanion<SyncedDevice> {
     Expression<DateTime>? lastSeenAsHostAt,
     Expression<DateTime>? lastSeenAsClientAt,
     Expression<DateTime>? firstPairedAt,
+    Expression<String>? lastSyncedHlc,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -3269,6 +3408,7 @@ class SyncedDevicesCompanion extends UpdateCompanion<SyncedDevice> {
       if (lastSeenAsClientAt != null)
         'last_seen_as_client_at': lastSeenAsClientAt,
       if (firstPairedAt != null) 'first_paired_at': firstPairedAt,
+      if (lastSyncedHlc != null) 'last_synced_hlc': lastSyncedHlc,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -3285,6 +3425,7 @@ class SyncedDevicesCompanion extends UpdateCompanion<SyncedDevice> {
     Value<DateTime?>? lastSeenAsHostAt,
     Value<DateTime?>? lastSeenAsClientAt,
     Value<DateTime>? firstPairedAt,
+    Value<String?>? lastSyncedHlc,
     Value<int>? rowid,
   }) {
     return SyncedDevicesCompanion(
@@ -3299,6 +3440,7 @@ class SyncedDevicesCompanion extends UpdateCompanion<SyncedDevice> {
       lastSeenAsHostAt: lastSeenAsHostAt ?? this.lastSeenAsHostAt,
       lastSeenAsClientAt: lastSeenAsClientAt ?? this.lastSeenAsClientAt,
       firstPairedAt: firstPairedAt ?? this.firstPairedAt,
+      lastSyncedHlc: lastSyncedHlc ?? this.lastSyncedHlc,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -3341,6 +3483,9 @@ class SyncedDevicesCompanion extends UpdateCompanion<SyncedDevice> {
     if (firstPairedAt.present) {
       map['first_paired_at'] = Variable<DateTime>(firstPairedAt.value);
     }
+    if (lastSyncedHlc.present) {
+      map['last_synced_hlc'] = Variable<String>(lastSyncedHlc.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -3361,6 +3506,7 @@ class SyncedDevicesCompanion extends UpdateCompanion<SyncedDevice> {
           ..write('lastSeenAsHostAt: $lastSeenAsHostAt, ')
           ..write('lastSeenAsClientAt: $lastSeenAsClientAt, ')
           ..write('firstPairedAt: $firstPairedAt, ')
+          ..write('lastSyncedHlc: $lastSyncedHlc, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4202,6 +4348,10 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
     'idx_notes_folder',
     'CREATE INDEX idx_notes_folder ON notes (folder_id)',
   );
+  late final Index idxNotesHlc = Index(
+    'idx_notes_hlc',
+    'CREATE INDEX idx_notes_hlc ON notes (hlc)',
+  );
   late final Index idxFoldersUpdatedAt = Index(
     'idx_folders_updated_at',
     'CREATE INDEX idx_folders_updated_at ON folders (updated_at)',
@@ -4209,6 +4359,10 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
   late final Index idxFoldersActive = Index(
     'idx_folders_active',
     'CREATE INDEX idx_folders_active ON folders (deleted_at)',
+  );
+  late final Index idxFoldersHlc = Index(
+    'idx_folders_hlc',
+    'CREATE INDEX idx_folders_hlc ON folders (hlc)',
   );
   late final Index idxKeybindingsUpdatedAt = Index(
     'idx_keybindings_updated_at',
@@ -4238,8 +4392,10 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
     idxNotesUpdatedAt,
     idxNotesActive,
     idxNotesFolder,
+    idxNotesHlc,
     idxFoldersUpdatedAt,
     idxFoldersActive,
+    idxFoldersHlc,
     idxKeybindingsUpdatedAt,
     idxKeybindingsDeletedAt,
   ];
@@ -4268,6 +4424,7 @@ typedef $$NotesTableCreateCompanionBuilder =
       Value<DateTime> updatedAt,
       Value<DateTime?> deletedAt,
       Value<int> updateCounter,
+      Value<String?> hlc,
       Value<int> cloudSyncStatus,
       Value<int> localSyncStatus,
       Value<String?> creationPlatform,
@@ -4301,6 +4458,7 @@ typedef $$NotesTableUpdateCompanionBuilder =
       Value<DateTime> updatedAt,
       Value<DateTime?> deletedAt,
       Value<int> updateCounter,
+      Value<String?> hlc,
       Value<int> cloudSyncStatus,
       Value<int> localSyncStatus,
       Value<String?> creationPlatform,
@@ -4423,6 +4581,11 @@ class $$NotesTableFilterComposer
 
   ColumnFilters<int> get updateCounter => $composableBuilder(
     column: $table.updateCounter,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get hlc => $composableBuilder(
+    column: $table.hlc,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4581,6 +4744,11 @@ class $$NotesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get hlc => $composableBuilder(
+    column: $table.hlc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get cloudSyncStatus => $composableBuilder(
     column: $table.cloudSyncStatus,
     builder: (column) => ColumnOrderings(column),
@@ -4712,6 +4880,9 @@ class $$NotesTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get hlc =>
+      $composableBuilder(column: $table.hlc, builder: (column) => column);
+
   GeneratedColumn<int> get cloudSyncStatus => $composableBuilder(
     column: $table.cloudSyncStatus,
     builder: (column) => column,
@@ -4802,6 +4973,7 @@ class $$NotesTableTableManager
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
                 Value<int> updateCounter = const Value.absent(),
+                Value<String?> hlc = const Value.absent(),
                 Value<int> cloudSyncStatus = const Value.absent(),
                 Value<int> localSyncStatus = const Value.absent(),
                 Value<String?> creationPlatform = const Value.absent(),
@@ -4833,6 +5005,7 @@ class $$NotesTableTableManager
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
                 updateCounter: updateCounter,
+                hlc: hlc,
                 cloudSyncStatus: cloudSyncStatus,
                 localSyncStatus: localSyncStatus,
                 creationPlatform: creationPlatform,
@@ -4866,6 +5039,7 @@ class $$NotesTableTableManager
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
                 Value<int> updateCounter = const Value.absent(),
+                Value<String?> hlc = const Value.absent(),
                 Value<int> cloudSyncStatus = const Value.absent(),
                 Value<int> localSyncStatus = const Value.absent(),
                 Value<String?> creationPlatform = const Value.absent(),
@@ -4897,6 +5071,7 @@ class $$NotesTableTableManager
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
                 updateCounter: updateCounter,
+                hlc: hlc,
                 cloudSyncStatus: cloudSyncStatus,
                 localSyncStatus: localSyncStatus,
                 creationPlatform: creationPlatform,
@@ -4940,6 +5115,7 @@ typedef $$FoldersTableCreateCompanionBuilder =
       Value<DateTime?> deletedAt,
       Value<DateTime?> pinnedAt,
       Value<int> updateCounter,
+      Value<String?> hlc,
       Value<int> cloudSyncStatus,
       Value<int> localSyncStatus,
       Value<String?> creationPlatform,
@@ -4961,6 +5137,7 @@ typedef $$FoldersTableUpdateCompanionBuilder =
       Value<DateTime?> deletedAt,
       Value<DateTime?> pinnedAt,
       Value<int> updateCounter,
+      Value<String?> hlc,
       Value<int> cloudSyncStatus,
       Value<int> localSyncStatus,
       Value<String?> creationPlatform,
@@ -5023,6 +5200,11 @@ class $$FoldersTableFilterComposer
 
   ColumnFilters<int> get updateCounter => $composableBuilder(
     column: $table.updateCounter,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get hlc => $composableBuilder(
+    column: $table.hlc,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5121,6 +5303,11 @@ class $$FoldersTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get hlc => $composableBuilder(
+    column: $table.hlc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get cloudSyncStatus => $composableBuilder(
     column: $table.cloudSyncStatus,
     builder: (column) => ColumnOrderings(column),
@@ -5202,6 +5389,9 @@ class $$FoldersTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get hlc =>
+      $composableBuilder(column: $table.hlc, builder: (column) => column);
+
   GeneratedColumn<int> get cloudSyncStatus => $composableBuilder(
     column: $table.cloudSyncStatus,
     builder: (column) => column,
@@ -5280,6 +5470,7 @@ class $$FoldersTableTableManager
                 Value<DateTime?> deletedAt = const Value.absent(),
                 Value<DateTime?> pinnedAt = const Value.absent(),
                 Value<int> updateCounter = const Value.absent(),
+                Value<String?> hlc = const Value.absent(),
                 Value<int> cloudSyncStatus = const Value.absent(),
                 Value<int> localSyncStatus = const Value.absent(),
                 Value<String?> creationPlatform = const Value.absent(),
@@ -5299,6 +5490,7 @@ class $$FoldersTableTableManager
                 deletedAt: deletedAt,
                 pinnedAt: pinnedAt,
                 updateCounter: updateCounter,
+                hlc: hlc,
                 cloudSyncStatus: cloudSyncStatus,
                 localSyncStatus: localSyncStatus,
                 creationPlatform: creationPlatform,
@@ -5320,6 +5512,7 @@ class $$FoldersTableTableManager
                 Value<DateTime?> deletedAt = const Value.absent(),
                 Value<DateTime?> pinnedAt = const Value.absent(),
                 Value<int> updateCounter = const Value.absent(),
+                Value<String?> hlc = const Value.absent(),
                 Value<int> cloudSyncStatus = const Value.absent(),
                 Value<int> localSyncStatus = const Value.absent(),
                 Value<String?> creationPlatform = const Value.absent(),
@@ -5339,6 +5532,7 @@ class $$FoldersTableTableManager
                 deletedAt: deletedAt,
                 pinnedAt: pinnedAt,
                 updateCounter: updateCounter,
+                hlc: hlc,
                 cloudSyncStatus: cloudSyncStatus,
                 localSyncStatus: localSyncStatus,
                 creationPlatform: creationPlatform,
@@ -5384,6 +5578,7 @@ typedef $$SyncedDevicesTableCreateCompanionBuilder =
       Value<DateTime?> lastSeenAsHostAt,
       Value<DateTime?> lastSeenAsClientAt,
       Value<DateTime> firstPairedAt,
+      Value<String?> lastSyncedHlc,
       Value<int> rowid,
     });
 typedef $$SyncedDevicesTableUpdateCompanionBuilder =
@@ -5399,6 +5594,7 @@ typedef $$SyncedDevicesTableUpdateCompanionBuilder =
       Value<DateTime?> lastSeenAsHostAt,
       Value<DateTime?> lastSeenAsClientAt,
       Value<DateTime> firstPairedAt,
+      Value<String?> lastSyncedHlc,
       Value<int> rowid,
     });
 
@@ -5463,6 +5659,11 @@ class $$SyncedDevicesTableFilterComposer
 
   ColumnFilters<DateTime> get firstPairedAt => $composableBuilder(
     column: $table.firstPairedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lastSyncedHlc => $composableBuilder(
+    column: $table.lastSyncedHlc,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -5530,6 +5731,11 @@ class $$SyncedDevicesTableOrderingComposer
     column: $table.firstPairedAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get lastSyncedHlc => $composableBuilder(
+    column: $table.lastSyncedHlc,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$SyncedDevicesTableAnnotationComposer
@@ -5593,6 +5799,11 @@ class $$SyncedDevicesTableAnnotationComposer
     column: $table.firstPairedAt,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get lastSyncedHlc => $composableBuilder(
+    column: $table.lastSyncedHlc,
+    builder: (column) => column,
+  );
 }
 
 class $$SyncedDevicesTableTableManager
@@ -5639,6 +5850,7 @@ class $$SyncedDevicesTableTableManager
                 Value<DateTime?> lastSeenAsHostAt = const Value.absent(),
                 Value<DateTime?> lastSeenAsClientAt = const Value.absent(),
                 Value<DateTime> firstPairedAt = const Value.absent(),
+                Value<String?> lastSyncedHlc = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SyncedDevicesCompanion(
                 deviceUuid: deviceUuid,
@@ -5652,6 +5864,7 @@ class $$SyncedDevicesTableTableManager
                 lastSeenAsHostAt: lastSeenAsHostAt,
                 lastSeenAsClientAt: lastSeenAsClientAt,
                 firstPairedAt: firstPairedAt,
+                lastSyncedHlc: lastSyncedHlc,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -5667,6 +5880,7 @@ class $$SyncedDevicesTableTableManager
                 Value<DateTime?> lastSeenAsHostAt = const Value.absent(),
                 Value<DateTime?> lastSeenAsClientAt = const Value.absent(),
                 Value<DateTime> firstPairedAt = const Value.absent(),
+                Value<String?> lastSyncedHlc = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SyncedDevicesCompanion.insert(
                 deviceUuid: deviceUuid,
@@ -5680,6 +5894,7 @@ class $$SyncedDevicesTableTableManager
                 lastSeenAsHostAt: lastSeenAsHostAt,
                 lastSeenAsClientAt: lastSeenAsClientAt,
                 firstPairedAt: firstPairedAt,
+                lastSyncedHlc: lastSyncedHlc,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

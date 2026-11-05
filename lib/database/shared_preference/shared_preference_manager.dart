@@ -45,11 +45,11 @@ class SharedPreferenceManager {
   // SHARED PREFERENCE KEYS
   // =========================================================================
 
-  // --- Database & Dev Keys ---
+  // --- Profile Keys ---
 
-  /// Key for storing the active SQLite database filename.
-  /// Value: String (e.g. `'note_it_db'`, `'note_it_db_test'`).
-  static const String _keyActiveDatabaseName = 'active_database_name';
+  /// Key for storing the active workspace profile ID.
+  /// Value: String (e.g. `'profile_default'`, `'profile_work_1718'`).
+  static const String _keyActiveProfileId = 'active_profile_id';
 
   // --- Sync & P2P Keys ---
 
@@ -650,14 +650,14 @@ class SharedPreferenceManager {
   Future<bool> setTimeOrder(List<String> order) async => await _prefs.setStringList(_keyTimeOrder, order);
 
   // =========================================================================
-  // 9. DATABASE SELECTION PREFERENCES
+  // 9. PROFILE SELECTION PREFERENCES
   // =========================================================================
 
-  /// The active database filename (`'note_it_db'` for production, `'note_it_db_test'` for test sandbox).
-  String get activeDatabaseName => _prefs.getString(_keyActiveDatabaseName) ?? 'note_it_db';
+  /// The active profile ID (defaults to `null` if unassigned).
+  String? get activeProfileId => _prefs.getString(_keyActiveProfileId);
 
-  /// Saves the active database filename preference.
-  Future<bool> setActiveDatabaseName(String value) async => await _prefs.setString(_keyActiveDatabaseName, value);
+  /// Saves the active profile ID preference.
+  Future<bool> setActiveProfileId(String value) async => await _prefs.setString(_keyActiveProfileId, value);
 
   // =========================================================================
   // 10. GENERAL / LIFECYCLE METHODS

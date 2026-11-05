@@ -278,6 +278,15 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
     return (select(notes)..where((t) => t.localSyncStatus.equals(0))).get();
   }
 
+  /// HLC DELTA SYNC: Get all active or tombstoned notes modified since [lastSyncedHlc].
+  /// If [lastSyncedHlc] is null (e.g. brand new device), returns all notes for initial sync.
+  Future<List<Note>> getNotesModifiedSince(String? lastSyncedHlc) {
+    if (lastSyncedHlc == null || lastSyncedHlc.isEmpty) {
+      return select(notes).get();
+    }
+    return (select(notes)..where((t) => t.hlc.isBiggerThan(Variable(lastSyncedHlc)))).get();
+  }
+
   /// Helper to safely parse incoming network timestamps
   DateTime? _parseNetworkTimestamp(dynamic timestamp) => TimeHelper.parseToUtcDateTime(timestamp);
 
@@ -310,8 +319,9 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
       updatedAt: Value(incomingUpdatedAt),
       createdAt: Value(_parseNetworkTimestamp(incomingData['createdAt'])!),
 
-      // Apply the network's conflict resolver counter
+      // Apply the network's conflict resolver counter & HLC
       updateCounter: Value(incomingData['updateCounter'] as int? ?? 1),
+      hlc: Value(incomingData['hlc'] as String?),
 
       // CRITICAL: Mark synced for Cloud, but keep pending for Local Wi-Fi
       cloudSyncStatus: const Value(1),
@@ -349,6 +359,7 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
       updatedAt: Value(incomingUpdatedAt),
       createdAt: Value(_parseNetworkTimestamp(incomingData['createdAt'])!),
       updateCounter: Value(incomingData['updateCounter'] as int? ?? 1),
+      hlc: Value(incomingData['hlc'] as String?),
 
       // INVERTED: Mark synced for Local Wi-Fi, but keep pending for Cloud
       cloudSyncStatus: const Value(0),

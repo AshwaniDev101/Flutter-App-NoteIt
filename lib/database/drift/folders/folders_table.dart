@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 // --- PERFORMANCE INDEXES ---
 @TableIndex(name: 'idx_folders_updated_at', columns: {#updatedAt})
 @TableIndex(name: 'idx_folders_active', columns: {#deletedAt})
+@TableIndex(name: 'idx_folders_hlc', columns: {#hlc})
 class Folders extends Table {
   // PRIMARY KEY
   TextColumn get uuid => text().clientDefault(() => const Uuid().v4())();
@@ -24,6 +25,9 @@ class Folders extends Table {
   DateTimeColumn get pinnedAt => dateTime().nullable()();
 
   IntColumn get updateCounter => integer().withDefault(const Constant(1))();
+
+  // HYBRID LOGICAL CLOCK (HLC Checkpoint String)
+  TextColumn get hlc => text().nullable()();
 
   // SYNC STATUS (0 = synced, 1 = pending)
   IntColumn get cloudSyncStatus => integer().withDefault(const Constant(0))();

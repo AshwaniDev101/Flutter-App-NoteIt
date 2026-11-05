@@ -17,6 +17,7 @@ import 'package:noteit/shared/overlays/snack_bar_manager.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../../../../database/drift/local_database.dart';
+import '../../../profiles/active_profile_provider.dart';
 
 final syncClientProvider = NotifierProvider<SyncClientNotifier, WebSocketChannel?>(() {
   return SyncClientNotifier();
@@ -57,6 +58,7 @@ class SyncClientNotifier extends Notifier<WebSocketChannel?> {
       final BaseDeviceInfo info = await ref.read(deviceInfoProvider.future);
       final myDeviceName = info.extractName;
       final myPlatform = info.extractPlatform;
+      final activeProfile = ref.read(activeProfileProvider);
 
       final Map<String, dynamic> queryParams = {
         'host_uuid': hostUuid,
@@ -64,8 +66,12 @@ class SyncClientNotifier extends Notifier<WebSocketChannel?> {
         'client_uuid': myUuid,
         'client_name': myDeviceName,
         'client_platform': myPlatform,
+        'profile_name': activeProfile.name,
         'v': AppConfig.syncProtocolVersion.toString(),
       };
+      if (activeProfile.linkedEmail != null) {
+        queryParams['linked_email'] = activeProfile.linkedEmail!;
+      }
       if (pin != null) {
         queryParams['pin'] = pin;
       }

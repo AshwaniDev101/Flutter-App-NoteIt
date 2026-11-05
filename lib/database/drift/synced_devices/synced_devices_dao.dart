@@ -155,4 +155,23 @@ class SyncedDevicesDao extends DatabaseAccessor<LocalDatabase>
 
     return (result ?? 0) > 0;
   }
+
+  // =========================================================================
+  // HLC CHECKPOINT MANAGEMENT
+  // =========================================================================
+
+  /// Updates the last acknowledged HLC checkpoint timestamp for a paired device.
+  Future<void> updateLastSyncedHlc(String deviceUuid, String hlc) async {
+    await (update(syncedDevices)..where((t) => t.deviceUuid.equals(deviceUuid))).write(
+      SyncedDevicesCompanion(
+        lastSyncedHlc: Value(hlc),
+      ),
+    );
+  }
+
+  /// Retrieves the last acknowledged HLC checkpoint timestamp for a paired device.
+  Future<String?> getLastSyncedHlc(String deviceUuid) async {
+    final device = await (select(syncedDevices)..where((t) => t.deviceUuid.equals(deviceUuid))).getSingleOrNull();
+    return device?.lastSyncedHlc;
+  }
 }

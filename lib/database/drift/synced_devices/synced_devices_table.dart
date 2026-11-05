@@ -29,6 +29,10 @@ class SyncedDevices extends Table {
   DateTimeColumn get lastSeenAsClientAt => dateTime().nullable()();
   DateTimeColumn get firstPairedAt => dateTime().withDefault(currentDateAndTime)();
 
+  // --- HLC SYNC CHECKPOINT ---
+  // Tracks the last acknowledged HLC timestamp successfully synced with this peer device
+  TextColumn get lastSyncedHlc => text().nullable()();
+
   @override
   Set<Column> get primaryKey => {deviceUuid};
 }

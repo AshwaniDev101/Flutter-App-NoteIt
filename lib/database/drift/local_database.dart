@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
-import 'database_switcher.dart';
+import '../../features/profiles/active_profile_provider.dart';
 import 'keybindings/keybindings_dao.dart';
 import 'keybindings/keybindings_table.dart';
 import 'synced_devices/synced_devices_dao.dart';
@@ -24,25 +24,24 @@ part 'local_database.g.dart';
 /// guaranteeing underlying SQLite file locks are cleanly released during app teardown or testing.
 
 final localDatabaseProvider = Provider((ref) {
-  final dbName = ref.watch(activeDatabaseNameProvider);
-  final db = LocalDatabase(dbName);
+  final activeProfile = ref.watch(activeProfileProvider);
+  final db = LocalDatabase(activeProfile.dbFileName);
   ref.onDispose(() async {
     await db.close();
   });
   return db;
 });
 
-/// Physically deletes SQLite database files (`note_it_db*` or a specific file name)
-/// from the application support directory.
-Future<void> deleteDatabaseFiles({String? specificDbName}) async {
+/// Physically deletes the SQLite database files (`note_it_db*`) from the
+/// application support directory.
+Future<void> deleteDatabaseFiles() async {
   try {
     final dir = await getApplicationSupportDirectory();
     final dbDir = Directory(dir.path);
     if (await dbDir.exists()) {
       final entities = dbDir.listSync();
-      final targetPattern = specificDbName ?? 'note_it_db';
       for (final entity in entities) {
-        if (entity is File && entity.path.contains(targetPattern)) {
+        if (entity is File && entity.path.contains('note_it_db')) {
           try {
             await entity.delete();
           } catch (_) {}
@@ -74,7 +73,7 @@ class LocalDatabase extends _$LocalDatabase {
   }
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration {
@@ -86,6 +85,11 @@ class LocalDatabase extends _$LocalDatabase {
         if (from < 2) {
           await m.addColumn(notes, notes.reminderRepeatMode);
           await m.addColumn(notes, notes.reminderCustomDays);
+        }
+        if (from < 3) {
+          await m.addColumn(notes, notes.hlc);
+          await m.addColumn(folders, folders.hlc);
+          await m.addColumn(syncedDevices, syncedDevices.lastSyncedHlc);
         }
       },
     );

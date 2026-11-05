@@ -15,6 +15,7 @@ import 'package:window_manager/window_manager.dart';
 
 import 'core/helpers/platform_helper.dart';
 import 'core/theme/app_theme.dart';
+import 'features/profiles/profile_repository.dart';
 import 'features/reminder/reminder_manager.dart';
 import 'features/tray/window_tray.dart';
 
@@ -31,6 +32,7 @@ Future<void> main(List<String> args) async {
   final container = ProviderContainer();
 
   await SharedPreferenceManager.init();
+  await ProfileRepository.init();
   await ReminderManager().init(container);
 
   if (PlatformHelper.isNativeDesktop) {
