@@ -44,11 +44,11 @@ class _SharedDrawerContentState extends ConsumerState<SharedDrawerContent> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // --- 1. Top Profile Switcher Header ---
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 16, 16, 12),
-            child: ProfileHeaderCard(),
-          ),
+          // // --- 1. Top Profile Switcher Header ---
+          // const Padding(
+          //   padding: EdgeInsets.fromLTRB(16, 16, 16, 12),
+          //   child: ProfileHeaderCard(),
+          // ),
 
           // --- 2. Scrollable Navigation ---
           Expanded(

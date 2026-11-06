@@ -6,7 +6,6 @@ import '../active_profile_provider.dart';
 import '../profile_model.dart';
 import '../profile_providers.dart';
 import 'create_profile_dialog.dart';
-import 'manage_profiles_sheet.dart';
 
 /// Full-width profile switcher header card rendered at the top of the app drawer.
 class ProfileHeaderCard extends ConsumerWidget {
@@ -96,13 +95,6 @@ class ProfileHeaderCard extends ConsumerWidget {
   Future<void> _handleMenuSelection(String value, BuildContext context, WidgetRef ref, List<Profile> profiles) async {
     if (value == 'create_profile') {
       showDialog(context: context, builder: (ctx) => const CreateProfileDialog());
-    } else if (value == 'manage_profiles') {
-      showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        builder: (ctx) => const ManageProfilesSheet(),
-      );
     } else {
       final selected = profiles.firstWhere((p) => p.id == value);
       await ref.read(activeProfileProvider.notifier).switchProfile(selected);
@@ -174,16 +166,6 @@ class ProfileHeaderCard extends ConsumerWidget {
             Icon(Icons.add_circle_outline_rounded, color: colorScheme.primary, size: 20),
             const SizedBox(width: 12),
             Text('Create New Profile', style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.primary, fontWeight: FontWeight.w600)),
-          ],
-        ),
-      ),
-      PopupMenuItem<String>(
-        value: 'manage_profiles',
-        child: Row(
-          children: [
-            Icon(Icons.settings_outlined, color: colorScheme.onSurfaceVariant, size: 20),
-            const SizedBox(width: 12),
-            Text('Manage Profiles', style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant)),
           ],
         ),
       ),
@@ -301,7 +283,7 @@ class _SyncMenuButtonState extends State<SyncMenuButton> {
         child: Row(
           children: [
             Text(
-              'Sync',
+              'Sync Mode',
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
@@ -348,7 +330,7 @@ class _SyncMenuButtonState extends State<SyncMenuButton> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildSectionHeader(context, 'SYNC SETTINGS'),
+                  _buildSectionHeader(context, 'SYNC MODE'),
                   ..._syncOptions.map((engine) {
                     return _buildViewTile(context, engine, onTap: () {
                       _menuController.close();

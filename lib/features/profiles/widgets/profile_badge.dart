@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/features/profiles/widgets/profile_header_card.dart';
 
+import '../../../core/helpers/platform_helper.dart';
+import '../../../core/sync/sync_engine.dart';
+import '../../../core/sync/sync_orchestrator.dart';
+import '../../../shared/menus/app_bottom_sheet.dart';
 import '../../../shared/overlays/snack_bar_manager.dart';
 import 'create_profile_dialog.dart';
-import 'manage_profiles_sheet.dart';
 import '../../profiles/active_profile_provider.dart';
 import '../../profiles/profile_model.dart';
 import '../../profiles/profile_providers.dart';
@@ -19,12 +23,99 @@ class ProfileBadge extends ConsumerStatefulWidget {
 class _ProfileBadgeState extends ConsumerState<ProfileBadge> {
   final MenuController _menuController = MenuController();
 
+  void _showMobileBottomSheet(BuildContext context) {
+    AppBottomSheet.show(
+      context: context,
+      builder: (bottomSheetContext, setModalState) {
+        final activeProfile = ref.watch(activeProfileProvider);
+        final profiles = ref.watch(profilesListProvider);
+        final theme = Theme.of(bottomSheetContext);
+
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+              child: Text(
+                'Profiles',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const Divider(indent: 16, endIndent: 16),
+            ...profiles.map((profile) {
+              return _buildProfileTile(
+                context: bottomSheetContext,
+                profile: profile,
+                activeProfile: activeProfile,
+                onSelect: () => Navigator.of(bottomSheetContext).pop(),
+              );
+            }),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 4.0),
+              child: Divider(indent: 16, endIndent: 16, height: 1),
+            ),
+            _buildCreateProfileTile(
+              bottomSheetContext,
+              onSelect: () => Navigator.of(bottomSheetContext).pop(),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final activeProfile = ref.watch(activeProfileProvider);
     final profiles = ref.watch(profilesListProvider);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isMobile = !PlatformHelper.isWideLayout(context);
+
+    final syncMode = ref.watch(syncModeProvider);
+    final currentEngine = syncMode.isCloud
+        ? SyncEngine.cloud
+        : (syncMode.isLocal ? SyncEngine.local : SyncEngine.offline);
+
+    final avatarWidget = InkWell(
+      borderRadius: BorderRadius.circular(15),
+      onTap: () {
+        if (isMobile) {
+          _showMobileBottomSheet(context);
+        } else {
+          if (_menuController.isOpen) {
+            _menuController.close();
+          } else {
+            _menuController.open();
+          }
+        }
+      },
+      child: Container(
+        height: 30,
+        width: 30,
+        decoration: const BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.grey,
+        ),
+        child: Center(
+          child: Text(
+            _getAvatarLetter(activeProfile),
+            style: const TextStyle(
+              fontSize: 14,
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    if (isMobile) {
+      return avatarWidget;
+    }
 
     return MenuAnchor(
       controller: _menuController,
@@ -36,34 +127,7 @@ class _ProfileBadgeState extends ConsumerState<ProfileBadge> {
         padding: WidgetStatePropertyAll(EdgeInsets.zero),
       ),
       builder: (BuildContext context, MenuController controller, Widget? child) {
-        return InkWell(
-          borderRadius: BorderRadius.circular(15),
-          onTap: () {
-            if (controller.isOpen) {
-              controller.close();
-            } else {
-              controller.open();
-            }
-          },
-          child: Container(
-            height: 30,
-            width: 30,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.grey,
-            ),
-            child: Center(
-              child: Text(
-                _getAvatarLetter(activeProfile),
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-        );
+        return avatarWidget;
       },
       menuChildren: [
         Card(
@@ -80,63 +144,23 @@ class _ProfileBadgeState extends ConsumerState<ProfileBadge> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  SyncMenuButton(
+                    currentEngine: currentEngine,
+                    onEngineSelected: (engine) => _handleSyncChange(engine, ref, syncMode),
+                  ),
+                  const Divider(indent: 16, endIndent: 16, height: 1),
+
                   // 1. Dynamic Profile List
                   ...profiles.map((profile) {
-                    final isSelected = profile.id == activeProfile.id;
-                    return GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onSecondaryTapDown: (details) {
-                        _showProfileContextMenu(context, details, profile);
-                      },
-                      onLongPressStart: (details) {
-                        _showProfileContextMenu(
-                          context,
-                          TapDownDetails(globalPosition: details.globalPosition),
-                          profile,
-                        );
-                      },
-                      child: ListTile(
-                        dense: true,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                        leading: CircleAvatar(
-                          radius: 14,
-                          backgroundColor: Colors.grey,
-                          child: Text(
-                            _getAvatarLetter(profile),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        title: Text(
-                          profile.name,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                            color: isSelected ? colorScheme.primary : colorScheme.onSurface,
-                          ),
-                          maxLines: 1,
-                        ),
-                        subtitle: profile.isDefault
-                            ? Text(
-                                'Default',
-                                style: theme.textTheme.labelSmall?.copyWith(
-                                  color: colorScheme.primary,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              )
-                            : null,
-                        trailing: isSelected
-                            ? Icon(Icons.check_circle_rounded, color: colorScheme.primary, size: 20)
-                            : null,
-                        onTap: () async {
+                    return _buildProfileTile(
+                      context: context,
+                      profile: profile,
+                      activeProfile: activeProfile,
+                      onSelect: () {
+                        if (_menuController.isOpen) {
                           _menuController.close();
-                          if (!isSelected) {
-                            await ref.read(activeProfileProvider.notifier).switchProfile(profile);
-                          }
-                        },
-                      ),
+                        }
+                      },
                     );
                   }),
 
@@ -145,44 +169,129 @@ class _ProfileBadgeState extends ConsumerState<ProfileBadge> {
                     child: Divider(height: 1, color: colorScheme.outlineVariant.withValues(alpha: 0.3)),
                   ),
 
-                  // 2. Actions (Create / Manage)
-                  ListTile(
-                    dense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                    leading: Icon(Icons.add_circle_outline_rounded, color: colorScheme.primary, size: 20),
-                    title: Text(
-                      'Create New Profile',
-                      style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.primary, fontWeight: FontWeight.w600),
-                    ),
-                    onTap: () {
-                      _menuController.close();
-                      showDialog(context: context, builder: (ctx) => const CreateProfileDialog());
+                  // 2. Actions (Create)
+                  _buildCreateProfileTile(
+                    context,
+                    onSelect: () {
+                      if (_menuController.isOpen) {
+                        _menuController.close();
+                      }
                     },
                   ),
-                  ListTile(
-                    dense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                    leading: Icon(Icons.settings_outlined, color: colorScheme.onSurfaceVariant, size: 20),
-                    title: Text(
-                      'Manage Profiles',
-                      style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
-                    ),
-                    onTap: () {
-                      _menuController.close();
-                      showModalBottomSheet(
-                        context: context,
-                        isScrollControlled: true,
-                        backgroundColor: Colors.transparent,
-                        builder: (ctx) => const ManageProfilesSheet(),
-                      );
-                    },
-                  ),
+
+
                 ],
               ),
             ),
           ),
         ),
       ],
+    );
+  }
+
+  Future<void> _handleSyncChange(SyncEngine selectedEngine, WidgetRef ref, SyncMode currentMode) async {
+    SyncMode targetMode;
+    switch (selectedEngine) {
+      case SyncEngine.cloud:
+        targetMode = SyncMode.cloud;
+        break;
+      case SyncEngine.local:
+        targetMode = currentMode.isLocal ? currentMode : SyncMode.localUndefined;
+        break;
+      case SyncEngine.offline:
+        targetMode = SyncMode.offline;
+        break;
+    }
+
+    final success = await ref.read(syncModeProvider.notifier).requestModeChange(targetMode);
+    if (success) {
+      ref.read(syncOrchestratorProvider).triggerSync();
+    }
+  }
+
+  Widget _buildProfileTile({
+    required BuildContext context,
+    required Profile profile,
+    required Profile activeProfile,
+    required VoidCallback onSelect,
+  }) {
+    final isSelected = profile.id == activeProfile.id;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onSecondaryTapDown: (details) {
+        _showProfileContextMenu(context, details, profile);
+      },
+      onLongPressStart: (details) {
+        _showProfileContextMenu(
+          context,
+          TapDownDetails(globalPosition: details.globalPosition),
+          profile,
+        );
+      },
+      child: ListTile(
+        dense: true,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+        leading: CircleAvatar(
+          radius: 14,
+          backgroundColor: Colors.grey,
+          child: Text(
+            _getAvatarLetter(profile),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        title: Text(
+          profile.name,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+            color: isSelected ? colorScheme.primary : colorScheme.onSurface,
+          ),
+          maxLines: 1,
+        ),
+        subtitle: profile.isDefault
+            ? Text(
+                'Default',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              )
+            : null,
+        trailing: isSelected
+            ? Icon(Icons.check_circle_rounded, color: colorScheme.primary, size: 20)
+            : null,
+        onTap: () async {
+          onSelect();
+          if (!isSelected) {
+            await ref.read(activeProfileProvider.notifier).switchProfile(profile);
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildCreateProfileTile(BuildContext context, {required VoidCallback onSelect}) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return ListTile(
+      dense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+      leading: Icon(Icons.add_circle_outline_rounded, color: colorScheme.primary, size: 20),
+      title: Text(
+        'Create New Profile',
+        style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.primary, fontWeight: FontWeight.w600),
+      ),
+      onTap: () {
+        onSelect();
+        showDialog(context: context, builder: (ctx) => const CreateProfileDialog());
+      },
     );
   }
 
@@ -263,7 +372,9 @@ class _ProfileBadgeState extends ConsumerState<ProfileBadge> {
 
   Future<void> _handleSetDefault(Profile profile) async {
     if (profile.isDefault) return;
-    _menuController.close();
+    if (_menuController.isOpen) {
+      _menuController.close();
+    }
     final success = await ref.read(profilesListProvider.notifier).setDefaultProfile(profile.id);
     if (success) {
       final activeProfile = ref.read(activeProfileProvider);
@@ -280,7 +391,9 @@ class _ProfileBadgeState extends ConsumerState<ProfileBadge> {
   }
 
   void _showEditProfileDialog(BuildContext context, Profile profile) {
-    _menuController.close();
+    if (_menuController.isOpen) {
+      _menuController.close();
+    }
     showDialog(
       context: context,
       builder: (ctx) => CreateProfileDialog(profileToEdit: profile),
@@ -289,7 +402,9 @@ class _ProfileBadgeState extends ConsumerState<ProfileBadge> {
 
   void _confirmAndDeleteProfile(BuildContext context, Profile profile) async {
     if (profile.isDefault) return;
-    _menuController.close();
+    if (_menuController.isOpen) {
+      _menuController.close();
+    }
 
     final confirmed = await showDialog<bool>(
       context: context,
