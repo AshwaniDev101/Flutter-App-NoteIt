@@ -2,11 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/overlays/snack_bar_manager.dart';
 import '../active_profile_provider.dart';
+import '../profile_model.dart';
 import '../profile_providers.dart';
 
-/// Modal dialog for creating a new user profile workspace.
+/// Modal dialog for creating a new user profile workspace or editing an existing profile.
 class CreateProfileDialog extends ConsumerStatefulWidget {
-  const CreateProfileDialog({super.key});
+  final Profile? profileToEdit;
+
+  const CreateProfileDialog({
+    super.key,
+    this.profileToEdit,
+  });
+
+  bool get isEditing => profileToEdit != null;
 
   @override
   ConsumerState<CreateProfileDialog> createState() => _CreateProfileDialogState();
@@ -14,7 +22,13 @@ class CreateProfileDialog extends ConsumerStatefulWidget {
 
 class _CreateProfileDialogState extends ConsumerState<CreateProfileDialog> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
+  late final TextEditingController _nameController;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.profileToEdit?.name ?? '');
+  }
 
   @override
   void dispose() {
@@ -22,24 +36,43 @@ class _CreateProfileDialogState extends ConsumerState<CreateProfileDialog> {
     super.dispose();
   }
 
-  void _onCreateProfile() async {
+  void _onSave() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     final name = _nameController.text.trim();
 
-    final newProfile = await ref.read(profilesListProvider.notifier).createProfile(
-          name: name,
-        );
+    if (widget.isEditing) {
+      final updated = widget.profileToEdit!.copyWith(name: name);
+      await ref.read(profilesListProvider.notifier).updateProfile(updated);
 
-    if (mounted) {
-      if (Navigator.of(context).canPop()) {
-        Navigator.of(context).pop();
+      if (ref.read(activeProfileProvider).id == updated.id) {
+        ref.read(activeProfileProvider.notifier).updateActiveProfile(updated);
       }
-      await ref.read(activeProfileProvider.notifier).switchProfile(newProfile);
-      SnackBarManager.show(
-        msg: 'Created and switched to "$name" profile.',
-        type: SnackBarMessageType.acknowledgment,
-      );
+
+      if (mounted) {
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+        SnackBarManager.show(
+          msg: 'Profile renamed to "$name".',
+          type: SnackBarMessageType.acknowledgment,
+        );
+      }
+    } else {
+      final newProfile = await ref.read(profilesListProvider.notifier).createProfile(
+            name: name,
+          );
+
+      if (mounted) {
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+        await ref.read(activeProfileProvider.notifier).switchProfile(newProfile);
+        SnackBarManager.show(
+          msg: 'Created and switched to "$name" profile.',
+          type: SnackBarMessageType.acknowledgment,
+        );
+      }
     }
   }
 
@@ -47,6 +80,7 @@ class _CreateProfileDialogState extends ConsumerState<CreateProfileDialog> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isEditing = widget.isEditing;
 
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -58,11 +92,15 @@ class _CreateProfileDialogState extends ConsumerState<CreateProfileDialog> {
               color: colorScheme.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(Icons.add_to_photos_rounded, color: colorScheme.primary, size: 24),
+            child: Icon(
+              isEditing ? Icons.edit_outlined : Icons.add_to_photos_rounded,
+              color: colorScheme.primary,
+              size: 24,
+            ),
           ),
           const SizedBox(width: 12),
           Text(
-            'Create New Profile',
+            isEditing ? 'Edit Profile' : 'Create New Profile',
             style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
           ),
         ],
@@ -104,8 +142,8 @@ class _CreateProfileDialogState extends ConsumerState<CreateProfileDialog> {
           child: const Text('Cancel'),
         ),
         FilledButton(
-          onPressed: _onCreateProfile,
-          child: const Text('Create Profile'),
+          onPressed: _onSave,
+          child: Text(isEditing ? 'Save Changes' : 'Create Profile'),
         ),
       ],
     );

@@ -5,6 +5,7 @@ import '../active_profile_provider.dart';
 import '../profile_model.dart';
 import '../profile_providers.dart';
 import '../profile_repository.dart';
+import 'create_profile_dialog.dart';
 
 /// Modal bottom sheet for managing, editing, and deleting workspace profiles.
 class ManageProfilesSheet extends ConsumerWidget {
@@ -128,7 +129,7 @@ class ManageProfilesSheet extends ConsumerWidget {
                           icon: const Icon(Icons.edit_outlined, size: 20),
                           tooltip: 'Edit Profile',
                           onPressed: () {
-                            _showEditProfileDialog(context, ref, profile);
+                            _showEditProfileDialog(context, profile);
                           },
                         ),
                         // Delete button (disabled for default profile)
@@ -164,54 +165,10 @@ class ManageProfilesSheet extends ConsumerWidget {
     return 'P';
   }
 
-  void _showEditProfileDialog(BuildContext context, WidgetRef ref, Profile profile) {
-    final nameController = TextEditingController(text: profile.name);
-
+  void _showEditProfileDialog(BuildContext context, Profile profile) {
     showDialog(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (dialogCtx, setState) {
-          final theme = Theme.of(dialogCtx);
-
-          return AlertDialog(
-            title: Text('Edit Profile', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TextField(
-                    controller: nameController,
-                    decoration: const InputDecoration(labelText: 'Profile Name'),
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(onPressed: () => Navigator.of(dialogCtx).pop(), child: const Text('Cancel')),
-              FilledButton(
-                onPressed: () async {
-                  final newName = nameController.text.trim();
-                  if (newName.isEmpty) return;
-
-                  final updated = profile.copyWith(
-                    name: newName,
-                  );
-
-                  await ref.read(profilesListProvider.notifier).updateProfile(updated);
-                  if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
-
-                  // If active profile was updated, refresh active profile
-                  if (ref.read(activeProfileProvider).id == profile.id) {
-                    ref.read(activeProfileProvider.notifier).updateActiveProfile(updated);
-                  }
-                },
-                child: const Text('Save'),
-              ),
-            ],
-          );
-        },
-      ),
+      builder: (ctx) => CreateProfileDialog(profileToEdit: profile),
     );
   }
 

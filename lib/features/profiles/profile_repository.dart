@@ -172,6 +172,25 @@ class ProfileRepository {
     return true;
   }
 
+  /// Sets the profile with [profileId] as default and clears `isDefault` on all other profiles.
+  Future<bool> setDefaultProfile(String profileId) async {
+    bool changed = false;
+    for (int i = 0; i < _profiles.length; i++) {
+      final p = _profiles[i];
+      final shouldBeDefault = (p.id == profileId);
+      if (p.isDefault != shouldBeDefault) {
+        _profiles[i] = p.copyWith(isDefault: shouldBeDefault);
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      await _saveManifest();
+      AppLogger.d('ProfileRepository: Set default profile to $profileId');
+    }
+    return changed;
+  }
+
   /// Updates the [lastUsedAt] timestamp for [profileId].
   Future<void> touchProfileLastUsed(String profileId) async {
     final profile = getProfileById(profileId);

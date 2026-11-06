@@ -47,6 +47,14 @@ class ProfilesListNotifier extends Notifier<List<Profile>> {
     return success;
   }
 
+  /// Sets a profile as default and refreshes the profiles list state.
+  Future<bool> setDefaultProfile(String profileId) async {
+    final repo = ref.read(profileRepositoryProvider);
+    final success = await repo.setDefaultProfile(profileId);
+    if (success) refresh();
+    return success;
+  }
+
   /// Deletes a non-default profile and refreshes the profiles list state.
   Future<bool> deleteProfile(String profileId) async {
     final repo = ref.read(profileRepositoryProvider);
