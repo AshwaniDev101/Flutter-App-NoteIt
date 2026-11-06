@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/sync/sync_engine.dart';
 import '../../../core/sync/sync_orchestrator.dart';
 import '../active_profile_provider.dart';
+import '../helpers/profile_badge_helper.dart';
 import '../profile_model.dart';
 import '../profile_providers.dart';
 import 'create_profile_dialog.dart';
@@ -49,9 +50,9 @@ class ProfileHeaderCard extends ConsumerWidget {
                 children: [
                   CircleAvatar(
                     radius: 20,
-                    backgroundColor: Colors.grey,
+                    backgroundColor: ProfileBadgeHelper.getColor(activeProfile.name),
                     child: Text(
-                      _getAvatarLetter(activeProfile),
+                      ProfileBadgeHelper.getInitial(activeProfile.name),
                       style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                     ),
                   ),
@@ -131,9 +132,9 @@ class ProfileHeaderCard extends ConsumerWidget {
             children: [
               CircleAvatar(
                 radius: 14,
-                backgroundColor: Colors.grey,
+                backgroundColor: ProfileBadgeHelper.getColor(profile.name),
                 child: Text(
-                  _getAvatarLetter(profile),
+                  ProfileBadgeHelper.getInitial(profile.name),
                   style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                 ),
               ),
@@ -170,13 +171,6 @@ class ProfileHeaderCard extends ConsumerWidget {
         ),
       ),
     ];
-  }
-
-  String _getAvatarLetter(Profile profile) {
-    if (profile.name.trim().isNotEmpty) {
-      return profile.name.trim()[0].toUpperCase();
-    }
-    return 'P';
   }
 }
 

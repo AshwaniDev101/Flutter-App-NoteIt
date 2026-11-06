@@ -66,6 +66,7 @@ class DesktopContentPanel extends ConsumerWidget {
             actions: [
               // IconTray(),
               const ProfileBadge(),
+              SizedBox(width: 8,),
               const SyncStateWidget(),
               const DesktopWindowControls(),
             ],

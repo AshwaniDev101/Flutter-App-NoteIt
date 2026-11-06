@@ -8,6 +8,7 @@ import '../../../core/sync/sync_orchestrator.dart';
 import '../../../shared/menus/app_bottom_sheet.dart';
 import '../../../shared/overlays/snack_bar_manager.dart';
 import 'create_profile_dialog.dart';
+import '../helpers/profile_badge_helper.dart';
 import '../../profiles/active_profile_provider.dart';
 import '../../profiles/profile_model.dart';
 import '../../profiles/profile_providers.dart';
@@ -80,33 +81,40 @@ class _ProfileBadgeState extends ConsumerState<ProfileBadge> {
         ? SyncEngine.cloud
         : (syncMode.isLocal ? SyncEngine.local : SyncEngine.offline);
 
-    final avatarWidget = InkWell(
-      borderRadius: BorderRadius.circular(15),
-      onTap: () {
-        if (isMobile) {
-          _showMobileBottomSheet(context);
+    void openProfileMenu() {
+      if (isMobile) {
+        _showMobileBottomSheet(context);
+      } else {
+        if (_menuController.isOpen) {
+          _menuController.close();
         } else {
-          if (_menuController.isOpen) {
-            _menuController.close();
-          } else {
-            _menuController.open();
-          }
+          _menuController.open();
         }
-      },
-      child: Container(
-        height: 30,
-        width: 30,
-        decoration: const BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.grey,
-        ),
-        child: Center(
-          child: Text(
-            _getAvatarLetter(activeProfile),
-            style: const TextStyle(
-              fontSize: 14,
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
+      }
+    }
+
+    final avatarWidget = Tooltip(
+      message: 'Profiles',
+      child: Material(
+        color: ProfileBadgeHelper.getColor(activeProfile.name),
+        shape: const CircleBorder(),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: openProfileMenu,
+          onSecondaryTap: openProfileMenu,
+          child: SizedBox(
+            height: 24,
+            width: 24,
+            child: Center(
+              child: Text(
+                ProfileBadgeHelper.getInitial(activeProfile.name),
+                style: const TextStyle(
+                  fontSize: 10,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ),
         ),
@@ -236,9 +244,9 @@ class _ProfileBadgeState extends ConsumerState<ProfileBadge> {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16),
         leading: CircleAvatar(
           radius: 14,
-          backgroundColor: Colors.grey,
+          backgroundColor: ProfileBadgeHelper.getColor(profile.name),
           child: Text(
-            _getAvatarLetter(profile),
+            ProfileBadgeHelper.getInitial(profile.name),
             style: const TextStyle(
               color: Colors.white,
               fontSize: 12,
@@ -447,12 +455,5 @@ class _ProfileBadgeState extends ConsumerState<ProfileBadge> {
         );
       }
     }
-  }
-
-  String _getAvatarLetter(Profile profile) {
-    if (profile.name.trim().isNotEmpty) {
-      return profile.name.trim()[0].toUpperCase();
-    }
-    return 'P';
   }
 }
