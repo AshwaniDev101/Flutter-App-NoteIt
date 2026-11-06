@@ -8,16 +8,7 @@ class Profile {
 
   /// Primary display name (e.g. 'Personal Notes', 'Work Projects').
   final String name;
-
-  /// Optional subtitle or custom alias (e.g. 'Daily Journal', 'Company X').
-  final String? customAlias;
-
-  /// ARGB integer color used for avatar badges and UI accent tint (e.g. 0xFF2196F3).
-  final int colorValue;
-
-  /// Icon identifier string (e.g. 'person', 'work', 'code', 'book', 'folder').
-  final String iconName;
-
+  
   /// SQLite database filename on disk (e.g. 'note_it_db.sqlite', 'profile_work_1718.sqlite').
   final String dbFileName;
 
@@ -39,9 +30,6 @@ class Profile {
   const Profile({
     required this.id,
     required this.name,
-    this.customAlias,
-    required this.colorValue,
-    required this.iconName,
     required this.dbFileName,
     this.linkedEmail,
     this.syncMode = 'offline',
@@ -55,9 +43,6 @@ class Profile {
     return {
       'id': id,
       'name': name,
-      'customAlias': customAlias,
-      'colorValue': colorValue,
-      'iconName': iconName,
       'dbFileName': dbFileName,
       'linkedEmail': linkedEmail,
       'syncMode': syncMode,
@@ -72,9 +57,6 @@ class Profile {
     return Profile(
       id: json['id'] as String,
       name: json['name'] as String,
-      customAlias: json['customAlias'] as String?,
-      colorValue: json['colorValue'] as int? ?? 0xFF2196F3,
-      iconName: json['iconName'] as String? ?? 'person',
       dbFileName: json['dbFileName'] as String? ?? 'note_it_db.sqlite',
       linkedEmail: json['linkedEmail'] as String?,
       syncMode: json['syncMode'] as String? ?? 'offline',
@@ -92,9 +74,6 @@ class Profile {
   Profile copyWith({
     String? id,
     String? name,
-    String? customAlias,
-    int? colorValue,
-    String? iconName,
     String? dbFileName,
     String? linkedEmail,
     String? syncMode,
@@ -105,9 +84,6 @@ class Profile {
     return Profile(
       id: id ?? this.id,
       name: name ?? this.name,
-      customAlias: customAlias ?? this.customAlias,
-      colorValue: colorValue ?? this.colorValue,
-      iconName: iconName ?? this.iconName,
       dbFileName: dbFileName ?? this.dbFileName,
       linkedEmail: linkedEmail ?? this.linkedEmail,
       syncMode: syncMode ?? this.syncMode,
@@ -123,9 +99,6 @@ class Profile {
     return other is Profile &&
         other.id == id &&
         other.name == name &&
-        other.customAlias == customAlias &&
-        other.colorValue == colorValue &&
-        other.iconName == iconName &&
         other.dbFileName == dbFileName &&
         other.linkedEmail == linkedEmail &&
         other.syncMode == syncMode &&
@@ -138,9 +111,6 @@ class Profile {
   int get hashCode => Object.hash(
         id,
         name,
-        customAlias,
-        colorValue,
-        iconName,
         dbFileName,
         linkedEmail,
         syncMode,

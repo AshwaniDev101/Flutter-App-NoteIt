@@ -7,7 +7,7 @@ import '../../core/config/app_env.dart';
 import '../../database/firebase/auth/firebase_provider.dart';
 import '../../core/theme/app_theme.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
-import 'widgets/profile_header_card.dart';
+import '../profiles/widgets/profile_header_card.dart';
 
 class SharedDrawerContent extends ConsumerStatefulWidget {
   final RightPanelPageOptions? selectedOption;

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/overlays/snack_bar_manager.dart';
-import '../../profiles/active_profile_provider.dart';
-import '../../profiles/profile_model.dart';
-import '../../profiles/profile_providers.dart';
-import '../../profiles/profile_repository.dart';
+import '../active_profile_provider.dart';
+import '../profile_model.dart';
+import '../profile_providers.dart';
+import '../profile_repository.dart';
 
 /// Modal bottom sheet for managing, editing, and deleting workspace profiles.
 class ManageProfilesSheet extends ConsumerWidget {
@@ -68,14 +68,14 @@ class ManageProfilesSheet extends ConsumerWidget {
                   final profile = profiles[index];
                   final isActive = profile.id == activeProfile.id;
                   final avatarLetter = _getAvatarLetter(profile);
-                  final avatarColor = Color(profile.colorValue);
+                  const avatarColor = Colors.grey;
 
                   return ListTile(
                     contentPadding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                     leading: Container(
                       width: 40,
                       height: 40,
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: avatarColor,
                         shape: BoxShape.circle,
                       ),
@@ -120,14 +120,6 @@ class ManageProfilesSheet extends ConsumerWidget {
                         ],
                       ],
                     ),
-                    subtitle: profile.customAlias != null && profile.customAlias!.isNotEmpty
-                        ? Text(
-                            profile.customAlias!,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                          )
-                        : null,
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -166,9 +158,6 @@ class ManageProfilesSheet extends ConsumerWidget {
   }
 
   String _getAvatarLetter(Profile profile) {
-    if (profile.customAlias != null && profile.customAlias!.trim().isNotEmpty) {
-      return profile.customAlias!.trim()[0].toUpperCase();
-    }
     if (profile.name.trim().isNotEmpty) {
       return profile.name.trim()[0].toUpperCase();
     }
@@ -177,26 +166,12 @@ class ManageProfilesSheet extends ConsumerWidget {
 
   void _showEditProfileDialog(BuildContext context, WidgetRef ref, Profile profile) {
     final nameController = TextEditingController(text: profile.name);
-    final aliasController = TextEditingController(text: profile.customAlias ?? '');
-    int selectedColorHex = profile.colorValue;
-
-    const presetColors = [
-      0xFF2196F3, // Ocean Blue
-      0xFF4CAF50, // Emerald Green
-      0xFFFF9800, // Amber / Orange
-      0xFF9C27B0, // Royal Purple
-      0xFFE91E63, // Crimson Rose
-      0xFF009688, // Teal
-      0xFF3F51B5, // Indigo
-      0xFF00BCD4, // Cyan
-    ];
 
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (dialogCtx, setState) {
           final theme = Theme.of(dialogCtx);
-          final colorScheme = theme.colorScheme;
 
           return AlertDialog(
             title: Text('Edit Profile', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
@@ -208,37 +183,6 @@ class ManageProfilesSheet extends ConsumerWidget {
                   TextField(
                     controller: nameController,
                     decoration: const InputDecoration(labelText: 'Profile Name'),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: aliasController,
-                    decoration: const InputDecoration(labelText: 'Subtitle / Custom Alias'),
-                  ),
-                  const SizedBox(height: 16),
-                  Text('Accent Color', style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: presetColors.map((colorHex) {
-                      final isSelected = selectedColorHex == colorHex;
-                      return GestureDetector(
-                        onTap: () => setState(() => selectedColorHex = colorHex),
-                        child: Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            color: Color(colorHex),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: isSelected ? colorScheme.onSurface : Colors.transparent,
-                              width: 2,
-                            ),
-                          ),
-                          child: isSelected ? const Icon(Icons.check, color: Colors.white, size: 16) : null,
-                        ),
-                      );
-                    }).toList(),
                   ),
                 ],
               ),
@@ -252,8 +196,6 @@ class ManageProfilesSheet extends ConsumerWidget {
 
                   final updated = profile.copyWith(
                     name: newName,
-                    customAlias: aliasController.text.trim().isNotEmpty ? aliasController.text.trim() : null,
-                    colorValue: selectedColorHex,
                   );
 
                   await ref.read(profilesListProvider.notifier).updateProfile(updated);

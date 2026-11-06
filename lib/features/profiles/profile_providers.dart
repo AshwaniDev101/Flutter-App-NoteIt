@@ -26,18 +26,12 @@ class ProfilesListNotifier extends Notifier<List<Profile>> {
   /// Creates a new profile and refreshes the profiles list state.
   Future<Profile> createProfile({
     required String name,
-    String? customAlias,
-    int colorValue = 0xFF2196F3,
-    String iconName = 'person',
     String? linkedEmail,
     String syncMode = 'offline',
   }) async {
     final repo = ref.read(profileRepositoryProvider);
     final newProfile = await repo.createProfile(
       name: name,
-      customAlias: customAlias,
-      colorValue: colorValue,
-      iconName: iconName,
       linkedEmail: linkedEmail,
       syncMode: syncMode,
     );

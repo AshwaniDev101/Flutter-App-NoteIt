@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/sync/sync_engine.dart';
 import '../../../core/sync/sync_orchestrator.dart';
-import '../../profiles/active_profile_provider.dart';
-import '../../profiles/profile_model.dart';
-import '../../profiles/profile_providers.dart';
+import '../active_profile_provider.dart';
+import '../profile_model.dart';
+import '../profile_providers.dart';
 import 'create_profile_dialog.dart';
 import 'manage_profiles_sheet.dart';
 
@@ -50,7 +50,7 @@ class ProfileHeaderCard extends ConsumerWidget {
                 children: [
                   CircleAvatar(
                     radius: 20,
-                    backgroundColor: Color(activeProfile.colorValue),
+                    backgroundColor: Colors.grey,
                     child: Text(
                       _getAvatarLetter(activeProfile),
                       style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -72,16 +72,6 @@ class ProfileHeaderCard extends ConsumerWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        if (activeProfile.customAlias?.isNotEmpty ?? false)
-                          Text(
-                            activeProfile.customAlias!,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
-                              fontSize: 12,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
                       ],
                     ),
                   ),
@@ -149,7 +139,7 @@ class ProfileHeaderCard extends ConsumerWidget {
             children: [
               CircleAvatar(
                 radius: 14,
-                backgroundColor: Color(profile.colorValue),
+                backgroundColor: Colors.grey,
                 child: Text(
                   _getAvatarLetter(profile),
                   style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
@@ -168,12 +158,6 @@ class ProfileHeaderCard extends ConsumerWidget {
                       ),
                       maxLines: 1,
                     ),
-                    if (profile.customAlias?.isNotEmpty ?? false)
-                      Text(
-                        profile.customAlias!,
-                        style: theme.textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
-                        maxLines: 1,
-                      ),
                   ],
                 ),
               ),
@@ -207,9 +191,6 @@ class ProfileHeaderCard extends ConsumerWidget {
   }
 
   String _getAvatarLetter(Profile profile) {
-    if (profile.customAlias != null && profile.customAlias!.trim().isNotEmpty) {
-      return profile.customAlias!.trim()[0].toUpperCase();
-    }
     if (profile.name.trim().isNotEmpty) {
       return profile.name.trim()[0].toUpperCase();
     }

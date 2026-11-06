@@ -22,10 +22,7 @@ class ProfileRepository {
   /// Default profile generated on first app launch (points to existing 'note_it_db').
   static final Profile defaultProfile = Profile(
     id: 'profile_default',
-    name: 'Default',
-    customAlias: 'Primary Workspace',
-    colorValue: 0xFF2196F3,
-    iconName: 'person',
+    name: 'NoteIt',
     dbFileName: 'note_it_db',
     isDefault: true,
     createdAt: DateTime.now().toUtc(),
@@ -140,9 +137,6 @@ class ProfileRepository {
   /// Creates and persists a brand new user profile with a unique database file.
   Future<Profile> createProfile({
     required String name,
-    String? customAlias,
-    int colorValue = 0xFF2196F3,
-    String iconName = 'person',
     String? linkedEmail,
     String syncMode = 'offline',
   }) async {
@@ -153,9 +147,6 @@ class ProfileRepository {
     final newProfile = Profile(
       id: id,
       name: name,
-      customAlias: customAlias,
-      colorValue: colorValue,
-      iconName: iconName,
       dbFileName: dbFileName,
       linkedEmail: linkedEmail,
       syncMode: syncMode,

@@ -3,9 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:window_manager/window_manager.dart';
 
-import 'package:noteit/shared/app_bars/desktop_window_controls.dart';
-
-import 'package:noteit/core/helpers/platform_helper.dart';
 import 'package:noteit/database/drift/notes/notes_dao.dart';
 import 'package:noteit/features/backup/export_page.dart';
 import 'package:noteit/features/backup/import_page.dart';
@@ -28,6 +25,9 @@ import 'package:noteit/features/trash/view/trash_page.dart';
 import 'package:noteit/features/reminder/reminder_settings_page.dart';
 import 'package:noteit/features/themes/view/theme_page.dart';
 
+import '../../../../../core/helpers/platform_helper.dart';
+import '../../../../../shared/app_bars/desktop_window_controls.dart';
+import '../../../../profiles/widgets/profile_badge.dart';
 import '../../../../settings/default_layout/default_settings_page.dart';
 import '../../../../settings/keybindings/keybinding_settings_page.dart';
 import '../../../../settings/note_editor/note_editor_settings_page.dart';
@@ -63,10 +63,11 @@ class DesktopContentPanel extends ConsumerWidget {
             ),
             elevation: 0,
             scrolledUnderElevation: PlatformHelper.isWideLayout(context) ? 0.0 : null,
-            actions: const [
+            actions: [
               // IconTray(),
-              SyncStateWidget(),
-              DesktopWindowControls(),
+              const ProfileBadge(),
+              const SyncStateWidget(),
+              const DesktopWindowControls(),
             ],
           ),
         ),

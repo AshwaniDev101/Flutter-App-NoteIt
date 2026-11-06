@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/overlays/snack_bar_manager.dart';
-import '../../profiles/active_profile_provider.dart';
-import '../../profiles/profile_providers.dart';
+import '../active_profile_provider.dart';
+import '../profile_providers.dart';
 
 /// Modal dialog for creating a new user profile workspace.
 class CreateProfileDialog extends ConsumerStatefulWidget {
@@ -15,25 +15,10 @@ class CreateProfileDialog extends ConsumerStatefulWidget {
 class _CreateProfileDialogState extends ConsumerState<CreateProfileDialog> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _aliasController = TextEditingController();
-
-  int _selectedColorValue = 0xFF2196F3; // Default Blue
-
-  static const List<int> _presetColors = [
-    0xFF2196F3, // Ocean Blue
-    0xFF4CAF50, // Emerald Green
-    0xFFFF9800, // Amber / Orange
-    0xFF9C27B0, // Royal Purple
-    0xFFE91E63, // Crimson Rose
-    0xFF009688, // Teal
-    0xFF3F51B5, // Indigo
-    0xFF00BCD4, // Cyan
-  ];
 
   @override
   void dispose() {
     _nameController.dispose();
-    _aliasController.dispose();
     super.dispose();
   }
 
@@ -41,13 +26,9 @@ class _CreateProfileDialogState extends ConsumerState<CreateProfileDialog> {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     final name = _nameController.text.trim();
-    final alias = _aliasController.text.trim();
 
     final newProfile = await ref.read(profilesListProvider.notifier).createProfile(
           name: name,
-          customAlias: alias.isNotEmpty ? alias : null,
-          colorValue: _selectedColorValue,
-          iconName: 'person',
         );
 
     if (mounted) {
@@ -111,60 +92,6 @@ class _CreateProfileDialogState extends ConsumerState<CreateProfileDialog> {
                     }
                     return null;
                   },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _aliasController,
-                  decoration: InputDecoration(
-                    labelText: 'Subtitle / Custom Alias (Optional)',
-                    hintText: 'e.g. Company X, Daily Journal',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    prefixIcon: const Icon(Icons.subtitles_rounded),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  'ACCENT COLOR',
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme.primary,
-                    letterSpacing: 1.1,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: _presetColors.map((colorHex) {
-                    final isSelected = _selectedColorValue == colorHex;
-                    final color = Color(colorHex);
-                    return GestureDetector(
-                      onTap: () => setState(() => _selectedColorValue = colorHex),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: color,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: isSelected ? colorScheme.onSurface : Colors.transparent,
-                            width: 3,
-                          ),
-                          boxShadow: isSelected
-                              ? [
-                                  BoxShadow(
-                                    color: color.withValues(alpha: 0.4),
-                                    blurRadius: 8,
-                                    spreadRadius: 2,
-                                  )
-                                ]
-                              : null,
-                        ),
-                        child: isSelected ? const Icon(Icons.check_rounded, color: Colors.white, size: 20) : null,
-                      ),
-                    );
-                  }).toList(),
                 ),
               ],
             ),
