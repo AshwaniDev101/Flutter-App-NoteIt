@@ -21,6 +21,7 @@ enum HomeMenuAction {
 
 class SortMenuButton extends StatefulWidget {
   final IconData icon;
+  final String tooltip;
   final HomeMenuAction currentSortSelection;
   final HomeMenuAction currentPlatformSelection;
   final ValueChanged<HomeMenuAction> onSelected;
@@ -28,6 +29,7 @@ class SortMenuButton extends StatefulWidget {
   const SortMenuButton({
     super.key,
     this.icon = CupertinoIcons.sort_down,
+    this.tooltip = 'Sort options',
     required this.currentSortSelection,
     this.currentPlatformSelection = HomeMenuAction.filterAll,
     required this.onSelected,
@@ -82,6 +84,7 @@ class _SortMenuButtonState extends State<SortMenuButton> {
     if (isMobile) {
       return IconButton(
         icon: Icon(widget.icon),
+        tooltip: widget.tooltip,
         onPressed: () => _showMobileBottomSheet(context),
       );
     }
@@ -103,6 +106,7 @@ class _SortMenuButtonState extends State<SortMenuButton> {
             }
           },
           icon: Icon(widget.icon),
+          tooltip: widget.tooltip,
         );
       },
       menuChildren: [

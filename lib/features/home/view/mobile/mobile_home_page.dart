@@ -106,6 +106,7 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> with WidgetsBin
       actions: const [
         // IconTray(),
         ProfileBadge(),
+        SizedBox(width: 8,),
         SyncStateWidget(),
         DesktopWindowControls(),
       ],

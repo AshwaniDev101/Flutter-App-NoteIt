@@ -20,12 +20,14 @@ enum NoteViewType {
 
 class ViewMenuButton extends StatefulWidget {
   final IconData icon;
+  final String tooltip;
   final NoteViewType currentView;
   final ValueChanged<NoteViewType> onViewSelected;
 
   const ViewMenuButton({
     super.key,
     this.icon = Icons.grid_view,
+    this.tooltip = 'View options',
     required this.currentView,
     required this.onViewSelected,
   });
@@ -72,6 +74,7 @@ class _ViewMenuButtonState extends State<ViewMenuButton> {
     if (isMobile) {
       return IconButton(
         icon: Icon(widget.icon),
+        tooltip: widget.tooltip,
         onPressed: () => _showMobileBottomSheet(context),
       );
     }
@@ -93,6 +96,7 @@ class _ViewMenuButtonState extends State<ViewMenuButton> {
             }
           },
           icon: Icon(widget.icon),
+          tooltip: widget.tooltip,
         );
       },
       menuChildren: [

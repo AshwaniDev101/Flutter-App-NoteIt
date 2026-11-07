@@ -1,56 +1,7 @@
 part of '../app_theme.dart';
 
-ThemeData get _darkThemeData => ThemeData(
-  useMaterial3: true,
-  brightness: Brightness.dark,
-  textTheme: AppTypography.textTheme,
-
-
-  textButtonTheme: TextButtonThemeData(
-    style: TextButton.styleFrom(
-      // Uses 'primary' so text buttons stand out as actionable text
-      foregroundColor: const Color(0xFFA6ACFF),
-      // Optional: Add a subtle padding or shape if needed globally
-      // padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-    ),
-  ),
-
-  iconButtonTheme: IconButtonThemeData(
-    style: IconButton.styleFrom(
-      // Uses 'onSurfaceVariant' for a subtle default icon color that isn't too distracting
-      foregroundColor: const Color(0xFF8F95B2),
-      // Optional: Use 'surfaceContainerHighest' for a subtle background hover/focus state
-      // hoverColor: const Color(0xFF1B1E27),
-    ),
-  ),
-
-  filledButtonTheme: FilledButtonThemeData(
-    style: FilledButton.styleFrom(
-      backgroundColor: const Color(0xFFA6ACFF),
-      foregroundColor: const Color(0xFF131853),
-    ),
-  ),
-
-  outlinedButtonTheme: OutlinedButtonThemeData(
-    style: OutlinedButton.styleFrom(
-      foregroundColor: const Color(0xFFA6ACFF),
-      side: const BorderSide(color: Color(0xFF757B9A)),
-    ),
-  ),
-
-  elevatedButtonTheme: ElevatedButtonThemeData(
-    style: ElevatedButton.styleFrom(
-      backgroundColor: const Color(0xFF22263A),
-      foregroundColor: const Color(0xFFA6ACFF),
-    ),
-  ),
-
-  floatingActionButtonTheme: const FloatingActionButtonThemeData(
-    backgroundColor: Color(0xFF323B7C),
-    foregroundColor: Color(0xFFCACDF5),
-  ),
-
-  colorScheme: const ColorScheme(
+ThemeData get _darkThemeData {
+  const colorScheme = ColorScheme(
     brightness: Brightness.dark,
 
     // PRIMARY COLORS (The Main Brand)
@@ -133,17 +84,88 @@ ThemeData get _darkThemeData => ThemeData(
     shadow: Colors.black,
     // The semi-transparent overlay color placed behind modal bottom sheets or dialogs to darken the app content behind it.
     scrim: Colors.black87,
-  ),
-  appBarTheme: const AppBarTheme(
-    backgroundColor: Color(0xFF0F111A),
-    foregroundColor: Color(0xFFE2E6FF),
-    elevation: 0,
-    systemOverlayStyle: SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-      statusBarBrightness: Brightness.dark,
+  );
+
+  return ThemeData(
+    useMaterial3: true,
+    brightness: Brightness.dark,
+    textTheme: AppTypography.textTheme,
+    colorScheme: colorScheme,
+
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        // Uses 'primary' so text buttons stand out as actionable text
+        foregroundColor: const Color(0xFFA6ACFF),
+        // Optional: Add a subtle padding or shape if needed globally
+        // padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      ),
     ),
-  ),
-);
+
+    // iconButtonTheme: IconButtonThemeData(
+    //   style: IconButton.styleFrom(
+    //     // Uses 'onSurfaceVariant' for a subtle default icon color that isn't too distracting
+    //     foregroundColor: const Color(0xFF8F95B2),
+    //     // Optional: Use 'surfaceContainerHighest' for a subtle background hover/focus state
+    //     // hoverColor: const Color(0xFFFF0707),
+    //
+    //     // focusColor: Colors.red,
+    //   ),
+    // ),
+
+    iconButtonTheme: IconButtonThemeData(
+      style: ButtonStyle(
+        foregroundColor: WidgetStateProperty.resolveWith<Color>(
+              (Set<WidgetState> states) {
+            // Check if the button is being hovered
+            if (states.contains(WidgetState.hovered)) {
+              return colorScheme.onSurface; // The icon color when hovered
+            }
+
+            // The default icon color
+            return colorScheme.onSurfaceVariant;
+          },
+        ),
+      ),
+    ),
+
+
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        backgroundColor: const Color(0xFFA6ACFF),
+        foregroundColor: const Color(0xFF131853),
+      ),
+    ),
+
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: const Color(0xFFA6ACFF),
+        side: const BorderSide(color: Color(0xFF757B9A)),
+      ),
+    ),
+
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color(0xFF22263A),
+        foregroundColor: const Color(0xFFA6ACFF),
+      ),
+    ),
+
+    floatingActionButtonTheme: const FloatingActionButtonThemeData(
+      backgroundColor: Color(0xFF323B7C),
+      foregroundColor: Color(0xFFCACDF5),
+    ),
+
+    appBarTheme: const AppBarTheme(
+      backgroundColor: Color(0xFF0F111A),
+      foregroundColor: Color(0xFFE2E6FF),
+      elevation: 0,
+      systemOverlayStyle: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+      ),
+    ),
+  );
+}
 
 // nice colors to considers #3c4ba2,#1d375c, #abc7d3 blue, #e2c53a yellow, #dc3e2d red

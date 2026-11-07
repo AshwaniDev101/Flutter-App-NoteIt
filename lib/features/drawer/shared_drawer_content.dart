@@ -1,13 +1,8 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:noteit/shared/widgets/app_switch.dart';
+import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
 
 import '../../core/config/app_env.dart';
-import '../../database/firebase/auth/firebase_provider.dart';
-import '../../core/theme/app_theme.dart';
-import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
-import '../profiles/widgets/profile_header_card.dart';
 
 class SharedDrawerContent extends ConsumerStatefulWidget {
   final RightPanelPageOptions? selectedOption;
@@ -38,31 +33,71 @@ class _SharedDrawerContentState extends ConsumerState<SharedDrawerContent> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final isDarkMode = theme.brightness == Brightness.dark;
 
-    return SafeArea(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // // --- 1. Top Profile Switcher Header ---
-          // const Padding(
-          //   padding: EdgeInsets.fromLTRB(16, 16, 16, 12),
-          //   child: ProfileHeaderCard(),
-          // ),
-
-          // --- 2. Scrollable Navigation ---
-          Expanded(
-            child: Scrollbar(
-              controller: _scrollController,
-              thumbVisibility: true,
-              interactive: true,
-              child: SingleChildScrollView(
-                controller: _scrollController,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // --- App Branding Header ---
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: colorScheme.primary.withValues(alpha: 0.2),
+                    width: 1,
+                  ),
+                ),
+                child: Image.asset(
+                  'assets/icons/note_icon.png',
+                  fit: BoxFit.contain,
+                ),
+              ),
+              const SizedBox(width: 12),
+              RichText(
+                text: TextSpan(
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.5,
+                    fontSize: 20,
+                  ),
                   children: [
-                    const _SectionHeader(title: 'WORKSPACE'),
+                    TextSpan(
+                      text: 'Note',
+                      style: TextStyle(color: colorScheme.onSurface),
+                    ),
+                    TextSpan(
+                      text: 'It',
+                      style: TextStyle(color: colorScheme.primary),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // --- 2. Scrollable Navigation ---
+        Flexible(
+          fit: FlexFit.loose,
+          child: Scrollbar(
+            controller: _scrollController,
+            thumbVisibility: true,
+            interactive: true,
+            child: SingleChildScrollView(
+              controller: _scrollController,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const _SectionHeader(title: 'WORKSPACE'),
                     _CompactDrawerTile(
                       option: RightPanelPageOptions.trash,
                       isSelected: widget.selectedOption == RightPanelPageOptions.trash,
@@ -122,83 +157,8 @@ class _SharedDrawerContentState extends ConsumerState<SharedDrawerContent> {
               ),
             ),
           ),
-
-          // --- 3. Unified Footer (Actions & Theme) ---
-          Divider(height: 1, color: colorScheme.surfaceContainerHighest),
-
-          //'Sign Out' : 'Sign In',
-          // Container(
-          //   color: colorScheme.surfaceContainerLowest, // Optional: slightly distinct footer background
-          //   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-          //   child: Column(
-          //     children: [
-          //       // Auth Button
-          //       StreamBuilder<User?>(
-          //         initialData: FirebaseAuth.instance.currentUser,
-          //         stream: FirebaseAuth.instance.authStateChanges(),
-          //         builder: (context, snapshot) {
-          //           final user = snapshot.data;
-          //           final isSignedIn = user != null;
-          //
-          //           return _ActionContainer(
-          //             title: isSignedIn ? 'Sign Out' : 'Sign In',
-          //             subtitle: isSignedIn ? (user.displayName ?? 'Account') : 'Sync your data',
-          //             icon: isSignedIn ? Icons.logout_rounded : Icons.login_rounded,
-          //             backgroundColor: isSignedIn ? colorScheme.surfaceContainerHighest : colorScheme.primaryContainer,
-          //             foregroundColor: isSignedIn ? colorScheme.onSurfaceVariant : colorScheme.onPrimaryContainer,
-          //             onTap: () async {
-          //               if (isSignedIn) {
-          //                 await ref.read(authRepositoryProvider).signOut();
-          //               } else {
-          //                 await ref.read(authRepositoryProvider).signInWithGoogle();
-          //               }
-          //               widget.onClose();
-          //             },
-          //           );
-          //         },
-          //       ),
-          //
-          //       const SizedBox(height: 20),
-          //
-          //       // Theme Toggle
-          //       Row(
-          //         mainAxisAlignment: MainAxisAlignment.center,
-          //         children: [
-          //           Icon(
-          //             Icons.light_mode_rounded,
-          //             size: 18,
-          //             color: !isDarkMode ? colorScheme.primary : colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-          //           ),
-          //           const SizedBox(width: 8),
-          //           AppSwitch(
-          //             value: isDarkMode,
-          //             inactiveThumbColor: colorScheme.surface,
-          //             inactiveTrackColor: colorScheme.surfaceContainerHighest,
-          //             // thumbIcon: WidgetStateProperty.resolveWith((states) {
-          //             //   if (states.contains(WidgetState.selected)) {
-          //             //     return Icon(Icons.dark_mode_rounded, size: 12, color: colorScheme.primary);
-          //             //   }
-          //             //   return Icon(Icons.light_mode_rounded, size: 12, color: colorScheme.onSurfaceVariant);
-          //             // }),
-          //             onChanged: (value) {
-          //               final newTheme = value ? AppThemeType.dark : AppThemeType.light;
-          //               ref.read(themeProvider.notifier).setTheme(newTheme);
-          //             },
-          //           ),
-          //           const SizedBox(width: 8),
-          //           Icon(
-          //             Icons.dark_mode_rounded,
-          //             size: 18,
-          //             color: isDarkMode ? colorScheme.primary : colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-          //           ),
-          //         ],
-          //       ),
-          //     ],
-          //   ),
-          // ),
         ],
-      ),
-    );
+      );
   }
 }
 
@@ -265,66 +225,6 @@ class _CompactDrawerTile extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ActionContainer extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final Color backgroundColor;
-  final Color foregroundColor;
-  final VoidCallback onTap;
-
-  const _ActionContainer({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    required this.backgroundColor,
-    required this.foregroundColor,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: foregroundColor.withValues(alpha: 0.1),
-            width: 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: foregroundColor, size: 22),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(color: foregroundColor, fontWeight: FontWeight.w600, fontSize: 14),
-                  ),
-                  Text(
-                    subtitle,
-                    style: TextStyle(color: foregroundColor.withValues(alpha: 0.8), fontSize: 12),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-          ],
         ),
       ),
     );

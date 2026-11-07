@@ -93,32 +93,9 @@ class _ProfileBadgeState extends ConsumerState<ProfileBadge> {
       }
     }
 
-    final avatarWidget = Tooltip(
-      message: 'Profiles',
-      child: Material(
-        color: ProfileBadgeHelper.getColor(activeProfile.name),
-        shape: const CircleBorder(),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          customBorder: const CircleBorder(),
-          onTap: openProfileMenu,
-          onSecondaryTap: openProfileMenu,
-          child: SizedBox(
-            height: 24,
-            width: 24,
-            child: Center(
-              child: Text(
-                ProfileBadgeHelper.getInitial(activeProfile.name),
-                style: const TextStyle(
-                  fontSize: 10,
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
+    final avatarWidget = _AvatarBadge(
+      activeProfileName: activeProfile.name,
+      onTap: openProfileMenu,
     );
 
     if (isMobile) {
@@ -455,5 +432,73 @@ class _ProfileBadgeState extends ConsumerState<ProfileBadge> {
         );
       }
     }
+  }
+}
+
+class _AvatarBadge extends StatefulWidget {
+  final String activeProfileName;
+  final VoidCallback onTap;
+
+  const _AvatarBadge({
+    required this.activeProfileName,
+    required this.onTap,
+  });
+
+  @override
+  State<_AvatarBadge> createState() => _AvatarBadgeState();
+}
+
+class _AvatarBadgeState extends State<_AvatarBadge> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: 'Profiles',
+      child: Material(
+        color: ProfileBadgeHelper.getColor(widget.activeProfileName),
+        shape: const CircleBorder(),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onHover: (hovered) {
+            if (_isHovered != hovered) {
+              setState(() => _isHovered = hovered);
+            }
+          },
+          onTap: widget.onTap,
+          onSecondaryTap: widget.onTap,
+          child: SizedBox(
+            height: 24,
+            width: 24,
+            child: Stack(
+              children: [
+                Center(
+                  child: Text(
+                    ProfileBadgeHelper.getInitial(widget.activeProfileName),
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Positioned.fill(
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: _isHovered
+                          ? Colors.transparent
+                          : Colors.black.withValues(alpha: 0.2),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
