@@ -1,6 +1,8 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:noteit/features/profiles/widgets/profile_header_card.dart';
+import 'package:noteit/database/firebase/auth/firebase_provider.dart';
+import 'package:noteit/features/profiles/widgets/sync_menu_button.dart';
 
 import '../../../core/helpers/platform_helper.dart';
 import '../../../core/sync/sync_engine.dart';
@@ -30,6 +32,7 @@ class _ProfileBadgeState extends ConsumerState<ProfileBadge> {
       builder: (bottomSheetContext, setModalState) {
         final activeProfile = ref.watch(activeProfileProvider);
         final profiles = ref.watch(profilesListProvider);
+        final authUser = ref.watch(authStateProvider).value;
         final theme = Theme.of(bottomSheetContext);
 
         return Column(
@@ -51,6 +54,7 @@ class _ProfileBadgeState extends ConsumerState<ProfileBadge> {
                 context: bottomSheetContext,
                 profile: profile,
                 activeProfile: activeProfile,
+                authUser: authUser,
                 onSelect: () => Navigator.of(bottomSheetContext).pop(),
               );
             }),
@@ -72,6 +76,7 @@ class _ProfileBadgeState extends ConsumerState<ProfileBadge> {
   Widget build(BuildContext context) {
     final activeProfile = ref.watch(activeProfileProvider);
     final profiles = ref.watch(profilesListProvider);
+    final authUser = ref.watch(authStateProvider).value;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isMobile = !PlatformHelper.isWideLayout(context);
@@ -80,6 +85,12 @@ class _ProfileBadgeState extends ConsumerState<ProfileBadge> {
     final currentEngine = syncMode.isCloud
         ? SyncEngine.cloud
         : (syncMode.isLocal ? SyncEngine.local : SyncEngine.offline);
+
+    final isAuthForActive = authUser != null &&
+        activeProfile.linkedEmail != null &&
+        authUser.email?.toLowerCase() == activeProfile.linkedEmail?.toLowerCase();
+
+    final activePhotoUrl = isAuthForActive ? authUser.photoURL : null;
 
     void openProfileMenu() {
       if (isMobile) {
@@ -95,6 +106,7 @@ class _ProfileBadgeState extends ConsumerState<ProfileBadge> {
 
     final avatarWidget = _AvatarBadge(
       activeProfileName: activeProfile.name,
+      photoUrl: activePhotoUrl,
       onTap: openProfileMenu,
     );
 
@@ -141,6 +153,7 @@ class _ProfileBadgeState extends ConsumerState<ProfileBadge> {
                       context: context,
                       profile: profile,
                       activeProfile: activeProfile,
+                      authUser: authUser,
                       onSelect: () {
                         if (_menuController.isOpen) {
                           _menuController.close();
@@ -198,11 +211,22 @@ class _ProfileBadgeState extends ConsumerState<ProfileBadge> {
     required BuildContext context,
     required Profile profile,
     required Profile activeProfile,
+    required User? authUser,
     required VoidCallback onSelect,
   }) {
     final isSelected = profile.id == activeProfile.id;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+
+    final isAuthForProfile = authUser != null &&
+        profile.linkedEmail != null &&
+        authUser.email?.toLowerCase() == profile.linkedEmail?.toLowerCase();
+
+    final photoUrl = isAuthForProfile ? authUser.photoURL : null;
+    final displayName = isAuthForProfile && (authUser.displayName?.isNotEmpty ?? false)
+        ? authUser.displayName!
+        : profile.name;
+    final hasPhoto = photoUrl != null && photoUrl.isNotEmpty;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -222,17 +246,20 @@ class _ProfileBadgeState extends ConsumerState<ProfileBadge> {
         leading: CircleAvatar(
           radius: 14,
           backgroundColor: ProfileBadgeHelper.getColor(profile.name),
-          child: Text(
-            ProfileBadgeHelper.getInitial(profile.name),
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          backgroundImage: hasPhoto ? NetworkImage(photoUrl) : null,
+          child: !hasPhoto
+              ? Text(
+                  ProfileBadgeHelper.getInitial(profile.name),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                )
+              : null,
         ),
         title: Text(
-          profile.name,
+          displayName,
           style: theme.textTheme.bodyMedium?.copyWith(
             fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
             color: isSelected ? colorScheme.primary : colorScheme.onSurface,
@@ -437,10 +464,12 @@ class _ProfileBadgeState extends ConsumerState<ProfileBadge> {
 
 class _AvatarBadge extends StatefulWidget {
   final String activeProfileName;
+  final String? photoUrl;
   final VoidCallback onTap;
 
   const _AvatarBadge({
     required this.activeProfileName,
+    this.photoUrl,
     required this.onTap,
   });
 
@@ -453,6 +482,8 @@ class _AvatarBadgeState extends State<_AvatarBadge> {
 
   @override
   Widget build(BuildContext context) {
+    final hasPhoto = widget.photoUrl != null && widget.photoUrl!.isNotEmpty;
+
     return Tooltip(
       message: 'Profiles',
       child: Material(
@@ -473,16 +504,36 @@ class _AvatarBadgeState extends State<_AvatarBadge> {
             width: 24,
             child: Stack(
               children: [
-                Center(
-                  child: Text(
-                    ProfileBadgeHelper.getInitial(widget.activeProfileName),
-                    style: const TextStyle(
-                      fontSize: 10,
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
+                if (hasPhoto)
+                  Positioned.fill(
+                    child: Image.network(
+                      widget.photoUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Center(
+                          child: Text(
+                            ProfileBadgeHelper.getInitial(widget.activeProfileName),
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  )
+                else
+                  Center(
+                    child: Text(
+                      ProfileBadgeHelper.getInitial(widget.activeProfileName),
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                ),
                 Positioned.fill(
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 150),
