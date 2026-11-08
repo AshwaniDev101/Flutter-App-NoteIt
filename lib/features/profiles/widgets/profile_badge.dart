@@ -13,7 +13,6 @@ import '../helpers/profile_badge_helper.dart';
 import '../../profiles/active_profile_provider.dart';
 import '../../profiles/profile_model.dart';
 import '../../profiles/profile_providers.dart';
-import '../../profiles/profile_repository.dart';
 import 'create_profile_dialog.dart';
 
 class ProfileBadge extends ConsumerStatefulWidget {
@@ -590,15 +589,7 @@ class _ProfileBadgeState extends ConsumerState<ProfileBadge> {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               )
-            : profile.isDefault
-                ? Text(
-                    'Default',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: colorScheme.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  )
-                : null,
+            : null,
         trailing: isSelected
             ? Icon(Icons.check_circle_rounded, color: colorScheme.primary, size: 20)
             : null,
@@ -655,21 +646,6 @@ class _ProfileBadgeState extends ConsumerState<ProfileBadge> {
       position: position,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       items: [
-        PopupMenuItem<String>(
-          value: 'set_default',
-          enabled: !profile.isDefault,
-          child: Row(
-            children: [
-              Icon(
-                profile.isDefault ? Icons.star_rounded : Icons.star_outline_rounded,
-                size: 18,
-                color: profile.isDefault ? Theme.of(context).colorScheme.primary : null,
-              ),
-              const SizedBox(width: 8),
-              Text(profile.isDefault ? 'Default Profile' : 'Set Default'),
-            ],
-          ),
-        ),
         const PopupMenuItem<String>(
           value: 'edit',
           child: Row(
@@ -682,19 +658,18 @@ class _ProfileBadgeState extends ConsumerState<ProfileBadge> {
         ),
         PopupMenuItem<String>(
           value: 'delete',
-          enabled: !profile.isDefault,
           child: Row(
             children: [
               Icon(
                 Icons.delete_outline_rounded,
                 size: 18,
-                color: profile.isDefault ? null : Theme.of(context).colorScheme.error,
+                color: Theme.of(context).colorScheme.error,
               ),
               const SizedBox(width: 8),
               Text(
                 'Delete',
                 style: TextStyle(
-                  color: profile.isDefault ? null : Theme.of(context).colorScheme.error,
+                  color: Theme.of(context).colorScheme.error,
                 ),
               ),
             ],
@@ -706,35 +681,12 @@ class _ProfileBadgeState extends ConsumerState<ProfileBadge> {
     if (selectedValue == null || !context.mounted) return;
 
     switch (selectedValue) {
-      case 'set_default':
-        await _handleSetDefault(profile);
-        break;
       case 'edit':
         _showEditProfileDialog(context, profile);
         break;
       case 'delete':
         _confirmAndDeleteProfile(context, profile);
         break;
-    }
-  }
-
-  Future<void> _handleSetDefault(Profile profile) async {
-    if (profile.isDefault) return;
-    if (_menuController.isOpen) {
-      _menuController.close();
-    }
-    final success = await ref.read(profilesListProvider.notifier).setDefaultProfile(profile.id);
-    if (success) {
-      final activeProfile = ref.read(activeProfileProvider);
-      if (activeProfile.id == profile.id) {
-        ref.read(activeProfileProvider.notifier).updateActiveProfile(profile.copyWith(isDefault: true));
-      } else if (activeProfile.isDefault) {
-        ref.read(activeProfileProvider.notifier).updateActiveProfile(activeProfile.copyWith(isDefault: false));
-      }
-      SnackBarManager.show(
-        msg: 'Profile "${profile.name}" set as default.',
-        type: SnackBarMessageType.acknowledgment,
-      );
     }
   }
 
@@ -749,7 +701,6 @@ class _ProfileBadgeState extends ConsumerState<ProfileBadge> {
   }
 
   void _confirmAndDeleteProfile(BuildContext context, Profile profile) async {
-    if (profile.isDefault) return;
     if (_menuController.isOpen) {
       _menuController.close();
     }
@@ -781,11 +732,13 @@ class _ProfileBadgeState extends ConsumerState<ProfileBadge> {
       final activeProfile = ref.read(activeProfileProvider);
       if (activeProfile.id == profile.id) {
         final allProfiles = ref.read(profilesListProvider);
-        final defaultProf = allProfiles.firstWhere(
-          (p) => p.isDefault,
-          orElse: () => ProfileRepository.defaultProfile,
-        );
-        await ref.read(activeProfileProvider.notifier).switchProfile(defaultProf);
+        final remaining = allProfiles.where((p) => p.id != profile.id).toList();
+        if (remaining.isNotEmpty) {
+          await ref.read(activeProfileProvider.notifier).switchProfile(remaining.first);
+        } else {
+          final newProf = await ref.read(profilesListProvider.notifier).createProfile(name: 'NoteIt');
+          await ref.read(activeProfileProvider.notifier).switchProfile(newProf);
+        }
       }
       await ref.read(profilesListProvider.notifier).deleteProfile(profile.id);
       if (context.mounted) {

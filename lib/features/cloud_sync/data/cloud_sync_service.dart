@@ -17,6 +17,7 @@ final cloudSyncServiceProvider = Provider<CloudSyncService>((ref) {
 class CloudSyncService {
   final Ref ref;
   bool _isRunning = false;
+  bool _isExecutingFullSync = false;
   StreamSubscription<List<DocumentSnapshot<Map<String, dynamic>>>>? _folderSubscription;
   StreamSubscription<List<DocumentSnapshot<Map<String, dynamic>>>>? _noteSubscription;
 
@@ -34,7 +35,7 @@ class CloudSyncService {
     }
 
     final activeProfile = ref.read(activeProfileProvider);
-    if (activeProfile.linkedEmail != null && user.email != activeProfile.linkedEmail) {
+    if (activeProfile.linkedEmail != null && user.email?.toLowerCase() != activeProfile.linkedEmail?.toLowerCase()) {
       AppLogger.w("CloudSyncService: Signed-in user (${user.email}) does not match active profile linkedEmail (${activeProfile.linkedEmail}). Aborting sync.");
       return;
     }
@@ -48,8 +49,8 @@ class CloudSyncService {
   }
 
   void stop() {
-    if (!_isRunning) return;
     _cancelSubscriptions();
+    if (!_isRunning) return;
     _isRunning = false;
     AppLogger.d("CloudSyncService: Stopping Firebase sync engine...");
   }
@@ -110,7 +111,7 @@ class CloudSyncService {
   }
 
   Future<void> executeFullSync() async {
-    if (!_isRunning) return;
+    if (!_isRunning || _isExecutingFullSync) return;
 
     final firebaseDb = ref.read(noteFirebaseDatabaseProvider);
     if (firebaseDb == null) {
@@ -118,6 +119,7 @@ class CloudSyncService {
       return;
     }
 
+    _isExecutingFullSync = true;
     AppLogger.d("CloudSyncService: Executing full sync...");
     ref.read(isSyncingProvider.notifier).setSyncing(true);
 
@@ -173,6 +175,7 @@ class CloudSyncService {
     } catch (e, st) {
       AppLogger.e("CloudSyncService: Error executing full sync", error: e, stack: st);
     } finally {
+      _isExecutingFullSync = false;
       ref.read(isSyncingProvider.notifier).setSyncing(false);
     }
   }

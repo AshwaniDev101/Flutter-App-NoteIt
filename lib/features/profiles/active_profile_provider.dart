@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/util/logger.dart';
 import '../../database/firebase/auth/firebase_provider.dart';
 import '../../database/shared_preference/shared_preference_manager.dart';
+import '../../features/cloud_sync/data/cloud_sync_service.dart';
 import '../../features/folders/core/providers.dart';
 import '../../features/home/core/providers.dart';
 import '../../features/lock/lock_manger/lock_manager.dart';
@@ -17,6 +18,9 @@ final activeProfileProvider = NotifierProvider<ActiveProfileNotifier, Profile>((
 
 class ActiveProfileNotifier extends Notifier<Profile> {
   bool _isSwitching = false;
+
+  /// Returns true if a profile switch operation is currently in progress.
+  bool get isSwitching => _isSwitching;
 
   @override
   Profile build() {
@@ -51,6 +55,9 @@ class ActiveProfileNotifier extends Notifier<Profile> {
     _isSwitching = true;
     try {
       AppLogger.d('ActiveProfileNotifier: Switching profile from "${state.name}" (${state.id}) to "${targetProfile.name}" (${targetProfile.id})...');
+
+      // 0. Stop active cloud sync listeners to prevent permission-denied errors on active streams during auth swap
+      ref.read(cloudSyncServiceProvider).stop();
 
       // 1. Clear active UI selection states
       ref.read(activeNoteProvider.notifier).clear();
@@ -95,24 +102,43 @@ class ActiveProfileNotifier extends Notifier<Profile> {
               AppLogger.d('ActiveProfileNotifier: Direct Firebase re-auth via stored OAuth tokens succeeded for $targetEmail (100% Silent).');
               authenticatedWithStoredToken = true;
             } else {
-              AppLogger.w('ActiveProfileNotifier: Stored OAuth token re-auth resulted in email mismatch or failure (${storedUser?.email}).');
+              AppLogger.w('ActiveProfileNotifier: Stored OAuth token re-auth failed or expired. Clearing stale tokens for ${targetProfile.name}.');
+              await ProfileSecureStorage.instance.deleteProfileToken(targetProfile.id);
             }
           }
 
           // 2. If stored token re-auth wasn't available or failed, attempt lightweight silent sign in
           if (!authenticatedWithStoredToken) {
             AppLogger.d('ActiveProfileNotifier: Attempting lightweight Google Sign-In fallback...');
-            final silentUser = await authRepo.signInSilently();
+            final silentResult = await authRepo.signInSilentlyDetails();
+            final silentUser = silentResult.user;
             final silentEmail = silentUser?.email?.toLowerCase();
 
             if (silentEmail == targetEmail) {
               AppLogger.d('ActiveProfileNotifier: Lightweight silent re-authentication succeeded for $targetEmail.');
+              authenticatedWithStoredToken = true;
+              if (silentResult.credentials?.idToken != null) {
+                await ProfileSecureStorage.instance.saveProfileOAuthTokens(
+                  profileId: targetProfile.id,
+                  idToken: silentResult.credentials!.idToken!,
+                  accessToken: silentResult.credentials?.accessToken,
+                );
+              }
             } else {
               AppLogger.w('ActiveProfileNotifier: Lightweight silent auth unavailable or mismatched ($silentEmail vs $targetEmail). Prompting interactive Google Sign-In...');
-              final interactiveUser = await authRepo.signInWithGoogle();
+              final interactiveResult = await authRepo.signInWithGoogleDetails();
+              final interactiveUser = interactiveResult.user;
 
               if (interactiveUser?.email?.toLowerCase() == targetEmail) {
                 AppLogger.d('ActiveProfileNotifier: Interactive Google Sign-In succeeded for $targetEmail.');
+                authenticatedWithStoredToken = true;
+                if (interactiveResult.credentials?.idToken != null) {
+                  await ProfileSecureStorage.instance.saveProfileOAuthTokens(
+                    profileId: targetProfile.id,
+                    idToken: interactiveResult.credentials!.idToken!,
+                    accessToken: interactiveResult.credentials?.accessToken,
+                  );
+                }
               } else {
                 AppLogger.w('ActiveProfileNotifier: Interactive Google Sign-In cancelled or mismatched for profile ${targetProfile.name}.');
               }

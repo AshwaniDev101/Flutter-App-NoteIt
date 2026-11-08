@@ -24,9 +24,6 @@ class Profile {
   /// Default sync mode for this profile ('offline', 'cloud', 'localHost', 'localClient').
   final String syncMode;
 
-  /// Whether this is the primary default profile created on first launch.
-  final bool isDefault;
-
   /// Creation timestamp (UTC).
   final DateTime createdAt;
 
@@ -41,7 +38,6 @@ class Profile {
     required this.dbFileName,
     this.linkedEmail,
     this.syncMode = 'offline',
-    this.isDefault = false,
     required this.createdAt,
     required this.lastUsedAt,
   });
@@ -56,7 +52,6 @@ class Profile {
       'dbFileName': dbFileName,
       'linkedEmail': linkedEmail,
       'syncMode': syncMode,
-      'isDefault': isDefault,
       'createdAt': createdAt.toUtc().toIso8601String(),
       'lastUsedAt': lastUsedAt.toUtc().toIso8601String(),
     };
@@ -72,7 +67,6 @@ class Profile {
       dbFileName: json['dbFileName'] as String? ?? 'note_it_db.sqlite',
       linkedEmail: json['linkedEmail'] as String?,
       syncMode: json['syncMode'] as String? ?? 'offline',
-      isDefault: json['isDefault'] as bool? ?? false,
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'] as String).toUtc()
           : DateTime.now().toUtc(),
@@ -91,7 +85,6 @@ class Profile {
     String? dbFileName,
     Object? linkedEmail = _undefined,
     String? syncMode,
-    bool? isDefault,
     DateTime? createdAt,
     DateTime? lastUsedAt,
   }) {
@@ -103,7 +96,6 @@ class Profile {
       dbFileName: dbFileName ?? this.dbFileName,
       linkedEmail: linkedEmail == _undefined ? this.linkedEmail : linkedEmail as String?,
       syncMode: syncMode ?? this.syncMode,
-      isDefault: isDefault ?? this.isDefault,
       createdAt: createdAt ?? this.createdAt,
       lastUsedAt: lastUsedAt ?? this.lastUsedAt,
     );
@@ -120,7 +112,6 @@ class Profile {
         other.dbFileName == dbFileName &&
         other.linkedEmail == linkedEmail &&
         other.syncMode == syncMode &&
-        other.isDefault == isDefault &&
         other.createdAt == createdAt &&
         other.lastUsedAt == lastUsedAt;
   }
@@ -134,7 +125,6 @@ class Profile {
         dbFileName,
         linkedEmail,
         syncMode,
-        isDefault,
         createdAt,
         lastUsedAt,
       );

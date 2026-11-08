@@ -75,13 +75,20 @@ class AuthRepository {
   /// Attempts silent Google and Firebase Sign-In using background credentials without UI popups.
   /// Returns the authenticated [User] on success, or `null` if silent auth is unavailable.
   Future<User?> signInSilently() async {
+    final result = await signInSilentlyDetails();
+    return result.user;
+  }
+
+  /// Attempts silent Google and Firebase Sign-In using background credentials without UI popups.
+  /// Returns both [User] and [GoogleSignInCredentials] on success, or `(null, null)` if unavailable.
+  Future<({User? user, GoogleSignInCredentials? credentials})> signInSilentlyDetails() async {
     try {
       AppLogger.d('AuthRepository: Attempting silent Google Sign-In (Lightweight)... Active Firebase user: ${currentUser?.email}');
       final GoogleSignInCredentials? credentials = await _googleSignIn.lightweightSignIn();
 
       if (credentials == null) {
         AppLogger.d('AuthRepository: Silent Google Sign-In returned null credentials.');
-        return null;
+        return (user: null, credentials: null);
       }
 
       AppLogger.d('AuthRepository: Received background Google credentials. Exchanging with Firebase...');
@@ -92,10 +99,10 @@ class AuthRepository {
 
       final UserCredential userCredential = await _auth.signInWithCredential(credential);
       AppLogger.d('AuthRepository: Successfully silent-authenticated as ${userCredential.user?.email} (UID: ${userCredential.user?.uid})');
-      return userCredential.user;
+      return (user: userCredential.user, credentials: credentials);
     } catch (e, st) {
       AppLogger.w('AuthRepository: Silent Google Sign-In failed: $e', e, st);
-      return null;
+      return (user: null, credentials: null);
     }
   }
 

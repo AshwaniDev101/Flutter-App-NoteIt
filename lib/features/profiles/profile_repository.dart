@@ -20,12 +20,11 @@ class ProfileRepository {
   File? _manifestFile;
   final List<Profile> _profiles = [];
 
-  /// Default profile generated on first app launch (points to existing 'note_it_db').
+  /// Default initial profile generated on first app launch (points to existing 'note_it_db').
   static final Profile defaultProfile = Profile(
     id: 'profile_default',
     name: 'NoteIt',
     dbFileName: 'note_it_db',
-    isDefault: true,
     createdAt: DateTime.now().toUtc(),
     lastUsedAt: DateTime.now().toUtc(),
   );
@@ -73,21 +72,20 @@ class ProfileRepository {
       await _saveManifest();
     }
 
-    // Migrate legacy global syncMode from SharedPreferences to default profile if necessary
+    // Migrate legacy global syncMode from SharedPreferences to active profile if necessary
     await _migrateLegacySyncMode();
   }
 
   Future<void> _migrateLegacySyncMode() async {
     try {
       final legacyMode = SharedPreferenceManager.instance.syncMode;
-      if (legacyMode != SyncMode.offline) {
-        final defaultIndex = _profiles.indexWhere((p) => p.isDefault);
-        if (defaultIndex != -1 && _profiles[defaultIndex].syncMode == 'offline') {
-          _profiles[defaultIndex] = _profiles[defaultIndex].copyWith(
+      if (legacyMode != SyncMode.offline && _profiles.isNotEmpty) {
+        if (_profiles.first.syncMode == 'offline') {
+          _profiles[0] = _profiles.first.copyWith(
             syncMode: legacyMode.name,
           );
           await _saveManifest();
-          AppLogger.d('ProfileRepository: Migrated legacy syncMode (${legacyMode.name}) to default profile.');
+          AppLogger.d('ProfileRepository: Migrated legacy syncMode (${legacyMode.name}) to active profile.');
         }
       }
     } catch (e) {
@@ -169,7 +167,6 @@ class ProfileRepository {
       dbFileName: dbFileName,
       linkedEmail: linkedEmail,
       syncMode: syncMode,
-      isDefault: false,
       createdAt: DateTime.now().toUtc(),
       lastUsedAt: DateTime.now().toUtc(),
     );
@@ -223,25 +220,6 @@ class ProfileRepository {
     return await updateProfile(updated);
   }
 
-  /// Sets the profile with [profileId] as default and clears `isDefault` on all other profiles.
-  Future<bool> setDefaultProfile(String profileId) async {
-    bool changed = false;
-    for (int i = 0; i < _profiles.length; i++) {
-      final p = _profiles[i];
-      final shouldBeDefault = (p.id == profileId);
-      if (p.isDefault != shouldBeDefault) {
-        _profiles[i] = p.copyWith(isDefault: shouldBeDefault);
-        changed = true;
-      }
-    }
-
-    if (changed) {
-      await _saveManifest();
-      AppLogger.d('ProfileRepository: Set default profile to $profileId');
-    }
-    return changed;
-  }
-
   /// Updates the [lastUsedAt] timestamp for [profileId].
   Future<void> touchProfileLastUsed(String profileId) async {
     final profile = getProfileById(profileId);
@@ -252,12 +230,10 @@ class ProfileRepository {
   }
 
   /// Deletes a profile from the manifest and physically deletes its database file.
-  ///
-  /// Returns `false` if attempting to delete the default primary profile.
   Future<bool> deleteProfile(String profileId) async {
     final profile = getProfileById(profileId);
-    if (profile == null || profile.isDefault) {
-      AppLogger.w('ProfileRepository: Cannot delete default or non-existent profile $profileId');
+    if (profile == null) {
+      AppLogger.w('ProfileRepository: Cannot delete non-existent profile $profileId');
       return false;
     }
 
