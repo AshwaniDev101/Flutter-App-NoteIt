@@ -12,6 +12,7 @@ import 'package:window_manager/window_manager.dart';
 import '../../core/router/router.dart';
 import '../../core/helpers/platform_helper.dart';
 import '../../core/helpers/time_helper.dart';
+import '../../core/util/logger.dart';
 import '../../database/drift/notes/notes_dao.dart';
 import '../../database/shared_preference/shared_preference_manager.dart';
 import '../home/core/providers.dart';
@@ -58,7 +59,7 @@ class ReminderManager {
         stopAlarmSound();
       });
     } catch (e) {
-      debugPrint('Error playing desktop alarm sound: $e');
+      AppLogger.w('ReminderManager: Error playing desktop alarm sound: $e');
     }
   }
 
@@ -102,7 +103,7 @@ class ReminderManager {
           await windowManager.show();
           await windowManager.focus();
         } catch (e) {
-          debugPrint('Error bringing desktop window to foreground: $e');
+          AppLogger.w('ReminderManager: Error bringing desktop window to foreground: $e');
         }
 
         // Set right panel view to note editor
@@ -117,7 +118,7 @@ class ReminderManager {
         }
       }
     } catch (e) {
-      debugPrint('Error launching note from notification: $e');
+      AppLogger.w('ReminderManager: Error launching note from notification: $e');
     }
   }
 
@@ -204,7 +205,7 @@ class ReminderManager {
         }
       }
     } catch (e) {
-      debugPrint('Error re-arming pending reminders: $e');
+      AppLogger.w('ReminderManager: Error re-arming pending reminders: $e');
     }
   }
 
@@ -405,9 +406,9 @@ class ReminderManager {
         timer.cancel();
       }
       _desktopTimers.clear();
-      debugPrint('ReminderManager: Canceled all active system notifications and timers.');
+      AppLogger.d('ReminderManager: Canceled all active system notifications and timers.');
     } catch (e, st) {
-      debugPrint('ReminderManager: Failed to cancel all notifications: $e\n$st');
+      AppLogger.w('ReminderManager: Failed to cancel all notifications', e, st);
     }
   }
 
@@ -471,7 +472,7 @@ class ReminderManager {
           payload: 'note_$noteUuid',
         );
       } catch (e) {
-        debugPrint('exactAllowWhileIdle exception, falling back to inexact: $e');
+        AppLogger.w('ReminderManager: exactAllowWhileIdle exception, falling back to inexact: $e');
         try {
           await _notificationsPlugin.zonedSchedule(
             id: id,
@@ -484,7 +485,7 @@ class ReminderManager {
             payload: 'note_$noteUuid',
           );
         } catch (err) {
-          debugPrint('inexactAllowWhileIdle exception: $err');
+          AppLogger.w('ReminderManager: inexactAllowWhileIdle exception: $err');
         }
       }
 
@@ -707,8 +708,8 @@ class ReminderManager {
         // One-time reminder: auto-clear in SQLite database
         await container.read(notesDaoProvider).updateNoteReminder(noteUuid, null);
       }
-    } catch (e) {
-      debugPrint('Error processing triggered reminder for note ($noteUuid): $e');
+    } catch (e, st) {
+      AppLogger.e('ReminderManager: Error processing triggered reminder for note ($noteUuid)', error: e, stack: st);
     }
 
     // Re-arm desktop timers for the newly calculated future dates

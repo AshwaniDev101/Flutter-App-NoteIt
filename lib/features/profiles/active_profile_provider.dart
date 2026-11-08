@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/util/logger.dart';
+import '../../database/firebase/auth/firebase_provider.dart';
 import '../../database/shared_preference/shared_preference_manager.dart';
 import '../../features/folders/core/providers.dart';
 import '../../features/home/core/providers.dart';
@@ -7,6 +8,7 @@ import '../../features/lock/lock_manger/lock_manager.dart';
 import '../../features/reminder/reminder_manager.dart';
 import 'profile_model.dart';
 import 'profile_repository.dart';
+import 'profile_secure_storage.dart';
 
 /// Riverpod provider managing the currently active user workspace profile.
 final activeProfileProvider = NotifierProvider<ActiveProfileNotifier, Profile>(() {
@@ -35,19 +37,20 @@ class ActiveProfileNotifier extends Notifier<Profile> {
 
   /// Switches the active profile to [targetProfile].
   ///
-  /// Executes the clean 6-step switching teardown & re-arm sequence:
+  /// Executes the clean 7-step switching teardown & re-arm sequence:
   /// 1. Clears active UI selection states (selected note, folder, search query).
   /// 2. Flushes session lock tokens.
   /// 3. Cancels pending OS system notifications for previous profile.
   /// 4. Saves [targetProfile.id] in SharedPreferences & updates `lastUsedAt`.
-  /// 5. Updates Riverpod state -> triggers SQLite connection swap via `localDatabaseProvider`.
-  /// 6. Re-arms pending reminders from the new active profile's database.
+  /// 5. Configures profile syncMode & performs silent/interactive auth switching.
+  /// 6. Updates Riverpod state -> triggers SQLite connection swap via `localDatabaseProvider`.
+  /// 7. Re-arms pending reminders from the new active profile's database.
   Future<void> switchProfile(Profile targetProfile) async {
     if (state.id == targetProfile.id || _isSwitching) return;
 
     _isSwitching = true;
     try {
-      AppLogger.d('ActiveProfileNotifier: Switching profile from ${state.name} (${state.id}) to ${targetProfile.name} (${targetProfile.id})...');
+      AppLogger.d('ActiveProfileNotifier: Switching profile from "${state.name}" (${state.id}) to "${targetProfile.name}" (${targetProfile.id})...');
 
       // 1. Clear active UI selection states
       ref.read(activeNoteProvider.notifier).clear();
@@ -64,13 +67,78 @@ class ActiveProfileNotifier extends Notifier<Profile> {
       await ref.read(sharedPreferenceProvider).setActiveProfileId(targetProfile.id);
       await ProfileRepository.instance.touchProfileLastUsed(targetProfile.id);
 
-      // 5. Update state -> triggers Riverpod rebuild & SQLite handle swap
-      state = targetProfile;
+      // 5. Handle Google Auth session & syncMode configuration without calling syncModeProvider (prevents CircularDependencyError)
+      Profile updatedProfile = targetProfile;
+      final authRepo = ref.read(authRepositoryProvider);
+      final currentFirebaseEmail = authRepo.currentUser?.email?.toLowerCase();
 
-      // 6. Re-arm pending reminders from newly active profile's database
+      if (targetProfile.linkedEmail != null) {
+        final targetEmail = targetProfile.linkedEmail!.toLowerCase();
+        AppLogger.d('ActiveProfileNotifier: Target profile is Google-linked to $targetEmail. Current Firebase session: $currentFirebaseEmail');
+
+        updatedProfile = targetProfile.copyWith(syncMode: 'cloud');
+        await ProfileRepository.instance.updateProfile(updatedProfile);
+
+        if (currentFirebaseEmail != targetEmail) {
+          bool authenticatedWithStoredToken = false;
+
+          // 1. Try re-authenticating with stored OAuth tokens from hardware storage
+          final storedTokens = await ProfileSecureStorage.instance.getProfileOAuthTokens(targetProfile.id);
+          if (storedTokens != null && storedTokens.containsKey('idToken')) {
+            AppLogger.d('ActiveProfileNotifier: Found hardware-stored OAuth tokens for ${targetProfile.name}. Attempting direct Firebase credential re-auth...');
+            final storedUser = await authRepo.signInWithStoredTokens(
+              idToken: storedTokens['idToken']!,
+              accessToken: storedTokens['accessToken'],
+            );
+
+            if (storedUser?.email?.toLowerCase() == targetEmail) {
+              AppLogger.d('ActiveProfileNotifier: Direct Firebase re-auth via stored OAuth tokens succeeded for $targetEmail (100% Silent).');
+              authenticatedWithStoredToken = true;
+            } else {
+              AppLogger.w('ActiveProfileNotifier: Stored OAuth token re-auth resulted in email mismatch or failure (${storedUser?.email}).');
+            }
+          }
+
+          // 2. If stored token re-auth wasn't available or failed, attempt lightweight silent sign in
+          if (!authenticatedWithStoredToken) {
+            AppLogger.d('ActiveProfileNotifier: Attempting lightweight Google Sign-In fallback...');
+            final silentUser = await authRepo.signInSilently();
+            final silentEmail = silentUser?.email?.toLowerCase();
+
+            if (silentEmail == targetEmail) {
+              AppLogger.d('ActiveProfileNotifier: Lightweight silent re-authentication succeeded for $targetEmail.');
+            } else {
+              AppLogger.w('ActiveProfileNotifier: Lightweight silent auth unavailable or mismatched ($silentEmail vs $targetEmail). Prompting interactive Google Sign-In...');
+              final interactiveUser = await authRepo.signInWithGoogle();
+
+              if (interactiveUser?.email?.toLowerCase() == targetEmail) {
+                AppLogger.d('ActiveProfileNotifier: Interactive Google Sign-In succeeded for $targetEmail.');
+              } else {
+                AppLogger.w('ActiveProfileNotifier: Interactive Google Sign-In cancelled or mismatched for profile ${targetProfile.name}.');
+              }
+            }
+          }
+        } else {
+          AppLogger.d('ActiveProfileNotifier: Active Firebase session already matches target profile email ($targetEmail).');
+        }
+      } else {
+        AppLogger.d('ActiveProfileNotifier: Target profile "${targetProfile.name}" is an offline profile (no linked Google email).');
+        updatedProfile = targetProfile.copyWith(syncMode: 'offline');
+        await ProfileRepository.instance.updateProfile(updatedProfile);
+
+        if (authRepo.isSignedIn) {
+          AppLogger.d('ActiveProfileNotifier: Signing out active user ($currentFirebaseEmail) for non-Google profile...');
+          await authRepo.signOut();
+        }
+      }
+
+      // 6. Update state -> triggers Riverpod rebuild, syncModeProvider update & SQLite handle swap
+      state = updatedProfile;
+
+      // 7. Re-arm pending reminders from newly active profile's database
       ReminderManager().rearmPendingReminders();
 
-      AppLogger.d('ActiveProfileNotifier: Successfully switched active profile to ${targetProfile.name}');
+      AppLogger.d('ActiveProfileNotifier: Successfully switched active profile to ${updatedProfile.name}');
     } finally {
       _isSwitching = false;
     }

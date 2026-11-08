@@ -158,22 +158,22 @@ class _ProfileBadgeState extends ConsumerState<ProfileBadge> {
       if (_menuController.isOpen) _menuController.close();
     }
 
+    final activeProfile = ref.read(activeProfileProvider);
+
     // 1. Sign out from Firebase & Google
     await ref.read(authRepositoryProvider).signOut();
 
-    // 2. Clear linked email on active profile if present
-    final activeProfile = ref.read(activeProfileProvider);
+    // 2. Unlink Google account from active profile if present (resets syncMode to offline)
     if (activeProfile.linkedEmail != null) {
-      final updatedProfile = activeProfile.copyWith(linkedEmail: null);
-      await ref.read(profilesListProvider.notifier).updateProfile(updatedProfile);
-      ref.read(activeProfileProvider.notifier).updateActiveProfile(updatedProfile);
+      await ref.read(profilesListProvider.notifier).unlinkGoogleAccount(activeProfile.id);
+      final unlinked = ref.read(profileRepositoryProvider).getProfileById(activeProfile.id);
+      if (unlinked != null) {
+        ref.read(activeProfileProvider.notifier).updateActiveProfile(unlinked);
+      }
     }
 
-    // 3. Revert sync mode to offline
-    await ref.read(syncModeProvider.notifier).setMode(SyncMode.offline);
-
     SnackBarManager.show(
-      msg: 'Signed out successfully.',
+      msg: 'Signed out and unlinked account successfully.',
       type: SnackBarMessageType.acknowledgment,
     );
   }
@@ -196,7 +196,7 @@ class _ProfileBadgeState extends ConsumerState<ProfileBadge> {
         activeProfile.linkedEmail != null &&
         authUser.email?.toLowerCase() == activeProfile.linkedEmail?.toLowerCase();
 
-    final activePhotoUrl = isAuthForActive ? authUser.photoURL : null;
+    final activePhotoUrl = (isAuthForActive ? authUser.photoURL : null) ?? activeProfile.photoUrl;
 
     void openProfileMenu() {
       if (isMobile) {
@@ -360,12 +360,15 @@ class _ProfileBadgeState extends ConsumerState<ProfileBadge> {
         activeProfile.linkedEmail != null &&
         authUser.email?.toLowerCase() == activeProfile.linkedEmail?.toLowerCase();
 
-    final photoUrl = isAuthForProfile ? authUser.photoURL : null;
-    final displayName = isAuthForProfile && (authUser.displayName?.isNotEmpty ?? false)
+    final photoUrl = (isAuthForProfile ? authUser.photoURL : null) ?? activeProfile.photoUrl;
+    final displayName = (isAuthForProfile && (authUser.displayName?.isNotEmpty ?? false))
         ? authUser.displayName!
-        : activeProfile.name;
-    final email = isAuthForProfile ? authUser.email : null;
+        : (activeProfile.displayName?.isNotEmpty ?? false)
+            ? activeProfile.displayName!
+            : activeProfile.name;
+    final email = activeProfile.linkedEmail ?? (isAuthForProfile ? authUser.email : null);
     final hasPhoto = photoUrl != null && photoUrl.isNotEmpty;
+    final isGoogleLinked = activeProfile.linkedEmail != null;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
@@ -405,7 +408,7 @@ class _ProfileBadgeState extends ConsumerState<ProfileBadge> {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    if (isAuthForProfile) ...[
+                    if (isGoogleLinked) ...[
                       const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -503,11 +506,14 @@ class _ProfileBadgeState extends ConsumerState<ProfileBadge> {
         profile.linkedEmail != null &&
         authUser.email?.toLowerCase() == profile.linkedEmail?.toLowerCase();
 
-    final photoUrl = isAuthForProfile ? authUser.photoURL : null;
-    final displayName = isAuthForProfile && (authUser.displayName?.isNotEmpty ?? false)
+    final photoUrl = (isAuthForProfile ? authUser.photoURL : null) ?? profile.photoUrl;
+    final displayName = (isAuthForProfile && (authUser.displayName?.isNotEmpty ?? false))
         ? authUser.displayName!
-        : profile.name;
+        : (profile.displayName?.isNotEmpty ?? false)
+            ? profile.displayName!
+            : profile.name;
     final hasPhoto = photoUrl != null && photoUrl.isNotEmpty;
+    final isGoogleLinked = profile.linkedEmail != null;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -539,23 +545,60 @@ class _ProfileBadgeState extends ConsumerState<ProfileBadge> {
                 )
               : null,
         ),
-        title: Text(
-          displayName,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-            color: isSelected ? colorScheme.primary : colorScheme.onSurface,
-          ),
-          maxLines: 1,
-        ),
-        subtitle: profile.isDefault
-            ? Text(
-                'Default',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: colorScheme.primary,
-                  fontWeight: FontWeight.w600,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(
+                displayName,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                  color: isSelected ? colorScheme.primary : colorScheme.onSurface,
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (isGoogleLinked) ...[
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer.withValues(alpha: 0.7),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  profile.name,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onPrimaryContainer,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ],
+        ),
+        subtitle: isGoogleLinked
+            ? Text(
+                profile.linkedEmail!,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               )
-            : null,
+            : profile.isDefault
+                ? Text(
+                    'Default',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  )
+                : null,
         trailing: isSelected
             ? Icon(Icons.check_circle_rounded, color: colorScheme.primary, size: 20)
             : null,
@@ -576,10 +619,7 @@ class _ProfileBadgeState extends ConsumerState<ProfileBadge> {
         'Create New Profile',
         style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.primary, fontWeight: FontWeight.w600),
       ),
-      onTap: () {
-        onSelect();
-        showDialog(context: context, builder: (ctx) => const CreateProfileDialog());
-      },
+      onTap: onSelect,
     );
   }
 

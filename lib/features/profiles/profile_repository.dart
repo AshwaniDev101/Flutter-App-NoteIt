@@ -149,9 +149,13 @@ class ProfileRepository {
   /// Creates and persists a brand new user profile with a unique database file.
   Future<Profile> createProfile({
     required String name,
+    String? displayName,
+    String? photoUrl,
     String? linkedEmail,
     String syncMode = 'offline',
     String? refreshToken,
+    String? idToken,
+    String? accessToken,
   }) async {
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final id = 'profile_$timestamp';
@@ -160,6 +164,8 @@ class ProfileRepository {
     final newProfile = Profile(
       id: id,
       name: name,
+      displayName: displayName,
+      photoUrl: photoUrl,
       dbFileName: dbFileName,
       linkedEmail: linkedEmail,
       syncMode: syncMode,
@@ -178,6 +184,14 @@ class ProfileRepository {
       );
     }
 
+    if (idToken != null && idToken.isNotEmpty) {
+      await ProfileSecureStorage.instance.saveProfileOAuthTokens(
+        profileId: id,
+        idToken: idToken,
+        accessToken: accessToken,
+      );
+    }
+
     AppLogger.d('ProfileRepository: Created new profile ${newProfile.name} (DB: $dbFileName)');
     return newProfile;
   }
@@ -191,6 +205,22 @@ class ProfileRepository {
     await _saveManifest();
     AppLogger.d('ProfileRepository: Updated profile metadata for ${updatedProfile.name}');
     return true;
+  }
+
+  /// Unlinks Google account from [profileId], clearing email, display name, photo, and hardware token.
+  Future<bool> unlinkGoogleAccount(String profileId) async {
+    final profile = getProfileById(profileId);
+    if (profile == null) return false;
+
+    final updated = profile.copyWith(
+      linkedEmail: null,
+      displayName: null,
+      photoUrl: null,
+      syncMode: 'offline',
+    );
+
+    await ProfileSecureStorage.instance.deleteProfileToken(profileId);
+    return await updateProfile(updated);
   }
 
   /// Sets the profile with [profileId] as default and clears `isDefault` on all other profiles.

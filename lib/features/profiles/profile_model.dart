@@ -6,9 +6,15 @@ class Profile {
   /// Unique profile identifier (e.g. 'profile_default', 'profile_1718000000').
   final String id;
 
-  /// Primary display name (e.g. 'Personal Notes', 'Work Projects').
+  /// Primary profile workspace name (e.g. 'Personal Notes', 'Work Projects').
   final String name;
-  
+
+  /// Optional Google account display name (e.g. 'John Doe').
+  final String? displayName;
+
+  /// Optional Google account profile photo URL.
+  final String? photoUrl;
+
   /// SQLite database filename on disk (e.g. 'note_it_db.sqlite', 'profile_work_1718.sqlite').
   final String dbFileName;
 
@@ -30,6 +36,8 @@ class Profile {
   const Profile({
     required this.id,
     required this.name,
+    this.displayName,
+    this.photoUrl,
     required this.dbFileName,
     this.linkedEmail,
     this.syncMode = 'offline',
@@ -43,6 +51,8 @@ class Profile {
     return {
       'id': id,
       'name': name,
+      'displayName': displayName,
+      'photoUrl': photoUrl,
       'dbFileName': dbFileName,
       'linkedEmail': linkedEmail,
       'syncMode': syncMode,
@@ -57,6 +67,8 @@ class Profile {
     return Profile(
       id: json['id'] as String,
       name: json['name'] as String,
+      displayName: json['displayName'] as String?,
+      photoUrl: json['photoUrl'] as String?,
       dbFileName: json['dbFileName'] as String? ?? 'note_it_db.sqlite',
       linkedEmail: json['linkedEmail'] as String?,
       syncMode: json['syncMode'] as String? ?? 'offline',
@@ -74,8 +86,10 @@ class Profile {
   Profile copyWith({
     String? id,
     String? name,
+    Object? displayName = _undefined,
+    Object? photoUrl = _undefined,
     String? dbFileName,
-    String? linkedEmail,
+    Object? linkedEmail = _undefined,
     String? syncMode,
     bool? isDefault,
     DateTime? createdAt,
@@ -84,8 +98,10 @@ class Profile {
     return Profile(
       id: id ?? this.id,
       name: name ?? this.name,
+      displayName: displayName == _undefined ? this.displayName : displayName as String?,
+      photoUrl: photoUrl == _undefined ? this.photoUrl : photoUrl as String?,
       dbFileName: dbFileName ?? this.dbFileName,
-      linkedEmail: linkedEmail ?? this.linkedEmail,
+      linkedEmail: linkedEmail == _undefined ? this.linkedEmail : linkedEmail as String?,
       syncMode: syncMode ?? this.syncMode,
       isDefault: isDefault ?? this.isDefault,
       createdAt: createdAt ?? this.createdAt,
@@ -99,6 +115,8 @@ class Profile {
     return other is Profile &&
         other.id == id &&
         other.name == name &&
+        other.displayName == displayName &&
+        other.photoUrl == photoUrl &&
         other.dbFileName == dbFileName &&
         other.linkedEmail == linkedEmail &&
         other.syncMode == syncMode &&
@@ -111,6 +129,8 @@ class Profile {
   int get hashCode => Object.hash(
         id,
         name,
+        displayName,
+        photoUrl,
         dbFileName,
         linkedEmail,
         syncMode,
@@ -119,3 +139,5 @@ class Profile {
         lastUsedAt,
       );
 }
+
+const Object _undefined = Object();

@@ -6,6 +6,7 @@ import '../../../shared/overlays/snack_bar_manager.dart';
 import '../active_profile_provider.dart';
 import '../profile_model.dart';
 import '../profile_providers.dart';
+import '../profile_secure_storage.dart';
 
 /// Modal dialog for creating a new user profile workspace or editing an existing profile.
 class CreateProfileDialog extends ConsumerStatefulWidget {
@@ -26,6 +27,8 @@ class _CreateProfileDialogState extends ConsumerState<CreateProfileDialog> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
   User? _dialogUser;
+  String? _dialogIdToken;
+  String? _dialogAccessToken;
   bool _isSigningIn = false;
 
   @override
@@ -74,16 +77,28 @@ class _CreateProfileDialogState extends ConsumerState<CreateProfileDialog> {
     }
 
     final linkedEmail = dialogUser?.email;
+    final displayName = dialogUser?.displayName;
+    final photoUrl = dialogUser?.photoURL;
     final syncMode = (dialogUser != null && linkedEmail != null) ? 'cloud' : 'offline';
     final refreshToken = dialogUser?.uid; // Secure storage key identifier
 
     if (widget.isEditing) {
       final updated = widget.profileToEdit!.copyWith(
         name: name,
+        displayName: displayName ?? widget.profileToEdit!.displayName,
+        photoUrl: photoUrl ?? widget.profileToEdit!.photoUrl,
         linkedEmail: linkedEmail ?? widget.profileToEdit!.linkedEmail,
         syncMode: syncMode,
       );
       await ref.read(profilesListProvider.notifier).updateProfile(updated);
+
+      if (_dialogIdToken != null && _dialogIdToken!.isNotEmpty) {
+        await ProfileSecureStorage.instance.saveProfileOAuthTokens(
+          profileId: updated.id,
+          idToken: _dialogIdToken!,
+          accessToken: _dialogAccessToken,
+        );
+      }
 
       if (ref.read(activeProfileProvider).id == updated.id) {
         ref.read(activeProfileProvider.notifier).updateActiveProfile(updated);
@@ -101,9 +116,13 @@ class _CreateProfileDialogState extends ConsumerState<CreateProfileDialog> {
     } else {
       final newProfile = await ref.read(profilesListProvider.notifier).createProfile(
             name: name,
+            displayName: displayName,
+            photoUrl: photoUrl,
             linkedEmail: linkedEmail,
             syncMode: syncMode,
             refreshToken: refreshToken,
+            idToken: _dialogIdToken,
+            accessToken: _dialogAccessToken,
           );
 
       if (mounted) {
@@ -196,7 +215,8 @@ class _CreateProfileDialogState extends ConsumerState<CreateProfileDialog> {
                         label: const Text('Unlink'),
                         onPressed: () async {
                           setState(() => _dialogUser = null);
-                          if (widget.isEditing) {
+                          if (widget.isEditing && widget.profileToEdit != null) {
+                            await ref.read(profilesListProvider.notifier).unlinkGoogleAccount(widget.profileToEdit!.id);
                             await ref.read(authRepositoryProvider).signOut();
                           }
                           SnackBarManager.show(
@@ -229,7 +249,10 @@ class _CreateProfileDialogState extends ConsumerState<CreateProfileDialog> {
                         : () async {
                             setState(() => _isSigningIn = true);
                             try {
-                              final user = await ref.read(authRepositoryProvider).signInWithGoogle();
+                              final result = await ref.read(authRepositoryProvider).signInWithGoogleDetails();
+                              final user = result.user;
+                              final creds = result.credentials;
+
                               if (user != null) {
                                 final userEmail = user.email ?? '';
                                 final isDuplicate = ref
@@ -248,6 +271,8 @@ class _CreateProfileDialogState extends ConsumerState<CreateProfileDialog> {
                                 } else {
                                   setState(() {
                                     _dialogUser = user;
+                                    _dialogIdToken = creds?.idToken;
+                                    _dialogAccessToken = creds?.accessToken;
                                     // Auto-fill profile name if field is empty
                                     if (_nameController.text.trim().isEmpty) {
                                       _nameController.text = (user.displayName?.isNotEmpty ?? false)
