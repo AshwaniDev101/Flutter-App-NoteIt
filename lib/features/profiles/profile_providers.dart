@@ -28,12 +28,14 @@ class ProfilesListNotifier extends Notifier<List<Profile>> {
     required String name,
     String? linkedEmail,
     String syncMode = 'offline',
+    String? refreshToken,
   }) async {
     final repo = ref.read(profileRepositoryProvider);
     final newProfile = await repo.createProfile(
       name: name,
       linkedEmail: linkedEmail,
       syncMode: syncMode,
+      refreshToken: refreshToken,
     );
     refresh();
     return newProfile;

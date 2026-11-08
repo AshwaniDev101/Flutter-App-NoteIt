@@ -16,6 +16,7 @@ dependencies:
   # UI & Core
   cupertino_icons: ^1.0.8
   shared_preferences: ^2.5.5
+  flutter_secure_storage: ^11.2.0
   path_provider: ^2.1.6
 
   # Database Engine

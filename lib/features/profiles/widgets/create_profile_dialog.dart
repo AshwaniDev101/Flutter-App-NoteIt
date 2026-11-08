@@ -1,5 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/database/firebase/auth/firebase_provider.dart';
 import '../../../shared/overlays/snack_bar_manager.dart';
 import '../active_profile_provider.dart';
 import '../profile_model.dart';
@@ -23,11 +25,21 @@ class CreateProfileDialog extends ConsumerStatefulWidget {
 class _CreateProfileDialogState extends ConsumerState<CreateProfileDialog> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
+  User? _dialogUser;
+  bool _isSigningIn = false;
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.profileToEdit?.name ?? '');
+    
+    // When editing an existing profile, check if the current auth user matches
+    if (widget.isEditing) {
+      final activeUser = ref.read(authStateProvider).value;
+      if (activeUser != null && activeUser.email == widget.profileToEdit?.linkedEmail) {
+        _dialogUser = activeUser;
+      }
+    }
   }
 
   @override
@@ -37,12 +49,40 @@ class _CreateProfileDialogState extends ConsumerState<CreateProfileDialog> {
   }
 
   void _onSave() async {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
+    // If not authenticated via Google, require a valid name in the text field
+    if (_dialogUser == null && !(_formKey.currentState?.validate() ?? false)) return;
 
-    final name = _nameController.text.trim();
+    var name = _nameController.text.trim();
+    final dialogUser = _dialogUser;
+
+    // Fallback name if Google signed in and name field left empty
+    if (name.isEmpty && dialogUser != null) {
+      name = (dialogUser.displayName?.isNotEmpty ?? false)
+          ? dialogUser.displayName!
+          : (dialogUser.email?.isNotEmpty ?? false)
+              ? dialogUser.email!.split('@').first
+              : 'Google Profile';
+      _nameController.text = name;
+    }
+
+    if (name.isEmpty) {
+      SnackBarManager.show(
+        msg: 'Please enter a profile name',
+        type: SnackBarMessageType.acknowledgment,
+      );
+      return;
+    }
+
+    final linkedEmail = dialogUser?.email;
+    final syncMode = (dialogUser != null && linkedEmail != null) ? 'cloud' : 'offline';
+    final refreshToken = dialogUser?.uid; // Secure storage key identifier
 
     if (widget.isEditing) {
-      final updated = widget.profileToEdit!.copyWith(name: name);
+      final updated = widget.profileToEdit!.copyWith(
+        name: name,
+        linkedEmail: linkedEmail ?? widget.profileToEdit!.linkedEmail,
+        syncMode: syncMode,
+      );
       await ref.read(profilesListProvider.notifier).updateProfile(updated);
 
       if (ref.read(activeProfileProvider).id == updated.id) {
@@ -54,13 +94,16 @@ class _CreateProfileDialogState extends ConsumerState<CreateProfileDialog> {
           Navigator.of(context).pop();
         }
         SnackBarManager.show(
-          msg: 'Profile renamed to "$name".',
+          msg: 'Profile updated to "$name".',
           type: SnackBarMessageType.acknowledgment,
         );
       }
     } else {
       final newProfile = await ref.read(profilesListProvider.notifier).createProfile(
             name: name,
+            linkedEmail: linkedEmail,
+            syncMode: syncMode,
+            refreshToken: refreshToken,
           );
 
       if (mounted) {
@@ -81,6 +124,7 @@ class _CreateProfileDialogState extends ConsumerState<CreateProfileDialog> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isEditing = widget.isEditing;
+    final displayUser = _dialogUser;
 
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -119,18 +163,172 @@ class _CreateProfileDialogState extends ConsumerState<CreateProfileDialog> {
                   controller: _nameController,
                   autofocus: true,
                   decoration: InputDecoration(
-                    labelText: 'Profile Name *',
+                    labelText: displayUser != null ? 'Profile Name (Optional)' : 'Profile Name *',
                     hintText: 'e.g. Work, Personal, Side Projects',
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     prefixIcon: const Icon(Icons.workspace_premium_rounded),
                   ),
                   validator: (val) {
-                    if (val == null || val.trim().isEmpty) {
+                    if (displayUser == null && (val == null || val.trim().isEmpty)) {
                       return 'Please enter a profile name';
                     }
                     return null;
                   },
                 ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'To sync over cloud sign in',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    if (displayUser != null)
+                      TextButton.icon(
+                        style: TextButton.styleFrom(
+                          foregroundColor: colorScheme.error,
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        ),
+                        icon: const Icon(Icons.logout, size: 18),
+                        label: const Text('Unlink'),
+                        onPressed: () async {
+                          setState(() => _dialogUser = null);
+                          if (widget.isEditing) {
+                            await ref.read(authRepositoryProvider).signOut();
+                          }
+                          SnackBarManager.show(
+                            msg: 'Account unlinked from this profile.',
+                            type: SnackBarMessageType.acknowledgment,
+                          );
+                        },
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                if (displayUser == null)
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(48),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    icon: _isSigningIn
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.login_rounded),
+                    label: Text(_isSigningIn ? 'Signing in...' : 'Sign in with Google'),
+                    onPressed: _isSigningIn
+                        ? null
+                        : () async {
+                            setState(() => _isSigningIn = true);
+                            try {
+                              final user = await ref.read(authRepositoryProvider).signInWithGoogle();
+                              if (user != null) {
+                                final userEmail = user.email ?? '';
+                                final isDuplicate = ref
+                                    .read(profileRepositoryProvider)
+                                    .isEmailAlreadyLinked(
+                                      userEmail,
+                                      excludeProfileId: widget.profileToEdit?.id,
+                                    );
+
+                                if (isDuplicate) {
+                                  SnackBarManager.show(
+                                    msg: 'Google account ($userEmail) is already linked to another profile.',
+                                    type: SnackBarMessageType.acknowledgment,
+                                  );
+                                  await ref.read(authRepositoryProvider).signOut();
+                                } else {
+                                  setState(() {
+                                    _dialogUser = user;
+                                    // Auto-fill profile name if field is empty
+                                    if (_nameController.text.trim().isEmpty) {
+                                      _nameController.text = (user.displayName?.isNotEmpty ?? false)
+                                          ? user.displayName!
+                                          : (user.email?.isNotEmpty ?? false)
+                                              ? user.email!.split('@').first
+                                              : 'Google Profile';
+                                    }
+                                  });
+                                  SnackBarManager.show(
+                                    msg: 'Signed in as ${user.email}',
+                                    type: SnackBarMessageType.acknowledgment,
+                                  );
+                                }
+                              }
+                            } finally {
+                              if (mounted) setState(() => _isSigningIn = false);
+                            }
+                          },
+                  )
+                else
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainerHigh,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 20,
+                          backgroundColor: colorScheme.primary,
+                          backgroundImage: (displayUser.photoURL != null && displayUser.photoURL!.isNotEmpty)
+                              ? NetworkImage(displayUser.photoURL!)
+                              : null,
+                          child: (displayUser.photoURL == null || displayUser.photoURL!.isEmpty)
+                              ? Text(
+                                  (displayUser.displayName?.isNotEmpty ?? false)
+                                      ? displayUser.displayName![0].toUpperCase()
+                                      : (displayUser.email?.isNotEmpty ?? false)
+                                          ? displayUser.email![0].toUpperCase()
+                                          : 'U',
+                                  style: TextStyle(
+                                    color: colorScheme.onPrimary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                )
+                              : null,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (displayUser.displayName != null && displayUser.displayName!.isNotEmpty)
+                                Text(
+                                  displayUser.displayName!,
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              if (displayUser.email != null && displayUser.email!.isNotEmpty)
+                                Text(
+                                  displayUser.email!,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
               ],
             ),
           ),

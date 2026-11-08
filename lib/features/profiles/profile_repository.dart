@@ -7,6 +7,7 @@ import '../../core/sync/sync_engine.dart';
 import '../../core/util/logger.dart';
 import '../../database/shared_preference/shared_preference_manager.dart';
 import 'profile_model.dart';
+import 'profile_secure_storage.dart';
 
 /// Centralized repository for creating, reading, updating, and deleting
 /// user workspace profiles stored in `profiles_manifest.json`.
@@ -134,11 +135,23 @@ class ProfileRepository {
     }
   }
 
+  /// Checks whether [email] is already linked to another profile in the repository.
+  bool isEmailAlreadyLinked(String email, {String? excludeProfileId}) {
+    final target = email.trim().toLowerCase();
+    if (target.isEmpty) return false;
+
+    return _profiles.any((p) {
+      if (excludeProfileId != null && p.id == excludeProfileId) return false;
+      return p.linkedEmail?.trim().toLowerCase() == target;
+    });
+  }
+
   /// Creates and persists a brand new user profile with a unique database file.
   Future<Profile> createProfile({
     required String name,
     String? linkedEmail,
     String syncMode = 'offline',
+    String? refreshToken,
   }) async {
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final id = 'profile_$timestamp';
@@ -157,6 +170,14 @@ class ProfileRepository {
 
     _profiles.add(newProfile);
     await _saveManifest();
+
+    if (refreshToken != null && refreshToken.isNotEmpty) {
+      await ProfileSecureStorage.instance.saveProfileToken(
+        profileId: id,
+        token: refreshToken,
+      );
+    }
+
     AppLogger.d('ProfileRepository: Created new profile ${newProfile.name} (DB: $dbFileName)');
     return newProfile;
   }
@@ -212,6 +233,9 @@ class ProfileRepository {
 
     _profiles.removeWhere((p) => p.id == profileId);
     await _saveManifest();
+
+    // Delete hardware-encrypted OAuth token if present
+    await ProfileSecureStorage.instance.deleteProfileToken(profileId);
 
     // Physically delete SQLite file and auxiliary WAL/SHM files asynchronously
     try {
