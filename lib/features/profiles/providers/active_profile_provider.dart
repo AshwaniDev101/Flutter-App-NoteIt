@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../core/sync/sync_engine.dart';
 import '../../../core/util/logger.dart';
 import '../../../database/firebase/auth/firebase_provider.dart';
 import '../../../database/shared_preference/shared_preference_manager.dart';
@@ -10,6 +12,7 @@ import '../../../features/reminder/reminder_manager.dart';
 import '../data/profile_repository.dart';
 import '../data/profile_secure_storage.dart';
 import '../models/profile_model.dart';
+import 'profile_providers.dart';
 
 class ProfileSwitchingState {
   final bool isSwitching;
@@ -107,12 +110,14 @@ class ActiveProfileNotifier extends Notifier<Profile> {
       final authRepo = ref.read(authRepositoryProvider);
       final currentFirebaseEmail = authRepo.currentUser?.email?.toLowerCase();
 
-      if (targetProfile.linkedEmail != null) {
-        final targetEmail = targetProfile.linkedEmail!.toLowerCase();
-        AppLogger.d('ActiveProfileNotifier: Target profile is Google-linked to $targetEmail. Current Firebase session: $currentFirebaseEmail');
+      final targetSyncMode = SyncMode.values.firstWhere(
+        (e) => e.name == targetProfile.syncMode,
+        orElse: () => SyncMode.offline,
+      );
 
-        updatedProfile = targetProfile.copyWith(syncMode: 'cloud');
-        await ProfileRepository.instance.updateProfile(updatedProfile);
+      if (targetSyncMode.isCloud && targetProfile.linkedEmail != null) {
+        final targetEmail = targetProfile.linkedEmail!.toLowerCase();
+        AppLogger.d('ActiveProfileNotifier: Target profile is in Cloud mode ($targetEmail). Current Firebase session: $currentFirebaseEmail');
 
         if (currentFirebaseEmail != targetEmail) {
           bool authenticatedWithStoredToken = false;
@@ -129,6 +134,12 @@ class ActiveProfileNotifier extends Notifier<Profile> {
             if (storedUser?.email?.toLowerCase() == targetEmail) {
               AppLogger.d('ActiveProfileNotifier: Direct Firebase re-auth via stored OAuth tokens succeeded for $targetEmail (100% Silent).');
               authenticatedWithStoredToken = true;
+              updatedProfile = updatedProfile.copyWith(
+                displayName: storedUser?.displayName ?? updatedProfile.displayName,
+                photoUrl: storedUser?.photoURL ?? updatedProfile.photoUrl,
+              );
+              await ProfileRepository.instance.updateProfile(updatedProfile);
+              await ref.read(profilesListProvider.notifier).updateProfile(updatedProfile);
             } else {
               AppLogger.w('ActiveProfileNotifier: Stored OAuth token re-auth failed or expired. Clearing stale tokens for ${targetProfile.name}.');
               await ProfileSecureStorage.instance.deleteProfileToken(targetProfile.id);
@@ -145,6 +156,12 @@ class ActiveProfileNotifier extends Notifier<Profile> {
             if (silentEmail == targetEmail) {
               AppLogger.d('ActiveProfileNotifier: Lightweight silent re-authentication succeeded for $targetEmail.');
               authenticatedWithStoredToken = true;
+              updatedProfile = updatedProfile.copyWith(
+                displayName: silentUser?.displayName ?? updatedProfile.displayName,
+                photoUrl: silentUser?.photoURL ?? updatedProfile.photoUrl,
+              );
+              await ProfileRepository.instance.updateProfile(updatedProfile);
+              await ref.read(profilesListProvider.notifier).updateProfile(updatedProfile);
               if (silentResult.credentials?.idToken != null) {
                 await ProfileSecureStorage.instance.saveProfileOAuthTokens(
                   profileId: targetProfile.id,
@@ -160,6 +177,12 @@ class ActiveProfileNotifier extends Notifier<Profile> {
               if (interactiveUser?.email?.toLowerCase() == targetEmail) {
                 AppLogger.d('ActiveProfileNotifier: Interactive Google Sign-In succeeded for $targetEmail.');
                 authenticatedWithStoredToken = true;
+                updatedProfile = updatedProfile.copyWith(
+                  displayName: interactiveUser?.displayName ?? updatedProfile.displayName,
+                  photoUrl: interactiveUser?.photoURL ?? updatedProfile.photoUrl,
+                );
+                await ProfileRepository.instance.updateProfile(updatedProfile);
+                await ref.read(profilesListProvider.notifier).updateProfile(updatedProfile);
                 if (interactiveResult.credentials?.idToken != null) {
                   await ProfileSecureStorage.instance.saveProfileOAuthTokens(
                     profileId: targetProfile.id,
@@ -171,19 +194,26 @@ class ActiveProfileNotifier extends Notifier<Profile> {
                 AppLogger.w('ActiveProfileNotifier: Interactive Google Sign-In cancelled or mismatched for profile ${targetProfile.name}. Falling back to offline mode.');
                 updatedProfile = targetProfile.copyWith(syncMode: 'offline');
                 await ProfileRepository.instance.updateProfile(updatedProfile);
+                await ref.read(profilesListProvider.notifier).updateProfile(updatedProfile);
               }
             }
           }
         } else {
           AppLogger.d('ActiveProfileNotifier: Active Firebase session already matches target profile email ($targetEmail).');
+          final currentUser = authRepo.currentUser;
+          if (currentUser?.photoURL != null || currentUser?.displayName != null) {
+            updatedProfile = updatedProfile.copyWith(
+              displayName: currentUser?.displayName ?? updatedProfile.displayName,
+              photoUrl: currentUser?.photoURL ?? updatedProfile.photoUrl,
+            );
+            await ProfileRepository.instance.updateProfile(updatedProfile);
+            await ref.read(profilesListProvider.notifier).updateProfile(updatedProfile);
+          }
         }
       } else {
-        AppLogger.d('ActiveProfileNotifier: Target profile "${targetProfile.name}" is an offline profile (no linked Google email).');
-        updatedProfile = targetProfile.copyWith(syncMode: 'offline');
-        await ProfileRepository.instance.updateProfile(updatedProfile);
-
+        AppLogger.d('ActiveProfileNotifier: Target profile "${targetProfile.name}" is operating in non-cloud mode (${targetProfile.syncMode}).');
         if (authRepo.isSignedIn) {
-          AppLogger.d('ActiveProfileNotifier: Signing out active Firebase user ($currentFirebaseEmail) for non-Google profile...');
+          AppLogger.d('ActiveProfileNotifier: Signing out active Firebase user ($currentFirebaseEmail) for non-cloud profile...');
           await authRepo.signOutFirebaseOnly();
         }
       }

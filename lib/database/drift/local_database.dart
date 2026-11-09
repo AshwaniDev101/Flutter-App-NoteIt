@@ -74,24 +74,4 @@ class LocalDatabase extends _$LocalDatabase {
 
   @override
   int get schemaVersion => 3;
-
-  @override
-  MigrationStrategy get migration {
-    return MigrationStrategy(
-      onCreate: (m) async {
-        await m.createAll();
-      },
-      onUpgrade: (m, from, to) async {
-        if (from < 2) {
-          await m.addColumn(notes, notes.reminderRepeatMode);
-          await m.addColumn(notes, notes.reminderCustomDays);
-        }
-        if (from < 3) {
-          await m.addColumn(notes, notes.hlc);
-          await m.addColumn(folders, folders.hlc);
-          await m.addColumn(syncedDevices, syncedDevices.lastSyncedHlc);
-        }
-      },
-    );
-  }
 }

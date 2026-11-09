@@ -53,29 +53,46 @@ class ProfileBadgeHelper {
     return trimmed[0].toUpperCase();
   }
 
-  /// Checks whether [authUser] matches [profile]'s linked Google account
-  /// and whether cloud sync mode is currently active.
+  /// Checks whether [authUser] matches [profile]'s linked Google account.
   static bool isAuthForProfile(Profile profile, User? authUser, {bool isCloud = true}) {
-    if (!isCloud) return false;
-    return authUser != null &&
+    return profile.syncMode == 'cloud' &&
+        authUser != null &&
         profile.linkedEmail != null &&
+        profile.linkedEmail!.isNotEmpty &&
         authUser.email?.toLowerCase() == profile.linkedEmail?.toLowerCase();
   }
 
   /// Resolves the effective photo URL for a profile.
+  /// If [profile.syncMode] == 'cloud', returns [authUser.photoURL] (if matching) or cached [profile.photoUrl].
   static String? getEffectivePhotoUrl(Profile profile, User? authUser, {bool isCloud = true}) {
-    final isAuth = isAuthForProfile(profile, authUser, isCloud: isCloud);
-    return (isAuth ? authUser?.photoURL : null) ?? profile.photoUrl;
+    if (profile.syncMode == 'cloud') {
+      final isAuth = authUser != null &&
+          authUser.email != null &&
+          authUser.email!.isNotEmpty &&
+          profile.linkedEmail != null &&
+          authUser.email!.toLowerCase() == profile.linkedEmail!.toLowerCase();
+
+      return (isAuth && (authUser.photoURL?.isNotEmpty ?? false) ? authUser.photoURL : null) ??
+          profile.photoUrl;
+    }
+    return null;
   }
 
   /// Resolves the effective display name for a profile.
   static String getEffectiveDisplayName(Profile profile, User? authUser, {bool isCloud = true}) {
-    final isAuth = isAuthForProfile(profile, authUser, isCloud: isCloud);
-    if (isAuth && (authUser?.displayName?.isNotEmpty ?? false)) {
-      return authUser!.displayName!;
-    }
-    if (profile.displayName?.isNotEmpty ?? false) {
-      return profile.displayName!;
+    if (profile.syncMode == 'cloud') {
+      final isAuth = authUser != null &&
+          authUser.email != null &&
+          authUser.email!.isNotEmpty &&
+          profile.linkedEmail != null &&
+          authUser.email!.toLowerCase() == profile.linkedEmail!.toLowerCase();
+
+      if (isAuth && (authUser.displayName?.isNotEmpty ?? false)) {
+        return authUser.displayName!;
+      }
+      if (profile.displayName?.isNotEmpty ?? false) {
+        return profile.displayName!;
+      }
     }
     return profile.name;
   }
@@ -83,6 +100,89 @@ class ProfileBadgeHelper {
   /// Resolves the effective email for a profile.
   static String? getEffectiveEmail(Profile profile, User? authUser, {bool isCloud = true}) {
     final isAuth = isAuthForProfile(profile, authUser, isCloud: isCloud);
-    return isAuth ? (profile.linkedEmail ?? authUser?.email) : null;
+    return isAuth ? (profile.linkedEmail ?? authUser?.email) : profile.linkedEmail;
   }
+}
+
+/// A crisp Google 4-color 'G' logo badge for linked accounts.
+class GoogleLogoBadge extends StatelessWidget {
+  final double size;
+
+  const GoogleLogoBadge({super.key, this.size = 22.0});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 2,
+            offset: Offset(0, 1),
+          ),
+        ],
+      ),
+      alignment: Alignment.center,
+      child: Padding(
+        padding: EdgeInsets.all(size * 0.18),
+        child: CustomPaint(
+          size: Size(size, size),
+          painter: const _GoogleGLogoPainter(),
+        ),
+      ),
+    );
+  }
+}
+
+class _GoogleGLogoPainter extends CustomPainter {
+  const _GoogleGLogoPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double w = size.width;
+    final double h = size.height;
+    final center = Offset(w / 2, h / 2);
+    final outerRadius = w / 2;
+    final innerRadius = w * 0.28;
+
+    final rect = Rect.fromCircle(center: center, radius: (outerRadius + innerRadius) / 2);
+    final strokeWidth = outerRadius - innerRadius;
+
+    final Paint paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth;
+
+    // Red: Top sweep
+    paint.color = const Color(0xFFEA4335);
+    canvas.drawArc(rect, -2.356, 1.484, false, paint);
+
+    // Yellow: Bottom-left sweep
+    paint.color = const Color(0xFFFBBC05);
+    canvas.drawArc(rect, 2.18, 1.0, false, paint);
+
+    // Green: Bottom-right sweep
+    paint.color = const Color(0xFF34A853);
+    canvas.drawArc(rect, 0.2, 1.98, false, paint);
+
+    // Blue: Right-top arc
+    paint.color = const Color(0xFF4285F4);
+    canvas.drawArc(rect, -0.87, 1.07, false, paint);
+
+    // Horizontal bar of G
+    final barPaint = Paint()
+      ..color = const Color(0xFF4285F4)
+      ..style = PaintingStyle.fill;
+
+    canvas.drawRect(
+      Rect.fromLTRB(w * 0.45, h * 0.38, w * 0.95, h * 0.62),
+      barPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

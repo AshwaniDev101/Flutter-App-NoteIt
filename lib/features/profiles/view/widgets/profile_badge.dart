@@ -39,11 +39,12 @@ class _ProfileBadgeState extends ConsumerState<ProfileBadge> {
     final colorScheme = Theme.of(context).colorScheme;
     final isMobile = !PlatformHelper.isWideLayout(context);
 
-    final activePhotoUrl = ProfileBadgeHelper.getEffectivePhotoUrl(
-      activeProfile,
-      authUser,
-      isCloud: syncMode.isCloud,
-    );
+    final activePhotoUrl = syncMode.isCloud
+        ? ProfileBadgeHelper.getEffectivePhotoUrl(
+            activeProfile,
+            authUser,
+          )
+        : null;
 
     void openProfileMenu() {
       if (isMobile) {

@@ -325,15 +325,17 @@ class _ProfileMenuContentState extends ConsumerState<ProfileMenuContent> {
     final colorScheme = theme.colorScheme;
     final isCloud = syncMode.isCloud;
 
-    final photoUrl = ProfileBadgeHelper.getEffectivePhotoUrl(activeProfile, authUser, isCloud: isCloud);
-    final displayName = ProfileBadgeHelper.getEffectiveDisplayName(activeProfile, authUser, isCloud: isCloud);
+    final photoUrl = isCloud ? ProfileBadgeHelper.getEffectivePhotoUrl(activeProfile, authUser) : null;
+    final displayName = ProfileBadgeHelper.getEffectiveDisplayName(activeProfile, authUser);
     final email = ProfileBadgeHelper.getEffectiveEmail(activeProfile, authUser, isCloud: isCloud);
     final hasPhoto = photoUrl != null && photoUrl.isNotEmpty;
-    final isGoogleAuthView = ProfileBadgeHelper.isAuthForProfile(activeProfile, authUser, isCloud: isCloud);
+    final isGoogleAuthView = ProfileBadgeHelper.isAuthForProfile(activeProfile, authUser);
 
     final linkedEmail = activeProfile.linkedEmail ?? (authUser?.email);
     final hasLinkedAccount = linkedEmail != null && linkedEmail.isNotEmpty;
-    final googlePhotoUrl = authUser?.photoURL ?? activeProfile.photoUrl;
+    final googlePhotoUrl = (authUser?.photoURL != null && authUser!.photoURL!.isNotEmpty)
+        ? authUser.photoURL
+        : activeProfile.photoUrl;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
@@ -365,7 +367,7 @@ class _ProfileMenuContentState extends ConsumerState<ProfileMenuContent> {
                   children: [
                     Flexible(
                       child: Text(
-                        displayName,
+                        isCloud ? displayName : activeProfile.name,
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w500,
                         ),
@@ -373,7 +375,7 @@ class _ProfileMenuContentState extends ConsumerState<ProfileMenuContent> {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    if (isGoogleAuthView) ...[
+                    if (isCloud && isGoogleAuthView) ...[
                       const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -394,7 +396,7 @@ class _ProfileMenuContentState extends ConsumerState<ProfileMenuContent> {
                     ],
                   ],
                 ),
-                if (isGoogleAuthView && email != null && email.isNotEmpty)
+                if (isCloud && isGoogleAuthView && email != null && email.isNotEmpty)
                   Text(
                     email,
                     style: theme.textTheme.bodyMedium?.copyWith(
@@ -429,12 +431,12 @@ class _ProfileMenuContentState extends ConsumerState<ProfileMenuContent> {
               message: 'Linked Account: $linkedEmail',
               child: CircleAvatar(
                 radius: 12,
-                backgroundColor: colorScheme.surfaceContainerHighest,
+                backgroundColor: Colors.transparent,
                 backgroundImage: googlePhotoUrl != null && googlePhotoUrl.isNotEmpty
                     ? NetworkImage(googlePhotoUrl)
                     : null,
                 child: (googlePhotoUrl == null || googlePhotoUrl.isEmpty)
-                    ? Icon(Icons.person, size: 14, color: colorScheme.onSurfaceVariant)
+                    ? const GoogleLogoBadge(size: 24)
                     : null,
               ),
             ),
@@ -479,15 +481,21 @@ class _ProfileMenuContentState extends ConsumerState<ProfileMenuContent> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return ListTile(
-      dense: true,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-      leading: Icon(Icons.add_circle_outline_rounded, color: colorScheme.primary, size: 20),
-      title: Text(
-        'Create New Profile',
-        style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.primary, fontWeight: FontWeight.w600),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      child: ListTile(
+        dense: true,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        leading: Icon(Icons.add_circle_outline_rounded, color: colorScheme.primary, size: 20),
+        title: Text(
+          'Create New Profile',
+          style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.primary, fontWeight: FontWeight.w600),
+        ),
+        onTap: onSelect,
       ),
-      onTap: onSelect,
     );
   }
 

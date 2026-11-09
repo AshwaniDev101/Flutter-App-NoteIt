@@ -117,10 +117,13 @@ class SyncModeNotifier extends Notifier<SyncMode> {
     if (authRepo.isSignedIn && authRepo.currentUser?.email != null) {
       final userEmail = authRepo.currentUser!.email!;
 
+      final currentUser = authRepo.currentUser;
       if (activeProfile.linkedEmail == null) {
         // Automatically link current email to active profile upon cloud sync enable
         final updated = activeProfile.copyWith(
           linkedEmail: userEmail,
+          displayName: currentUser?.displayName ?? activeProfile.displayName,
+          photoUrl: currentUser?.photoURL ?? activeProfile.photoUrl,
           syncMode: SyncMode.cloud.name,
         );
         await ref.read(profilesListProvider.notifier).updateProfile(updated);
@@ -142,6 +145,12 @@ class SyncModeNotifier extends Notifier<SyncMode> {
             accessToken: result.credentials?.accessToken,
           );
         }
+        final updated = activeProfile.copyWith(
+          displayName: user.displayName ?? activeProfile.displayName,
+          photoUrl: user.photoURL ?? activeProfile.photoUrl,
+        );
+        await ref.read(profilesListProvider.notifier).updateProfile(updated);
+        ref.read(activeProfileProvider.notifier).updateActiveProfile(updated);
       }
 
       await setMode(SyncMode.cloud);
@@ -160,16 +169,14 @@ class SyncModeNotifier extends Notifier<SyncMode> {
           accessToken: result.credentials?.accessToken,
         );
       }
-      if (activeProfile.linkedEmail == null) {
-        final updated = activeProfile.copyWith(
-          linkedEmail: user.email,
-          syncMode: SyncMode.cloud.name,
-        );
-        await ref.read(profilesListProvider.notifier).updateProfile(updated);
-        ref.read(activeProfileProvider.notifier).updateActiveProfile(updated);
-      } else {
-        await setMode(SyncMode.cloud);
-      }
+      final updated = activeProfile.copyWith(
+        linkedEmail: user.email,
+        displayName: user.displayName ?? activeProfile.displayName,
+        photoUrl: user.photoURL ?? activeProfile.photoUrl,
+        syncMode: SyncMode.cloud.name,
+      );
+      await ref.read(profilesListProvider.notifier).updateProfile(updated);
+      ref.read(activeProfileProvider.notifier).updateActiveProfile(updated);
       AppLogger.d("SyncModeNotifier: Google Sign-In successful. Switching to Cloud Mode.");
       return true;
     } else {
