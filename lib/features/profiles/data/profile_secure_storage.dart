@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import '../../core/util/logger.dart';
+import '../../../core/util/logger.dart';
 
 /// Hardware-backed secure storage wrapper for storing per-profile OAuth credentials.
 ///

@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../features/profiles/active_profile_provider.dart';
+import '../../features/profiles/providers/active_profile_provider.dart';
 import 'keybindings/keybindings_dao.dart';
 import 'keybindings/keybindings_table.dart';
 import 'synced_devices/synced_devices_dao.dart';

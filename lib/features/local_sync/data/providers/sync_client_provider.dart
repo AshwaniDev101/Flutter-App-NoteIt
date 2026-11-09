@@ -17,7 +17,7 @@ import 'package:noteit/shared/overlays/snack_bar_manager.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../../../../database/drift/local_database.dart';
-import '../../../profiles/active_profile_provider.dart';
+import '../../../profiles/providers/active_profile_provider.dart';
 
 final syncClientProvider = NotifierProvider<SyncClientNotifier, WebSocketChannel?>(() {
   return SyncClientNotifier();

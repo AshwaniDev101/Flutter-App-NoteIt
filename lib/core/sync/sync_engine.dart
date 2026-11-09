@@ -2,8 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/util/logger.dart';
 import 'package:noteit/database/firebase/auth/firebase_provider.dart';
 
-import '../../features/profiles/active_profile_provider.dart';
-import '../../features/profiles/profile_providers.dart';
+import '../../features/profiles/providers/active_profile_provider.dart';
+import '../../features/profiles/providers/profile_providers.dart';
 
 /// Legacy enum kept for backwards compatibility during migration.
 enum SyncEngine { cloud, local, offline }

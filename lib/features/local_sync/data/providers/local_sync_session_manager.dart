@@ -6,8 +6,9 @@ import 'package:noteit/features/local_sync/data/network/local_sync_service.dart'
 import 'package:noteit/features/local_sync/data/network/mdns_broadcast.dart';
 import 'package:noteit/features/local_sync/data/network/mdns_searcher.dart';
 import 'package:noteit/features/local_sync/data/providers/sync_client_provider.dart';
-import 'package:noteit/features/local_sync/domain/models/local_sync_session.dart';
+import 'package:noteit/features/local_sync/models/local_sync_session.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+
 
 final localSyncSessionProvider =
     NotifierProvider<LocalSyncSessionManager, LocalSyncSession>(() {

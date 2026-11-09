@@ -1,15 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/util/logger.dart';
-import '../../database/firebase/auth/firebase_provider.dart';
-import '../../database/shared_preference/shared_preference_manager.dart';
-import '../../features/cloud_sync/data/cloud_sync_service.dart';
-import '../../features/folders/core/providers.dart';
-import '../../features/home/core/providers.dart';
-import '../../features/lock/lock_manger/lock_manager.dart';
-import '../../features/reminder/reminder_manager.dart';
-import 'profile_model.dart';
-import 'profile_repository.dart';
-import 'profile_secure_storage.dart';
+import '../../../core/util/logger.dart';
+import '../../../database/firebase/auth/firebase_provider.dart';
+import '../../../database/shared_preference/shared_preference_manager.dart';
+import '../../../features/cloud_sync/data/cloud_sync_service.dart';
+import '../../../features/folders/core/providers.dart';
+import '../../../features/home/core/providers.dart';
+import '../../../features/lock/lock_manger/lock_manager.dart';
+import '../../../features/reminder/reminder_manager.dart';
+import '../data/profile_repository.dart';
+import '../data/profile_secure_storage.dart';
+import '../models/profile_model.dart';
 
 /// Riverpod provider managing the currently active user workspace profile.
 final activeProfileProvider = NotifierProvider<ActiveProfileNotifier, Profile>(() {

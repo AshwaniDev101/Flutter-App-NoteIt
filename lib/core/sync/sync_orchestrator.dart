@@ -6,7 +6,7 @@ import 'package:noteit/database/firebase/auth/firebase_provider.dart';
 import 'package:noteit/features/cloud_sync/data/cloud_sync_service.dart';
 import 'package:noteit/features/local_sync/data/network/local_sync_service.dart';
 import 'package:noteit/features/local_sync/data/providers/local_sync_session_manager.dart';
-import 'package:noteit/features/profiles/active_profile_provider.dart';
+import 'package:noteit/features/profiles/providers/active_profile_provider.dart';
 
 final isSyncingProvider = NotifierProvider<IsSyncingNotifier, bool>(() {
   return IsSyncingNotifier();

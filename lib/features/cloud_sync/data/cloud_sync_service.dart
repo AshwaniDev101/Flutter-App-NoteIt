@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:noteit/features/profiles/active_profile_provider.dart';
+import 'package:noteit/features/profiles/providers/active_profile_provider.dart';
 import 'package:noteit/core/sync/sync_orchestrator.dart';
 import 'package:noteit/core/util/logger.dart';
 import 'package:noteit/database/drift/folders/folders_dao.dart';

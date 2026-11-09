@@ -16,7 +16,7 @@ import '../../../../shared/app_bars/mobile_bottom_control_bar.dart';
 import '../../../../shared/app_bars/top_select_mode_appbar.dart';
 import '../../../../shared/note_card/dynamic_notes_layout.dart';
 import '../../../drawer/mobile_app_drawer.dart';
-import '../../../profiles/widgets/profile_badge.dart';
+import '../../../profiles/view/widgets/profile_badge.dart';
 import '../../core/note_tap_handler.dart';
 import '../../core/providers.dart';
 import '../../viewmodel/viewmodel.dart';

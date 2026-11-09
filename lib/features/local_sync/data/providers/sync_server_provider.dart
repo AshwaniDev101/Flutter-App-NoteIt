@@ -13,7 +13,7 @@ import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_web_socket/shelf_web_socket.dart';
 
-import '../../../profiles/active_profile_provider.dart';
+import '../../../profiles/providers/active_profile_provider.dart';
 
 final syncServerProvider = NotifierProvider<SyncServerNotifier, HttpServer?>(() {
   return SyncServerNotifier();

@@ -2,11 +2,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/database/firebase/auth/firebase_provider.dart';
-import '../../../shared/overlays/snack_bar_manager.dart';
-import '../active_profile_provider.dart';
-import '../profile_model.dart';
-import '../profile_providers.dart';
-import '../profile_secure_storage.dart';
+import '../../../../shared/overlays/snack_bar_manager.dart';
+import '../../data/profile_secure_storage.dart';
+import '../../models/profile_model.dart';
+import '../../providers/active_profile_provider.dart';
+import '../../providers/profile_providers.dart';
 
 /// Modal dialog for creating a new user profile workspace or editing an existing profile.
 class CreateProfileDialog extends ConsumerStatefulWidget {
@@ -35,7 +35,7 @@ class _CreateProfileDialogState extends ConsumerState<CreateProfileDialog> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.profileToEdit?.name ?? '');
-    
+
     // When editing an existing profile, check if the current auth user matches
     if (widget.isEditing) {
       final activeUser = ref.read(authStateProvider).value;

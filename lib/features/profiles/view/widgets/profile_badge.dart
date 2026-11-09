@@ -2,17 +2,17 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/database/firebase/auth/firebase_provider.dart';
-import 'package:noteit/features/profiles/widgets/sync_menu_button.dart';
 
-import '../../../core/helpers/platform_helper.dart';
-import '../../../core/sync/sync_engine.dart';
-import '../../../core/sync/sync_orchestrator.dart';
-import '../../../shared/menus/app_bottom_sheet.dart';
-import '../../../shared/overlays/snack_bar_manager.dart';
+import '../../../../core/helpers/platform_helper.dart';
+import '../../../../core/sync/sync_engine.dart';
+import '../../../../core/sync/sync_orchestrator.dart';
+import '../../../../shared/menus/app_bottom_sheet.dart';
+import '../../../../shared/menus/sync_menu_button.dart';
+import '../../../../shared/overlays/snack_bar_manager.dart';
+import '../../models/profile_model.dart';
+import '../../providers/active_profile_provider.dart';
+import '../../providers/profile_providers.dart';
 import '../helpers/profile_badge_helper.dart';
-import '../../profiles/active_profile_provider.dart';
-import '../../profiles/profile_model.dart';
-import '../../profiles/profile_providers.dart';
 import 'create_profile_dialog.dart';
 
 class ProfileBadge extends ConsumerStatefulWidget {

@@ -27,7 +27,7 @@ import 'package:noteit/features/themes/view/theme_page.dart';
 
 import '../../../../../core/helpers/platform_helper.dart';
 import '../../../../../shared/app_bars/desktop_window_controls.dart';
-import '../../../../profiles/widgets/profile_badge.dart';
+import '../../../../profiles/view/widgets/profile_badge.dart';
 import '../../../../settings/default_layout/default_settings_page.dart';
 import '../../../../settings/keybindings/keybinding_settings_page.dart';
 import '../../../../settings/note_editor/note_editor_settings_page.dart';

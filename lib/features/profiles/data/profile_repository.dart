@@ -3,10 +3,10 @@ import 'dart:io';
 
 import 'package:path_provider/path_provider.dart';
 
-import '../../core/sync/sync_engine.dart';
-import '../../core/util/logger.dart';
-import '../../database/shared_preference/shared_preference_manager.dart';
-import 'profile_model.dart';
+import '../../../core/sync/sync_engine.dart';
+import '../../../core/util/logger.dart';
+import '../../../database/shared_preference/shared_preference_manager.dart';
+import '../models/profile_model.dart';
 import 'profile_secure_storage.dart';
 
 /// Centralized repository for creating, reading, updating, and deleting

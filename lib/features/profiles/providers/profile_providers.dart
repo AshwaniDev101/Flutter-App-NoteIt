@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'profile_model.dart';
-import 'profile_repository.dart';
+import '../data/profile_repository.dart';
+import '../models/profile_model.dart';
 
 /// Riverpod provider exposing access to [ProfileRepository].
 final profileRepositoryProvider = Provider<ProfileRepository>((ref) {

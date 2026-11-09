@@ -15,7 +15,7 @@ import 'package:window_manager/window_manager.dart';
 
 import 'core/helpers/platform_helper.dart';
 import 'core/theme/app_theme.dart';
-import 'features/profiles/profile_repository.dart';
+import 'features/profiles/data/profile_repository.dart';
 import 'features/reminder/reminder_manager.dart';
 import 'features/tray/window_tray.dart';
 
