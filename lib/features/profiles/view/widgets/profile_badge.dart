@@ -739,6 +739,8 @@ class _ProfileBadgeState extends ConsumerState<ProfileBadge> {
           final newProf = await ref.read(profilesListProvider.notifier).createProfile(name: 'NoteIt');
           await ref.read(activeProfileProvider.notifier).switchProfile(newProf);
         }
+        // Brief asynchronous pause to allow Riverpod disposal and SQLite file handle closure
+        await Future.delayed(const Duration(milliseconds: 100));
       }
       await ref.read(profilesListProvider.notifier).deleteProfile(profile.id);
       if (context.mounted) {

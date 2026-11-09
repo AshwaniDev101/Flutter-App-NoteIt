@@ -250,11 +250,17 @@ class ProfileRepository {
         final entities = dir.listSync();
         final baseName = profile.dbFileName;
         for (final entity in entities) {
-          if (entity is File && entity.path.contains(baseName)) {
-            try {
-              await entity.delete();
-              AppLogger.d('ProfileRepository: Deleted database file ${entity.path}');
-            } catch (_) {}
+          if (entity is File) {
+            final fileName = entity.path.split(RegExp(r'[/\\]')).last;
+            if (fileName == baseName ||
+                fileName == '$baseName.sqlite' ||
+                fileName.startsWith('$baseName.') ||
+                fileName.startsWith('$baseName-')) {
+              try {
+                await entity.delete();
+                AppLogger.d('ProfileRepository: Deleted database file ${entity.path}');
+              } catch (_) {}
+            }
           }
         }
       }

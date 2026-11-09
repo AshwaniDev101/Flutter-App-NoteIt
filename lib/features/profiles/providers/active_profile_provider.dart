@@ -140,7 +140,9 @@ class ActiveProfileNotifier extends Notifier<Profile> {
                   );
                 }
               } else {
-                AppLogger.w('ActiveProfileNotifier: Interactive Google Sign-In cancelled or mismatched for profile ${targetProfile.name}.');
+                AppLogger.w('ActiveProfileNotifier: Interactive Google Sign-In cancelled or mismatched for profile ${targetProfile.name}. Falling back to offline mode.');
+                updatedProfile = targetProfile.copyWith(syncMode: 'offline');
+                await ProfileRepository.instance.updateProfile(updatedProfile);
               }
             }
           }

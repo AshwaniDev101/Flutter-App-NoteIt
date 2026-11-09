@@ -85,9 +85,9 @@ class _CreateProfileDialogState extends ConsumerState<CreateProfileDialog> {
     if (widget.isEditing) {
       final updated = widget.profileToEdit!.copyWith(
         name: name,
-        displayName: displayName ?? widget.profileToEdit!.displayName,
-        photoUrl: photoUrl ?? widget.profileToEdit!.photoUrl,
-        linkedEmail: linkedEmail ?? widget.profileToEdit!.linkedEmail,
+        displayName: dialogUser != null ? (displayName ?? widget.profileToEdit!.displayName) : null,
+        photoUrl: dialogUser != null ? (photoUrl ?? widget.profileToEdit!.photoUrl) : null,
+        linkedEmail: dialogUser != null ? (linkedEmail ?? widget.profileToEdit!.linkedEmail) : null,
         syncMode: syncMode,
       );
       await ref.read(profilesListProvider.notifier).updateProfile(updated);

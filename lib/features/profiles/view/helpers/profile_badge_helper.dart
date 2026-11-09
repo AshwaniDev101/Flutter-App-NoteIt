@@ -36,7 +36,7 @@ class ProfileBadgeHelper {
 
     // Lowercase ensures 'Ashwin' and 'ashwin' resolve to the exact same hash
     final normalized = name.trim().toLowerCase();
-    final index = _generateHash(normalized) % _palette.length;
+    final index = (_generateHash(normalized) % _palette.length).abs();
 
     return _palette[index];
   }
