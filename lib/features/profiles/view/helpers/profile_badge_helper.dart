@@ -1,4 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+
+import '../../models/profile_model.dart';
 
 class ProfileBadgeHelper {
   // Exactly 30 high-contrast Material Design colors (600-800 shades).
@@ -48,5 +51,36 @@ class ProfileBadgeHelper {
 
     // Handles multi-word names (e.g. returning 'A' for "Ashwani Yadav")
     return trimmed[0].toUpperCase();
+  }
+
+  /// Checks whether [authUser] matches [profile]'s linked Google account.
+  static bool isAuthForProfile(Profile profile, User? authUser) {
+    return authUser != null &&
+        profile.linkedEmail != null &&
+        authUser.email?.toLowerCase() == profile.linkedEmail?.toLowerCase();
+  }
+
+  /// Resolves the effective photo URL for a profile.
+  static String? getEffectivePhotoUrl(Profile profile, User? authUser) {
+    final isAuth = isAuthForProfile(profile, authUser);
+    return (isAuth ? authUser?.photoURL : null) ?? profile.photoUrl;
+  }
+
+  /// Resolves the effective display name for a profile.
+  static String getEffectiveDisplayName(Profile profile, User? authUser) {
+    final isAuth = isAuthForProfile(profile, authUser);
+    if (isAuth && (authUser?.displayName?.isNotEmpty ?? false)) {
+      return authUser!.displayName!;
+    }
+    if (profile.displayName?.isNotEmpty ?? false) {
+      return profile.displayName!;
+    }
+    return profile.name;
+  }
+
+  /// Resolves the effective email for a profile.
+  static String? getEffectiveEmail(Profile profile, User? authUser) {
+    final isAuth = isAuthForProfile(profile, authUser);
+    return profile.linkedEmail ?? (isAuth ? authUser?.email : null);
   }
 }
