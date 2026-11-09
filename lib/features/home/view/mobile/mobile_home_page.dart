@@ -17,6 +17,7 @@ import '../../../../shared/app_bars/top_select_mode_appbar.dart';
 import '../../../../shared/note_card/dynamic_notes_layout.dart';
 import '../../../drawer/mobile_app_drawer.dart';
 import '../../../profiles/view/widgets/profile_badge.dart';
+import '../../../profiles/view/widgets/profile_switch_overlay.dart';
 import '../../core/note_tap_handler.dart';
 import '../../core/providers.dart';
 import '../../viewmodel/viewmodel.dart';
@@ -162,13 +163,15 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> with WidgetsBin
         //   searchController: _searchController,
         //   searchFocusNode: _searchFocusNode,
         // ),
-        body: DynamicNotesLayout(
-          isSelectMode: homeState.isSelectMode,
-          noteIds: homeState.selectedNoteIds,
-          activeNoteId: null,
-          onToggleSelection: viewModel.toggleSelection,
-          onEnableSelectMode: viewModel.enableSelectMode,
-          onNoteTap: _handleNoteTap,
+        body: ProfileSwitchOverlay(
+          child: DynamicNotesLayout(
+            isSelectMode: homeState.isSelectMode,
+            noteIds: homeState.selectedNoteIds,
+            activeNoteId: null,
+            onToggleSelection: viewModel.toggleSelection,
+            onEnableSelectMode: viewModel.enableSelectMode,
+            onNoteTap: _handleNoteTap,
+          ),
         ),
       ),
     );

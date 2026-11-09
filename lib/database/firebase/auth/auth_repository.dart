@@ -106,6 +106,17 @@ class AuthRepository {
     }
   }
 
+  /// Signs out from Firebase only, keeping Google account session cached for fast background profile switching.
+  Future<void> signOutFirebaseOnly() async {
+    try {
+      AppLogger.d('AuthRepository: Signing out active Firebase session (${currentUser?.email})...');
+      await _auth.signOut();
+      AppLogger.d('AuthRepository: Firebase sign-out complete.');
+    } catch (e, st) {
+      AppLogger.e('AuthRepository: Firebase sign-out error', error: e, stack: st);
+    }
+  }
+
   /// Signs out from both Google and Firebase.
   Future<void> signOut() async {
     try {

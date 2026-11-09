@@ -16,6 +16,7 @@ import '../../../keybinding/shortcut_config.dart';
 import 'package:noteit/features/home/core/providers.dart';
 import '../../viewmodel/viewmodel.dart';
 import 'list_panel.dart';
+import 'package:noteit/features/profiles/view/widgets/profile_switch_overlay.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/content_panel.dart';
 
 class DesktopHomePanel extends ConsumerStatefulWidget {
@@ -216,32 +217,33 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePanel> {
                   if (!didPop && homeState.isSelectMode) viewModel.clearSelection();
                 },
                 child: Scaffold(
-                  body: FocusTraversalGroup(
-                    policy: OrderedTraversalPolicy(),
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final screenWidth = constraints.maxWidth;
-                        return ValueListenableBuilder<double>(
-                          valueListenable: _listPanelWidthNotifier,
-                          builder: (context, listPanelWidth, child) {
-                            final effectiveMaxWidth = math.max(_minListPanelWidth, screenWidth * 0.75);
-                            final clampedWidth = listPanelWidth.clamp(_minListPanelWidth, effectiveMaxWidth);
+                  body: ProfileSwitchOverlay(
+                    child: FocusTraversalGroup(
+                      policy: OrderedTraversalPolicy(),
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final screenWidth = constraints.maxWidth;
+                          return ValueListenableBuilder<double>(
+                            valueListenable: _listPanelWidthNotifier,
+                            builder: (context, listPanelWidth, child) {
+                              final effectiveMaxWidth = math.max(_minListPanelWidth, screenWidth * 0.75);
+                              final clampedWidth = listPanelWidth.clamp(_minListPanelWidth, effectiveMaxWidth);
 
-                            return Stack(
-                              children: [
-                                Row(
-                                  children: [
-                                    // Middle Panel
-                                    SizedBox(
-                                      width: clampedWidth,
-                                      child: listPanelWidget,
-                                    ),
-                                    const VerticalDivider(width: 1, thickness: 1, color: Colors.transparent),
+                              return Stack(
+                                children: [
+                                  Row(
+                                    children: [
+                                      // Middle Panel
+                                      SizedBox(
+                                        width: clampedWidth,
+                                        child: listPanelWidget,
+                                      ),
+                                      const VerticalDivider(width: 1, thickness: 1, color: Colors.transparent),
 
-                                    // Right Panel
-                                    Expanded(child: contentPanelWidget),
-                                  ],
-                                ),
+                                      // Right Panel
+                                      Expanded(child: contentPanelWidget),
+                                    ],
+                                  ),
 
                                 // Middle Panel Divider
                                 Positioned(
@@ -291,6 +293,7 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePanel> {
                       },
                     ),
                   ),
+                ),
                 ),
               ),
             ),

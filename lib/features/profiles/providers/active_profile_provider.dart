@@ -11,6 +11,33 @@ import '../data/profile_repository.dart';
 import '../data/profile_secure_storage.dart';
 import '../models/profile_model.dart';
 
+class ProfileSwitchingState {
+  final bool isSwitching;
+  final Profile? targetProfile;
+
+  const ProfileSwitchingState({
+    this.isSwitching = false,
+    this.targetProfile,
+  });
+}
+
+final profileSwitchingProvider = NotifierProvider<ProfileSwitchingNotifier, ProfileSwitchingState>(() {
+  return ProfileSwitchingNotifier();
+});
+
+class ProfileSwitchingNotifier extends Notifier<ProfileSwitchingState> {
+  @override
+  ProfileSwitchingState build() => const ProfileSwitchingState();
+
+  void startSwitch(Profile target) {
+    state = ProfileSwitchingState(isSwitching: true, targetProfile: target);
+  }
+
+  void endSwitch() {
+    state = const ProfileSwitchingState(isSwitching: false, targetProfile: null);
+  }
+}
+
 /// Riverpod provider managing the currently active user workspace profile.
 final activeProfileProvider = NotifierProvider<ActiveProfileNotifier, Profile>(() {
   return ActiveProfileNotifier();
@@ -53,6 +80,7 @@ class ActiveProfileNotifier extends Notifier<Profile> {
     if (state.id == targetProfile.id || _isSwitching) return;
 
     _isSwitching = true;
+    ref.read(profileSwitchingProvider.notifier).startSwitch(targetProfile);
     try {
       AppLogger.d('ActiveProfileNotifier: Switching profile from "${state.name}" (${state.id}) to "${targetProfile.name}" (${targetProfile.id})...');
 
@@ -155,8 +183,8 @@ class ActiveProfileNotifier extends Notifier<Profile> {
         await ProfileRepository.instance.updateProfile(updatedProfile);
 
         if (authRepo.isSignedIn) {
-          AppLogger.d('ActiveProfileNotifier: Signing out active user ($currentFirebaseEmail) for non-Google profile...');
-          await authRepo.signOut();
+          AppLogger.d('ActiveProfileNotifier: Signing out active Firebase user ($currentFirebaseEmail) for non-Google profile...');
+          await authRepo.signOutFirebaseOnly();
         }
       }
 
@@ -168,7 +196,9 @@ class ActiveProfileNotifier extends Notifier<Profile> {
 
       AppLogger.d('ActiveProfileNotifier: Successfully switched active profile to ${updatedProfile.name}');
     } finally {
+      await Future.delayed(const Duration(milliseconds: 300));
       _isSwitching = false;
+      ref.read(profileSwitchingProvider.notifier).endSwitch();
     }
   }
 

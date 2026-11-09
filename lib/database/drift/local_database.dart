@@ -24,8 +24,8 @@ part 'local_database.g.dart';
 /// guaranteeing underlying SQLite file locks are cleanly released during app teardown or testing.
 
 final localDatabaseProvider = Provider((ref) {
-  final activeProfile = ref.watch(activeProfileProvider);
-  final db = LocalDatabase(activeProfile.dbFileName);
+  final dbFileName = ref.watch(activeProfileProvider.select((p) => p.dbFileName));
+  final db = LocalDatabase(dbFileName);
   ref.onDispose(() async {
     await db.close();
   });

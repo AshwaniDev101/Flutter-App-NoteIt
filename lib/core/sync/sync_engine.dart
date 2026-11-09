@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/util/logger.dart';
 import 'package:noteit/database/firebase/auth/firebase_provider.dart';
 
+import '../../features/profiles/data/profile_secure_storage.dart';
 import '../../features/profiles/providers/active_profile_provider.dart';
 import '../../features/profiles/providers/profile_providers.dart';
 
@@ -84,9 +85,9 @@ final syncEngineProvider = NotifierProvider<SyncEngineNotifier, SyncEngine>(() {
 class SyncModeNotifier extends Notifier<SyncMode> {
   @override
   SyncMode build() {
-    final activeProfile = ref.watch(activeProfileProvider);
+    final syncModeStr = ref.watch(activeProfileProvider.select((p) => p.syncMode));
     return SyncMode.values.firstWhere(
-      (e) => e.name == activeProfile.syncMode,
+      (e) => e.name == syncModeStr,
       orElse: () => SyncMode.offline,
     );
   }
@@ -128,10 +129,18 @@ class SyncModeNotifier extends Notifier<SyncMode> {
         return true;
       } else if (activeProfile.linkedEmail != userEmail) {
         AppLogger.w("SyncModeNotifier: Profile linked email (${activeProfile.linkedEmail}) differs from current account ($userEmail). Prompting Google Sign-In...");
-        final user = await authRepo.signInWithGoogle();
+        final result = await authRepo.signInWithGoogleDetails();
+        final user = result.user;
         if (user == null || user.email != activeProfile.linkedEmail) {
           AppLogger.w("SyncModeNotifier: Google Sign-In failed or email mismatched.");
           return false;
+        }
+        if (result.credentials?.idToken != null) {
+          await ProfileSecureStorage.instance.saveProfileOAuthTokens(
+            profileId: activeProfile.id,
+            idToken: result.credentials!.idToken!,
+            accessToken: result.credentials?.accessToken,
+          );
         }
       }
 
@@ -140,9 +149,17 @@ class SyncModeNotifier extends Notifier<SyncMode> {
     }
 
     AppLogger.d("SyncModeNotifier: Cloud Mode requested but user is unauthenticated. Prompting Google Sign-In...");
-    final user = await authRepo.signInWithGoogle();
+    final result = await authRepo.signInWithGoogleDetails();
+    final user = result.user;
 
     if (user != null && user.email != null) {
+      if (result.credentials?.idToken != null) {
+        await ProfileSecureStorage.instance.saveProfileOAuthTokens(
+          profileId: activeProfile.id,
+          idToken: result.credentials!.idToken!,
+          accessToken: result.credentials?.accessToken,
+        );
+      }
       if (activeProfile.linkedEmail == null) {
         final updated = activeProfile.copyWith(
           linkedEmail: user.email,

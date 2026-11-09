@@ -94,7 +94,7 @@ class _ProfileMenuContentState extends ConsumerState<ProfileMenuContent> {
         _buildExpandableTile(
           context: context,
           icon: Icons.switch_account_outlined,
-          title: 'Switch account',
+          title: 'Switch profile',
           onTap: () {
             setState(() {
               _activeSubView = _ProfileSubView.profiles;
