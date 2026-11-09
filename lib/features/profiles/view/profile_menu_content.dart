@@ -5,7 +5,6 @@ import 'package:noteit/database/firebase/auth/firebase_provider.dart';
 
 import '../../../core/sync/sync_engine.dart';
 import '../../../core/sync/sync_orchestrator.dart';
-import '../../../shared/menus/sync_menu_button.dart';
 import '../../../shared/overlays/snack_bar_manager.dart';
 import '../models/profile_model.dart';
 import '../providers/active_profile_provider.dart';
@@ -13,6 +12,8 @@ import '../providers/profile_providers.dart';
 import 'helpers/profile_badge_helper.dart';
 import 'widgets/create_profile_dialog.dart';
 import 'widgets/profile_tile.dart';
+
+enum _ProfileSubView { main, profiles, sync }
 
 class ProfileMenuContent extends ConsumerStatefulWidget {
   final VoidCallback onCloseMenu;
@@ -27,7 +28,7 @@ class ProfileMenuContent extends ConsumerStatefulWidget {
 }
 
 class _ProfileMenuContentState extends ConsumerState<ProfileMenuContent> {
-  bool _showProfilesList = false;
+  _ProfileSubView _activeSubView = _ProfileSubView.main;
 
   @override
   Widget build(BuildContext context) {
@@ -40,87 +41,61 @@ class _ProfileMenuContentState extends ConsumerState<ProfileMenuContent> {
         ? SyncEngine.cloud
         : (syncMode.isLocal ? SyncEngine.local : SyncEngine.offline);
 
-    if (_showProfilesList) {
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(8, 8, 16, 8),
-            child: Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.arrow_back, size: 20),
-                  onPressed: () {
-                    setState(() {
-                      _showProfilesList = false;
-                    });
-                  },
-                  tooltip: 'Back',
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  'Switch profile',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-              ],
-            ),
-          ),
-          const Divider(height: 1),
-          ...profiles.map((profile) {
-            return ProfileTile(
-              profile: profile,
-              activeProfile: activeProfile,
-              authUser: authUser,
-              onMenuDismiss: widget.onCloseMenu,
-              onSelect: (selectedProfile) async {
-                widget.onCloseMenu();
-                if (selectedProfile.id != activeProfile.id) {
-                  await ref.read(activeProfileProvider.notifier).switchProfile(selectedProfile);
-                  SnackBarManager.show(
-                    msg: 'Switched to profile "${selectedProfile.name}".',
-                    type: SnackBarMessageType.acknowledgment,
-                  );
-                }
-              },
-            );
-          }),
-          const Divider(height: 1),
-          _buildCreateProfileTile(
-            context,
-            onSelect: () {
-              widget.onCloseMenu();
-              showDialog(context: context, builder: (ctx) => const CreateProfileDialog());
-            },
-          ),
-          const SizedBox(height: 8),
-        ],
+    if (_activeSubView == _ProfileSubView.profiles) {
+      return _buildProfilesPanel(
+        context: context,
+        profiles: profiles,
+        activeProfile: activeProfile,
+        authUser: authUser,
       );
     }
 
+    if (_activeSubView == _ProfileSubView.sync) {
+      return _buildSyncOptionsPanel(
+        context: context,
+        currentEngine: currentEngine,
+        syncMode: syncMode,
+      );
+    }
+
+    return _buildMainPanel(
+      context: context,
+      activeProfile: activeProfile,
+      authUser: authUser,
+      currentEngine: currentEngine,
+    );
+  }
+
+  Widget _buildMainPanel({
+    required BuildContext context,
+    required Profile activeProfile,
+    required User? authUser,
+    required SyncEngine currentEngine,
+  }) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildHeader(context, activeProfile, authUser),
         const Divider(height: 1),
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: SyncMenuButton(
-            currentEngine: currentEngine,
-            onEngineSelected: (engine) => _handleSyncChange(engine, ref, syncMode),
-          ),
+        _buildExpandableTile(
+          context: context,
+          icon: currentEngine.icon,
+          title: 'Sync Method',
+          statusText: currentEngine.label,
+          onTap: () {
+            setState(() {
+              _activeSubView = _ProfileSubView.sync;
+            });
+          },
         ),
-        _buildActionItem(
+        _buildExpandableTile(
           context: context,
           icon: Icons.switch_account_outlined,
           title: 'Switch account',
-          trailing: const Icon(Icons.chevron_right, size: 20),
           onTap: () {
             setState(() {
-              _showProfilesList = true;
+              _activeSubView = _ProfileSubView.profiles;
             });
           },
         ),
@@ -142,6 +117,202 @@ class _ProfileMenuContentState extends ConsumerState<ProfileMenuContent> {
         ),
         const SizedBox(height: 8),
       ],
+    );
+  }
+
+  Widget _buildProfilesPanel({
+    required BuildContext context,
+    required List<Profile> profiles,
+    required Profile activeProfile,
+    required User? authUser,
+  }) {
+    final theme = Theme.of(context);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(8, 8, 16, 8),
+          child: Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back, size: 20),
+                onPressed: () {
+                  setState(() {
+                    _activeSubView = _ProfileSubView.main;
+                  });
+                },
+                tooltip: 'Back',
+              ),
+              const SizedBox(width: 4),
+              Text(
+                'Switch profile',
+                style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+            ],
+          ),
+        ),
+        const Divider(height: 1),
+        ...profiles.map((profile) {
+          return ProfileTile(
+            profile: profile,
+            activeProfile: activeProfile,
+            authUser: authUser,
+            onMenuDismiss: widget.onCloseMenu,
+            onSelect: (selectedProfile) async {
+              widget.onCloseMenu();
+              if (selectedProfile.id != activeProfile.id) {
+                await ref.read(activeProfileProvider.notifier).switchProfile(selectedProfile);
+                SnackBarManager.show(
+                  msg: 'Switched to profile "${selectedProfile.name}".',
+                  type: SnackBarMessageType.acknowledgment,
+                );
+              }
+            },
+          );
+        }),
+        const Divider(height: 1),
+        _buildCreateProfileTile(
+          context,
+          onSelect: () {
+            widget.onCloseMenu();
+            showDialog(context: context, builder: (ctx) => const CreateProfileDialog());
+          },
+        ),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+
+  Widget _buildSyncOptionsPanel({
+    required BuildContext context,
+    required SyncEngine currentEngine,
+    required SyncMode syncMode,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    const options = [
+      SyncEngine.cloud,
+      SyncEngine.local,
+      SyncEngine.offline,
+    ];
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(8, 8, 16, 8),
+          child: Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back, size: 20),
+                onPressed: () {
+                  setState(() {
+                    _activeSubView = _ProfileSubView.main;
+                  });
+                },
+                tooltip: 'Back',
+              ),
+              const SizedBox(width: 4),
+              Text(
+                'Sync Method',
+                style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+            ],
+          ),
+        ),
+        const Divider(height: 1),
+        ...options.map((engine) {
+          final isSelected = currentEngine == engine;
+          return ListTile(
+            dense: true,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            leading: Icon(
+              engine.icon,
+              color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
+              size: 22,
+            ),
+            title: Text(
+              engine.label,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                color: isSelected ? colorScheme.primary : colorScheme.onSurface,
+              ),
+            ),
+            subtitle: Text(
+              engine.description,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+            trailing: isSelected
+                ? Icon(Icons.check_circle_rounded, color: colorScheme.primary, size: 20)
+                : null,
+            onTap: () async {
+              await _handleSyncChange(engine, ref, syncMode);
+              setState(() {
+                _activeSubView = _ProfileSubView.main;
+              });
+            },
+          );
+        }),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+
+  Widget _buildExpandableTile({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    String? statusText,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+        child: Row(
+          children: [
+            Icon(icon, size: 24, color: colorScheme.onSurfaceVariant),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                title,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ),
+            if (statusText != null) ...[
+              Text(
+                statusText,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                  fontStyle: FontStyle.italic,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(width: 4),
+            ],
+            Icon(
+              Icons.chevron_right,
+              size: 20,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -296,6 +467,9 @@ class _ProfileMenuContentState extends ConsumerState<ProfileMenuContent> {
   }
 
   Future<void> _handleSyncChange(SyncEngine selectedEngine, WidgetRef ref, SyncMode currentMode) async {
+    final syncNotifier = ref.read(syncModeProvider.notifier);
+    final orchestrator = ref.read(syncOrchestratorProvider);
+
     SyncMode targetMode;
     switch (selectedEngine) {
       case SyncEngine.cloud:
@@ -309,9 +483,9 @@ class _ProfileMenuContentState extends ConsumerState<ProfileMenuContent> {
         break;
     }
 
-    final success = await ref.read(syncModeProvider.notifier).requestModeChange(targetMode);
+    final success = await syncNotifier.requestModeChange(targetMode);
     if (success) {
-      ref.read(syncOrchestratorProvider).triggerSync();
+      orchestrator.triggerSync();
     }
   }
 

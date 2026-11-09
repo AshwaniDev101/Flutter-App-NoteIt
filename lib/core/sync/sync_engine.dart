@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/util/logger.dart';
 import 'package:noteit/database/firebase/auth/firebase_provider.dart';
@@ -5,8 +6,34 @@ import 'package:noteit/database/firebase/auth/firebase_provider.dart';
 import '../../features/profiles/providers/active_profile_provider.dart';
 import '../../features/profiles/providers/profile_providers.dart';
 
-/// Legacy enum kept for backwards compatibility during migration.
-enum SyncEngine { cloud, local, offline }
+/// Available sync engines with associated label, description, and icon.
+enum SyncEngine {
+  cloud(
+    label: 'Cloud',
+    description: 'Sync notes across devices using cloud storage',
+    icon: Icons.cloud_outlined,
+  ),
+  local(
+    label: 'Local Network',
+    description: 'Sync notes directly with devices on your local network',
+    icon: Icons.wifi,
+  ),
+  offline(
+    label: 'Offline',
+    description: 'Keep all notes stored only on this device',
+    icon: Icons.signal_wifi_off,
+  );
+
+  final String label;
+  final String description;
+  final IconData icon;
+
+  const SyncEngine({
+    required this.label,
+    required this.description,
+    required this.icon,
+  });
+}
 
 /// Unified synchronization mode of the application.
 enum SyncMode {

@@ -6,8 +6,8 @@ import '../../../../core/helpers/platform_helper.dart';
 import '../../../../shared/menus/app_bottom_sheet.dart';
 import '../../providers/active_profile_provider.dart';
 import '../helpers/profile_badge_helper.dart';
-import 'profile_avatar_badge.dart';
 import '../profile_menu_content.dart';
+import 'profile_avatar_badge.dart';
 
 class ProfileBadge extends ConsumerStatefulWidget {
   const ProfileBadge({super.key});
