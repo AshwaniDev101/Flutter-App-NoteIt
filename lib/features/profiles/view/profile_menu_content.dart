@@ -63,6 +63,7 @@ class _ProfileMenuContentState extends ConsumerState<ProfileMenuContent> {
       activeProfile: activeProfile,
       authUser: authUser,
       currentEngine: currentEngine,
+      syncMode: syncMode,
     );
   }
 
@@ -71,12 +72,13 @@ class _ProfileMenuContentState extends ConsumerState<ProfileMenuContent> {
     required Profile activeProfile,
     required User? authUser,
     required SyncEngine currentEngine,
+    required SyncMode syncMode,
   }) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildHeader(context, activeProfile, authUser),
+        _buildHeader(context, activeProfile, authUser, syncMode),
         const Divider(height: 1),
         _buildExpandableTile(
           context: context,
@@ -108,13 +110,15 @@ class _ProfileMenuContentState extends ConsumerState<ProfileMenuContent> {
             showDialog(context: context, builder: (ctx) => const CreateProfileDialog());
           },
         ),
-        const Divider(height: 1),
-        _buildActionItem(
-          context: context,
-          icon: Icons.logout,
-          title: 'Sign out',
-          onTap: () => _handleSignOut(context),
-        ),
+        if (syncMode.isCloud) ...[
+          const Divider(height: 1),
+          _buildActionItem(
+            context: context,
+            icon: Icons.logout,
+            title: 'Sign out',
+            onTap: () => _handleSignOut(context),
+          ),
+        ],
         const SizedBox(height: 8),
       ],
     );
@@ -316,20 +320,25 @@ class _ProfileMenuContentState extends ConsumerState<ProfileMenuContent> {
     );
   }
 
-  Widget _buildHeader(BuildContext context, Profile activeProfile, User? authUser) {
+  Widget _buildHeader(BuildContext context, Profile activeProfile, User? authUser, SyncMode syncMode) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isCloud = syncMode.isCloud;
 
-    final photoUrl = ProfileBadgeHelper.getEffectivePhotoUrl(activeProfile, authUser);
-    final displayName = ProfileBadgeHelper.getEffectiveDisplayName(activeProfile, authUser);
-    final email = ProfileBadgeHelper.getEffectiveEmail(activeProfile, authUser);
+    final photoUrl = ProfileBadgeHelper.getEffectivePhotoUrl(activeProfile, authUser, isCloud: isCloud);
+    final displayName = ProfileBadgeHelper.getEffectiveDisplayName(activeProfile, authUser, isCloud: isCloud);
+    final email = ProfileBadgeHelper.getEffectiveEmail(activeProfile, authUser, isCloud: isCloud);
     final hasPhoto = photoUrl != null && photoUrl.isNotEmpty;
-    final isGoogleLinked = activeProfile.linkedEmail != null;
+    final isGoogleAuthView = ProfileBadgeHelper.isAuthForProfile(activeProfile, authUser, isCloud: isCloud);
+
+    final linkedEmail = activeProfile.linkedEmail ?? (authUser?.email);
+    final hasLinkedAccount = linkedEmail != null && linkedEmail.isNotEmpty;
+    final googlePhotoUrl = authUser?.photoURL ?? activeProfile.photoUrl;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           CircleAvatar(
             radius: 20,
@@ -364,7 +373,7 @@ class _ProfileMenuContentState extends ConsumerState<ProfileMenuContent> {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    if (isGoogleLinked) ...[
+                    if (isGoogleAuthView) ...[
                       const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -385,7 +394,7 @@ class _ProfileMenuContentState extends ConsumerState<ProfileMenuContent> {
                     ],
                   ],
                 ),
-                if (email != null && email.isNotEmpty)
+                if (isGoogleAuthView && email != null && email.isNotEmpty)
                   Text(
                     email,
                     style: theme.textTheme.bodyMedium?.copyWith(
@@ -414,6 +423,22 @@ class _ProfileMenuContentState extends ConsumerState<ProfileMenuContent> {
               ],
             ),
           ),
+          if (!isCloud && hasLinkedAccount) ...[
+            const SizedBox(width: 12),
+            Tooltip(
+              message: 'Linked Account: $linkedEmail',
+              child: CircleAvatar(
+                radius: 12,
+                backgroundColor: colorScheme.surfaceContainerHighest,
+                backgroundImage: googlePhotoUrl != null && googlePhotoUrl.isNotEmpty
+                    ? NetworkImage(googlePhotoUrl)
+                    : null,
+                child: (googlePhotoUrl == null || googlePhotoUrl.isEmpty)
+                    ? Icon(Icons.person, size: 14, color: colorScheme.onSurfaceVariant)
+                    : null,
+              ),
+            ),
+          ],
         ],
       ),
     );

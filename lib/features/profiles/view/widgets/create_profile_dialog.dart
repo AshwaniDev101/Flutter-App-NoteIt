@@ -212,7 +212,7 @@ class _CreateProfileDialogState extends ConsumerState<CreateProfileDialog> {
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         ),
                         icon: const Icon(Icons.logout, size: 18),
-                        label: const Text('Unlink'),
+                        label: const Text('Sign out'),
                         onPressed: () async {
                           setState(() => _dialogUser = null);
                           if (widget.isEditing && widget.profileToEdit != null) {
@@ -220,7 +220,7 @@ class _CreateProfileDialogState extends ConsumerState<CreateProfileDialog> {
                             await ref.read(authRepositoryProvider).signOut();
                           }
                           SnackBarManager.show(
-                            msg: 'Account unlinked from this profile.',
+                            msg: 'Signed out from this profile.',
                             type: SnackBarMessageType.acknowledgment,
                           );
                         },

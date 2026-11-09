@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/database/firebase/auth/firebase_provider.dart';
 
 import '../../../../core/helpers/platform_helper.dart';
+import '../../../../core/sync/sync_engine.dart';
 import '../../../../shared/menus/app_bottom_sheet.dart';
 import '../../providers/active_profile_provider.dart';
 import '../helpers/profile_badge_helper.dart';
@@ -34,10 +35,15 @@ class _ProfileBadgeState extends ConsumerState<ProfileBadge> {
   Widget build(BuildContext context) {
     final activeProfile = ref.watch(activeProfileProvider);
     final authUser = ref.watch(authStateProvider).value;
+    final syncMode = ref.watch(syncModeProvider);
     final colorScheme = Theme.of(context).colorScheme;
     final isMobile = !PlatformHelper.isWideLayout(context);
 
-    final activePhotoUrl = ProfileBadgeHelper.getEffectivePhotoUrl(activeProfile, authUser);
+    final activePhotoUrl = ProfileBadgeHelper.getEffectivePhotoUrl(
+      activeProfile,
+      authUser,
+      isCloud: syncMode.isCloud,
+    );
 
     void openProfileMenu() {
       if (isMobile) {

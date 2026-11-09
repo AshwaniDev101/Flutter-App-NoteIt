@@ -53,22 +53,24 @@ class ProfileBadgeHelper {
     return trimmed[0].toUpperCase();
   }
 
-  /// Checks whether [authUser] matches [profile]'s linked Google account.
-  static bool isAuthForProfile(Profile profile, User? authUser) {
+  /// Checks whether [authUser] matches [profile]'s linked Google account
+  /// and whether cloud sync mode is currently active.
+  static bool isAuthForProfile(Profile profile, User? authUser, {bool isCloud = true}) {
+    if (!isCloud) return false;
     return authUser != null &&
         profile.linkedEmail != null &&
         authUser.email?.toLowerCase() == profile.linkedEmail?.toLowerCase();
   }
 
   /// Resolves the effective photo URL for a profile.
-  static String? getEffectivePhotoUrl(Profile profile, User? authUser) {
-    final isAuth = isAuthForProfile(profile, authUser);
+  static String? getEffectivePhotoUrl(Profile profile, User? authUser, {bool isCloud = true}) {
+    final isAuth = isAuthForProfile(profile, authUser, isCloud: isCloud);
     return (isAuth ? authUser?.photoURL : null) ?? profile.photoUrl;
   }
 
   /// Resolves the effective display name for a profile.
-  static String getEffectiveDisplayName(Profile profile, User? authUser) {
-    final isAuth = isAuthForProfile(profile, authUser);
+  static String getEffectiveDisplayName(Profile profile, User? authUser, {bool isCloud = true}) {
+    final isAuth = isAuthForProfile(profile, authUser, isCloud: isCloud);
     if (isAuth && (authUser?.displayName?.isNotEmpty ?? false)) {
       return authUser!.displayName!;
     }
@@ -79,8 +81,8 @@ class ProfileBadgeHelper {
   }
 
   /// Resolves the effective email for a profile.
-  static String? getEffectiveEmail(Profile profile, User? authUser) {
-    final isAuth = isAuthForProfile(profile, authUser);
-    return profile.linkedEmail ?? (isAuth ? authUser?.email : null);
+  static String? getEffectiveEmail(Profile profile, User? authUser, {bool isCloud = true}) {
+    final isAuth = isAuthForProfile(profile, authUser, isCloud: isCloud);
+    return isAuth ? (profile.linkedEmail ?? authUser?.email) : null;
   }
 }
