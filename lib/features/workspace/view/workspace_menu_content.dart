@@ -101,23 +101,22 @@ class _WorkspaceMenuContentState extends ConsumerState<WorkspaceMenuContent> {
             });
           },
         ),
-        _buildActionItem(
-          context: context,
-          icon: Icons.add_circle_outline_rounded,
-          title: 'Create New Workspace',
-          onTap: () {
-            widget.onCloseMenu();
-            showDialog(context: context, builder: (ctx) => const CreateWorkspaceDialog());
-          },
-        ),
         if (syncMode.isCloud) ...[
           const Divider(height: 1),
-          _buildActionItem(
-            context: context,
-            icon: Icons.logout,
-            title: 'Sign out',
-            onTap: () => _handleSignOut(context),
-          ),
+          if (authUser != null)
+            _buildActionItem(
+              context: context,
+              icon: Icons.logout_rounded,
+              title: 'Sign out',
+              onTap: () => _handleSignOut(context),
+            )
+          else
+            _buildActionItem(
+              context: context,
+              icon: Icons.login_rounded,
+              title: 'Sign in with Google',
+              onTap: () => _handleSignIn(context),
+            ),
         ],
         const SizedBox(height: 8),
       ],
@@ -354,6 +353,32 @@ class _WorkspaceMenuContentState extends ConsumerState<WorkspaceMenuContent> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
+                if (syncMode.isCloud) ...[
+                  const SizedBox(height: 2),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.cloud_outlined,
+                        size: 14,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          (authUser != null && authUser.email != null && authUser.email!.isNotEmpty)
+                              ? authUser.email!
+                              : 'not signed in',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 4),
                 InkWell(
                   onTap: () {
@@ -363,12 +388,24 @@ class _WorkspaceMenuContentState extends ConsumerState<WorkspaceMenuContent> {
                       builder: (ctx) => CreateWorkspaceDialog(workspaceToEdit: activeWorkspace),
                     );
                   },
-                  child: Text(
-                    'Manage your workspace',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: colorScheme.primary,
-                      fontWeight: FontWeight.w500,
-                    ),
+                  borderRadius: BorderRadius.circular(4),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.edit_outlined,
+                        size: 14,
+                        color: colorScheme.primary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Edit workspace',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.primary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -452,6 +489,21 @@ class _WorkspaceMenuContentState extends ConsumerState<WorkspaceMenuContent> {
     final success = await syncNotifier.requestModeChange(targetMode);
     if (success) {
       orchestrator.triggerSync();
+    }
+  }
+
+  Future<void> _handleSignIn(BuildContext context) async {
+    widget.onCloseMenu();
+
+    final authRepo = ref.read(authRepositoryProvider);
+    final signedInUser = await authRepo.signInWithGoogle();
+
+    if (signedInUser != null) {
+      ref.read(syncOrchestratorProvider).triggerSync();
+      SnackBarManager.show(
+        msg: 'Signed in as ${signedInUser.email ?? "Google User"}.',
+        type: SnackBarMessageType.acknowledgment,
+      );
     }
   }
 

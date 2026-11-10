@@ -56,7 +56,7 @@ class _CreateWorkspaceDialogState extends ConsumerState<CreateWorkspaceDialog> {
               backgroundColor: Theme.of(ctx).colorScheme.error,
             ),
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Delete Workspace'),
+            child: const Text('Delete'),
           ),
         ],
       ),
@@ -199,7 +199,7 @@ class _CreateWorkspaceDialogState extends ConsumerState<CreateWorkspaceDialog> {
               foregroundColor: colorScheme.error,
             ),
             icon: const Icon(Icons.delete_outline, size: 18),
-            label: const Text('Delete Workspace'),
+            label: const Text('Delete'),
             onPressed: () => _confirmAndDeleteWorkspace(context, ref, widget.workspaceToEdit!),
           ),
         TextButton(
@@ -208,7 +208,7 @@ class _CreateWorkspaceDialogState extends ConsumerState<CreateWorkspaceDialog> {
         ),
         FilledButton(
           onPressed: _onSave,
-          child: Text(isEditing ? 'Save Changes' : 'Create Workspace'),
+          child: Text(isEditing ? 'Save' : 'Create Workspace'),
         ),
       ],
     );

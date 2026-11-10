@@ -81,8 +81,8 @@ class _WorkspaceAvatarBadgeState extends State<WorkspaceAvatarBadge> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: _isHovered
-                          ? Colors.transparent
-                          : Colors.black.withValues(alpha: 0.2),
+                          ? Colors.white.withValues(alpha: 0.25)
+                          : Colors.transparent,
                     ),
                   ),
                 ),

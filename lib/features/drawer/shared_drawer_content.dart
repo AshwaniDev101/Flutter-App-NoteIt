@@ -9,6 +9,7 @@ import '../../shared/note_card/core/note_action_controller.dart';
 import '../../shared/overlays/snack_bar_manager.dart';
 import '../archive/providers/archive_providers.dart';
 import '../trash/providers/trash_providers.dart';
+import '../workspace/view/helpers/workspace_badge_helper.dart';
 
 class SharedDrawerContent extends ConsumerStatefulWidget {
   final RightPanelPageOptions? selectedOption;
@@ -178,9 +179,9 @@ class _SharedDrawerContentState extends ConsumerState<SharedDrawerContent> {
           ),
         ),
 
-        // --- Google Account Auth Header ---
+        // --- Account Header & Auth Actions ---
         const _DrawerAuthHeaderWidget(),
-        const SizedBox(height: 8),
+        const SizedBox(height: 4),
 
         // --- 2. Scrollable Navigation ---
         Flexible(
@@ -196,8 +197,9 @@ class _SharedDrawerContentState extends ConsumerState<SharedDrawerContent> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const _SectionHeader(title: 'WORKSPACE'),
-                  _CompactDrawerTile(
-                    option: RightPanelPageOptions.trash,
+                  _DrawerTile(
+                    label: RightPanelPageOptions.trash.label,
+                    icon: Icon(RightPanelPageOptions.trash.icon),
                     isSelected: widget.selectedOption == RightPanelPageOptions.trash,
                     onTap: () => widget.onOptionSelected(RightPanelPageOptions.trash),
                     onSecondaryTapUp: (details) => _showTrashContextMenu(context, details),
@@ -206,28 +208,33 @@ class _SharedDrawerContentState extends ConsumerState<SharedDrawerContent> {
                   const SizedBox(height: 16),
 
                   const _SectionHeader(title: 'SYSTEM'),
-                  _CompactDrawerTile(
-                    option: RightPanelPageOptions.localSync,
+                  _DrawerTile(
+                    label: RightPanelPageOptions.localSync.label,
+                    icon: Icon(RightPanelPageOptions.localSync.icon),
                     isSelected: widget.selectedOption == RightPanelPageOptions.localSync,
                     onTap: () => widget.onOptionSelected(RightPanelPageOptions.localSync),
                   ),
-                  _CompactDrawerTile(
-                    option: RightPanelPageOptions.themes,
+                  _DrawerTile(
+                    label: RightPanelPageOptions.themes.label,
+                    icon: Icon(RightPanelPageOptions.themes.icon),
                     isSelected: widget.selectedOption == RightPanelPageOptions.themes,
                     onTap: () => widget.onOptionSelected(RightPanelPageOptions.themes),
                   ),
-                  _CompactDrawerTile(
-                    option: RightPanelPageOptions.settings,
+                  _DrawerTile(
+                    label: RightPanelPageOptions.settings.label,
+                    icon: Icon(RightPanelPageOptions.settings.icon),
                     isSelected: widget.selectedOption == RightPanelPageOptions.settings,
                     onTap: () => widget.onOptionSelected(RightPanelPageOptions.settings),
                   ),
-                  _CompactDrawerTile(
-                    option: RightPanelPageOptions.devTools,
+                  _DrawerTile(
+                    label: RightPanelPageOptions.devTools.label,
+                    icon: Icon(RightPanelPageOptions.devTools.icon),
                     isSelected: widget.selectedOption == RightPanelPageOptions.devTools,
                     onTap: () => widget.onOptionSelected(RightPanelPageOptions.devTools),
                   ),
-                  _CompactDrawerTile(
-                    option: RightPanelPageOptions.archivePage,
+                  _DrawerTile(
+                    label: RightPanelPageOptions.archivePage.label,
+                    icon: Icon(RightPanelPageOptions.archivePage.icon),
                     isSelected: widget.selectedOption == RightPanelPageOptions.archivePage,
                     onTap: () => widget.onOptionSelected(RightPanelPageOptions.archivePage),
                     count: archiveCount,
@@ -284,25 +291,33 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-class _CompactDrawerTile extends StatelessWidget {
-  final RightPanelPageOptions option;
+/// Generalized Drawer Tile used for both Navigation and Auth Actions
+class _DrawerTile extends StatelessWidget {
+  final String label;
+  final Widget icon;
   final bool isSelected;
   final VoidCallback onTap;
   final void Function(TapUpDetails details)? onSecondaryTapUp;
   final int? count;
+  final Color? overrideColor;
 
-  const _CompactDrawerTile({
-    required this.option,
+  const _DrawerTile({
+    required this.label,
+    required this.icon,
     required this.isSelected,
     required this.onTap,
     this.onSecondaryTapUp,
     this.count,
+    this.overrideColor,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+
+    final contentColor = overrideColor ??
+        (isSelected ? colorScheme.onSecondaryContainer : colorScheme.onSurfaceVariant);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 2),
@@ -318,18 +333,20 @@ class _CompactDrawerTile extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           child: Row(
             children: [
-              Icon(
-                option.icon,
-                size: 20,
-                color: isSelected ? colorScheme.onSecondaryContainer : colorScheme.onSurfaceVariant,
+              IconTheme(
+                data: IconThemeData(
+                  color: contentColor,
+                  size: 20,
+                ),
+                child: icon,
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: Text(
-                  option.label,
+                  label,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                    color: isSelected ? colorScheme.onSecondaryContainer : colorScheme.onSurfaceVariant,
+                    color: contentColor,
                   ),
                 ),
               ),
@@ -374,117 +391,105 @@ class _DrawerAuthHeaderWidget extends ConsumerWidget {
     return authState.when(
       data: (user) {
         if (user == null) {
-          // Unauthenticated State: Show Google Sign-In button
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: OutlinedButton.icon(
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 40),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                side: BorderSide(color: colorScheme.outline.withValues(alpha: 0.3)),
-              ),
-              icon: Image.asset(
-                'assets/icons/note_icon.png',
-                width: 18,
-                height: 18,
-                errorBuilder: (context, error, stackTrace) => const Icon(Icons.login, size: 18),
-              ),
-              label: Text(
-                'Sign in with Google',
-                style: theme.textTheme.labelLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
+          // Unauthenticated State: Profile header + Sign-in drawer tile
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: _DrawerTile(
+                  label: 'Sign in to sync',
+                  icon: const GoogleLogoBadge(size: 20),
+                  isSelected: false,
+                  onTap: () async {
+                    final authRepo = ref.read(authRepositoryProvider);
+                    final signedInUser = await authRepo.signInWithGoogle();
+                    if (signedInUser != null) {
+                      SnackBarManager.show(
+                        msg: 'Signed in as ${signedInUser.email}',
+                        type: SnackBarMessageType.acknowledgment,
+                      );
+                    }
+                  },
                 ),
               ),
-              onPressed: () async {
-                final authRepo = ref.read(authRepositoryProvider);
-                final signedInUser = await authRepo.signInWithGoogle();
-                if (signedInUser != null) {
-                  SnackBarManager.show(
-                    msg: 'Signed in as ${signedInUser.email}',
-                    type: SnackBarMessageType.acknowledgment,
-                  );
-                }
-              },
-            ),
+            ],
           );
         }
 
-        // Authenticated State: Show Avatar, Name, Email & Sign-Out button
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+        // Authenticated State: Profile Header + Sign-out drawer tile
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 16, 12),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 18,
+                    backgroundColor: colorScheme.primaryContainer,
+                    backgroundImage: user.photoURL != null ? NetworkImage(user.photoURL!) : null,
+                    child: user.photoURL == null
+                        ? Text(
+                      (user.displayName?.isNotEmpty == true ? user.displayName![0] : (user.email?[0] ?? 'U')).toUpperCase(),
+                      style: TextStyle(color: colorScheme.onPrimaryContainer, fontWeight: FontWeight.bold, fontSize: 14),
+                    )
+                        : null,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          user.displayName ?? 'Google User',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: colorScheme.onSurface,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          user.email ?? '',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 16,
-                  backgroundColor: colorScheme.primaryContainer,
-                  backgroundImage: user.photoURL != null ? NetworkImage(user.photoURL!) : null,
-                  child: user.photoURL == null
-                      ? Text(
-                          (user.displayName?.isNotEmpty == true ? user.displayName![0] : (user.email?[0] ?? 'U')).toUpperCase(),
-                          style: TextStyle(color: colorScheme.onPrimaryContainer, fontWeight: FontWeight.bold, fontSize: 13),
-                        )
-                      : null,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        user.displayName ?? 'Google User',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 13,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        user.email ?? '',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                          fontSize: 11,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.logout, size: 18),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                  tooltip: 'Sign Out',
-                  onPressed: () async {
-                    final authRepo = ref.read(authRepositoryProvider);
-                    await authRepo.signOut();
-                    await ref.read(syncModeProvider.notifier).setMode(SyncMode.offline);
-                    SnackBarManager.show(
-                      msg: 'Signed out. Switched to offline mode.',
-                      type: SnackBarMessageType.info,
-                    );
-                  },
-                ),
-              ],
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: _DrawerTile(
+                label: 'Sign out',
+                icon: const Icon(Icons.logout_rounded),
+                isSelected: false,
+                overrideColor: colorScheme.error.withValues(alpha: 0.85),
+                onTap: () async {
+                  final authRepo = ref.read(authRepositoryProvider);
+                  await authRepo.signOut();
+                  await ref.read(syncModeProvider.notifier).setMode(SyncMode.offline);
+                  SnackBarManager.show(
+                    msg: 'Signed out. Switched to offline mode.',
+                    type: SnackBarMessageType.info,
+                  );
+                },
+              ),
             ),
-          ),
+          ],
         );
       },
-      loading: () => const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        child: SizedBox(height: 40, child: Center(child: CircularProgressIndicator(strokeWidth: 2))),
-      ),
+      loading: () => const SizedBox.shrink(),
       error: (error, stackTrace) => const SizedBox.shrink(),
     );
   }
