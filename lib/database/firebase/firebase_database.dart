@@ -1,14 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../features/profiles/providers/active_profile_provider.dart';
+import '../../features/workspace/providers/active_workspace_provider.dart';
 import 'auth/firebase_provider.dart';
 import '../../core/util/logger.dart';
 
 final noteFirebaseDatabaseProvider = Provider<NoteFirestoreDatabase?>((ref) {
   final firestore = ref.watch(firestoreProvider);
   final authUser = ref.watch(authStateProvider).value;
-  final activeProfile = ref.watch(activeProfileProvider);
+  final activeWorkspace = ref.watch(activeWorkspaceProvider);
 
   // If nobody is logged in, no database instance is created
   if (authUser == null) {
@@ -18,7 +18,7 @@ final noteFirebaseDatabaseProvider = Provider<NoteFirestoreDatabase?>((ref) {
   return NoteFirestoreDatabase(
     firestore: firestore,
     userId: authUser.uid,
-    profileId: activeProfile.id,
+    profileId: activeWorkspace.id,
   );
 });
 

@@ -14,7 +14,7 @@ import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_web_socket/shelf_web_socket.dart';
 
-import '../../../profiles/providers/active_profile_provider.dart';
+import '../../../workspace/providers/active_workspace_provider.dart';
 
 final syncServerProvider = NotifierProvider<SyncServerNotifier, HttpServer?>(() {
   return SyncServerNotifier();
@@ -150,9 +150,9 @@ class SyncServerNotifier extends Notifier<HttpServer?> {
         return Response.forbidden('Version mismatch. Please update NoteIt.');
       }
 
-      // --- STRICT GOOGLE ACCOUNT & PROFILE MATCHING CHECK ---
-      final activeProfile = ref.read(activeProfileProvider);
-      final hostProfileNameNorm = activeProfile.name.trim().toLowerCase();
+      // --- STRICT GOOGLE ACCOUNT & WORKSPACE MATCHING CHECK ---
+      final activeWorkspace = ref.read(activeWorkspaceProvider);
+      final hostProfileNameNorm = activeWorkspace.name.trim().toLowerCase();
       final clientProfileNameNorm = clientProfileName?.trim().toLowerCase();
 
       final authUser = ref.read(authStateProvider).value;
@@ -163,8 +163,8 @@ class SyncServerNotifier extends Notifier<HttpServer?> {
       final bool isEmailMatched = hostEmailNorm != null && clientEmailNorm != null && hostEmailNorm == clientEmailNorm;
 
       if (!isNameMatched && !isEmailMatched) {
-        AppLogger.d("SyncServerNotifier: Connection rejected. Client profile '$clientProfileName' ($clientAuthEmail) does not match host profile '${activeProfile.name}' ($hostEmailNorm).");
-        return Response.forbidden('Profile/Account mismatch: $clientProfileName');
+        AppLogger.d("SyncServerNotifier: Connection rejected. Client workspace '$clientProfileName' ($clientAuthEmail) does not match host workspace '${activeWorkspace.name}' ($hostEmailNorm).");
+        return Response.forbidden('Workspace/Account mismatch: $clientProfileName');
       }
       // -------------------------------------
 

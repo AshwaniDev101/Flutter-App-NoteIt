@@ -4,26 +4,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/sync/sync_engine.dart';
-import '../../models/profile_model.dart';
-import '../../providers/active_profile_provider.dart';
-import '../helpers/profile_badge_helper.dart';
+import '../../models/workspace_model.dart';
+import '../../providers/active_workspace_provider.dart';
+import '../helpers/workspace_badge_helper.dart';
 
 /// A sleek, non-disruptive loading overlay displayed over notes/content panels
-/// during workspace profile switching.
-class ProfileSwitchOverlay extends ConsumerWidget {
+/// during workspace switching.
+class WorkspaceSwitchOverlay extends ConsumerWidget {
   final Widget child;
 
-  const ProfileSwitchOverlay({
+  const WorkspaceSwitchOverlay({
     super.key,
     required this.child,
   });
 
-  SyncEngine _getSyncEngine(Profile? profile) {
-    if (profile == null) return SyncEngine.offline;
-    if (profile.syncMode == 'cloud') return SyncEngine.cloud;
-    if (profile.syncMode == 'localHost' ||
-        profile.syncMode == 'localClient' ||
-        profile.syncMode == 'localUndefined') {
+  SyncEngine _getSyncEngine(Workspace? workspace) {
+    if (workspace == null) return SyncEngine.offline;
+    if (workspace.syncMode == 'cloud') return SyncEngine.cloud;
+    if (workspace.syncMode == 'localHost' ||
+        workspace.syncMode == 'localClient' ||
+        workspace.syncMode == 'localUndefined') {
       return SyncEngine.local;
     }
     return SyncEngine.offline;
@@ -31,15 +31,15 @@ class ProfileSwitchOverlay extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final switchingState = ref.watch(profileSwitchingProvider);
+    final switchingState = ref.watch(workspaceSwitchingProvider);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     final isSwitching = switchingState.isSwitching;
-    final targetProfile = switchingState.targetProfile;
-    final profileName = targetProfile?.name ?? 'Workspace';
+    final targetWorkspace = switchingState.targetWorkspace;
+    final workspaceName = targetWorkspace?.name ?? 'Workspace';
 
-    final syncEngine = _getSyncEngine(targetProfile);
+    final syncEngine = _getSyncEngine(targetWorkspace);
 
     return Stack(
       children: [
@@ -54,7 +54,7 @@ class ProfileSwitchOverlay extends ConsumerWidget {
             switchOutCurve: Curves.easeInCubic,
             child: isSwitching
                 ? SizedBox.expand(
-                    key: ValueKey('profile_switch_overlay_active_${targetProfile?.id}'),
+                    key: ValueKey('workspace_switch_overlay_active_${targetWorkspace?.id}'),
                     child: ClipRect(
                       child: BackdropFilter(
                         filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
@@ -83,9 +83,9 @@ class ProfileSwitchOverlay extends ConsumerWidget {
                                         children: [
                                           CircleAvatar(
                                             radius: 20,
-                                            backgroundColor: ProfileBadgeHelper.getColor(profileName),
+                                            backgroundColor: WorkspaceBadgeHelper.getColor(workspaceName),
                                             child: Text(
-                                              ProfileBadgeHelper.getInitial(profileName),
+                                              WorkspaceBadgeHelper.getInitial(workspaceName),
                                               style: const TextStyle(
                                                 fontSize: 16,
                                                 fontWeight: FontWeight.bold,
@@ -108,7 +108,7 @@ class ProfileSwitchOverlay extends ConsumerWidget {
                                                 ),
                                                 const SizedBox(height: 2),
                                                 Text(
-                                                  profileName,
+                                                  workspaceName,
                                                   style: theme.textTheme.titleMedium?.copyWith(
                                                     fontWeight: FontWeight.bold,
                                                     color: colorScheme.onSurface,
@@ -152,7 +152,7 @@ class ProfileSwitchOverlay extends ConsumerWidget {
                       ),
                     ),
                   )
-                : const SizedBox.shrink(key: ValueKey('profile_switch_overlay_inactive')),
+                : const SizedBox.shrink(key: ValueKey('workspace_switch_overlay_inactive')),
           ),
         ),
       ],

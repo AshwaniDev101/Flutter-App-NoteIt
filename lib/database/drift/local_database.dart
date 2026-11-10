@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../features/profiles/providers/active_profile_provider.dart';
+import '../../features/workspace/providers/active_workspace_provider.dart';
 import 'keybindings/keybindings_dao.dart';
 import 'keybindings/keybindings_table.dart';
 import 'synced_devices/synced_devices_dao.dart';
@@ -24,7 +24,7 @@ part 'local_database.g.dart';
 /// guaranteeing underlying SQLite file locks are cleanly released during app teardown or testing.
 
 final localDatabaseProvider = Provider((ref) {
-  final dbFileName = ref.watch(activeProfileProvider.select((p) => p.dbFileName));
+  final dbFileName = ref.watch(activeWorkspaceProvider.select((p) => p.dbFileName));
   final db = LocalDatabase(dbFileName);
   ref.onDispose(() async {
     await db.close();
@@ -41,7 +41,10 @@ Future<void> deleteDatabaseFiles() async {
     if (await dbDir.exists()) {
       final entities = dbDir.listSync();
       for (final entity in entities) {
-        if (entity is File && entity.path.contains('note_it_db')) {
+        if (entity is File &&
+            (entity.path.contains('note_it_db') ||
+                entity.path.contains('workspace_') ||
+                entity.path.contains('profile_'))) {
           try {
             await entity.delete();
           } catch (_) {}

@@ -1,33 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../shared/overlays/snack_bar_manager.dart';
-import '../../models/profile_model.dart';
-import '../../providers/active_profile_provider.dart';
-import '../../providers/profile_providers.dart';
+import '../../models/workspace_model.dart';
+import '../../providers/active_workspace_provider.dart';
+import '../../providers/workspace_providers.dart';
 
-/// Modal dialog for creating a new user profile workspace or editing an existing profile.
-class CreateProfileDialog extends ConsumerStatefulWidget {
-  final Profile? profileToEdit;
+/// Modal dialog for creating a new user workspace or editing an existing workspace.
+class CreateWorkspaceDialog extends ConsumerStatefulWidget {
+  final Workspace? workspaceToEdit;
 
-  const CreateProfileDialog({
+  const CreateWorkspaceDialog({
     super.key,
-    this.profileToEdit,
+    this.workspaceToEdit,
   });
 
-  bool get isEditing => profileToEdit != null;
+  bool get isEditing => workspaceToEdit != null;
 
   @override
-  ConsumerState<CreateProfileDialog> createState() => _CreateProfileDialogState();
+  ConsumerState<CreateWorkspaceDialog> createState() => _CreateWorkspaceDialogState();
 }
 
-class _CreateProfileDialogState extends ConsumerState<CreateProfileDialog> {
+class _CreateWorkspaceDialogState extends ConsumerState<CreateWorkspaceDialog> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.profileToEdit?.name ?? '');
+    _nameController = TextEditingController(text: widget.workspaceToEdit?.name ?? '');
   }
 
   @override
@@ -36,15 +36,15 @@ class _CreateProfileDialogState extends ConsumerState<CreateProfileDialog> {
     super.dispose();
   }
 
-  void _confirmAndDeleteProfile(BuildContext context, WidgetRef ref, Profile profile) async {
+  void _confirmAndDeleteWorkspace(BuildContext context, WidgetRef ref, Workspace workspace) async {
     Navigator.of(context).pop();
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Delete Profile "${profile.name}"?'),
+        title: Text('Delete Workspace "${workspace.name}"?'),
         content: const Text(
-          'This will move the profile and its notes to Profile Trash.',
+          'This will permanently delete this workspace and its associated notes.',
         ),
         actions: [
           TextButton(
@@ -56,27 +56,27 @@ class _CreateProfileDialogState extends ConsumerState<CreateProfileDialog> {
               backgroundColor: Theme.of(ctx).colorScheme.error,
             ),
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Delete Profile'),
+            child: const Text('Delete Workspace'),
           ),
         ],
       ),
     );
 
     if (confirmed == true) {
-      final activeProfile = ref.read(activeProfileProvider);
-      if (activeProfile.id == profile.id) {
-        final allProfiles = ref.read(profilesListProvider);
-        final remaining = allProfiles.where((p) => p.id != profile.id).toList();
+      final activeWorkspace = ref.read(activeWorkspaceProvider);
+      if (activeWorkspace.id == workspace.id) {
+        final allWorkspaces = ref.read(workspacesListProvider);
+        final remaining = allWorkspaces.where((p) => p.id != workspace.id).toList();
         if (remaining.isNotEmpty) {
-          await ref.read(activeProfileProvider.notifier).switchProfile(remaining.first);
+          await ref.read(activeWorkspaceProvider.notifier).switchWorkspace(remaining.first);
         } else {
-          final newProf = await ref.read(profilesListProvider.notifier).createProfile(name: 'NoteIt');
-          await ref.read(activeProfileProvider.notifier).switchProfile(newProf);
+          final newProf = await ref.read(workspacesListProvider.notifier).createWorkspace(name: 'NoteIt');
+          await ref.read(activeWorkspaceProvider.notifier).switchWorkspace(newProf);
         }
       }
-      await ref.read(profilesListProvider.notifier).deleteProfile(profile.id);
+      await ref.read(workspacesListProvider.notifier).deleteWorkspace(workspace.id);
       SnackBarManager.show(
-        msg: 'Profile "${profile.name}" deleted.',
+        msg: 'Workspace "${workspace.name}" deleted.',
         type: SnackBarMessageType.acknowledgment,
       );
     }
@@ -87,20 +87,20 @@ class _CreateProfileDialogState extends ConsumerState<CreateProfileDialog> {
 
     if (name.isEmpty) {
       SnackBarManager.show(
-        msg: 'Please enter a profile name',
+        msg: 'Please enter a workspace name',
         type: SnackBarMessageType.acknowledgment,
       );
       return;
     }
 
     if (widget.isEditing) {
-      final updated = widget.profileToEdit!.copyWith(
+      final updated = widget.workspaceToEdit!.copyWith(
         name: name,
       );
-      await ref.read(profilesListProvider.notifier).updateProfile(updated);
+      await ref.read(workspacesListProvider.notifier).updateWorkspace(updated);
 
-      if (ref.read(activeProfileProvider).id == updated.id) {
-        ref.read(activeProfileProvider.notifier).updateActiveProfile(updated);
+      if (ref.read(activeWorkspaceProvider).id == updated.id) {
+        ref.read(activeWorkspaceProvider.notifier).updateActiveWorkspace(updated);
       }
 
       if (mounted) {
@@ -108,12 +108,12 @@ class _CreateProfileDialogState extends ConsumerState<CreateProfileDialog> {
           Navigator.of(context).pop();
         }
         SnackBarManager.show(
-          msg: 'Profile updated to "$name".',
+          msg: 'Workspace updated to "$name".',
           type: SnackBarMessageType.acknowledgment,
         );
       }
     } else {
-      final newProfile = await ref.read(profilesListProvider.notifier).createProfile(
+      final newWorkspace = await ref.read(workspacesListProvider.notifier).createWorkspace(
             name: name,
           );
 
@@ -121,9 +121,9 @@ class _CreateProfileDialogState extends ConsumerState<CreateProfileDialog> {
         if (Navigator.of(context).canPop()) {
           Navigator.of(context).pop();
         }
-        await ref.read(activeProfileProvider.notifier).switchProfile(newProfile);
+        await ref.read(activeWorkspaceProvider.notifier).switchWorkspace(newWorkspace);
         SnackBarManager.show(
-          msg: 'Created and switched to "$name" profile.',
+          msg: 'Created and switched to "$name" workspace.',
           type: SnackBarMessageType.acknowledgment,
         );
       }
@@ -154,7 +154,7 @@ class _CreateProfileDialogState extends ConsumerState<CreateProfileDialog> {
           ),
           const SizedBox(width: 12),
           Text(
-            isEditing ? 'Edit Profile' : 'Create New Profile',
+            isEditing ? 'Edit Workspace' : 'Create New Workspace',
             style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
           ),
         ],
@@ -175,14 +175,14 @@ class _CreateProfileDialogState extends ConsumerState<CreateProfileDialog> {
                   textInputAction: TextInputAction.done,
                   onFieldSubmitted: (_) => _onSave(),
                   decoration: InputDecoration(
-                    labelText: 'Profile Name *',
+                    labelText: 'Workspace Name *',
                     hintText: 'e.g. Work, Personal, Side Projects',
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     prefixIcon: const Icon(Icons.workspace_premium_rounded),
                   ),
                   validator: (val) {
                     if (val == null || val.trim().isEmpty) {
-                      return 'Please enter a profile name';
+                      return 'Please enter a workspace name';
                     }
                     return null;
                   },
@@ -193,14 +193,14 @@ class _CreateProfileDialogState extends ConsumerState<CreateProfileDialog> {
         ),
       ),
       actions: [
-        if (isEditing && widget.profileToEdit != null)
+        if (isEditing && widget.workspaceToEdit != null)
           TextButton.icon(
             style: TextButton.styleFrom(
               foregroundColor: colorScheme.error,
             ),
             icon: const Icon(Icons.delete_outline, size: 18),
-            label: const Text('Delete Profile'),
-            onPressed: () => _confirmAndDeleteProfile(context, ref, widget.profileToEdit!),
+            label: const Text('Delete Workspace'),
+            onPressed: () => _confirmAndDeleteWorkspace(context, ref, widget.workspaceToEdit!),
           ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
@@ -208,7 +208,7 @@ class _CreateProfileDialogState extends ConsumerState<CreateProfileDialog> {
         ),
         FilledButton(
           onPressed: _onSave,
-          child: Text(isEditing ? 'Save Changes' : 'Create Profile'),
+          child: Text(isEditing ? 'Save Changes' : 'Create Workspace'),
         ),
       ],
     );

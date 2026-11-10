@@ -5,26 +5,26 @@ import 'package:noteit/database/firebase/auth/firebase_provider.dart';
 import '../../../../core/helpers/platform_helper.dart';
 import '../../../../core/sync/sync_engine.dart';
 import '../../../../shared/menus/app_bottom_sheet.dart';
-import '../../providers/active_profile_provider.dart';
-import '../helpers/profile_badge_helper.dart';
-import '../profile_menu_content.dart';
-import 'profile_avatar_badge.dart';
+import '../../providers/active_workspace_provider.dart';
+import '../helpers/workspace_badge_helper.dart';
+import '../workspace_menu_content.dart';
+import 'workspace_avatar_badge.dart';
 
-class ProfileBadge extends ConsumerStatefulWidget {
-  const ProfileBadge({super.key});
+class WorkspaceBadge extends ConsumerStatefulWidget {
+  const WorkspaceBadge({super.key});
 
   @override
-  ConsumerState<ProfileBadge> createState() => _ProfileBadgeState();
+  ConsumerState<WorkspaceBadge> createState() => _WorkspaceBadgeState();
 }
 
-class _ProfileBadgeState extends ConsumerState<ProfileBadge> {
+class _WorkspaceBadgeState extends ConsumerState<WorkspaceBadge> {
   final MenuController _menuController = MenuController();
 
   void _showMobileBottomSheet(BuildContext context) {
     AppBottomSheet.show(
       context: context,
       builder: (bottomSheetContext, setModalState) {
-        return ProfileMenuContent(
+        return WorkspaceMenuContent(
           onCloseMenu: () => Navigator.of(bottomSheetContext).pop(),
         );
       },
@@ -33,20 +33,20 @@ class _ProfileBadgeState extends ConsumerState<ProfileBadge> {
 
   @override
   Widget build(BuildContext context) {
-    final activeProfile = ref.watch(activeProfileProvider);
+    final activeWorkspace = ref.watch(activeWorkspaceProvider);
     final authUser = ref.watch(authStateProvider).value;
     final syncMode = ref.watch(syncModeProvider);
     final colorScheme = Theme.of(context).colorScheme;
     final isMobile = !PlatformHelper.isWideLayout(context);
 
     final activePhotoUrl = syncMode.isCloud
-        ? ProfileBadgeHelper.getEffectivePhotoUrl(
-            activeProfile,
+        ? WorkspaceBadgeHelper.getEffectivePhotoUrl(
+            activeWorkspace,
             authUser,
           )
         : null;
 
-    void openProfileMenu() {
+    void openWorkspaceMenu() {
       if (isMobile) {
         _showMobileBottomSheet(context);
       } else {
@@ -58,10 +58,10 @@ class _ProfileBadgeState extends ConsumerState<ProfileBadge> {
       }
     }
 
-    final avatarWidget = ProfileAvatarBadge(
-      activeProfileName: activeProfile.name,
+    final avatarWidget = WorkspaceAvatarBadge(
+      activeWorkspaceName: activeWorkspace.name,
       photoUrl: activePhotoUrl,
-      onTap: openProfileMenu,
+      onTap: openWorkspaceMenu,
     );
 
     if (isMobile) {
@@ -91,7 +91,7 @@ class _ProfileBadgeState extends ConsumerState<ProfileBadge> {
             width: 320,
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: ProfileMenuContent(
+              child: WorkspaceMenuContent(
                 onCloseMenu: () {
                   if (_menuController.isOpen) _menuController.close();
                 },

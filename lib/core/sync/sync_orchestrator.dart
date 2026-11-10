@@ -6,7 +6,7 @@ import 'package:noteit/database/firebase/auth/firebase_provider.dart';
 import 'package:noteit/features/cloud_sync/data/cloud_sync_service.dart';
 import 'package:noteit/features/local_sync/data/network/local_sync_service.dart';
 import 'package:noteit/features/local_sync/data/providers/local_sync_session_manager.dart';
-import 'package:noteit/features/profiles/providers/active_profile_provider.dart';
+import 'package:noteit/features/workspace/providers/active_workspace_provider.dart';
 
 final isSyncingProvider = NotifierProvider<IsSyncingNotifier, bool>(() {
   return IsSyncingNotifier();
@@ -59,9 +59,9 @@ class SyncOrchestrator with WidgetsBindingObserver {
 
   // The Master Switchboard: Turns background listeners on or off
   void _evaluateState() {
-    final activeProfileNotifier = ref.read(activeProfileProvider.notifier);
-    if (activeProfileNotifier.isSwitching) {
-      AppLogger.d("SyncOrchestrator: Profile switch in progress. Skipping state evaluation.");
+    final activeWorkspaceNotifier = ref.read(activeWorkspaceProvider.notifier);
+    if (activeWorkspaceNotifier.isSwitching) {
+      AppLogger.d("SyncOrchestrator: Workspace switch in progress. Skipping state evaluation.");
       return;
     }
 
@@ -85,7 +85,7 @@ class SyncOrchestrator with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (ref.read(activeProfileProvider.notifier).isSwitching) return;
+    if (ref.read(activeWorkspaceProvider.notifier).isSwitching) return;
 
     // Only fire Firebase delta syncs on resume if Cloud is actively selected
     if (state == AppLifecycleState.resumed) {

@@ -1,27 +1,27 @@
 import 'package:flutter/foundation.dart';
 
-/// Data model representing a distinct user profile workspace in NoteIt.
+/// Data model representing a distinct user workspace in NoteIt.
 @immutable
-class Profile {
-  /// Unique profile identifier (e.g. 'profile_default', 'profile_1718000000').
+class Workspace {
+  /// Unique workspace identifier (e.g. 'profile_default', 'workspace_1718000000').
   final String id;
 
-  /// Primary profile workspace name (e.g. 'Personal Notes', 'Work Projects').
+  /// Primary workspace name (e.g. 'Personal Notes', 'Work Projects').
   final String name;
 
-  /// SQLite database filename on disk (e.g. 'note_it_db.sqlite', 'profile_work_1718.sqlite').
+  /// SQLite database filename on disk (e.g. 'note_it_db.sqlite', 'workspace_work_1718.sqlite').
   final String dbFileName;
 
-  /// Default sync mode for this profile ('offline', 'cloud', 'localHost', 'localClient').
+  /// Default sync mode for this workspace ('offline', 'cloud', 'localHost', 'localClient').
   final String syncMode;
 
   /// Creation timestamp (UTC).
   final DateTime createdAt;
 
-  /// Last active timestamp (UTC), used for sorting recently used profiles.
+  /// Last active timestamp (UTC), used for sorting recently used workspaces.
   final DateTime lastUsedAt;
 
-  /// Soft-delete timestamp (UTC) for profile trash recovery (null if active).
+  /// Soft-delete timestamp (UTC) for workspace trash recovery (null if active).
   final DateTime? deletedAt;
 
   /// Conflict resolution update counter.
@@ -30,7 +30,7 @@ class Profile {
   /// Hybrid Logical Clock (HLC) string checkpoint.
   final String? hlc;
 
-  const Profile({
+  const Workspace({
     required this.id,
     required this.name,
     required this.dbFileName,
@@ -42,7 +42,7 @@ class Profile {
     this.hlc,
   });
 
-  /// Serializes [Profile] to a JSON Map.
+  /// Serializes [Workspace] to a JSON Map.
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -57,9 +57,9 @@ class Profile {
     };
   }
 
-  /// Deserializes a JSON Map into a [Profile] instance.
-  factory Profile.fromJson(Map<String, dynamic> json) {
-    return Profile(
+  /// Deserializes a JSON Map into a [Workspace] instance.
+  factory Workspace.fromJson(Map<String, dynamic> json) {
+    return Workspace(
       id: json['id'] as String,
       name: json['name'] as String,
       dbFileName: json['dbFileName'] as String? ?? 'note_it_db.sqlite',
@@ -78,8 +78,8 @@ class Profile {
     );
   }
 
-  /// Creates a copy of this [Profile] with updated fields.
-  Profile copyWith({
+  /// Creates a copy of this [Workspace] with updated fields.
+  Workspace copyWith({
     String? id,
     String? name,
     String? dbFileName,
@@ -90,7 +90,7 @@ class Profile {
     int? updateCounter,
     Object? hlc = _undefined,
   }) {
-    return Profile(
+    return Workspace(
       id: id ?? this.id,
       name: name ?? this.name,
       dbFileName: dbFileName ?? this.dbFileName,
@@ -106,7 +106,7 @@ class Profile {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is Profile &&
+    return other is Workspace &&
         other.id == id &&
         other.name == name &&
         other.dbFileName == dbFileName &&

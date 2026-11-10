@@ -16,7 +16,7 @@ import '../../../keybinding/shortcut_config.dart';
 import 'package:noteit/features/home/core/providers.dart';
 import '../../viewmodel/viewmodel.dart';
 import 'list_panel.dart';
-import 'package:noteit/features/profiles/view/widgets/profile_switch_overlay.dart';
+import 'package:noteit/features/workspace/view/widgets/workspace_switch_overlay.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/content_panel.dart';
 
 class DesktopHomePanel extends ConsumerStatefulWidget {
@@ -217,7 +217,7 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePanel> {
                   if (!didPop && homeState.isSelectMode) viewModel.clearSelection();
                 },
                 child: Scaffold(
-                  body: ProfileSwitchOverlay(
+                  body: WorkspaceSwitchOverlay(
                     child: FocusTraversalGroup(
                       policy: OrderedTraversalPolicy(),
                       child: LayoutBuilder(

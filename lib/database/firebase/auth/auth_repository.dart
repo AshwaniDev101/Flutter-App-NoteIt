@@ -51,7 +51,7 @@ class AuthRepository {
     }
   }
 
-  /// Re-authenticates Firebase directly using stored OAuth tokens from ProfileSecureStorage.
+  /// Re-authenticates Firebase directly using stored OAuth tokens from WorkspaceSecureStorage.
   Future<User?> signInWithStoredTokens({
     required String idToken,
     String? accessToken,

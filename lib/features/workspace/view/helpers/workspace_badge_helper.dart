@@ -1,9 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../../models/profile_model.dart';
+import '../../models/workspace_model.dart';
 
-class ProfileBadgeHelper {
+class WorkspaceBadgeHelper {
   static const List<Color> _palette = [
     Color(0xFFE53935), Color(0xFFD32F2F), Color(0xFFC62828),
     Color(0xFFD81B60), Color(0xFFC2185B), Color(0xFFAD1457),
@@ -44,15 +44,15 @@ class ProfileBadgeHelper {
     return trimmed[0].toUpperCase();
   }
 
-  static String? getEffectivePhotoUrl(Profile profile, User? authUser) {
-    if (profile.syncMode == 'cloud') {
+  static String? getEffectivePhotoUrl(Workspace workspace, User? authUser) {
+    if (workspace.syncMode == 'cloud') {
       return authUser?.photoURL;
     }
     return null;
   }
 
-  static String getEffectiveDisplayName(Profile profile, User? authUser) {
-    return profile.name;
+  static String getEffectiveDisplayName(Workspace workspace, User? authUser) {
+    return workspace.name;
   }
 }
 

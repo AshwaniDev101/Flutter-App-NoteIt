@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:noteit/features/profiles/providers/active_profile_provider.dart';
+import 'package:noteit/features/workspace/providers/active_workspace_provider.dart';
 import 'package:noteit/core/sync/sync_orchestrator.dart';
 import 'package:noteit/core/util/logger.dart';
 import 'package:noteit/database/drift/folders/folders_dao.dart';
@@ -34,11 +34,11 @@ class CloudSyncService {
       return;
     }
 
-    final activeProfile = ref.read(activeProfileProvider);
+    final activeWorkspace = ref.read(activeWorkspaceProvider);
 
     _isRunning = true;
     final sessionStartTime = DateTime.now().millisecondsSinceEpoch;
-    AppLogger.d("CloudSyncService: Starting Firebase sync engine for user ${user.uid} (Profile: ${activeProfile.name}, ID: ${activeProfile.id})...");
+    AppLogger.d("CloudSyncService: Starting Firebase sync engine for user ${user.uid} (Workspace: ${activeWorkspace.name}, ID: ${activeWorkspace.id})...");
 
     _subscribeToRemoteChanges(sessionStartTime);
     executeFullSync();

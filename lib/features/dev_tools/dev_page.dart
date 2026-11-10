@@ -7,7 +7,7 @@ import 'package:noteit/database/shared_preference/shared_preference_manager.dart
 import 'package:noteit/features/cloud_sync/data/cloud_sync_service.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
 import 'package:noteit/features/lock/lock_manger/lock_manager.dart';
-import 'package:noteit/features/profiles/data/profile_secure_storage.dart';
+import 'package:noteit/features/workspace/data/workspace_secure_storage.dart';
 import 'package:noteit/features/reminder/reminder_manager.dart';
 import 'package:noteit/shared/overlays/app_scaffold.dart';
 import 'package:noteit/shared/overlays/snack_bar_manager.dart';
@@ -128,7 +128,7 @@ class DevPage extends ConsumerWidget {
                                 await db.close();
                                 await deleteDatabaseFiles();
                                 ref.invalidate(localDatabaseProvider);
-                                await ProfileSecureStorage.instance.deleteProfileToken('profile_default');
+                                await WorkspaceSecureStorage.instance.deleteWorkspaceToken('profile_default');
                                 await ref.read(sharedPreferenceProvider).clearAll();
                                 await ref.read(authRepositoryProvider).signOut();
 

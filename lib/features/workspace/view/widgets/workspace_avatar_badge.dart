@@ -1,24 +1,24 @@
 import 'package:flutter/material.dart';
 
-import '../helpers/profile_badge_helper.dart';
+import '../helpers/workspace_badge_helper.dart';
 
-class ProfileAvatarBadge extends StatefulWidget {
-  final String activeProfileName;
+class WorkspaceAvatarBadge extends StatefulWidget {
+  final String activeWorkspaceName;
   final String? photoUrl;
   final VoidCallback onTap;
 
-  const ProfileAvatarBadge({
+  const WorkspaceAvatarBadge({
     super.key,
-    required this.activeProfileName,
+    required this.activeWorkspaceName,
     this.photoUrl,
     required this.onTap,
   });
 
   @override
-  State<ProfileAvatarBadge> createState() => _ProfileAvatarBadgeState();
+  State<WorkspaceAvatarBadge> createState() => _WorkspaceAvatarBadgeState();
 }
 
-class _ProfileAvatarBadgeState extends State<ProfileAvatarBadge> {
+class _WorkspaceAvatarBadgeState extends State<WorkspaceAvatarBadge> {
   bool _isHovered = false;
 
   @override
@@ -26,9 +26,9 @@ class _ProfileAvatarBadgeState extends State<ProfileAvatarBadge> {
     final hasPhoto = widget.photoUrl != null && widget.photoUrl!.isNotEmpty;
 
     return Tooltip(
-      message: 'Profiles',
+      message: 'Workspaces',
       child: Material(
-        color: ProfileBadgeHelper.getColor(widget.activeProfileName),
+        color: WorkspaceBadgeHelper.getColor(widget.activeWorkspaceName),
         shape: const CircleBorder(),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -53,7 +53,7 @@ class _ProfileAvatarBadgeState extends State<ProfileAvatarBadge> {
                       errorBuilder: (context, error, stackTrace) {
                         return Center(
                           child: Text(
-                            ProfileBadgeHelper.getInitial(widget.activeProfileName),
+                            WorkspaceBadgeHelper.getInitial(widget.activeWorkspaceName),
                             style: const TextStyle(
                               fontSize: 10,
                               color: Colors.white,
@@ -67,7 +67,7 @@ class _ProfileAvatarBadgeState extends State<ProfileAvatarBadge> {
                 else
                   Center(
                     child: Text(
-                      ProfileBadgeHelper.getInitial(widget.activeProfileName),
+                      WorkspaceBadgeHelper.getInitial(widget.activeWorkspaceName),
                       style: const TextStyle(
                         fontSize: 10,
                         color: Colors.white,

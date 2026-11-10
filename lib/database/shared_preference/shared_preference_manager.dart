@@ -45,11 +45,11 @@ class SharedPreferenceManager {
   // SHARED PREFERENCE KEYS
   // =========================================================================
 
-  // --- Profile Keys ---
+  // --- Workspace Keys ---
 
-  /// Key for storing the active workspace profile ID.
-  /// Value: String (e.g. `'profile_default'`, `'profile_work_1718'`).
-  static const String _keyActiveProfileId = 'active_profile_id';
+  /// Key for storing the active workspace ID.
+  /// Value: String (e.g. `'workspace_default'`, `'workspace_1718'`).
+  static const String _keyActiveWorkspaceId = 'active_workspace_id';
 
   // --- Sync & P2P Keys ---
 
@@ -650,14 +650,14 @@ class SharedPreferenceManager {
   Future<bool> setTimeOrder(List<String> order) async => await _prefs.setStringList(_keyTimeOrder, order);
 
   // =========================================================================
-  // 9. PROFILE SELECTION PREFERENCES
+  // 9. WORKSPACE SELECTION PREFERENCES
   // =========================================================================
 
-  /// The active profile ID (defaults to `null` if unassigned).
-  String? get activeProfileId => _prefs.getString(_keyActiveProfileId);
+  /// The active workspace ID (defaults to `null` if unassigned).
+  String? get activeWorkspaceId => _prefs.getString(_keyActiveWorkspaceId);
 
-  /// Saves the active profile ID preference.
-  Future<bool> setActiveProfileId(String value) async => await _prefs.setString(_keyActiveProfileId, value);
+  /// Saves the active workspace ID preference.
+  Future<bool> setActiveWorkspaceId(String value) async => await _prefs.setString(_keyActiveWorkspaceId, value);
 
   // =========================================================================
   // 10. GENERAL / LIFECYCLE METHODS

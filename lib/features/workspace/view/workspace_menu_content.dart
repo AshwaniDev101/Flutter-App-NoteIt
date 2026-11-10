@@ -6,34 +6,34 @@ import 'package:noteit/database/firebase/auth/firebase_provider.dart';
 import '../../../core/sync/sync_engine.dart';
 import '../../../core/sync/sync_orchestrator.dart';
 import '../../../shared/overlays/snack_bar_manager.dart';
-import '../models/profile_model.dart';
-import '../providers/active_profile_provider.dart';
-import '../providers/profile_providers.dart';
-import 'helpers/profile_badge_helper.dart';
-import 'widgets/create_profile_dialog.dart';
-import 'widgets/profile_tile.dart';
+import '../models/workspace_model.dart';
+import '../providers/active_workspace_provider.dart';
+import '../providers/workspace_providers.dart';
+import 'helpers/workspace_badge_helper.dart';
+import 'widgets/create_workspace_dialog.dart';
+import 'widgets/workspace_tile.dart';
 
-enum _ProfileSubView { main, profiles, sync }
+enum _WorkspaceSubView { main, workspaces, sync }
 
-class ProfileMenuContent extends ConsumerStatefulWidget {
+class WorkspaceMenuContent extends ConsumerStatefulWidget {
   final VoidCallback onCloseMenu;
 
-  const ProfileMenuContent({
+  const WorkspaceMenuContent({
     super.key,
     required this.onCloseMenu,
   });
 
   @override
-  ConsumerState<ProfileMenuContent> createState() => _ProfileMenuContentState();
+  ConsumerState<WorkspaceMenuContent> createState() => _WorkspaceMenuContentState();
 }
 
-class _ProfileMenuContentState extends ConsumerState<ProfileMenuContent> {
-  _ProfileSubView _activeSubView = _ProfileSubView.main;
+class _WorkspaceMenuContentState extends ConsumerState<WorkspaceMenuContent> {
+  _WorkspaceSubView _activeSubView = _WorkspaceSubView.main;
 
   @override
   Widget build(BuildContext context) {
-    final activeProfile = ref.watch(activeProfileProvider);
-    final profiles = ref.watch(profilesListProvider);
+    final activeWorkspace = ref.watch(activeWorkspaceProvider);
+    final workspaces = ref.watch(workspacesListProvider);
     final authUser = ref.watch(authStateProvider).value;
     final syncMode = ref.watch(syncModeProvider);
 
@@ -41,16 +41,16 @@ class _ProfileMenuContentState extends ConsumerState<ProfileMenuContent> {
         ? SyncEngine.cloud
         : (syncMode.isLocal ? SyncEngine.local : SyncEngine.offline);
 
-    if (_activeSubView == _ProfileSubView.profiles) {
-      return _buildProfilesPanel(
+    if (_activeSubView == _WorkspaceSubView.workspaces) {
+      return _buildWorkspacesPanel(
         context: context,
-        profiles: profiles,
-        activeProfile: activeProfile,
+        workspaces: workspaces,
+        activeWorkspace: activeWorkspace,
         authUser: authUser,
       );
     }
 
-    if (_activeSubView == _ProfileSubView.sync) {
+    if (_activeSubView == _WorkspaceSubView.sync) {
       return _buildSyncOptionsPanel(
         context: context,
         currentEngine: currentEngine,
@@ -60,7 +60,7 @@ class _ProfileMenuContentState extends ConsumerState<ProfileMenuContent> {
 
     return _buildMainPanel(
       context: context,
-      activeProfile: activeProfile,
+      activeWorkspace: activeWorkspace,
       authUser: authUser,
       currentEngine: currentEngine,
       syncMode: syncMode,
@@ -69,7 +69,7 @@ class _ProfileMenuContentState extends ConsumerState<ProfileMenuContent> {
 
   Widget _buildMainPanel({
     required BuildContext context,
-    required Profile activeProfile,
+    required Workspace activeWorkspace,
     required User? authUser,
     required SyncEngine currentEngine,
     required SyncMode syncMode,
@@ -78,7 +78,7 @@ class _ProfileMenuContentState extends ConsumerState<ProfileMenuContent> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildHeader(context, activeProfile, authUser, syncMode),
+        _buildHeader(context, activeWorkspace, authUser, syncMode),
         const Divider(height: 1),
         _buildExpandableTile(
           context: context,
@@ -87,27 +87,27 @@ class _ProfileMenuContentState extends ConsumerState<ProfileMenuContent> {
           statusText: currentEngine.label,
           onTap: () {
             setState(() {
-              _activeSubView = _ProfileSubView.sync;
+              _activeSubView = _WorkspaceSubView.sync;
             });
           },
         ),
         _buildExpandableTile(
           context: context,
           icon: Icons.switch_account_outlined,
-          title: 'Switch profile',
+          title: 'Switch workspace',
           onTap: () {
             setState(() {
-              _activeSubView = _ProfileSubView.profiles;
+              _activeSubView = _WorkspaceSubView.workspaces;
             });
           },
         ),
         _buildActionItem(
           context: context,
           icon: Icons.add_circle_outline_rounded,
-          title: 'Create New Profile',
+          title: 'Create New Workspace',
           onTap: () {
             widget.onCloseMenu();
-            showDialog(context: context, builder: (ctx) => const CreateProfileDialog());
+            showDialog(context: context, builder: (ctx) => const CreateWorkspaceDialog());
           },
         ),
         if (syncMode.isCloud) ...[
@@ -124,10 +124,10 @@ class _ProfileMenuContentState extends ConsumerState<ProfileMenuContent> {
     );
   }
 
-  Widget _buildProfilesPanel({
+  Widget _buildWorkspacesPanel({
     required BuildContext context,
-    required List<Profile> profiles,
-    required Profile activeProfile,
+    required List<Workspace> workspaces,
+    required Workspace activeWorkspace,
     required User? authUser,
   }) {
     final theme = Theme.of(context);
@@ -144,14 +144,14 @@ class _ProfileMenuContentState extends ConsumerState<ProfileMenuContent> {
                 icon: const Icon(Icons.arrow_back, size: 20),
                 onPressed: () {
                   setState(() {
-                    _activeSubView = _ProfileSubView.main;
+                    _activeSubView = _WorkspaceSubView.main;
                   });
                 },
                 tooltip: 'Back',
               ),
               const SizedBox(width: 4),
               Text(
-                'Switch profile',
+                'Switch workspace',
                 style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -160,18 +160,18 @@ class _ProfileMenuContentState extends ConsumerState<ProfileMenuContent> {
           ),
         ),
         const Divider(height: 1),
-        ...profiles.map((profile) {
-          return ProfileTile(
-            profile: profile,
-            activeProfile: activeProfile,
+        ...workspaces.map((workspace) {
+          return WorkspaceTile(
+            workspace: workspace,
+            activeWorkspace: activeWorkspace,
             authUser: authUser,
             onMenuDismiss: widget.onCloseMenu,
-            onSelect: (selectedProfile) async {
+            onSelect: (selectedWorkspace) async {
               widget.onCloseMenu();
-              if (selectedProfile.id != activeProfile.id) {
-                await ref.read(activeProfileProvider.notifier).switchProfile(selectedProfile);
+              if (selectedWorkspace.id != activeWorkspace.id) {
+                await ref.read(activeWorkspaceProvider.notifier).switchWorkspace(selectedWorkspace);
                 SnackBarManager.show(
-                  msg: 'Switched to profile "${selectedProfile.name}".',
+                  msg: 'Switched to workspace "${selectedWorkspace.name}".',
                   type: SnackBarMessageType.acknowledgment,
                 );
               }
@@ -179,11 +179,11 @@ class _ProfileMenuContentState extends ConsumerState<ProfileMenuContent> {
           );
         }),
         const Divider(height: 1),
-        _buildCreateProfileTile(
+        _buildCreateWorkspaceTile(
           context,
           onSelect: () {
             widget.onCloseMenu();
-            showDialog(context: context, builder: (ctx) => const CreateProfileDialog());
+            showDialog(context: context, builder: (ctx) => const CreateWorkspaceDialog());
           },
         ),
         const SizedBox(height: 8),
@@ -217,7 +217,7 @@ class _ProfileMenuContentState extends ConsumerState<ProfileMenuContent> {
                 icon: const Icon(Icons.arrow_back, size: 20),
                 onPressed: () {
                   setState(() {
-                    _activeSubView = _ProfileSubView.main;
+                    _activeSubView = _WorkspaceSubView.main;
                   });
                 },
                 tooltip: 'Back',
@@ -262,7 +262,7 @@ class _ProfileMenuContentState extends ConsumerState<ProfileMenuContent> {
             onTap: () async {
               await _handleSyncChange(engine, ref, syncMode);
               setState(() {
-                _activeSubView = _ProfileSubView.main;
+                _activeSubView = _WorkspaceSubView.main;
               });
             },
           );
@@ -320,7 +320,7 @@ class _ProfileMenuContentState extends ConsumerState<ProfileMenuContent> {
     );
   }
 
-  Widget _buildHeader(BuildContext context, Profile activeProfile, User? authUser, SyncMode syncMode) {
+  Widget _buildHeader(BuildContext context, Workspace activeWorkspace, User? authUser, SyncMode syncMode) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -331,9 +331,9 @@ class _ProfileMenuContentState extends ConsumerState<ProfileMenuContent> {
         children: [
           CircleAvatar(
             radius: 20,
-            backgroundColor: ProfileBadgeHelper.getColor(activeProfile.name),
+            backgroundColor: WorkspaceBadgeHelper.getColor(activeWorkspace.name),
             child: Text(
-              ProfileBadgeHelper.getInitial(activeProfile.name),
+              WorkspaceBadgeHelper.getInitial(activeWorkspace.name),
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 18,
@@ -347,7 +347,7 @@ class _ProfileMenuContentState extends ConsumerState<ProfileMenuContent> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  activeProfile.name,
+                  activeWorkspace.name,
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -360,11 +360,11 @@ class _ProfileMenuContentState extends ConsumerState<ProfileMenuContent> {
                     widget.onCloseMenu();
                     showDialog(
                       context: context,
-                      builder: (ctx) => CreateProfileDialog(profileToEdit: activeProfile),
+                      builder: (ctx) => CreateWorkspaceDialog(workspaceToEdit: activeWorkspace),
                     );
                   },
                   child: Text(
-                    'Manage your profile',
+                    'Manage your workspace',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: colorScheme.primary,
                       fontWeight: FontWeight.w500,
@@ -410,7 +410,7 @@ class _ProfileMenuContentState extends ConsumerState<ProfileMenuContent> {
     );
   }
 
-  Widget _buildCreateProfileTile(BuildContext context, {required VoidCallback onSelect}) {
+  Widget _buildCreateWorkspaceTile(BuildContext context, {required VoidCallback onSelect}) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -424,7 +424,7 @@ class _ProfileMenuContentState extends ConsumerState<ProfileMenuContent> {
         ),
         leading: Icon(Icons.add_circle_outline_rounded, color: colorScheme.primary, size: 20),
         title: Text(
-          'Create New Profile',
+          'Create New Workspace',
           style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.primary, fontWeight: FontWeight.w600),
         ),
         onTap: onSelect,

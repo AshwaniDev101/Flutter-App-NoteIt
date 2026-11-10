@@ -4,33 +4,33 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/sync/sync_engine.dart';
 import '../../../../shared/overlays/snack_bar_manager.dart';
-import '../../models/profile_model.dart';
-import '../../providers/active_profile_provider.dart';
-import '../../providers/profile_providers.dart';
-import '../helpers/profile_badge_helper.dart';
-import 'create_profile_dialog.dart';
+import '../../models/workspace_model.dart';
+import '../../providers/active_workspace_provider.dart';
+import '../../providers/workspace_providers.dart';
+import '../helpers/workspace_badge_helper.dart';
+import 'create_workspace_dialog.dart';
 
-class ProfileTile extends ConsumerWidget {
-  final Profile profile;
-  final Profile activeProfile;
+class WorkspaceTile extends ConsumerWidget {
+  final Workspace workspace;
+  final Workspace activeWorkspace;
   final User? authUser;
-  final ValueChanged<Profile> onSelect;
+  final ValueChanged<Workspace> onSelect;
   final VoidCallback? onMenuDismiss;
 
-  const ProfileTile({
+  const WorkspaceTile({
     super.key,
-    required this.profile,
-    required this.activeProfile,
+    required this.workspace,
+    required this.activeWorkspace,
     required this.authUser,
     required this.onSelect,
     this.onMenuDismiss,
   });
 
-  SyncEngine _getSyncEngineForProfile(Profile profile) {
-    if (profile.syncMode == 'cloud') return SyncEngine.cloud;
-    if (profile.syncMode == 'localHost' ||
-        profile.syncMode == 'localClient' ||
-        profile.syncMode == 'localUndefined') {
+  SyncEngine _getSyncEngineForWorkspace(Workspace workspace) {
+    if (workspace.syncMode == 'cloud') return SyncEngine.cloud;
+    if (workspace.syncMode == 'localHost' ||
+        workspace.syncMode == 'localClient' ||
+        workspace.syncMode == 'localUndefined') {
       return SyncEngine.local;
     }
     return SyncEngine.offline;
@@ -38,24 +38,24 @@ class ProfileTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isSelected = profile.id == activeProfile.id;
+    final isSelected = workspace.id == activeWorkspace.id;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final syncEngine = _getSyncEngineForProfile(profile);
+    final syncEngine = _getSyncEngineForWorkspace(workspace);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onSecondaryTapDown: (details) {
-          _showProfileContextMenu(context, ref, details, profile);
+          _showWorkspaceContextMenu(context, ref, details, workspace);
         },
         onLongPressStart: (details) {
-          _showProfileContextMenu(
+          _showWorkspaceContextMenu(
             context,
             ref,
             TapDownDetails(globalPosition: details.globalPosition),
-            profile,
+            workspace,
           );
         },
         child: Material(
@@ -72,9 +72,9 @@ class ProfileTile extends ConsumerWidget {
             ),
             leading: CircleAvatar(
               radius: 14,
-              backgroundColor: ProfileBadgeHelper.getColor(profile.name),
+              backgroundColor: WorkspaceBadgeHelper.getColor(workspace.name),
               child: Text(
-                ProfileBadgeHelper.getInitial(profile.name),
+                WorkspaceBadgeHelper.getInitial(workspace.name),
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 12,
@@ -83,7 +83,7 @@ class ProfileTile extends ConsumerWidget {
               ),
             ),
             title: Text(
-              profile.name,
+              workspace.name,
               style: theme.textTheme.bodyMedium?.copyWith(
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                 color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
@@ -116,18 +116,18 @@ class ProfileTile extends ConsumerWidget {
             trailing: isSelected
                 ? Icon(Icons.check_circle_rounded, color: colorScheme.primary, size: 20)
                 : null,
-            onTap: () => onSelect(profile),
+            onTap: () => onSelect(workspace),
           ),
         ),
       ),
     );
   }
 
-  void _showProfileContextMenu(
+  void _showWorkspaceContextMenu(
     BuildContext context,
     WidgetRef ref,
     TapDownDetails details,
-    Profile profile,
+    Workspace workspace,
   ) async {
     final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
     final position = RelativeRect.fromRect(
@@ -176,35 +176,35 @@ class ProfileTile extends ConsumerWidget {
 
     switch (selectedValue) {
       case 'edit':
-        _showEditProfileDialog(context, profile);
+        _showEditWorkspaceDialog(context, workspace);
         break;
       case 'delete':
-        _confirmAndDeleteProfile(context, ref, profile);
+        _confirmAndDeleteWorkspace(context, ref, workspace);
         break;
     }
   }
 
-  void _showEditProfileDialog(BuildContext context, Profile profile) {
+  void _showEditWorkspaceDialog(BuildContext context, Workspace workspace) {
     onMenuDismiss?.call();
     showDialog(
       context: context,
-      builder: (ctx) => CreateProfileDialog(profileToEdit: profile),
+      builder: (ctx) => CreateWorkspaceDialog(workspaceToEdit: workspace),
     );
   }
 
-  void _confirmAndDeleteProfile(
+  void _confirmAndDeleteWorkspace(
     BuildContext context,
     WidgetRef ref,
-    Profile profile,
+    Workspace workspace,
   ) async {
     onMenuDismiss?.call();
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Delete Profile "${profile.name}"?'),
+        title: Text('Delete Workspace "${workspace.name}"?'),
         content: const Text(
-          'This will permanently delete this profile and its associated SQLite database file on disk. Continue?',
+          'This will permanently delete this workspace and its associated SQLite database file on disk. Continue?',
         ),
         actions: [
           TextButton(
@@ -216,28 +216,28 @@ class ProfileTile extends ConsumerWidget {
               backgroundColor: Theme.of(ctx).colorScheme.error,
             ),
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Delete Profile'),
+            child: const Text('Delete Workspace'),
           ),
         ],
       ),
     );
 
     if ((confirmed ?? false) && context.mounted) {
-      final activeProfile = ref.read(activeProfileProvider);
-      if (activeProfile.id == profile.id) {
-        final allProfiles = ref.read(profilesListProvider);
-        final remaining = allProfiles.where((p) => p.id != profile.id).toList();
+      final activeWorkspace = ref.read(activeWorkspaceProvider);
+      if (activeWorkspace.id == workspace.id) {
+        final allWorkspaces = ref.read(workspacesListProvider);
+        final remaining = allWorkspaces.where((p) => p.id != workspace.id).toList();
         if (remaining.isNotEmpty) {
-          await ref.read(activeProfileProvider.notifier).switchProfile(remaining.first);
+          await ref.read(activeWorkspaceProvider.notifier).switchWorkspace(remaining.first);
         } else {
-          final newProf = await ref.read(profilesListProvider.notifier).createProfile(name: 'NoteIt');
-          await ref.read(activeProfileProvider.notifier).switchProfile(newProf);
+          final newProf = await ref.read(workspacesListProvider.notifier).createWorkspace(name: 'NoteIt');
+          await ref.read(activeWorkspaceProvider.notifier).switchWorkspace(newProf);
         }
       }
-      await ref.read(profilesListProvider.notifier).deleteProfile(profile.id);
+      await ref.read(workspacesListProvider.notifier).deleteWorkspace(workspace.id);
       if (context.mounted) {
         SnackBarManager.show(
-          msg: 'Profile "${profile.name}" deleted.',
+          msg: 'Workspace "${workspace.name}" deleted.',
           type: SnackBarMessageType.acknowledgment,
         );
       }
