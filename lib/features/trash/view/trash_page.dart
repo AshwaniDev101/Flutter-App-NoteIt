@@ -89,7 +89,8 @@ class _TrashPageState extends ConsumerState<TrashPage> with WidgetsBindingObserv
   // ------------------------------------------
 
   void _clearSelection() {
-    ref.read(rightPanelSelectionProvider.notifier).exitSelection();
+    if (!mounted) return;
+    _selectionNotifier.exitSelection();
     setState(() {
       isSelectMode = false;
       selectedNoteIds.clear();
@@ -98,36 +99,38 @@ class _TrashPageState extends ConsumerState<TrashPage> with WidgetsBindingObserv
   }
 
   void _toggleNoteSelection(String uuid) {
+    if (!mounted) return;
     setState(() {
       if (selectedNoteIds.contains(uuid)) {
         selectedNoteIds.remove(uuid);
       } else {
         if (!isSelectMode || !ref.read(rightPanelSelectionProvider).isSelecting) {
-          ref.read(rightPanelSelectionProvider.notifier).enterSelection(onClear: _clearSelection);
+          _selectionNotifier.enterSelection(onClear: _clearSelection);
         }
         selectedNoteIds.add(uuid);
       }
       final shouldBeSelectMode = selectedNoteIds.isNotEmpty || selectedFolderIds.isNotEmpty;
       if (!shouldBeSelectMode && isSelectMode) {
-        ref.read(rightPanelSelectionProvider.notifier).exitSelection();
+        _selectionNotifier.exitSelection();
       }
       isSelectMode = shouldBeSelectMode;
     });
   }
 
   void _toggleFolderSelection(String uuid) {
+    if (!mounted) return;
     setState(() {
       if (selectedFolderIds.contains(uuid)) {
         selectedFolderIds.remove(uuid);
       } else {
         if (!isSelectMode || !ref.read(rightPanelSelectionProvider).isSelecting) {
-          ref.read(rightPanelSelectionProvider.notifier).enterSelection(onClear: _clearSelection);
+          _selectionNotifier.enterSelection(onClear: _clearSelection);
         }
         selectedFolderIds.add(uuid);
       }
       final shouldBeSelectMode = selectedNoteIds.isNotEmpty || selectedFolderIds.isNotEmpty;
       if (!shouldBeSelectMode && isSelectMode) {
-        ref.read(rightPanelSelectionProvider.notifier).exitSelection();
+        _selectionNotifier.exitSelection();
       }
       isSelectMode = shouldBeSelectMode;
     });

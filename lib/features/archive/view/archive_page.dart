@@ -88,7 +88,8 @@ class _ArchivePageState extends ConsumerState<ArchivePage> with WidgetsBindingOb
   // ------------------------------------------
 
   void _clearSelection() {
-    ref.read(rightPanelSelectionProvider.notifier).exitSelection();
+    if (!mounted) return;
+    _selectionNotifier.exitSelection();
     setState(() {
       isSelectMode = false;
       noteIds.clear();
@@ -96,17 +97,18 @@ class _ArchivePageState extends ConsumerState<ArchivePage> with WidgetsBindingOb
   }
 
   void _toggleSelection(String uuid) {
+    if (!mounted) return;
     setState(() {
       if (noteIds.contains(uuid)) {
         noteIds.remove(uuid);
         if (noteIds.isEmpty) {
           isSelectMode = false;
-          ref.read(rightPanelSelectionProvider.notifier).exitSelection();
+          _selectionNotifier.exitSelection();
         }
       } else {
         if (!isSelectMode || !ref.read(rightPanelSelectionProvider).isSelecting) {
           isSelectMode = true;
-          ref.read(rightPanelSelectionProvider.notifier).enterSelection(onClear: _clearSelection);
+          _selectionNotifier.enterSelection(onClear: _clearSelection);
         }
         noteIds.add(uuid);
       }

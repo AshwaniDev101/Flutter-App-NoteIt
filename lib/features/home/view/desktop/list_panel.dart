@@ -308,7 +308,11 @@ class DesktopListPanel extends ConsumerWidget {
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: () {
-                  rightPanelSelection.onClearSelection?.call();
+                  final callback = rightPanelSelection.onClearSelection;
+                  ref.read(rightPanelSelectionProvider.notifier).exitSelection();
+                  try {
+                    callback?.call();
+                  } catch (_) {}
                 },
                 child: Tooltip(
                   message: 'Click to exit selection mode',
