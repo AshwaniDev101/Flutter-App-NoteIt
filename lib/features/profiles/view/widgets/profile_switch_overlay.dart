@@ -2,7 +2,6 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:noteit/database/firebase/auth/firebase_provider.dart';
 
 import '../../../../core/sync/sync_engine.dart';
 import '../../models/profile_model.dart';
@@ -33,7 +32,6 @@ class ProfileSwitchOverlay extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final switchingState = ref.watch(profileSwitchingProvider);
-    final authUser = ref.watch(authStateProvider).value;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -41,23 +39,7 @@ class ProfileSwitchOverlay extends ConsumerWidget {
     final targetProfile = switchingState.targetProfile;
     final profileName = targetProfile?.name ?? 'Workspace';
 
-    final photoUrl = targetProfile != null
-        ? ProfileBadgeHelper.getEffectivePhotoUrl(targetProfile, authUser)
-        : null;
-    final displayName = targetProfile != null
-        ? ProfileBadgeHelper.getEffectiveDisplayName(targetProfile, authUser)
-        : profileName;
-    final hasPhoto = photoUrl != null && photoUrl.isNotEmpty;
-    final isGoogleAuthView = targetProfile != null &&
-        ProfileBadgeHelper.isAuthForProfile(targetProfile, authUser);
-
     final syncEngine = _getSyncEngine(targetProfile);
-    final linkedEmail = targetProfile?.linkedEmail;
-    final displayEmail = (targetProfile?.syncMode == 'cloud' &&
-            linkedEmail != null &&
-            linkedEmail.isNotEmpty)
-        ? linkedEmail
-        : null;
 
     return Stack(
       children: [
@@ -102,17 +84,14 @@ class ProfileSwitchOverlay extends ConsumerWidget {
                                           CircleAvatar(
                                             radius: 20,
                                             backgroundColor: ProfileBadgeHelper.getColor(profileName),
-                                            backgroundImage: hasPhoto ? NetworkImage(photoUrl) : null,
-                                            child: !hasPhoto
-                                                ? Text(
-                                                    ProfileBadgeHelper.getInitial(profileName),
-                                                    style: const TextStyle(
-                                                      fontSize: 16,
-                                                      fontWeight: FontWeight.bold,
-                                                      color: Colors.white,
-                                                    ),
-                                                  )
-                                                : null,
+                                            child: Text(
+                                              ProfileBadgeHelper.getInitial(profileName),
+                                              style: const TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.white,
+                                              ),
+                                            ),
                                           ),
                                           const SizedBox(width: 14),
                                           Expanded(
@@ -128,45 +107,14 @@ class ProfileSwitchOverlay extends ConsumerWidget {
                                                   ),
                                                 ),
                                                 const SizedBox(height: 2),
-                                                Row(
-                                                  mainAxisSize: MainAxisSize.min,
-                                                  children: [
-                                                    Flexible(
-                                                      child: Text(
-                                                        displayName,
-                                                        style: theme.textTheme.titleMedium?.copyWith(
-                                                          fontWeight: FontWeight.bold,
-                                                          color: colorScheme.onSurface,
-                                                        ),
-                                                        maxLines: 1,
-                                                        overflow: TextOverflow.ellipsis,
-                                                      ),
-                                                    ),
-                                                    if (isGoogleAuthView) ...[
-                                                      const SizedBox(width: 6),
-                                                      Container(
-                                                        padding: const EdgeInsets.symmetric(
-                                                          horizontal: 6,
-                                                          vertical: 1,
-                                                        ),
-                                                        decoration: BoxDecoration(
-                                                          color: colorScheme.primaryContainer
-                                                              .withValues(alpha: 0.7),
-                                                          borderRadius: BorderRadius.circular(10),
-                                                        ),
-                                                        child: Text(
-                                                          targetProfile.name,
-                                                          style: theme.textTheme.labelSmall?.copyWith(
-                                                            color: colorScheme.onPrimaryContainer,
-                                                            fontSize: 10,
-                                                            fontWeight: FontWeight.w600,
-                                                          ),
-                                                          maxLines: 1,
-                                                          overflow: TextOverflow.ellipsis,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ],
+                                                Text(
+                                                  profileName,
+                                                  style: theme.textTheme.titleMedium?.copyWith(
+                                                    fontWeight: FontWeight.bold,
+                                                    color: colorScheme.onSurface,
+                                                  ),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
                                                 ),
                                                 const SizedBox(height: 2),
                                                 Row(
@@ -186,26 +134,6 @@ class ProfileSwitchOverlay extends ConsumerWidget {
                                                         fontWeight: FontWeight.w500,
                                                       ),
                                                     ),
-                                                    if (displayEmail != null) ...[
-                                                      Text(
-                                                        ' • ',
-                                                        style: theme.textTheme.bodySmall?.copyWith(
-                                                          fontSize: 11,
-                                                          color: colorScheme.onSurfaceVariant,
-                                                        ),
-                                                      ),
-                                                      Flexible(
-                                                        child: Text(
-                                                          displayEmail,
-                                                          style: theme.textTheme.bodySmall?.copyWith(
-                                                            fontSize: 11,
-                                                            color: colorScheme.onSurfaceVariant,
-                                                          ),
-                                                          maxLines: 1,
-                                                          overflow: TextOverflow.ellipsis,
-                                                        ),
-                                                      ),
-                                                    ],
                                                   ],
                                                 ),
                                               ],

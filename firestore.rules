@@ -3,13 +3,39 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // User data is stored under /users/{userId} and its subcollections (e.g. notes, folders)
-    match /users/{userId}/{document=**} {
-      // Allow read and write only if the request is from the authenticated owner
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+    // --- USER PRIVATE REPOSITORY ---
+    // All user profiles, manifests, notes, and folders live under /users/{userId}
+    match /users/{userId} {
+      // Helper function to verify authenticated user ownership
+      function isOwner() {
+        return request.auth != null && request.auth.uid == userId;
+      }
+
+      // Wildcard fallback: Allow owner full read/write across all sub-paths
+      allow read, write: if isOwner();
+
+      // Explicit rules for Profile Manifest: /users/{userId}/profiles_manifest/{profileId}
+      match /profiles_manifest/{profileId} {
+        allow read, write: if isOwner();
+      }
+
+      // Explicit rules for Workspace Profiles: /users/{userId}/profiles/{profileId}
+      match /profiles/{profileId} {
+        allow read, write: if isOwner();
+
+        // Notes Subcollection: /users/{userId}/profiles/{profileId}/notes/{noteId}
+        match /notes/{noteId} {
+          allow read, write: if isOwner();
+        }
+
+        // Folders Subcollection: /users/{userId}/profiles/{profileId}/folders/{folderId}
+        match /folders/{folderId} {
+          allow read, write: if isOwner();
+        }
+      }
     }
 
-    // Deny access to any other unhandled documents by default
+    // Default fallback: Deny access to any unhandled root collection
     match /{document=**} {
       allow read, write: if false;
     }

@@ -1,9 +1,6 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:noteit/database/firebase/auth/firebase_provider.dart';
 import '../../../../shared/overlays/snack_bar_manager.dart';
-import '../../data/profile_secure_storage.dart';
 import '../../models/profile_model.dart';
 import '../../providers/active_profile_provider.dart';
 import '../../providers/profile_providers.dart';
@@ -26,23 +23,11 @@ class CreateProfileDialog extends ConsumerStatefulWidget {
 class _CreateProfileDialogState extends ConsumerState<CreateProfileDialog> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
-  User? _dialogUser;
-  String? _dialogIdToken;
-  String? _dialogAccessToken;
-  bool _isSigningIn = false;
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.profileToEdit?.name ?? '');
-
-    // When editing an existing profile, check if the current auth user matches
-    if (widget.isEditing) {
-      final activeUser = ref.read(authStateProvider).value;
-      if (activeUser != null && activeUser.email == widget.profileToEdit?.linkedEmail) {
-        _dialogUser = activeUser;
-      }
-    }
   }
 
   @override
@@ -51,22 +36,54 @@ class _CreateProfileDialogState extends ConsumerState<CreateProfileDialog> {
     super.dispose();
   }
 
-  void _onSave() async {
-    // If not authenticated via Google, require a valid name in the text field
-    if (_dialogUser == null && !(_formKey.currentState?.validate() ?? false)) return;
+  void _confirmAndDeleteProfile(BuildContext context, WidgetRef ref, Profile profile) async {
+    Navigator.of(context).pop();
 
-    var name = _nameController.text.trim();
-    final dialogUser = _dialogUser;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Delete Profile "${profile.name}"?'),
+        content: const Text(
+          'This will move the profile and its notes to Profile Trash.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(ctx).colorScheme.error,
+            ),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Delete Profile'),
+          ),
+        ],
+      ),
+    );
 
-    // Fallback name if Google signed in and name field left empty
-    if (name.isEmpty && dialogUser != null) {
-      name = (dialogUser.displayName?.isNotEmpty ?? false)
-          ? dialogUser.displayName!
-          : (dialogUser.email?.isNotEmpty ?? false)
-              ? dialogUser.email!.split('@').first
-              : 'Google Profile';
-      _nameController.text = name;
+    if (confirmed == true) {
+      final activeProfile = ref.read(activeProfileProvider);
+      if (activeProfile.id == profile.id) {
+        final allProfiles = ref.read(profilesListProvider);
+        final remaining = allProfiles.where((p) => p.id != profile.id).toList();
+        if (remaining.isNotEmpty) {
+          await ref.read(activeProfileProvider.notifier).switchProfile(remaining.first);
+        } else {
+          final newProf = await ref.read(profilesListProvider.notifier).createProfile(name: 'NoteIt');
+          await ref.read(activeProfileProvider.notifier).switchProfile(newProf);
+        }
+      }
+      await ref.read(profilesListProvider.notifier).deleteProfile(profile.id);
+      SnackBarManager.show(
+        msg: 'Profile "${profile.name}" deleted.',
+        type: SnackBarMessageType.acknowledgment,
+      );
     }
+  }
+
+  void _onSave() async {
+    var name = _nameController.text.trim();
 
     if (name.isEmpty) {
       SnackBarManager.show(
@@ -76,29 +93,11 @@ class _CreateProfileDialogState extends ConsumerState<CreateProfileDialog> {
       return;
     }
 
-    final linkedEmail = dialogUser?.email;
-    final displayName = dialogUser?.displayName;
-    final photoUrl = dialogUser?.photoURL;
-    final syncMode = (dialogUser != null && linkedEmail != null) ? 'cloud' : 'offline';
-    final refreshToken = dialogUser?.uid; // Secure storage key identifier
-
     if (widget.isEditing) {
       final updated = widget.profileToEdit!.copyWith(
         name: name,
-        displayName: dialogUser != null ? (displayName ?? widget.profileToEdit!.displayName) : null,
-        photoUrl: dialogUser != null ? (photoUrl ?? widget.profileToEdit!.photoUrl) : null,
-        linkedEmail: dialogUser != null ? (linkedEmail ?? widget.profileToEdit!.linkedEmail) : null,
-        syncMode: syncMode,
       );
       await ref.read(profilesListProvider.notifier).updateProfile(updated);
-
-      if (_dialogIdToken != null && _dialogIdToken!.isNotEmpty) {
-        await ProfileSecureStorage.instance.saveProfileOAuthTokens(
-          profileId: updated.id,
-          idToken: _dialogIdToken!,
-          accessToken: _dialogAccessToken,
-        );
-      }
 
       if (ref.read(activeProfileProvider).id == updated.id) {
         ref.read(activeProfileProvider.notifier).updateActiveProfile(updated);
@@ -116,13 +115,6 @@ class _CreateProfileDialogState extends ConsumerState<CreateProfileDialog> {
     } else {
       final newProfile = await ref.read(profilesListProvider.notifier).createProfile(
             name: name,
-            displayName: displayName,
-            photoUrl: photoUrl,
-            linkedEmail: linkedEmail,
-            syncMode: syncMode,
-            refreshToken: refreshToken,
-            idToken: _dialogIdToken,
-            accessToken: _dialogAccessToken,
           );
 
       if (mounted) {
@@ -143,7 +135,6 @@ class _CreateProfileDialogState extends ConsumerState<CreateProfileDialog> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isEditing = widget.isEditing;
-    final displayUser = _dialogUser;
 
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -181,185 +172,36 @@ class _CreateProfileDialogState extends ConsumerState<CreateProfileDialog> {
                 TextFormField(
                   controller: _nameController,
                   autofocus: true,
+                  textInputAction: TextInputAction.done,
+                  onFieldSubmitted: (_) => _onSave(),
                   decoration: InputDecoration(
-                    labelText: displayUser != null ? 'Profile Name (Optional)' : 'Profile Name *',
+                    labelText: 'Profile Name *',
                     hintText: 'e.g. Work, Personal, Side Projects',
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     prefixIcon: const Icon(Icons.workspace_premium_rounded),
                   ),
                   validator: (val) {
-                    if (displayUser == null && (val == null || val.trim().isEmpty)) {
+                    if (val == null || val.trim().isEmpty) {
                       return 'Please enter a profile name';
                     }
                     return null;
                   },
                 ),
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'To sync over cloud sign in',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    if (displayUser != null)
-                      TextButton.icon(
-                        style: TextButton.styleFrom(
-                          foregroundColor: colorScheme.error,
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        ),
-                        icon: const Icon(Icons.logout, size: 18),
-                        label: const Text('Sign out'),
-                        onPressed: () async {
-                          setState(() => _dialogUser = null);
-                          if (widget.isEditing && widget.profileToEdit != null) {
-                            await ref.read(profilesListProvider.notifier).unlinkGoogleAccount(widget.profileToEdit!.id);
-                            await ref.read(authRepositoryProvider).signOut();
-                          }
-                          SnackBarManager.show(
-                            msg: 'Signed out from this profile.',
-                            type: SnackBarMessageType.acknowledgment,
-                          );
-                        },
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                if (displayUser == null)
-                  OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(48),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    icon: _isSigningIn
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.login_rounded),
-                    label: Text(_isSigningIn ? 'Signing in...' : 'Sign in with Google'),
-                    onPressed: _isSigningIn
-                        ? null
-                        : () async {
-                            setState(() => _isSigningIn = true);
-                            try {
-                              final result = await ref.read(authRepositoryProvider).signInWithGoogleDetails();
-                              final user = result.user;
-                              final creds = result.credentials;
-
-                              if (user != null) {
-                                final userEmail = user.email ?? '';
-                                final isDuplicate = ref
-                                    .read(profileRepositoryProvider)
-                                    .isEmailAlreadyLinked(
-                                      userEmail,
-                                      excludeProfileId: widget.profileToEdit?.id,
-                                    );
-
-                                if (isDuplicate) {
-                                  SnackBarManager.show(
-                                    msg: 'Google account ($userEmail) is already linked to another profile.',
-                                    type: SnackBarMessageType.acknowledgment,
-                                  );
-                                  await ref.read(authRepositoryProvider).signOut();
-                                } else {
-                                  setState(() {
-                                    _dialogUser = user;
-                                    _dialogIdToken = creds?.idToken;
-                                    _dialogAccessToken = creds?.accessToken;
-                                    // Auto-fill profile name if field is empty
-                                    if (_nameController.text.trim().isEmpty) {
-                                      _nameController.text = (user.displayName?.isNotEmpty ?? false)
-                                          ? user.displayName!
-                                          : (user.email?.isNotEmpty ?? false)
-                                              ? user.email!.split('@').first
-                                              : 'Google Profile';
-                                    }
-                                  });
-                                  SnackBarManager.show(
-                                    msg: 'Signed in as ${user.email}',
-                                    type: SnackBarMessageType.acknowledgment,
-                                  );
-                                }
-                              }
-                            } finally {
-                              if (mounted) setState(() => _isSigningIn = false);
-                            }
-                          },
-                  )
-                else
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surfaceContainerHigh,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 20,
-                          backgroundColor: colorScheme.primary,
-                          backgroundImage: (displayUser.photoURL != null && displayUser.photoURL!.isNotEmpty)
-                              ? NetworkImage(displayUser.photoURL!)
-                              : null,
-                          child: (displayUser.photoURL == null || displayUser.photoURL!.isEmpty)
-                              ? Text(
-                                  (displayUser.displayName?.isNotEmpty ?? false)
-                                      ? displayUser.displayName![0].toUpperCase()
-                                      : (displayUser.email?.isNotEmpty ?? false)
-                                          ? displayUser.email![0].toUpperCase()
-                                          : 'U',
-                                  style: TextStyle(
-                                    color: colorScheme.onPrimary,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                )
-                              : null,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (displayUser.displayName != null && displayUser.displayName!.isNotEmpty)
-                                Text(
-                                  displayUser.displayName!,
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              if (displayUser.email != null && displayUser.email!.isNotEmpty)
-                                Text(
-                                  displayUser.email!,
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: colorScheme.onSurfaceVariant,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
               ],
             ),
           ),
         ),
       ),
       actions: [
+        if (isEditing && widget.profileToEdit != null)
+          TextButton.icon(
+            style: TextButton.styleFrom(
+              foregroundColor: colorScheme.error,
+            ),
+            icon: const Icon(Icons.delete_outline, size: 18),
+            label: const Text('Delete Profile'),
+            onPressed: () => _confirmAndDeleteProfile(context, ref, widget.profileToEdit!),
+          ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancel'),

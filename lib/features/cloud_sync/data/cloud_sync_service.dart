@@ -35,14 +35,10 @@ class CloudSyncService {
     }
 
     final activeProfile = ref.read(activeProfileProvider);
-    if (activeProfile.linkedEmail != null && user.email?.toLowerCase() != activeProfile.linkedEmail?.toLowerCase()) {
-      AppLogger.w("CloudSyncService: Signed-in user (${user.email}) does not match active profile linkedEmail (${activeProfile.linkedEmail}). Aborting sync.");
-      return;
-    }
 
     _isRunning = true;
     final sessionStartTime = DateTime.now().millisecondsSinceEpoch;
-    AppLogger.d("CloudSyncService: Starting Firebase sync engine for user ${user.uid} (${activeProfile.name})...");
+    AppLogger.d("CloudSyncService: Starting Firebase sync engine for user ${user.uid} (Profile: ${activeProfile.name}, ID: ${activeProfile.id})...");
 
     _subscribeToRemoteChanges(sessionStartTime);
     executeFullSync();
@@ -120,7 +116,7 @@ class CloudSyncService {
     }
 
     _isExecutingFullSync = true;
-    AppLogger.d("CloudSyncService: Executing full sync...");
+    AppLogger.d("CloudSyncService: Executing full sync for profile ${firebaseDb.profileId}...");
     ref.read(isSyncingProvider.notifier).setSyncing(true);
 
     try {
@@ -171,7 +167,7 @@ class CloudSyncService {
       final now = DateTime.now().millisecondsSinceEpoch;
       await prefs.setLastCloudSyncTime(now);
 
-      AppLogger.d("CloudSyncService: Full sync completed successfully.");
+      AppLogger.d("CloudSyncService: Full sync completed successfully for profile ${firebaseDb.profileId}.");
     } catch (e, st) {
       AppLogger.e("CloudSyncService: Error executing full sync", error: e, stack: st);
     } finally {

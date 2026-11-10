@@ -7,6 +7,7 @@ import 'package:noteit/core/sync/sync_engine.dart';
 import 'package:noteit/core/util/device_info.dart';
 import 'package:noteit/core/util/logger.dart';
 import 'package:noteit/database/drift/synced_devices/synced_devices_dao.dart';
+import 'package:noteit/database/firebase/auth/firebase_provider.dart';
 import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
 import 'package:noteit/features/local_sync/data/network/local_sync_service.dart';
 import 'package:noteit/features/local_sync/data/network/mdns_broadcast.dart';
@@ -60,6 +61,8 @@ class SyncClientNotifier extends Notifier<WebSocketChannel?> {
       final myPlatform = info.extractPlatform;
       final activeProfile = ref.read(activeProfileProvider);
 
+      final authUser = ref.read(authStateProvider).value;
+
       final Map<String, dynamic> queryParams = {
         'host_uuid': hostUuid,
         'host_name': hostName,
@@ -69,8 +72,8 @@ class SyncClientNotifier extends Notifier<WebSocketChannel?> {
         'profile_name': activeProfile.name,
         'v': AppConfig.syncProtocolVersion.toString(),
       };
-      if (activeProfile.linkedEmail != null) {
-        queryParams['linked_email'] = activeProfile.linkedEmail!;
+      if (authUser?.email != null) {
+        queryParams['auth_email'] = authUser!.email!;
       }
       if (pin != null) {
         queryParams['pin'] = pin;

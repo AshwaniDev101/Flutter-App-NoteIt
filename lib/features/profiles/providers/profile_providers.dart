@@ -26,24 +26,12 @@ class ProfilesListNotifier extends Notifier<List<Profile>> {
   /// Creates a new profile and refreshes the profiles list state.
   Future<Profile> createProfile({
     required String name,
-    String? displayName,
-    String? photoUrl,
-    String? linkedEmail,
     String syncMode = 'offline',
-    String? refreshToken,
-    String? idToken,
-    String? accessToken,
   }) async {
     final repo = ref.read(profileRepositoryProvider);
     final newProfile = await repo.createProfile(
       name: name,
-      displayName: displayName,
-      photoUrl: photoUrl,
-      linkedEmail: linkedEmail,
       syncMode: syncMode,
-      refreshToken: refreshToken,
-      idToken: idToken,
-      accessToken: accessToken,
     );
     refresh();
     return newProfile;
@@ -53,14 +41,6 @@ class ProfilesListNotifier extends Notifier<List<Profile>> {
   Future<bool> updateProfile(Profile profile) async {
     final repo = ref.read(profileRepositoryProvider);
     final success = await repo.updateProfile(profile);
-    if (success) refresh();
-    return success;
-  }
-
-  /// Unlinks Google account from a profile and refreshes profiles list state.
-  Future<bool> unlinkGoogleAccount(String profileId) async {
-    final repo = ref.read(profileRepositoryProvider);
-    final success = await repo.unlinkGoogleAccount(profileId);
     if (success) refresh();
     return success;
   }

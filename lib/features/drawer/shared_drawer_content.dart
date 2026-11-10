@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/core/sync/sync_engine.dart';
+import 'package:noteit/database/firebase/auth/firebase_provider.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
 
 import '../../core/config/app_env.dart';
@@ -132,7 +134,7 @@ class _SharedDrawerContentState extends ConsumerState<SharedDrawerContent> {
       children: [
         // --- App Branding Header ---
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
           child: Row(
             children: [
               Container(
@@ -175,6 +177,10 @@ class _SharedDrawerContentState extends ConsumerState<SharedDrawerContent> {
             ],
           ),
         ),
+
+        // --- Google Account Auth Header ---
+        const _DrawerAuthHeaderWidget(),
+        const SizedBox(height: 8),
 
         // --- 2. Scrollable Navigation ---
         Flexible(
@@ -352,6 +358,134 @@ class _CompactDrawerTile extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _DrawerAuthHeaderWidget extends ConsumerWidget {
+  const _DrawerAuthHeaderWidget();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final authState = ref.watch(authStateProvider);
+
+    return authState.when(
+      data: (user) {
+        if (user == null) {
+          // Unauthenticated State: Show Google Sign-In button
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 40),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                side: BorderSide(color: colorScheme.outline.withValues(alpha: 0.3)),
+              ),
+              icon: Image.asset(
+                'assets/icons/note_icon.png',
+                width: 18,
+                height: 18,
+                errorBuilder: (context, error, stackTrace) => const Icon(Icons.login, size: 18),
+              ),
+              label: Text(
+                'Sign in with Google',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              onPressed: () async {
+                final authRepo = ref.read(authRepositoryProvider);
+                final signedInUser = await authRepo.signInWithGoogle();
+                if (signedInUser != null) {
+                  SnackBarManager.show(
+                    msg: 'Signed in as ${signedInUser.email}',
+                    type: SnackBarMessageType.acknowledgment,
+                  );
+                }
+              },
+            ),
+          );
+        }
+
+        // Authenticated State: Show Avatar, Name, Email & Sign-Out button
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+              ),
+            ),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 16,
+                  backgroundColor: colorScheme.primaryContainer,
+                  backgroundImage: user.photoURL != null ? NetworkImage(user.photoURL!) : null,
+                  child: user.photoURL == null
+                      ? Text(
+                          (user.displayName?.isNotEmpty == true ? user.displayName![0] : (user.email?[0] ?? 'U')).toUpperCase(),
+                          style: TextStyle(color: colorScheme.onPrimaryContainer, fontWeight: FontWeight.bold, fontSize: 13),
+                        )
+                      : null,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        user.displayName ?? 'Google User',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        user.email ?? '',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                          fontSize: 11,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.logout, size: 18),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                  tooltip: 'Sign Out',
+                  onPressed: () async {
+                    final authRepo = ref.read(authRepositoryProvider);
+                    await authRepo.signOut();
+                    await ref.read(syncModeProvider.notifier).setMode(SyncMode.offline);
+                    SnackBarManager.show(
+                      msg: 'Signed out. Switched to offline mode.',
+                      type: SnackBarMessageType.info,
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+      loading: () => const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        child: SizedBox(height: 40, child: Center(child: CircularProgressIndicator(strokeWidth: 2))),
+      ),
+      error: (error, stackTrace) => const SizedBox.shrink(),
     );
   }
 }

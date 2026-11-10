@@ -5,6 +5,7 @@ import 'package:noteit/core/config/config.dart';
 import 'package:noteit/core/sync/sync_engine.dart';
 import 'package:noteit/core/util/logger.dart';
 import 'package:noteit/database/drift/synced_devices/synced_devices_dao.dart';
+import 'package:noteit/database/firebase/auth/firebase_provider.dart';
 import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
 import 'package:noteit/features/local_sync/data/network/local_sync_service.dart';
 import 'package:noteit/features/local_sync/data/providers/local_sync_session_manager.dart';
@@ -132,7 +133,7 @@ class SyncServerNotifier extends Notifier<HttpServer?> {
       final clientName = queryParams['client_name'];
       final clientPin = queryParams['pin'];
       final clientProfileName = queryParams['profile_name'];
-      final clientLinkedEmail = queryParams['linked_email'];
+      final clientAuthEmail = queryParams['auth_email'];
 
       final String clientPlatform = queryParams['client_platform'] ?? 'unknown';
 
@@ -149,20 +150,21 @@ class SyncServerNotifier extends Notifier<HttpServer?> {
         return Response.forbidden('Version mismatch. Please update NoteIt.');
       }
 
-      // --- STRICT PROFILE MATCHING CHECK ---
+      // --- STRICT GOOGLE ACCOUNT & PROFILE MATCHING CHECK ---
       final activeProfile = ref.read(activeProfileProvider);
       final hostProfileNameNorm = activeProfile.name.trim().toLowerCase();
       final clientProfileNameNorm = clientProfileName?.trim().toLowerCase();
 
-      final hostEmailNorm = activeProfile.linkedEmail?.trim().toLowerCase();
-      final clientEmailNorm = clientLinkedEmail?.trim().toLowerCase();
+      final authUser = ref.read(authStateProvider).value;
+      final hostEmailNorm = authUser?.email?.trim().toLowerCase();
+      final clientEmailNorm = clientAuthEmail?.trim().toLowerCase();
 
       final bool isNameMatched = clientProfileNameNorm != null && clientProfileNameNorm == hostProfileNameNorm;
       final bool isEmailMatched = hostEmailNorm != null && clientEmailNorm != null && hostEmailNorm == clientEmailNorm;
 
       if (!isNameMatched && !isEmailMatched) {
-        AppLogger.d("SyncServerNotifier: Connection rejected. Client profile '$clientProfileName' ($clientLinkedEmail) does not match host profile '${activeProfile.name}' (${activeProfile.linkedEmail}).");
-        return Response.forbidden('Profile mismatch: $clientProfileName');
+        AppLogger.d("SyncServerNotifier: Connection rejected. Client profile '$clientProfileName' ($clientAuthEmail) does not match host profile '${activeProfile.name}' ($hostEmailNorm).");
+        return Response.forbidden('Profile/Account mismatch: $clientProfileName');
       }
       // -------------------------------------
 

@@ -9,17 +9,8 @@ class Profile {
   /// Primary profile workspace name (e.g. 'Personal Notes', 'Work Projects').
   final String name;
 
-  /// Optional Google account display name (e.g. 'John Doe').
-  final String? displayName;
-
-  /// Optional Google account profile photo URL.
-  final String? photoUrl;
-
   /// SQLite database filename on disk (e.g. 'note_it_db.sqlite', 'profile_work_1718.sqlite').
   final String dbFileName;
-
-  /// Optional linked Google Account email string for Cloud Sync authentication.
-  final String? linkedEmail;
 
   /// Default sync mode for this profile ('offline', 'cloud', 'localHost', 'localClient').
   final String syncMode;
@@ -30,16 +21,25 @@ class Profile {
   /// Last active timestamp (UTC), used for sorting recently used profiles.
   final DateTime lastUsedAt;
 
+  /// Soft-delete timestamp (UTC) for profile trash recovery (null if active).
+  final DateTime? deletedAt;
+
+  /// Conflict resolution update counter.
+  final int updateCounter;
+
+  /// Hybrid Logical Clock (HLC) string checkpoint.
+  final String? hlc;
+
   const Profile({
     required this.id,
     required this.name,
-    this.displayName,
-    this.photoUrl,
     required this.dbFileName,
-    this.linkedEmail,
     this.syncMode = 'offline',
     required this.createdAt,
     required this.lastUsedAt,
+    this.deletedAt,
+    this.updateCounter = 1,
+    this.hlc,
   });
 
   /// Serializes [Profile] to a JSON Map.
@@ -47,13 +47,13 @@ class Profile {
     return {
       'id': id,
       'name': name,
-      'displayName': displayName,
-      'photoUrl': photoUrl,
       'dbFileName': dbFileName,
-      'linkedEmail': linkedEmail,
       'syncMode': syncMode,
       'createdAt': createdAt.toUtc().toIso8601String(),
       'lastUsedAt': lastUsedAt.toUtc().toIso8601String(),
+      'deletedAt': deletedAt?.toUtc().toIso8601String(),
+      'updateCounter': updateCounter,
+      'hlc': hlc,
     };
   }
 
@@ -62,10 +62,7 @@ class Profile {
     return Profile(
       id: json['id'] as String,
       name: json['name'] as String,
-      displayName: json['displayName'] as String?,
-      photoUrl: json['photoUrl'] as String?,
       dbFileName: json['dbFileName'] as String? ?? 'note_it_db.sqlite',
-      linkedEmail: json['linkedEmail'] as String?,
       syncMode: json['syncMode'] as String? ?? 'offline',
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'] as String).toUtc()
@@ -73,6 +70,11 @@ class Profile {
       lastUsedAt: json['lastUsedAt'] != null
           ? DateTime.parse(json['lastUsedAt'] as String).toUtc()
           : DateTime.now().toUtc(),
+      deletedAt: json['deletedAt'] != null
+          ? DateTime.parse(json['deletedAt'] as String).toUtc()
+          : null,
+      updateCounter: json['updateCounter'] as int? ?? 1,
+      hlc: json['hlc'] as String?,
     );
   }
 
@@ -80,24 +82,24 @@ class Profile {
   Profile copyWith({
     String? id,
     String? name,
-    Object? displayName = _undefined,
-    Object? photoUrl = _undefined,
     String? dbFileName,
-    Object? linkedEmail = _undefined,
     String? syncMode,
     DateTime? createdAt,
     DateTime? lastUsedAt,
+    Object? deletedAt = _undefined,
+    int? updateCounter,
+    Object? hlc = _undefined,
   }) {
     return Profile(
       id: id ?? this.id,
       name: name ?? this.name,
-      displayName: displayName == _undefined ? this.displayName : displayName as String?,
-      photoUrl: photoUrl == _undefined ? this.photoUrl : photoUrl as String?,
       dbFileName: dbFileName ?? this.dbFileName,
-      linkedEmail: linkedEmail == _undefined ? this.linkedEmail : linkedEmail as String?,
       syncMode: syncMode ?? this.syncMode,
       createdAt: createdAt ?? this.createdAt,
       lastUsedAt: lastUsedAt ?? this.lastUsedAt,
+      deletedAt: deletedAt == _undefined ? this.deletedAt : deletedAt as DateTime?,
+      updateCounter: updateCounter ?? this.updateCounter,
+      hlc: hlc == _undefined ? this.hlc : hlc as String?,
     );
   }
 
@@ -107,26 +109,26 @@ class Profile {
     return other is Profile &&
         other.id == id &&
         other.name == name &&
-        other.displayName == displayName &&
-        other.photoUrl == photoUrl &&
         other.dbFileName == dbFileName &&
-        other.linkedEmail == linkedEmail &&
         other.syncMode == syncMode &&
         other.createdAt == createdAt &&
-        other.lastUsedAt == lastUsedAt;
+        other.lastUsedAt == lastUsedAt &&
+        other.deletedAt == deletedAt &&
+        other.updateCounter == updateCounter &&
+        other.hlc == hlc;
   }
 
   @override
   int get hashCode => Object.hash(
         id,
         name,
-        displayName,
-        photoUrl,
         dbFileName,
-        linkedEmail,
         syncMode,
         createdAt,
         lastUsedAt,
+        deletedAt,
+        updateCounter,
+        hlc,
       );
 }
 

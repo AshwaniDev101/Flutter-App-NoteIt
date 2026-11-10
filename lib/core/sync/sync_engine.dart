@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/util/logger.dart';
 import 'package:noteit/database/firebase/auth/firebase_provider.dart';
 
-import '../../features/profiles/data/profile_secure_storage.dart';
 import '../../features/profiles/providers/active_profile_provider.dart';
 import '../../features/profiles/providers/profile_providers.dart';
 
@@ -115,44 +114,9 @@ class SyncModeNotifier extends Notifier<SyncMode> {
     final activeProfile = ref.read(activeProfileProvider);
 
     if (authRepo.isSignedIn && authRepo.currentUser?.email != null) {
-      final userEmail = authRepo.currentUser!.email!;
-
-      final currentUser = authRepo.currentUser;
-      if (activeProfile.linkedEmail == null) {
-        // Automatically link current email to active profile upon cloud sync enable
-        final updated = activeProfile.copyWith(
-          linkedEmail: userEmail,
-          displayName: currentUser?.displayName ?? activeProfile.displayName,
-          photoUrl: currentUser?.photoURL ?? activeProfile.photoUrl,
-          syncMode: SyncMode.cloud.name,
-        );
-        await ref.read(profilesListProvider.notifier).updateProfile(updated);
-        ref.read(activeProfileProvider.notifier).updateActiveProfile(updated);
-        AppLogger.d("SyncModeNotifier: Linked profile ${activeProfile.name} to $userEmail and set cloud mode");
-        return true;
-      } else if (activeProfile.linkedEmail != userEmail) {
-        AppLogger.w("SyncModeNotifier: Profile linked email (${activeProfile.linkedEmail}) differs from current account ($userEmail). Prompting Google Sign-In...");
-        final result = await authRepo.signInWithGoogleDetails();
-        final user = result.user;
-        if (user == null || user.email != activeProfile.linkedEmail) {
-          AppLogger.w("SyncModeNotifier: Google Sign-In failed or email mismatched.");
-          return false;
-        }
-        if (result.credentials?.idToken != null) {
-          await ProfileSecureStorage.instance.saveProfileOAuthTokens(
-            profileId: activeProfile.id,
-            idToken: result.credentials!.idToken!,
-            accessToken: result.credentials?.accessToken,
-          );
-        }
-        final updated = activeProfile.copyWith(
-          displayName: user.displayName ?? activeProfile.displayName,
-          photoUrl: user.photoURL ?? activeProfile.photoUrl,
-        );
-        await ref.read(profilesListProvider.notifier).updateProfile(updated);
-        ref.read(activeProfileProvider.notifier).updateActiveProfile(updated);
-      }
-
+      final updated = activeProfile.copyWith(syncMode: SyncMode.cloud.name);
+      await ref.read(profilesListProvider.notifier).updateProfile(updated);
+      ref.read(activeProfileProvider.notifier).updateActiveProfile(updated);
       await setMode(SyncMode.cloud);
       return true;
     }
@@ -162,21 +126,10 @@ class SyncModeNotifier extends Notifier<SyncMode> {
     final user = result.user;
 
     if (user != null && user.email != null) {
-      if (result.credentials?.idToken != null) {
-        await ProfileSecureStorage.instance.saveProfileOAuthTokens(
-          profileId: activeProfile.id,
-          idToken: result.credentials!.idToken!,
-          accessToken: result.credentials?.accessToken,
-        );
-      }
-      final updated = activeProfile.copyWith(
-        linkedEmail: user.email,
-        displayName: user.displayName ?? activeProfile.displayName,
-        photoUrl: user.photoURL ?? activeProfile.photoUrl,
-        syncMode: SyncMode.cloud.name,
-      );
+      final updated = activeProfile.copyWith(syncMode: SyncMode.cloud.name);
       await ref.read(profilesListProvider.notifier).updateProfile(updated);
       ref.read(activeProfileProvider.notifier).updateActiveProfile(updated);
+      await setMode(SyncMode.cloud);
       AppLogger.d("SyncModeNotifier: Google Sign-In successful. Switching to Cloud Mode.");
       return true;
     } else {

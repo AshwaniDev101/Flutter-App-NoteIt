@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/helpers/platform_helper.dart';
 import 'package:noteit/database/drift/local_database.dart';
+import 'package:noteit/database/firebase/auth/firebase_provider.dart';
 import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
+import 'package:noteit/features/cloud_sync/data/cloud_sync_service.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
 import 'package:noteit/features/lock/lock_manger/lock_manager.dart';
+import 'package:noteit/features/profiles/data/profile_secure_storage.dart';
+import 'package:noteit/features/reminder/reminder_manager.dart';
 import 'package:noteit/shared/overlays/app_scaffold.dart';
 import 'package:noteit/shared/overlays/snack_bar_manager.dart';
 import 'package:noteit/shared/widgets/app_switch.dart';
@@ -105,27 +109,42 @@ class DevPage extends ConsumerWidget {
                         DevActionTile(
                           icon: Icons.delete_forever_rounded,
                           iconColor: Colors.red.shade700,
-                          title: 'Wipe Drift DB File',
-                          subtitle: 'Physically deletes note_it_db.sqlite and recreates database',
+                          title: 'Complete Nuke (Factory Reset)',
+                          subtitle: 'Wipes all SQLite DBs, SecureStorage, SharedPreferences & Firebase session',
                           enabled: true,
                           onTap: () async {
                             final confirmed = await _showConfirmationDialog(
                               context: context,
-                              title: 'Wipe Drift Database?',
-                              content: 'This will physically delete the note_it_db.sqlite file. All local notes, folders, and keybindings will be lost. Continue?',
-                              confirmLabel: 'Delete DB File',
+                              title: 'Execute Complete Factory Reset?',
+                              content: 'This will wipe ALL local SQLite databases, reset manifest, clear secure storage, wipe preferences, and sign out of Firebase. Continue?',
+                              confirmLabel: 'Nuke Everything',
                               confirmColor: Colors.red,
                             );
                             if (confirmed && context.mounted) {
-                              final db = ref.read(localDatabaseProvider);
-                              await db.close();
-                              await deleteDatabaseFiles();
-                              ref.invalidate(localDatabaseProvider);
-                              if (context.mounted) {
-                                SnackBarManager.show(
-                                  msg: 'Drift database file physically deleted and recreated.',
-                                  type: SnackBarMessageType.acknowledgment,
-                                );
+                              try {
+                                ref.read(cloudSyncServiceProvider).stop();
+                                await ReminderManager().cancelAllNotifications();
+                                final db = ref.read(localDatabaseProvider);
+                                await db.close();
+                                await deleteDatabaseFiles();
+                                ref.invalidate(localDatabaseProvider);
+                                await ProfileSecureStorage.instance.deleteProfileToken('profile_default');
+                                await ref.read(sharedPreferenceProvider).clearAll();
+                                await ref.read(authRepositoryProvider).signOut();
+
+                                if (context.mounted) {
+                                  SnackBarManager.show(
+                                    msg: 'Complete factory reset executed.',
+                                    type: SnackBarMessageType.acknowledgment,
+                                  );
+                                }
+                              } catch (e) {
+                                if (context.mounted) {
+                                  SnackBarManager.show(
+                                    msg: 'Factory reset completed with warnings.',
+                                    type: SnackBarMessageType.info,
+                                  );
+                                }
                               }
                             }
                           },

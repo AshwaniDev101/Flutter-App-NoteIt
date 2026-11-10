@@ -41,21 +41,7 @@ class ProfileTile extends ConsumerWidget {
     final isSelected = profile.id == activeProfile.id;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-
-    final photoUrl = ProfileBadgeHelper.getEffectivePhotoUrl(profile, authUser);
-    final displayName = ProfileBadgeHelper.getEffectiveDisplayName(profile, authUser);
-    final hasPhoto = photoUrl != null && photoUrl.isNotEmpty;
-    final isGoogleAuthView = ProfileBadgeHelper.isAuthForProfile(profile, authUser);
-
-    final linkedEmail = profile.linkedEmail;
-    final hasLinkedAccount = linkedEmail != null && linkedEmail.isNotEmpty;
-    final googlePhotoUrl = photoUrl ?? profile.photoUrl;
-
     final syncEngine = _getSyncEngineForProfile(profile);
-
-    final displayEmail = (profile.syncMode == 'cloud' && linkedEmail != null && linkedEmail.isNotEmpty)
-        ? linkedEmail
-        : null;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -87,53 +73,23 @@ class ProfileTile extends ConsumerWidget {
             leading: CircleAvatar(
               radius: 14,
               backgroundColor: ProfileBadgeHelper.getColor(profile.name),
-              backgroundImage: hasPhoto ? NetworkImage(photoUrl) : null,
-              child: !hasPhoto
-                  ? Text(
-                      ProfileBadgeHelper.getInitial(profile.name),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    )
-                  : null,
-            ),
-            title: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Flexible(
-                  child: Text(
-                    displayName,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                      color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+              child: Text(
+                ProfileBadgeHelper.getInitial(profile.name),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
                 ),
-                if (isGoogleAuthView) ...[
-                  const SizedBox(width: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                    decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer.withValues(alpha: 0.7),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      profile.name,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: colorScheme.onPrimaryContainer,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ],
+              ),
+            ),
+            title: Text(
+              profile.name,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
             subtitle: Padding(
               padding: const EdgeInsets.only(top: 2.0),
@@ -154,86 +110,16 @@ class ProfileTile extends ConsumerWidget {
                       fontWeight: isSelected ? FontWeight.w500 : FontWeight.w400,
                     ),
                   ),
-                  if (displayEmail != null) ...[
-                    Text(
-                      ' • ',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        fontSize: 11,
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    Flexible(
-                      child: Text(
-                        displayEmail,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          fontSize: 11,
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
                 ],
               ),
             ),
-            trailing: _buildTrailing(
-              context: context,
-              isSelected: isSelected,
-              showLinkedBadge: profile.syncMode != 'cloud' && hasLinkedAccount,
-              linkedEmail: linkedEmail,
-              googlePhotoUrl: googlePhotoUrl,
-            ),
+            trailing: isSelected
+                ? Icon(Icons.check_circle_rounded, color: colorScheme.primary, size: 20)
+                : null,
             onTap: () => onSelect(profile),
           ),
         ),
       ),
-    );
-  }
-
-  Widget? _buildTrailing({
-    required BuildContext context,
-    required bool isSelected,
-    required bool showLinkedBadge,
-    required String? linkedEmail,
-    required String? googlePhotoUrl,
-  }) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    final List<Widget> trailingChildren = [];
-
-    if (showLinkedBadge && linkedEmail != null) {
-      final hasPhoto = googlePhotoUrl != null && googlePhotoUrl.isNotEmpty;
-      trailingChildren.add(
-        Tooltip(
-          message: 'Linked Account: $linkedEmail',
-          child: CircleAvatar(
-            radius: 11,
-            backgroundColor: Colors.transparent,
-            backgroundImage: hasPhoto ? NetworkImage(googlePhotoUrl) : null,
-            child: !hasPhoto ? const GoogleLogoBadge(size: 22) : null,
-          ),
-        ),
-      );
-    }
-
-    if (isSelected) {
-      if (trailingChildren.isNotEmpty) {
-        trailingChildren.add(const SizedBox(width: 8));
-      }
-      trailingChildren.add(
-        Icon(Icons.check_circle_rounded, color: colorScheme.primary, size: 20),
-      );
-    }
-
-    if (trailingChildren.isEmpty) return null;
-    if (trailingChildren.length == 1) return trailingChildren.first;
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: trailingChildren,
     );
   }
 
@@ -347,7 +233,6 @@ class ProfileTile extends ConsumerWidget {
           final newProf = await ref.read(profilesListProvider.notifier).createProfile(name: 'NoteIt');
           await ref.read(activeProfileProvider.notifier).switchProfile(newProf);
         }
-        await Future.delayed(const Duration(milliseconds: 100));
       }
       await ref.read(profilesListProvider.notifier).deleteProfile(profile.id);
       if (context.mounted) {

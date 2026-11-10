@@ -28,8 +28,6 @@ class ProfileRepository {
   );
 
   /// Synchronously initializes the profile manifest file at app startup.
-  ///
-  /// Guarantees sub-millisecond execution so the active profile is ready before UI render.
   static Future<void> init() async {
     try {
       final dir = await getApplicationSupportDirectory();
@@ -95,9 +93,9 @@ class ProfileRepository {
   // CRUD OPERATIONS
   // =========================================================================
 
-  /// Returns an unmodifiable list of all profiles sorted by [lastUsedAt] descending.
+  /// Returns an unmodifiable list of all active (non-deleted) profiles sorted by [lastUsedAt] descending.
   List<Profile> getProfiles() {
-    final list = List<Profile>.from(_profiles);
+    final list = _profiles.where((p) => p.deletedAt == null).toList();
     list.sort((a, b) => b.lastUsedAt.compareTo(a.lastUsedAt));
     return List.unmodifiable(list);
   }
@@ -111,27 +109,10 @@ class ProfileRepository {
     }
   }
 
-  /// Checks whether [email] is already linked to another profile in the repository.
-  bool isEmailAlreadyLinked(String email, {String? excludeProfileId}) {
-    final target = email.trim().toLowerCase();
-    if (target.isEmpty) return false;
-
-    return _profiles.any((p) {
-      if (excludeProfileId != null && p.id == excludeProfileId) return false;
-      return p.linkedEmail?.trim().toLowerCase() == target;
-    });
-  }
-
   /// Creates and persists a brand new user profile with a unique database file.
   Future<Profile> createProfile({
     required String name,
-    String? displayName,
-    String? photoUrl,
-    String? linkedEmail,
     String syncMode = 'offline',
-    String? refreshToken,
-    String? idToken,
-    String? accessToken,
   }) async {
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final id = 'profile_$timestamp';
@@ -140,10 +121,7 @@ class ProfileRepository {
     final newProfile = Profile(
       id: id,
       name: name,
-      displayName: displayName,
-      photoUrl: photoUrl,
       dbFileName: dbFileName,
-      linkedEmail: linkedEmail,
       syncMode: syncMode,
       createdAt: DateTime.now().toUtc(),
       lastUsedAt: DateTime.now().toUtc(),
@@ -151,21 +129,6 @@ class ProfileRepository {
 
     _profiles.add(newProfile);
     await _saveManifest();
-
-    if (refreshToken != null && refreshToken.isNotEmpty) {
-      await ProfileSecureStorage.instance.saveProfileToken(
-        profileId: id,
-        token: refreshToken,
-      );
-    }
-
-    if (idToken != null && idToken.isNotEmpty) {
-      await ProfileSecureStorage.instance.saveProfileOAuthTokens(
-        profileId: id,
-        idToken: idToken,
-        accessToken: accessToken,
-      );
-    }
 
     AppLogger.d('ProfileRepository: Created new profile ${newProfile.name} (DB: $dbFileName)');
     return newProfile;
@@ -182,22 +145,6 @@ class ProfileRepository {
     return true;
   }
 
-  /// Unlinks Google account from [profileId], clearing email, display name, photo, and hardware token.
-  Future<bool> unlinkGoogleAccount(String profileId) async {
-    final profile = getProfileById(profileId);
-    if (profile == null) return false;
-
-    final updated = profile.copyWith(
-      linkedEmail: null,
-      displayName: null,
-      photoUrl: null,
-      syncMode: 'offline',
-    );
-
-    await ProfileSecureStorage.instance.deleteProfileToken(profileId);
-    return await updateProfile(updated);
-  }
-
   /// Updates the [lastUsedAt] timestamp for [profileId].
   Future<void> touchProfileLastUsed(String profileId) async {
     final profile = getProfileById(profileId);
@@ -207,7 +154,7 @@ class ProfileRepository {
     }
   }
 
-  /// Deletes a profile from the manifest and physically deletes its database file.
+  /// Soft deletes a profile or physically deletes its database file.
   Future<bool> deleteProfile(String profileId) async {
     final profile = getProfileById(profileId);
     if (profile == null) {
@@ -218,7 +165,6 @@ class ProfileRepository {
     _profiles.removeWhere((p) => p.id == profileId);
     await _saveManifest();
 
-    // Delete hardware-encrypted OAuth token if present
     await ProfileSecureStorage.instance.deleteProfileToken(profileId);
 
     // Physically delete SQLite file and auxiliary WAL/SHM files asynchronously

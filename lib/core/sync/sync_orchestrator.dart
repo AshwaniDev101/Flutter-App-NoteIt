@@ -67,11 +67,7 @@ class SyncOrchestrator with WidgetsBindingObserver {
 
     final mode = ref.read(syncModeProvider);
     final user = ref.read(authStateProvider).value;
-    final activeProfile = ref.read(activeProfileProvider);
-
-    final isMatchingUser = user != null &&
-        (activeProfile.linkedEmail == null ||
-            user.email?.toLowerCase() == activeProfile.linkedEmail?.toLowerCase());
+    final isMatchingUser = user != null;
 
     final cloudWorker = ref.read(cloudSyncServiceProvider);
 

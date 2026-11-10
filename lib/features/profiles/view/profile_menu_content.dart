@@ -323,19 +323,6 @@ class _ProfileMenuContentState extends ConsumerState<ProfileMenuContent> {
   Widget _buildHeader(BuildContext context, Profile activeProfile, User? authUser, SyncMode syncMode) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final isCloud = syncMode.isCloud;
-
-    final photoUrl = isCloud ? ProfileBadgeHelper.getEffectivePhotoUrl(activeProfile, authUser) : null;
-    final displayName = ProfileBadgeHelper.getEffectiveDisplayName(activeProfile, authUser);
-    final email = ProfileBadgeHelper.getEffectiveEmail(activeProfile, authUser, isCloud: isCloud);
-    final hasPhoto = photoUrl != null && photoUrl.isNotEmpty;
-    final isGoogleAuthView = ProfileBadgeHelper.isAuthForProfile(activeProfile, authUser);
-
-    final linkedEmail = activeProfile.linkedEmail ?? (authUser?.email);
-    final hasLinkedAccount = linkedEmail != null && linkedEmail.isNotEmpty;
-    final googlePhotoUrl = (authUser?.photoURL != null && authUser!.photoURL!.isNotEmpty)
-        ? authUser.photoURL
-        : activeProfile.photoUrl;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
@@ -345,67 +332,29 @@ class _ProfileMenuContentState extends ConsumerState<ProfileMenuContent> {
           CircleAvatar(
             radius: 20,
             backgroundColor: ProfileBadgeHelper.getColor(activeProfile.name),
-            backgroundImage: hasPhoto ? NetworkImage(photoUrl) : null,
-            child: !hasPhoto
-                ? Text(
-                    ProfileBadgeHelper.getInitial(activeProfile.name),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  )
-                : null,
+            child: Text(
+              ProfileBadgeHelper.getInitial(activeProfile.name),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        isCloud ? displayName : activeProfile.name,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w500,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    if (isCloud && isGoogleAuthView) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: colorScheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          activeProfile.name,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: colorScheme.onPrimaryContainer,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-                if (isCloud && isGoogleAuthView && email != null && email.isNotEmpty)
-                  Text(
-                    email,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                Text(
+                  activeProfile.name,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
                   ),
-                const SizedBox(height: 6),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
                 InkWell(
                   onTap: () {
                     widget.onCloseMenu();
@@ -416,8 +365,8 @@ class _ProfileMenuContentState extends ConsumerState<ProfileMenuContent> {
                   },
                   child: Text(
                     'Manage your profile',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: Colors.blue,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: colorScheme.primary,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -425,22 +374,6 @@ class _ProfileMenuContentState extends ConsumerState<ProfileMenuContent> {
               ],
             ),
           ),
-          if (!isCloud && hasLinkedAccount) ...[
-            const SizedBox(width: 12),
-            Tooltip(
-              message: 'Linked Account: $linkedEmail',
-              child: CircleAvatar(
-                radius: 12,
-                backgroundColor: Colors.transparent,
-                backgroundImage: googlePhotoUrl != null && googlePhotoUrl.isNotEmpty
-                    ? NetworkImage(googlePhotoUrl)
-                    : null,
-                child: (googlePhotoUrl == null || googlePhotoUrl.isEmpty)
-                    ? const GoogleLogoBadge(size: 24)
-                    : null,
-              ),
-            ),
-          ],
         ],
       ),
     );
@@ -525,22 +458,11 @@ class _ProfileMenuContentState extends ConsumerState<ProfileMenuContent> {
   Future<void> _handleSignOut(BuildContext context) async {
     widget.onCloseMenu();
 
-    final activeProfile = ref.read(activeProfileProvider);
-
-    // 1. Sign out from Firebase & Google
     await ref.read(authRepositoryProvider).signOut();
-
-    // 2. Unlink Google account from active profile if present (resets syncMode to offline)
-    if (activeProfile.linkedEmail != null) {
-      await ref.read(profilesListProvider.notifier).unlinkGoogleAccount(activeProfile.id);
-      final unlinked = ref.read(profileRepositoryProvider).getProfileById(activeProfile.id);
-      if (unlinked != null) {
-        ref.read(activeProfileProvider.notifier).updateActiveProfile(unlinked);
-      }
-    }
+    await ref.read(syncModeProvider.notifier).setMode(SyncMode.offline);
 
     SnackBarManager.show(
-      msg: 'Signed out and unlinked account successfully.',
+      msg: 'Signed out successfully. Switched to offline mode.',
       type: SnackBarMessageType.acknowledgment,
     );
   }
