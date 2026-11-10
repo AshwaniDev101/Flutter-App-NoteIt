@@ -402,13 +402,14 @@ class ReminderManager {
   Future<void> cancelAllNotifications() async {
     try {
       await _notificationsPlugin.cancelAll();
+    } catch (e, st) {
+      AppLogger.w('ReminderManager: Failed to cancel OS notifications: $e', e, st);
+    } finally {
       for (final timer in _desktopTimers.values) {
         timer.cancel();
       }
       _desktopTimers.clear();
       AppLogger.d('ReminderManager: Canceled all active system notifications and timers.');
-    } catch (e, st) {
-      AppLogger.w('ReminderManager: Failed to cancel all notifications', e, st);
     }
   }
 

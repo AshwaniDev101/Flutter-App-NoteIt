@@ -3,6 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
 
 import '../../core/config/app_env.dart';
+import '../../shared/note_card/core/note_action_controller.dart';
+import '../../shared/overlays/snack_bar_manager.dart';
+import '../archive/providers/archive_providers.dart';
+import '../trash/providers/trash_providers.dart';
 
 class SharedDrawerContent extends ConsumerStatefulWidget {
   final RightPanelPageOptions? selectedOption;
@@ -29,10 +33,98 @@ class _SharedDrawerContentState extends ConsumerState<SharedDrawerContent> {
     super.dispose();
   }
 
+  void _showTrashContextMenu(BuildContext context, TapUpDetails details) async {
+    final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+    final position = RelativeRect.fromRect(
+      Rect.fromLTWH(details.globalPosition.dx, details.globalPosition.dy, 0, 0),
+      Offset.zero & overlay.size,
+    );
+
+    final selected = await showMenu<String>(
+      context: context,
+      position: position,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 8,
+      items: [
+        PopupMenuItem<String>(
+          value: 'clear_trash',
+          height: 40,
+          child: Row(
+            children: [
+              Icon(
+                Icons.delete_forever_outlined,
+                size: 18,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Clear trash',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.error,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+
+    if (selected == 'clear_trash' && context.mounted) {
+      _handleEmptyTrash(context);
+    }
+  }
+
+  Future<void> _handleEmptyTrash(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Empty Trash?'),
+        content: const Text(
+          'This will permanently delete all notes and folders in the trash. Action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Empty Trash'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      try {
+        SnackBarManager.show(msg: 'Emptying trash...', type: SnackBarMessageType.info);
+
+        await ref.read(noteActionsControllerProvider).emptyLocalAndCloudTrash();
+
+        if (context.mounted) {
+          SnackBarManager.show(msg: 'Trash emptied successfully.', type: SnackBarMessageType.acknowledgment);
+        }
+      } catch (e) {
+        if (context.mounted) {
+          SnackBarManager.show(msg: 'Error emptying trash', description: '$e', type: SnackBarMessageType.error);
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+
+    final trashNotesState = ref.watch(trashNotesProvider);
+    final archivedNotesState = ref.watch(archivedNotesStreamProvider);
+
+    final trashCount = trashNotesState.value?.length;
+    final archiveCount = archivedNotesState.value?.length;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -98,67 +190,70 @@ class _SharedDrawerContentState extends ConsumerState<SharedDrawerContent> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const _SectionHeader(title: 'WORKSPACE'),
-                    _CompactDrawerTile(
-                      option: RightPanelPageOptions.trash,
-                      isSelected: widget.selectedOption == RightPanelPageOptions.trash,
-                      onTap: () => widget.onOptionSelected(RightPanelPageOptions.trash),
-                    ),
-                    const SizedBox(height: 16),
+                  _CompactDrawerTile(
+                    option: RightPanelPageOptions.trash,
+                    isSelected: widget.selectedOption == RightPanelPageOptions.trash,
+                    onTap: () => widget.onOptionSelected(RightPanelPageOptions.trash),
+                    onSecondaryTapUp: (details) => _showTrashContextMenu(context, details),
+                    count: trashCount,
+                  ),
+                  const SizedBox(height: 16),
 
-                    const _SectionHeader(title: 'SYSTEM'),
-                    _CompactDrawerTile(
-                      option: RightPanelPageOptions.localSync,
-                      isSelected: widget.selectedOption == RightPanelPageOptions.localSync,
-                      onTap: () => widget.onOptionSelected(RightPanelPageOptions.localSync),
-                    ),
-                    _CompactDrawerTile(
-                      option: RightPanelPageOptions.themes,
-                      isSelected: widget.selectedOption == RightPanelPageOptions.themes,
-                      onTap: () => widget.onOptionSelected(RightPanelPageOptions.themes),
-                    ),
-                    _CompactDrawerTile(
-                      option: RightPanelPageOptions.settings,
-                      isSelected: widget.selectedOption == RightPanelPageOptions.settings,
-                      onTap: () => widget.onOptionSelected(RightPanelPageOptions.settings),
-                    ),
-                    _CompactDrawerTile(
-                      option: RightPanelPageOptions.devTools,
-                      isSelected: widget.selectedOption == RightPanelPageOptions.devTools,
-                      onTap: () => widget.onOptionSelected(RightPanelPageOptions.devTools),
-                    ),
-                    _CompactDrawerTile(
-                      option: RightPanelPageOptions.archivePage,
-                      isSelected: widget.selectedOption == RightPanelPageOptions.archivePage,
-                      onTap: () => widget.onOptionSelected(RightPanelPageOptions.archivePage),
-                    ),
+                  const _SectionHeader(title: 'SYSTEM'),
+                  _CompactDrawerTile(
+                    option: RightPanelPageOptions.localSync,
+                    isSelected: widget.selectedOption == RightPanelPageOptions.localSync,
+                    onTap: () => widget.onOptionSelected(RightPanelPageOptions.localSync),
+                  ),
+                  _CompactDrawerTile(
+                    option: RightPanelPageOptions.themes,
+                    isSelected: widget.selectedOption == RightPanelPageOptions.themes,
+                    onTap: () => widget.onOptionSelected(RightPanelPageOptions.themes),
+                  ),
+                  _CompactDrawerTile(
+                    option: RightPanelPageOptions.settings,
+                    isSelected: widget.selectedOption == RightPanelPageOptions.settings,
+                    onTap: () => widget.onOptionSelected(RightPanelPageOptions.settings),
+                  ),
+                  _CompactDrawerTile(
+                    option: RightPanelPageOptions.devTools,
+                    isSelected: widget.selectedOption == RightPanelPageOptions.devTools,
+                    onTap: () => widget.onOptionSelected(RightPanelPageOptions.devTools),
+                  ),
+                  _CompactDrawerTile(
+                    option: RightPanelPageOptions.archivePage,
+                    isSelected: widget.selectedOption == RightPanelPageOptions.archivePage,
+                    onTap: () => widget.onOptionSelected(RightPanelPageOptions.archivePage),
+                    count: archiveCount,
+                  ),
 
-                    const SizedBox(height: 24),
+                  const SizedBox(height: 24),
 
-                    // Version Info
-                    Padding(
-                      padding: const EdgeInsets.only(left: 12.0, bottom: 16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SelectableText(
-                            "Version: ${AppEnv.version}",
-                            style: theme.textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
-                          ),
-                          const SizedBox(height: 2),
-                          SelectableText(
-                            "Build: ${AppEnv.buildNumber}",
-                            style: theme.textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
-                          ),
-                        ],
-                      ),
+                  // Version Info
+                  Padding(
+                    padding: const EdgeInsets.only(left: 12.0, bottom: 16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SelectableText(
+                          "Version: ${AppEnv.version}",
+                          style: theme.textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                        ),
+                        const SizedBox(height: 2),
+                        SelectableText(
+                          "Build: ${AppEnv.buildNumber}",
+                          style: theme.textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
-        ],
-      );
+        ),
+      ],
+    );
   }
 }
 
@@ -187,8 +282,16 @@ class _CompactDrawerTile extends StatelessWidget {
   final RightPanelPageOptions option;
   final bool isSelected;
   final VoidCallback onTap;
+  final void Function(TapUpDetails details)? onSecondaryTapUp;
+  final int? count;
 
-  const _CompactDrawerTile({required this.option, required this.isSelected, required this.onTap});
+  const _CompactDrawerTile({
+    required this.option,
+    required this.isSelected,
+    required this.onTap,
+    this.onSecondaryTapUp,
+    this.count,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -199,6 +302,7 @@ class _CompactDrawerTile extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 2),
       child: InkWell(
         onTap: onTap,
+        onSecondaryTapUp: onSecondaryTapUp,
         borderRadius: BorderRadius.circular(8),
         child: Container(
           decoration: BoxDecoration(
@@ -209,9 +313,9 @@ class _CompactDrawerTile extends StatelessWidget {
           child: Row(
             children: [
               Icon(
-                  option.icon,
-                  size: 20,
-                  color: isSelected ? colorScheme.onSecondaryContainer : colorScheme.onSurfaceVariant
+                option.icon,
+                size: 20,
+                color: isSelected ? colorScheme.onSecondaryContainer : colorScheme.onSurfaceVariant,
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -223,6 +327,27 @@ class _CompactDrawerTile extends StatelessWidget {
                   ),
                 ),
               ),
+              if (count != null) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? colorScheme.onSecondaryContainer.withValues(alpha: 0.1)
+                        : colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '$count',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: isSelected
+                          ? colorScheme.onSecondaryContainer
+                          : colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
