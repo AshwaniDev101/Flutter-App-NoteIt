@@ -27,66 +27,69 @@ class _WorkspaceAvatarBadgeState extends State<WorkspaceAvatarBadge> {
 
     return Tooltip(
       message: 'Workspaces',
-      child: Material(
-        color: WorkspaceBadgeHelper.getColor(widget.activeWorkspaceName),
-        shape: const CircleBorder(),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          customBorder: const CircleBorder(),
-          onHover: (hovered) {
-            if (_isHovered != hovered) {
-              setState(() => _isHovered = hovered);
-            }
-          },
-          onTap: widget.onTap,
-          onSecondaryTap: widget.onTap,
-          child: SizedBox(
-            height: 24,
-            width: 24,
-            child: Stack(
-              children: [
-                if (hasPhoto)
-                  Positioned.fill(
-                    child: Image.network(
-                      widget.photoUrl!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Center(
-                          child: Text(
-                            WorkspaceBadgeHelper.getInitial(widget.activeWorkspaceName),
-                            style: const TextStyle(
-                              fontSize: 10,
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onHover: (hovered) {
+          if (_isHovered != hovered) {
+            setState(() => _isHovered = hovered);
+          }
+        },
+        onTap: widget.onTap,
+        onSecondaryTap: widget.onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(4.0),
+          child: Material(
+            color: WorkspaceBadgeHelper.getColor(widget.activeWorkspaceName),
+            shape: const CircleBorder(),
+            clipBehavior: Clip.antiAlias,
+            child: SizedBox(
+              height: 32,
+              width: 32,
+              child: Stack(
+                children: [
+                  if (hasPhoto)
+                    Positioned.fill(
+                      child: Image.network(
+                        widget.photoUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Center(
+                            child: Text(
+                              WorkspaceBadgeHelper.getInitial(widget.activeWorkspaceName),
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
-                        );
-                      },
+                          );
+                        },
+                      ),
+                    )
+                  else
+                    Center(
+                      child: Text(
+                        WorkspaceBadgeHelper.getInitial(widget.activeWorkspaceName),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
-                  )
-                else
-                  Center(
-                    child: Text(
-                      WorkspaceBadgeHelper.getInitial(widget.activeWorkspaceName),
-                      style: const TextStyle(
-                        fontSize: 10,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
+                  Positioned.fill(
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: _isHovered
+                            ? Colors.white.withValues(alpha: 0.25)
+                            : Colors.transparent,
                       ),
                     ),
                   ),
-                Positioned.fill(
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 150),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: _isHovered
-                          ? Colors.white.withValues(alpha: 0.25)
-                          : Colors.transparent,
-                    ),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

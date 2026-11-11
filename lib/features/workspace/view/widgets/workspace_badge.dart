@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:noteit/database/firebase/auth/firebase_provider.dart';
 
 import '../../../../core/helpers/platform_helper.dart';
-import '../../../../core/sync/sync_engine.dart';
 import '../../../../shared/menus/app_bottom_sheet.dart';
 import '../../providers/active_workspace_provider.dart';
-import '../helpers/workspace_badge_helper.dart';
 import '../workspace_menu_content.dart';
 import 'workspace_avatar_badge.dart';
 
@@ -34,15 +31,8 @@ class _WorkspaceBadgeState extends ConsumerState<WorkspaceBadge> {
   @override
   Widget build(BuildContext context) {
     final activeWorkspace = ref.watch(activeWorkspaceProvider);
-    final authUser = ref.watch(authStateProvider).value;
-    final syncMode = ref.watch(syncModeProvider);
     final colorScheme = Theme.of(context).colorScheme;
     final isMobile = !PlatformHelper.isWideLayout(context);
-
-    final activePhotoUrl = WorkspaceBadgeHelper.getEffectivePhotoUrl(
-      authUser,
-      isCloudMode: syncMode.isCloud,
-    );
 
     void openWorkspaceMenu() {
       if (isMobile) {
@@ -58,7 +48,7 @@ class _WorkspaceBadgeState extends ConsumerState<WorkspaceBadge> {
 
     final avatarWidget = WorkspaceAvatarBadge(
       activeWorkspaceName: activeWorkspace.name,
-      photoUrl: activePhotoUrl,
+      photoUrl: null,
       onTap: openWorkspaceMenu,
     );
 

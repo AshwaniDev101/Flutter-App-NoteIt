@@ -5,6 +5,7 @@ import 'package:noteit/core/helpers/platform_helper.dart';
 import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/database/drift/notes/notes_dao.dart';
 
+import '../../../shared/app_bars/floating_bottom_app_bar.dart';
 import '../../../shared/app_bars/top_select_mode_appbar.dart';
 import '../../../shared/note_card/core/note_action.dart';
 import '../../../shared/overlays/app_scaffold.dart';
@@ -318,8 +319,7 @@ class _TrashPageState extends ConsumerState<TrashPage> with WidgetsBindingObserv
             ),
 
             if (!PlatformHelper.isWideLayout(context) && !trashState.isSelectMode)
-              const BottomAppBar(
-                elevation: 8.0,
+              const FloatingBottomAppBar(
                 child: TrashControlBar(),
               ),
           ],

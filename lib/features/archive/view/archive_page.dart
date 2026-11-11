@@ -8,6 +8,7 @@ import 'package:noteit/core/util/device_info.dart';
 import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/database/drift/notes/notes_dao.dart';
 import '../../../shared/app_bars/app_search_bar.dart';
+import '../../../shared/app_bars/floating_bottom_app_bar.dart';
 import '../../../shared/app_bars/top_select_mode_appbar.dart';
 import '../../../shared/menus/sort_menu_button.dart';
 import '../../../shared/menus/view_menu_button.dart';
@@ -414,8 +415,7 @@ class _ArchivePageState extends ConsumerState<ArchivePage> with WidgetsBindingOb
 
             // Bottom control bar for Mobile / Compact layout
             if (!PlatformHelper.isWideLayout(context) && !isSelectMode)
-              BottomAppBar(
-                elevation: 8.0,
+              FloatingBottomAppBar(
                 child: _buildControlBarContent(),
               ),
           ],

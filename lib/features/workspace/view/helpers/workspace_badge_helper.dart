@@ -45,9 +45,6 @@ class WorkspaceBadgeHelper {
   }
 
   static String? getEffectivePhotoUrl(User? authUser, {required bool isCloudMode}) {
-    if (isCloudMode) {
-      return authUser?.photoURL;
-    }
     return null;
   }
 

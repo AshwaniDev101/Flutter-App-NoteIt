@@ -9,6 +9,7 @@ import '../../features/home/view/desktop/content_panel/core/navigator.dart';
 import '../../features/home/viewmodel/viewmodel.dart';
 import '../note_card/core/note_action.dart';
 import '../note_card/core/note_action_controller.dart';
+import 'floating_bottom_app_bar.dart';
 
 class BottomSelectModeAppBar extends ConsumerWidget {
   final List<NoteAction> noteActions;
@@ -97,7 +98,7 @@ class BottomSelectModeAppBar extends ConsumerWidget {
     final firstFour = noteActions.take(4).toList();
     final remainingActions = noteActions.skip(4).toList();
 
-    return BottomAppBar(
+    return FloatingBottomAppBar(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
