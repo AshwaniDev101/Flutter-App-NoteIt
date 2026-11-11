@@ -349,6 +349,121 @@ class SettingsSwitchTile extends StatelessWidget {
   }
 }
 
+/// Standardized single-selection option tile (with leading icon, title, subtitle, and checkmark)
+/// used in settings options lists.
+class SettingsSelectionTile extends StatelessWidget {
+  /// Icon displayed on the left side of the tile.
+  final IconData? icon;
+
+  /// Widget displayed in place of the default icon.
+  final Widget? leading;
+
+  /// Primary label title.
+  final String title;
+
+  /// Optional description subtitle text.
+  final String? subtitle;
+
+  /// Whether this option tile is currently selected.
+  final bool isSelected;
+
+  /// Callback executed when the tile is tapped.
+  final VoidCallback? onTap;
+
+  /// Content padding around the tile. Defaults to `(horizontal: 16, vertical: 8)`.
+  final EdgeInsetsGeometry contentPadding;
+
+  const SettingsSelectionTile({
+    super.key,
+    this.icon,
+    this.leading,
+    required this.title,
+    this.subtitle,
+    required this.isSelected,
+    this.onTap,
+    this.contentPadding = const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDesktop = PlatformHelper.isDesktopScreen;
+
+    final leadingWidget = leading ??
+        (icon != null
+            ? AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? colorScheme.primary.withValues(alpha: 0.12)
+                      : colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  icon,
+                  size: 20,
+                  color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
+                ),
+              )
+            : null);
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      decoration: BoxDecoration(
+        color: isSelected
+            ? colorScheme.primary.withValues(alpha: 0.08)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: ListTile(
+        dense: isDesktop,
+        visualDensity: isDesktop ? VisualDensity.compact : VisualDensity.standard,
+        contentPadding: contentPadding,
+        hoverColor: colorScheme.primary.withValues(alpha: 0.04),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        leading: leadingWidget,
+        title: Text(
+          title,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+            color: isSelected ? colorScheme.primary : theme.textTheme.titleMedium?.color,
+          ),
+        ),
+        subtitle: subtitle != null
+            ? Text(
+                subtitle!,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              )
+            : null,
+        trailing: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          transitionBuilder: (child, animation) => ScaleTransition(
+            scale: animation,
+            child: child,
+          ),
+          child: isSelected
+              ? Icon(
+                  Icons.check_circle_rounded,
+                  key: const ValueKey('selected'),
+                  size: 22,
+                  color: colorScheme.primary,
+                )
+              : const SizedBox(
+                  key: ValueKey('unselected'),
+                  width: 22,
+                  height: 22,
+                ),
+        ),
+        onTap: onTap,
+      ),
+    );
+  }
+}
+
 /// Standardized slider setting tile with a title, icon, formatted value label, and slider bar.
 class SettingsSliderTile extends StatelessWidget {
   /// Section title for the slider option.

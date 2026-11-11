@@ -10,6 +10,7 @@ import '../../../features/lock/lock_manger/lock_manager.dart';
 import '../../../features/reminder/reminder_manager.dart';
 import '../data/workspace_repository.dart';
 import '../models/workspace_model.dart';
+import 'workspace_providers.dart';
 
 class WorkspaceSwitchingState {
   final bool isSwitching;
@@ -102,6 +103,7 @@ class ActiveWorkspaceNotifier extends Notifier<Workspace> {
       // 5. Update SharedPreferences & touch lastUsedAt timestamp
       await ref.read(sharedPreferenceProvider).setActiveWorkspaceId(targetWorkspace.id);
       await WorkspaceRepository.instance.touchWorkspaceLastUsed(targetWorkspace.id);
+      ref.read(workspacesListProvider.notifier).refresh();
 
       // 6. Update state -> triggers Riverpod rebuild, syncModeProvider update & SQLite handle swap
       state = targetWorkspace;

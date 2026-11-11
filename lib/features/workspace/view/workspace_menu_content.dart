@@ -60,11 +60,47 @@ class _WorkspaceMenuContentState extends ConsumerState<WorkspaceMenuContent> {
     required User? authUser,
     required SyncMode syncMode,
   }) {
+    final recentWorkspaces = ref
+        .watch(workspacesListProvider)
+        .where((w) => w.id != activeWorkspace.id)
+        .toList()
+      ..sort((a, b) => b.lastUsedAt.compareTo(a.lastUsedAt));
+    final top3Recent = recentWorkspaces.take(3).toList();
+
+    final colorSchema = Theme.of(context).colorScheme;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildHeader(context, activeWorkspace, authUser, syncMode),
+        if (top3Recent.isNotEmpty) ...[
+          const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+            child: Text(
+              'Recent',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(color: colorSchema.onSurfaceVariant),
+            ),
+          ),
+          ...top3Recent.map((workspace) {
+            return WorkspaceTile(
+              workspace: workspace,
+              activeWorkspace: activeWorkspace,
+              authUser: authUser,
+              onMenuDismiss: widget.onCloseMenu,
+              onSelect: (selectedWorkspace) async {
+                widget.onCloseMenu();
+                if (selectedWorkspace.id != activeWorkspace.id) {
+                  await ref.read(activeWorkspaceProvider.notifier).switchWorkspace(selectedWorkspace);
+                  SnackBarManager.show(
+                    msg: 'Switched to workspace "${selectedWorkspace.name}".',
+                    type: SnackBarMessageType.acknowledgment,
+                  );
+                }
+              },
+            );
+          }),
+        ],
         const Divider(height: 1),
         _buildExpandableTile(
           context: context,
@@ -76,24 +112,37 @@ class _WorkspaceMenuContentState extends ConsumerState<WorkspaceMenuContent> {
             });
           },
         ),
-        if (syncMode.isCloud) ...[
-          const Divider(height: 1),
-          if (authUser != null)
-            _buildActionItem(
+        const Divider(height: 1),
+        _buildActionItem(
+          context: context,
+          icon: Icons.add_circle_outline_rounded,
+          title: 'Create new workspace',
+          onTap: () {
+            widget.onCloseMenu();
+            showDialog(
               context: context,
-              icon: Icons.logout_rounded,
-              title: 'Sign out',
-              onTap: () => _handleSignOut(context),
-            )
-          else
-            _buildActionItem(
-              context: context,
-              icon: Icons.login_rounded,
-              title: 'Sign in with Google',
-              onTap: () => _handleSignIn(context),
-            ),
-        ],
-        const SizedBox(height: 8),
+              builder: (ctx) => const CreateWorkspaceDialog(),
+            );
+          },
+        ),
+        // if (syncMode.isCloud) ...[
+        //   const Divider(height: 1),
+        //   if (authUser != null)
+        //     _buildActionItem(
+        //       context: context,
+        //       icon: Icons.logout_rounded,
+        //       title: 'Sign out',
+        //       onTap: () => _handleSignOut(context),
+        //     )
+        //   else
+        //     _buildActionItem(
+        //       context: context,
+        //       icon: Icons.login_rounded,
+        //       title: 'Sign in with Google',
+        //       onTap: () => _handleSignIn(context),
+        //     ),
+        // ],
+        // const SizedBox(height: 8),
       ],
     );
   }
@@ -153,11 +202,16 @@ class _WorkspaceMenuContentState extends ConsumerState<WorkspaceMenuContent> {
           );
         }),
         const Divider(height: 1),
-        _buildCreateWorkspaceTile(
-          context,
-          onSelect: () {
+        _buildActionItem(
+          context: context,
+          icon: Icons.add_circle_outline_rounded,
+          title: 'Create new workspace',
+          onTap: () {
             widget.onCloseMenu();
-            showDialog(context: context, builder: (ctx) => const CreateWorkspaceDialog());
+            showDialog(
+              context: context,
+              builder: (ctx) => const CreateWorkspaceDialog(),
+            );
           },
         ),
         const SizedBox(height: 8),
@@ -238,14 +292,51 @@ class _WorkspaceMenuContentState extends ConsumerState<WorkspaceMenuContent> {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  activeWorkspace.name,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        activeWorkspace.name,
+                        style: theme.textTheme.titleLarge,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    InkWell(
+                      onTap: () {
+                        widget.onCloseMenu();
+                        showDialog(
+                          context: context,
+                          builder: (ctx) => CreateWorkspaceDialog(workspaceToEdit: activeWorkspace),
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(4),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.edit_outlined,
+                              size: 16,
+                              color: colorScheme.primary,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Manage',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: colorScheme.primary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 if (syncMode.isCloud) ...[
                   const SizedBox(height: 2),
@@ -273,35 +364,6 @@ class _WorkspaceMenuContentState extends ConsumerState<WorkspaceMenuContent> {
                     ],
                   ),
                 ],
-                const SizedBox(height: 4),
-                InkWell(
-                  onTap: () {
-                    widget.onCloseMenu();
-                    showDialog(
-                      context: context,
-                      builder: (ctx) => CreateWorkspaceDialog(workspaceToEdit: activeWorkspace),
-                    );
-                  },
-                  borderRadius: BorderRadius.circular(4),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.edit_outlined,
-                        size: 14,
-                        color: colorScheme.primary,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Edit workspace',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: colorScheme.primary,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
               ],
             ),
           ),
@@ -329,7 +391,7 @@ class _WorkspaceMenuContentState extends ConsumerState<WorkspaceMenuContent> {
             Expanded(
               child: Text(
                 title,
-                style: theme.textTheme.bodyLarge?.copyWith(
+                style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w400,
                 ),
               ),
@@ -337,28 +399,6 @@ class _WorkspaceMenuContentState extends ConsumerState<WorkspaceMenuContent> {
             if (trailing != null) ...[trailing],
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildCreateWorkspaceTile(BuildContext context, {required VoidCallback onSelect}) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      child: ListTile(
-        dense: true,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        leading: Icon(Icons.add_circle_outline_rounded, color: colorScheme.primary, size: 20),
-        title: Text(
-          'Create New Workspace',
-          style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.primary, fontWeight: FontWeight.w600),
-        ),
-        onTap: onSelect,
       ),
     );
   }

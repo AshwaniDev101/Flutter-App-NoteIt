@@ -63,8 +63,8 @@ class _SharedDrawerContentState extends ConsumerState<SharedDrawerContent> {
               Text(
                 'Clear trash',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
+                  color: Theme.of(context).colorScheme.error,
+                ),
               ),
             ],
           ),
@@ -135,33 +135,21 @@ class _SharedDrawerContentState extends ConsumerState<SharedDrawerContent> {
       children: [
         // --- App Branding Header ---
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
           child: Row(
             children: [
-              Container(
+              Image.asset(
+                'assets/icons/note_icon.png',
                 width: 32,
                 height: 32,
-                padding: const EdgeInsets.all(5),
-                decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: colorScheme.primary.withValues(alpha: 0.2),
-                    width: 1,
-                  ),
-                ),
-                child: Image.asset(
-                  'assets/icons/note_icon.png',
-                  fit: BoxFit.contain,
-                ),
+                fit: BoxFit.contain,
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               RichText(
                 text: TextSpan(
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w900,
                     letterSpacing: 0.5,
-                    fontSize: 18,
                   ),
                   children: [
                     TextSpan(
@@ -179,13 +167,17 @@ class _SharedDrawerContentState extends ConsumerState<SharedDrawerContent> {
           ),
         ),
 
+        Divider(height: 1, color: colorScheme.outlineVariant.withValues(alpha: 0.3)),
+        const SizedBox(height: 12),
 
-        const SizedBox(height: 8),
         // --- Account Header & Auth Actions ---
         const _DrawerAuthHeaderWidget(),
+
+        const SizedBox(height: 12),
+        Divider(height: 1, indent: 16, endIndent: 16, color: colorScheme.outlineVariant.withValues(alpha: 0.3)),
         const SizedBox(height: 8),
 
-        // --- 2. Scrollable Navigation ---
+        // --- Scrollable Navigation ---
         Flexible(
           fit: FlexFit.loose,
           child: Scrollbar(
@@ -207,7 +199,9 @@ class _SharedDrawerContentState extends ConsumerState<SharedDrawerContent> {
                     onSecondaryTapUp: (details) => _showTrashContextMenu(context, details),
                     count: trashCount,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
+
+                  Divider(height: 24, color: colorScheme.outlineVariant.withValues(alpha: 0.2)),
 
                   const _SectionHeader(title: 'SYSTEM'),
                   _DrawerTile(
@@ -242,26 +236,37 @@ class _SharedDrawerContentState extends ConsumerState<SharedDrawerContent> {
                     count: archiveCount,
                   ),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 32),
 
-                  // Version Info
-                  Padding(
-                    padding: const EdgeInsets.only(left: 12.0, bottom: 16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SelectableText(
-                          "Version: ${AppEnv.version}",
-                          style: theme.textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
-                        ),
-                        const SizedBox(height: 2),
-                        SelectableText(
-                          "Build: ${AppEnv.buildNumber}",
-                          style: theme.textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
-                        ),
-                      ],
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          SelectableText(
+                            "Version ${AppEnv.version}",
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          SelectableText(
+                            "Build ${AppEnv.buildNumber}",
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
+                  const SizedBox(height: 24),
                 ],
               ),
             ),
@@ -279,21 +284,22 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Padding(
-      padding: const EdgeInsets.only(left: 12, top: 16, bottom: 6),
+      padding: const EdgeInsets.only(left: 4, top: 8, bottom: 12),
       child: Text(
         title,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          letterSpacing: 1.0,
-          fontWeight: FontWeight.bold,
-          color: Theme.of(context).colorScheme.primary,
+          letterSpacing: 1.2,
+          fontWeight: FontWeight.w700,
+          color: colorScheme.primary.withValues(alpha: 0.8),
         ),
       ),
     );
   }
 }
 
-/// Generalized Drawer Tile used for both Navigation and Auth Actions
 class _DrawerTile extends StatelessWidget {
   final String label;
   final Widget icon;
@@ -322,23 +328,29 @@ class _DrawerTile extends StatelessWidget {
         (isSelected ? colorScheme.onSecondaryContainer : colorScheme.onSurfaceVariant);
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 2),
+      padding: const EdgeInsets.only(bottom: 4),
       child: InkWell(
         onTap: onTap,
         onSecondaryTapUp: onSecondaryTapUp,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
+        borderRadius: BorderRadius.circular(10),
+        hoverColor: colorScheme.onSurface.withValues(alpha: 0.04),
+        splashColor: colorScheme.primary.withValues(alpha: 0.1),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
           decoration: BoxDecoration(
             color: isSelected ? colorScheme.secondaryContainer : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(10),
+            border: isSelected
+                ? Border.all(color: colorScheme.secondaryContainer, width: 1)
+                : Border.all(color: Colors.transparent, width: 1),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           child: Row(
             children: [
               IconTheme(
                 data: IconThemeData(
                   color: contentColor,
-                  size: 20,
+                  size: 22,
                 ),
                 child: icon,
               ),
@@ -347,7 +359,7 @@ class _DrawerTile extends StatelessWidget {
                 child: Text(
                   label,
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                     color: contentColor,
                   ),
                 ),
@@ -355,20 +367,20 @@ class _DrawerTile extends StatelessWidget {
               if (count != null) ...[
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? colorScheme.onSecondaryContainer.withValues(alpha: 0.1)
-                        : colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                        ? colorScheme.onSecondaryContainer.withValues(alpha: 0.15)
+                        : colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     '$count',
                     style: theme.textTheme.labelSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w800,
                       color: isSelected
                           ? colorScheme.onSecondaryContainer
-                          : colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                          : colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ),
@@ -393,34 +405,26 @@ class _DrawerAuthHeaderWidget extends ConsumerWidget {
     return authState.when(
       data: (user) {
         if (user == null) {
-          // Unauthenticated State: Profile header + Sign-in drawer tile
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: _DrawerTile(
-                  label: 'Sign in to sync',
-                  icon: const GoogleLogoBadge(size: 20),
-                  isSelected: false,
-                  onTap: () async {
-                    final authRepo = ref.read(authRepositoryProvider);
-                    final signedInUser = await authRepo.signInWithGoogle();
-                    if (signedInUser != null) {
-                      SnackBarManager.show(
-                        msg: 'Signed in as ${signedInUser.email}',
-                        type: SnackBarMessageType.acknowledgment,
-                      );
-                    }
-                  },
-                ),
-              ),
-            ],
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: _DrawerTile(
+              label: 'Sign in to sync',
+              icon: const GoogleLogoBadge(size: 20),
+              isSelected: false,
+              onTap: () async {
+                final authRepo = ref.read(authRepositoryProvider);
+                final signedInUser = await authRepo.signInWithGoogle();
+                if (signedInUser != null) {
+                  SnackBarManager.show(
+                    msg: 'Signed in as ${signedInUser.email}',
+                    type: SnackBarMessageType.acknowledgment,
+                  );
+                }
+              },
+            ),
           );
         }
 
-        // Authenticated State: Profile Header + Sign-out drawer tile
         return Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -430,13 +434,13 @@ class _DrawerAuthHeaderWidget extends ConsumerWidget {
               child: Row(
                 children: [
                   CircleAvatar(
-                    radius: 18,
+                    radius: 20,
                     backgroundColor: colorScheme.primaryContainer,
                     backgroundImage: user.photoURL != null ? NetworkImage(user.photoURL!) : null,
                     child: user.photoURL == null
                         ? Text(
                       (user.displayName?.isNotEmpty == true ? user.displayName![0] : (user.email?[0] ?? 'U')).toUpperCase(),
-                      style: TextStyle(color: colorScheme.onPrimaryContainer, fontWeight: FontWeight.bold, fontSize: 14),
+                      style: TextStyle(color: colorScheme.onPrimaryContainer, fontWeight: FontWeight.bold, fontSize: 16),
                     )
                         : null,
                   ),
@@ -449,7 +453,7 @@ class _DrawerAuthHeaderWidget extends ConsumerWidget {
                         Text(
                           user.displayName ?? 'Google User',
                           style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.bold,
                             color: colorScheme.onSurface,
                           ),
                           maxLines: 1,
