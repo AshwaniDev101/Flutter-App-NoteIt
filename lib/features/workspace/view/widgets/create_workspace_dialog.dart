@@ -96,6 +96,8 @@ class _CreateWorkspaceDialogState extends ConsumerState<CreateWorkspaceDialog> {
     if (widget.isEditing) {
       final updated = widget.workspaceToEdit!.copyWith(
         name: name,
+        updateCounter: widget.workspaceToEdit!.updateCounter + 1,
+        lastUsedAt: DateTime.now().toUtc(),
       );
       await ref.read(workspacesListProvider.notifier).updateWorkspace(updated);
 

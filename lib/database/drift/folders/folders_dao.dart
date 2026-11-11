@@ -288,6 +288,16 @@ class FoldersDao extends DatabaseAccessor<LocalDatabase> with _$FoldersDaoMixin 
     } else {
       await into(folders).insert(companion);
     }
+
+    // If folder is soft-deleted, unassign any local notes referencing this folder
+    if (companion.deletedAt.present && companion.deletedAt.value != null) {
+      final affectedNotes = await (select(notes)..where((t) => t.folderId.equals(incomingUuid))).get();
+      for (final note in affectedNotes) {
+        await (update(notes)..where((t) => t.uuid.equals(note.uuid))).write(
+          const NotesCompanion(folderId: Value(null)),
+        );
+      }
+    }
   }
 
   Future<List<Folder>> getAllFolders() async {

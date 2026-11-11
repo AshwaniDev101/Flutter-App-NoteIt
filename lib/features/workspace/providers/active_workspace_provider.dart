@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/sync/sync_orchestrator.dart';
 import '../../../core/util/logger.dart';
 import '../../../database/shared_preference/shared_preference_manager.dart';
 import '../../../features/cloud_sync/data/cloud_sync_service.dart';
@@ -75,6 +76,7 @@ class ActiveWorkspaceNotifier extends Notifier<Workspace> {
   /// 5. Saves [targetWorkspace.id] in SharedPreferences & updates `lastUsedAt`.
   /// 6. Updates Riverpod state -> triggers SQLite connection swap via `localDatabaseProvider`.
   /// 7. Re-arms pending reminders from the new active workspace's database.
+  /// 8. Re-evaluates sync orchestrator state so sync engine re-binds to new workspace.
   Future<void> switchWorkspace(Workspace targetWorkspace) async {
     if (state.id == targetWorkspace.id || _isSwitching) return;
 
@@ -112,6 +114,7 @@ class ActiveWorkspaceNotifier extends Notifier<Workspace> {
       await Future.delayed(const Duration(milliseconds: 200));
       _isSwitching = false;
       ref.read(workspaceSwitchingProvider.notifier).endSwitch();
+      ref.read(syncOrchestratorProvider).evaluateState();
     }
   }
 

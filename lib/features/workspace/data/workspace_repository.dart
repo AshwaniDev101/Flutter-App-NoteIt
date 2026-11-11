@@ -112,7 +112,6 @@ class WorkspaceRepository {
   /// Creates and persists a brand new user workspace with a unique database file.
   Future<Workspace> createWorkspace({
     required String name,
-    String syncMode = 'offline',
   }) async {
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final id = 'workspace_$timestamp';
@@ -122,7 +121,6 @@ class WorkspaceRepository {
       id: id,
       name: name,
       dbFileName: dbFileName,
-      syncMode: syncMode,
       createdAt: DateTime.now().toUtc(),
       lastUsedAt: DateTime.now().toUtc(),
     );
@@ -134,15 +132,22 @@ class WorkspaceRepository {
     return newWorkspace;
   }
 
+  /// Updates or inserts a workspace in the manifest and persists changes to disk.
+  Future<bool> upsertWorkspace(Workspace workspace) async {
+    final index = _workspaces.indexWhere((p) => p.id == workspace.id);
+    if (index != -1) {
+      _workspaces[index] = workspace;
+    } else {
+      _workspaces.add(workspace);
+    }
+    await _saveManifest();
+    AppLogger.d('WorkspaceRepository: Upserted workspace ${workspace.name} (${workspace.id})');
+    return true;
+  }
+
   /// Updates an existing workspace's metadata and persists changes to disk.
   Future<bool> updateWorkspace(Workspace updatedWorkspace) async {
-    final index = _workspaces.indexWhere((p) => p.id == updatedWorkspace.id);
-    if (index == -1) return false;
-
-    _workspaces[index] = updatedWorkspace;
-    await _saveManifest();
-    AppLogger.d('WorkspaceRepository: Updated workspace metadata for ${updatedWorkspace.name}');
-    return true;
+    return await upsertWorkspace(updatedWorkspace);
   }
 
   /// Updates the [lastUsedAt] timestamp for [workspaceId].
@@ -150,11 +155,11 @@ class WorkspaceRepository {
     final workspace = getWorkspaceById(workspaceId);
     if (workspace != null) {
       final updated = workspace.copyWith(lastUsedAt: DateTime.now().toUtc());
-      await updateWorkspace(updated);
+      await upsertWorkspace(updated);
     }
   }
 
-  /// Soft deletes a workspace or physically deletes its database file.
+  /// Soft deletes a workspace (sets deletedAt) and persists changes to disk so tombstones sync across devices.
   Future<bool> deleteWorkspace(String workspaceId) async {
     final workspace = getWorkspaceById(workspaceId);
     if (workspace == null) {
@@ -162,9 +167,13 @@ class WorkspaceRepository {
       return false;
     }
 
-    _workspaces.removeWhere((p) => p.id == workspaceId);
-    await _saveManifest();
+    final now = DateTime.now().toUtc();
+    final updated = workspace.copyWith(
+      deletedAt: now,
+      updateCounter: workspace.updateCounter + 1,
+    );
 
+    await upsertWorkspace(updated);
     await WorkspaceSecureStorage.instance.deleteWorkspaceToken(workspaceId);
 
     // Physically delete SQLite file and auxiliary WAL/SHM files asynchronously

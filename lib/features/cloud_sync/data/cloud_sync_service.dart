@@ -1,14 +1,17 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:noteit/features/workspace/providers/active_workspace_provider.dart';
 import 'package:noteit/core/sync/sync_orchestrator.dart';
 import 'package:noteit/core/util/logger.dart';
-import 'package:noteit/database/drift/folders/folders_dao.dart';
-import 'package:noteit/database/drift/notes/notes_dao.dart';
 import 'package:noteit/database/firebase/auth/firebase_provider.dart';
 import 'package:noteit/database/firebase/firebase_database.dart';
 import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
+import 'package:noteit/features/workspace/providers/active_workspace_provider.dart';
+
+import 'processors/cloud_entity_processor.dart';
+import 'processors/cloud_folder_processor.dart';
+import 'processors/cloud_note_processor.dart';
+import 'processors/cloud_workspace_processor.dart';
 
 final cloudSyncServiceProvider = Provider<CloudSyncService>((ref) {
   return CloudSyncService(ref);
@@ -18,16 +21,21 @@ class CloudSyncService {
   final Ref ref;
   bool _isRunning = false;
   bool _isExecutingFullSync = false;
+  StreamSubscription<List<DocumentSnapshot<Map<String, dynamic>>>>? _manifestSubscription;
   StreamSubscription<List<DocumentSnapshot<Map<String, dynamic>>>>? _folderSubscription;
   StreamSubscription<List<DocumentSnapshot<Map<String, dynamic>>>>? _noteSubscription;
 
   bool get isRunning => _isRunning;
 
+  List<CloudEntityProcessor> get _processors => [
+        ref.read(cloudWorkspaceProcessorProvider),
+        ref.read(cloudFolderProcessorProvider),
+        ref.read(cloudNoteProcessorProvider),
+      ];
+
   CloudSyncService(this.ref);
 
   void start() {
-    if (_isRunning) return;
-
     final user = ref.read(authStateProvider).value;
     if (user == null) {
       AppLogger.w("CloudSyncService: Cannot start engine. User is not authenticated.");
@@ -36,9 +44,13 @@ class CloudSyncService {
 
     final activeWorkspace = ref.read(activeWorkspaceProvider);
 
+    if (_isRunning) {
+      _cancelSubscriptions();
+    }
+
     _isRunning = true;
     final sessionStartTime = DateTime.now().millisecondsSinceEpoch;
-    AppLogger.d("CloudSyncService: Starting Firebase sync engine for user ${user.uid} (Workspace: ${activeWorkspace.name}, ID: ${activeWorkspace.id})...");
+    AppLogger.d("CloudSyncService: Starting Firebase sync engine for user ${user.uid} (Active Workspace: ${activeWorkspace.name}, ID: ${activeWorkspace.id})...");
 
     _subscribeToRemoteChanges(sessionStartTime);
     executeFullSync();
@@ -51,7 +63,14 @@ class CloudSyncService {
     AppLogger.d("CloudSyncService: Stopping Firebase sync engine...");
   }
 
+  void restart() {
+    stop();
+    start();
+  }
+
   void _cancelSubscriptions() {
+    _manifestSubscription?.cancel();
+    _manifestSubscription = null;
     _folderSubscription?.cancel();
     _folderSubscription = null;
     _noteSubscription?.cancel();
@@ -64,20 +83,30 @@ class CloudSyncService {
     final firebaseDb = ref.read(noteFirebaseDatabaseProvider);
     if (firebaseDb == null) return;
 
-    final foldersDao = ref.read(foldersDaoProvider);
-    final notesDao = ref.read(notesDaoProvider);
+    final workspaceProcessor = ref.read(cloudWorkspaceProcessorProvider);
+    final folderProcessor = ref.read(cloudFolderProcessorProvider);
+    final noteProcessor = ref.read(cloudNoteProcessorProvider);
+
+    _manifestSubscription = firebaseDb.watchForManifestChanges(sessionStartTime).listen(
+      (docSnapshots) async {
+        for (final doc in docSnapshots) {
+          final data = doc.data();
+          if (data != null) {
+            await workspaceProcessor.processIncomingCloudItem(data);
+          }
+        }
+      },
+      onError: (e, st) {
+        AppLogger.e("CloudSyncService: Error in workspace manifest realtime stream", error: e, stack: st);
+      },
+    );
 
     _folderSubscription = firebaseDb.watchForRemoteChanges('folders', sessionStartTime).listen(
       (docSnapshots) async {
         for (final doc in docSnapshots) {
           final data = doc.data();
           if (data != null) {
-            try {
-              await foldersDao.upsertFolderFromCloud(data);
-              AppLogger.d("CloudSyncService: Realtime merged folder ${data['uuid']}");
-            } catch (e, st) {
-              AppLogger.e("CloudSyncService: Failed to upsert realtime folder", error: e, stack: st);
-            }
+            await folderProcessor.processIncomingCloudItem(data);
           }
         }
       },
@@ -91,12 +120,7 @@ class CloudSyncService {
         for (final doc in docSnapshots) {
           final data = doc.data();
           if (data != null) {
-            try {
-              await notesDao.upsertNoteFromCloud(data);
-              AppLogger.d("CloudSyncService: Realtime merged note ${data['uuid']}");
-            } catch (e, st) {
-              AppLogger.e("CloudSyncService: Failed to upsert realtime note", error: e, stack: st);
-            }
+            await noteProcessor.processIncomingCloudItem(data);
           }
         }
       },
@@ -106,6 +130,9 @@ class CloudSyncService {
     );
   }
 
+  /// Master sync coordinator executing entity processors in strict dependency order:
+  /// Stage 1: Workspace Manifest Sync (Level 0)
+  /// Stage 2: Active Workspace Content Sync (Level 1 Folders -> Level 2 Notes)
   Future<void> executeFullSync() async {
     if (!_isRunning || _isExecutingFullSync) return;
 
@@ -116,58 +143,33 @@ class CloudSyncService {
     }
 
     _isExecutingFullSync = true;
-    AppLogger.d("CloudSyncService: Executing full sync for profile ${firebaseDb.profileId}...");
+    final activeWorkspace = ref.read(activeWorkspaceProvider);
+    AppLogger.d("CloudSyncService: Executing prioritized sync for active workspace ${activeWorkspace.name} (${activeWorkspace.id})...");
     ref.read(isSyncingProvider.notifier).setSyncing(true);
 
     try {
-      final foldersDao = ref.read(foldersDaoProvider);
-      final notesDao = ref.read(notesDaoProvider);
       final prefs = ref.read(sharedPreferenceProvider);
-
-      // 1. PUSH FOLDERS FIRST
-      final pendingFolders = await foldersDao.getPendingCloudFolders();
-      if (pendingFolders.isNotEmpty) {
-        final folderMaps = pendingFolders.map((f) => f.toJson()).toList();
-        await firebaseDb.pushBatch('folders', folderMaps);
-        await foldersDao.markAsCloudSynced(pendingFolders.map((f) => f.uuid));
-        AppLogger.d("CloudSyncService: Pushed ${pendingFolders.length} folders to cloud.");
-      }
-
-      // 2. PUSH NOTES SECOND
-      final pendingNotes = await notesDao.getPendingCloudNotes();
-      if (pendingNotes.isNotEmpty) {
-        final noteMaps = pendingNotes.map((n) => n.toJson()).toList();
-        await firebaseDb.pushBatch('notes', noteMaps);
-        await notesDao.markAsCloudSynced(pendingNotes.map((n) => n.uuid));
-        AppLogger.d("CloudSyncService: Pushed ${pendingNotes.length} notes to cloud.");
-      }
-
-      // 3. PULL REMOTE FOLDERS
       final lastSyncTime = prefs.lastCloudSyncTime;
-      final remoteFolderDocs = await firebaseDb.pullChanges('folders', lastSyncTime);
-      for (final doc in remoteFolderDocs) {
-        final data = doc.data();
-        await foldersDao.upsertFolderFromCloud(data);
-      }
-      if (remoteFolderDocs.isNotEmpty) {
-        AppLogger.d("CloudSyncService: Pulled and merged ${remoteFolderDocs.length} folders from cloud.");
+
+      // STAGE 1: WORKSPACE MANIFEST SYNC (Level 0)
+      final workspaceProcessor = ref.read(cloudWorkspaceProcessorProvider);
+      await workspaceProcessor.pushPendingChanges(firebaseDb);
+      await workspaceProcessor.pullRemoteChanges(firebaseDb, lastSyncTime);
+
+      // STAGE 2: ACTIVE WORKSPACE CONTENT SYNC (Level 1 Folders -> Level 2 Notes)
+      final activeWorkspaceProcessors = _processors.where((p) => p.dependencyLevel > 0).toList()
+        ..sort((a, b) => a.dependencyLevel.compareTo(b.dependencyLevel));
+
+      for (final processor in activeWorkspaceProcessors) {
+        await processor.pushPendingChanges(firebaseDb, targetWorkspaceId: activeWorkspace.id);
+        await processor.pullRemoteChanges(firebaseDb, lastSyncTime, targetWorkspaceId: activeWorkspace.id);
       }
 
-      // 4. PULL REMOTE NOTES
-      final remoteNoteDocs = await firebaseDb.pullChanges('notes', lastSyncTime);
-      for (final doc in remoteNoteDocs) {
-        final data = doc.data();
-        await notesDao.upsertNoteFromCloud(data);
-      }
-      if (remoteNoteDocs.isNotEmpty) {
-        AppLogger.d("CloudSyncService: Pulled and merged ${remoteNoteDocs.length} notes from cloud.");
-      }
-
-      // 5. UPDATE LAST SYNC TIMESTAMP
+      // UPDATE GLOBAL LAST SYNC TIMESTAMP
       final now = DateTime.now().millisecondsSinceEpoch;
       await prefs.setLastCloudSyncTime(now);
 
-      AppLogger.d("CloudSyncService: Full sync completed successfully for profile ${firebaseDb.profileId}.");
+      AppLogger.d("CloudSyncService: Prioritized sync completed successfully for active workspace ${activeWorkspace.name}.");
     } catch (e, st) {
       AppLogger.e("CloudSyncService: Error executing full sync", error: e, stack: st);
     } finally {

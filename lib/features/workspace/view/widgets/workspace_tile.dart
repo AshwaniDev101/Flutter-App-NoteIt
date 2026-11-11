@@ -26,22 +26,15 @@ class WorkspaceTile extends ConsumerWidget {
     this.onMenuDismiss,
   });
 
-  SyncEngine _getSyncEngineForWorkspace(Workspace workspace) {
-    if (workspace.syncMode == 'cloud') return SyncEngine.cloud;
-    if (workspace.syncMode == 'localHost' ||
-        workspace.syncMode == 'localClient' ||
-        workspace.syncMode == 'localUndefined') {
-      return SyncEngine.local;
-    }
-    return SyncEngine.offline;
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isSelected = workspace.id == activeWorkspace.id;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final syncEngine = _getSyncEngineForWorkspace(workspace);
+    final syncMode = ref.watch(syncModeProvider);
+    final syncEngine = syncMode.isCloud
+        ? SyncEngine.cloud
+        : (syncMode.isLocal ? SyncEngine.local : SyncEngine.offline);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -91,28 +84,30 @@ class WorkspaceTile extends ConsumerWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-            subtitle: Padding(
-              padding: const EdgeInsets.only(top: 2.0),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    syncEngine.icon,
-                    size: 12,
-                    color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    syncEngine.label,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      fontSize: 11,
-                      color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
-                      fontWeight: isSelected ? FontWeight.w500 : FontWeight.w400,
+            subtitle: isSelected
+                ? Padding(
+                    padding: const EdgeInsets.only(top: 2.0),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          syncEngine.icon,
+                          size: 12,
+                          color: colorScheme.primary,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          syncEngine.label,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            fontSize: 11,
+                            color: colorScheme.primary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-            ),
+                  )
+                : null,
             trailing: isSelected
                 ? Icon(Icons.check_circle_rounded, color: colorScheme.primary, size: 20)
                 : null,

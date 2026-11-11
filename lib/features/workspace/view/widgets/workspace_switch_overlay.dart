@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/sync/sync_engine.dart';
-import '../../models/workspace_model.dart';
 import '../../providers/active_workspace_provider.dart';
 import '../helpers/workspace_badge_helper.dart';
 
@@ -18,28 +17,20 @@ class WorkspaceSwitchOverlay extends ConsumerWidget {
     required this.child,
   });
 
-  SyncEngine _getSyncEngine(Workspace? workspace) {
-    if (workspace == null) return SyncEngine.offline;
-    if (workspace.syncMode == 'cloud') return SyncEngine.cloud;
-    if (workspace.syncMode == 'localHost' ||
-        workspace.syncMode == 'localClient' ||
-        workspace.syncMode == 'localUndefined') {
-      return SyncEngine.local;
-    }
-    return SyncEngine.offline;
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final switchingState = ref.watch(workspaceSwitchingProvider);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final syncMode = ref.watch(syncModeProvider);
 
     final isSwitching = switchingState.isSwitching;
     final targetWorkspace = switchingState.targetWorkspace;
     final workspaceName = targetWorkspace?.name ?? 'Workspace';
 
-    final syncEngine = _getSyncEngine(targetWorkspace);
+    final syncEngine = syncMode.isCloud
+        ? SyncEngine.cloud
+        : (syncMode.isLocal ? SyncEngine.local : SyncEngine.offline);
 
     return Stack(
       children: [

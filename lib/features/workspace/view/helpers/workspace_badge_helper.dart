@@ -44,8 +44,8 @@ class WorkspaceBadgeHelper {
     return trimmed[0].toUpperCase();
   }
 
-  static String? getEffectivePhotoUrl(Workspace workspace, User? authUser) {
-    if (workspace.syncMode == 'cloud') {
+  static String? getEffectivePhotoUrl(User? authUser, {required bool isCloudMode}) {
+    if (isCloudMode) {
       return authUser?.photoURL;
     }
     return null;

@@ -20,10 +20,10 @@ class SettingsPage extends ConsumerWidget {
 
     // Watch states
     final lockState = ref.watch(lockManagerProvider);
-    // final syncMode = ref.watch(syncModeProvider);
-    // final currentEngine = syncMode.isCloud
-    //     ? SyncEngine.cloud
-    //     : (syncMode.isLocal ? SyncEngine.local : SyncEngine.offline);
+    final syncMode = ref.watch(syncModeProvider);
+    final currentEngine = syncMode.isCloud
+        ? SyncEngine.cloud
+        : (syncMode.isLocal ? SyncEngine.local : SyncEngine.offline);
 
     // Watch shortcut preferences
     final shortcutPrefs = ref.watch(shortcutPreferencesProvider);
@@ -35,53 +35,66 @@ class SettingsPage extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // // ==================== SYNCHRONIZATION SECTION ====================
-          // const SettingsSectionHeader(title: 'Synchronization'),
-          // SettingsCard(
-          //   padding: const EdgeInsets.all(12.0),
-          //   child: SegmentedButton<SyncEngine>(
-          //     segments: const [
-          //       ButtonSegment<SyncEngine>(
-          //         value: SyncEngine.cloud,
-          //         label: Text('Cloud'),
-          //         icon: Icon(Icons.cloud_outlined),
-          //       ),
-          //       ButtonSegment<SyncEngine>(
-          //         value: SyncEngine.local,
-          //         label: Text('Offline Sync'),
-          //         icon: Icon(Icons.wifi),
-          //       ),
-          //       ButtonSegment<SyncEngine>(
-          //         value: SyncEngine.offline,
-          //         label: Text('No Sync'),
-          //         icon: Icon(Icons.signal_wifi_off),
-          //       ),
-          //     ],
-          //     selected: {currentEngine},
-          //     onSelectionChanged: (Set<SyncEngine> newSelection) async {
-          //       final selectedEngine = newSelection.first;
-          //       SyncMode targetMode;
-          //       switch (selectedEngine) {
-          //         case SyncEngine.cloud:
-          //           targetMode = SyncMode.cloud;
-          //           break;
-          //         case SyncEngine.local:
-          //           targetMode = syncMode.isLocal ? syncMode : SyncMode.localUndefined;
-          //           break;
-          //         case SyncEngine.offline:
-          //           targetMode = SyncMode.offline;
-          //           break;
-          //       }
-          //       final bool success = await ref
-          //           .read(syncModeProvider.notifier)
-          //           .requestModeChange(targetMode);
-          //
-          //       if (success) {
-          //         ref.read(syncOrchestratorProvider).triggerSync();
-          //       }
-          //     },
-          //   ),
-          // ),
+          // ==================== SYNCHRONIZATION SECTION ====================
+          const SettingsSectionHeader(title: 'Synchronization'),
+          SettingsCard(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SegmentedButton<SyncEngine>(
+                  segments: const [
+                    ButtonSegment<SyncEngine>(
+                      value: SyncEngine.cloud,
+                      label: Text('Cloud'),
+                      icon: Icon(Icons.cloud_outlined),
+                    ),
+                    ButtonSegment<SyncEngine>(
+                      value: SyncEngine.local,
+                      label: Text('Local Network'),
+                      icon: Icon(Icons.wifi),
+                    ),
+                    ButtonSegment<SyncEngine>(
+                      value: SyncEngine.offline,
+                      label: Text('Offline'),
+                      icon: Icon(Icons.signal_wifi_off),
+                    ),
+                  ],
+                  selected: {currentEngine},
+                  onSelectionChanged: (Set<SyncEngine> newSelection) async {
+                    final selectedEngine = newSelection.first;
+                    SyncMode targetMode;
+                    switch (selectedEngine) {
+                      case SyncEngine.cloud:
+                        targetMode = SyncMode.cloud;
+                        break;
+                      case SyncEngine.local:
+                        targetMode = syncMode.isLocal ? syncMode : SyncMode.localUndefined;
+                        break;
+                      case SyncEngine.offline:
+                        targetMode = SyncMode.offline;
+                        break;
+                    }
+                    final bool success = await ref
+                        .read(syncModeProvider.notifier)
+                        .requestModeChange(targetMode);
+
+                    if (success) {
+                      ref.read(syncOrchestratorProvider).triggerSync();
+                    }
+                  },
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  currentEngine.description,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
 
           const SizedBox(height: 24),
 

@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/util/logger.dart';
 import 'package:noteit/database/firebase/auth/firebase_provider.dart';
-
-import '../../features/workspace/providers/active_workspace_provider.dart';
-import '../../features/workspace/providers/workspace_providers.dart';
+import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
 
 /// Available sync engines with associated label, description, and icon.
 enum SyncEngine {
@@ -71,7 +69,7 @@ enum SyncMode {
   bool get isSyncing => this != SyncMode.offline;
 }
 
-/// Unified Provider for accessing and modifying the active [SyncMode].
+/// Unified Provider for accessing and modifying the active app-wide [SyncMode].
 final syncModeProvider = NotifierProvider<SyncModeNotifier, SyncMode>(() {
   return SyncModeNotifier();
 });
@@ -84,20 +82,12 @@ final syncEngineProvider = NotifierProvider<SyncEngineNotifier, SyncEngine>(() {
 class SyncModeNotifier extends Notifier<SyncMode> {
   @override
   SyncMode build() {
-    final syncModeStr = ref.watch(activeWorkspaceProvider.select((p) => p.syncMode));
-    return SyncMode.values.firstWhere(
-      (e) => e.name == syncModeStr,
-      orElse: () => SyncMode.offline,
-    );
+    return SharedPreferenceManager.instance.syncMode;
   }
 
   Future<void> setMode(SyncMode newMode) async {
-    final activeWorkspace = ref.read(activeWorkspaceProvider);
-    if (activeWorkspace.syncMode == newMode.name) return;
-
-    final updated = activeWorkspace.copyWith(syncMode: newMode.name);
-    await ref.read(workspacesListProvider.notifier).updateWorkspace(updated);
-    ref.read(activeWorkspaceProvider.notifier).updateActiveWorkspace(updated);
+    await SharedPreferenceManager.instance.setSyncMode(newMode);
+    state = newMode;
   }
 
   /// Attempts to switch sync mode with an Auth Guard.
@@ -111,12 +101,8 @@ class SyncModeNotifier extends Notifier<SyncMode> {
     }
 
     final authRepo = ref.read(authRepositoryProvider);
-    final activeWorkspace = ref.read(activeWorkspaceProvider);
 
     if (authRepo.isSignedIn && authRepo.currentUser?.email != null) {
-      final updated = activeWorkspace.copyWith(syncMode: SyncMode.cloud.name);
-      await ref.read(workspacesListProvider.notifier).updateWorkspace(updated);
-      ref.read(activeWorkspaceProvider.notifier).updateActiveWorkspace(updated);
       await setMode(SyncMode.cloud);
       return true;
     }
@@ -126,9 +112,6 @@ class SyncModeNotifier extends Notifier<SyncMode> {
     final user = result.user;
 
     if (user != null && user.email != null) {
-      final updated = activeWorkspace.copyWith(syncMode: SyncMode.cloud.name);
-      await ref.read(workspacesListProvider.notifier).updateWorkspace(updated);
-      ref.read(activeWorkspaceProvider.notifier).updateActiveWorkspace(updated);
       await setMode(SyncMode.cloud);
       AppLogger.d("SyncModeNotifier: Google Sign-In successful. Switching to Cloud Mode.");
       return true;

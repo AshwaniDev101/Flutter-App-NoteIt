@@ -13,7 +13,7 @@ import 'helpers/workspace_badge_helper.dart';
 import 'widgets/create_workspace_dialog.dart';
 import 'widgets/workspace_tile.dart';
 
-enum _WorkspaceSubView { main, workspaces, sync }
+enum _WorkspaceSubView { main, workspaces }
 
 class WorkspaceMenuContent extends ConsumerStatefulWidget {
   final VoidCallback onCloseMenu;
@@ -37,10 +37,6 @@ class _WorkspaceMenuContentState extends ConsumerState<WorkspaceMenuContent> {
     final authUser = ref.watch(authStateProvider).value;
     final syncMode = ref.watch(syncModeProvider);
 
-    final currentEngine = syncMode.isCloud
-        ? SyncEngine.cloud
-        : (syncMode.isLocal ? SyncEngine.local : SyncEngine.offline);
-
     if (_activeSubView == _WorkspaceSubView.workspaces) {
       return _buildWorkspacesPanel(
         context: context,
@@ -50,19 +46,10 @@ class _WorkspaceMenuContentState extends ConsumerState<WorkspaceMenuContent> {
       );
     }
 
-    if (_activeSubView == _WorkspaceSubView.sync) {
-      return _buildSyncOptionsPanel(
-        context: context,
-        currentEngine: currentEngine,
-        syncMode: syncMode,
-      );
-    }
-
     return _buildMainPanel(
       context: context,
       activeWorkspace: activeWorkspace,
       authUser: authUser,
-      currentEngine: currentEngine,
       syncMode: syncMode,
     );
   }
@@ -71,7 +58,6 @@ class _WorkspaceMenuContentState extends ConsumerState<WorkspaceMenuContent> {
     required BuildContext context,
     required Workspace activeWorkspace,
     required User? authUser,
-    required SyncEngine currentEngine,
     required SyncMode syncMode,
   }) {
     return Column(
@@ -80,17 +66,6 @@ class _WorkspaceMenuContentState extends ConsumerState<WorkspaceMenuContent> {
       children: [
         _buildHeader(context, activeWorkspace, authUser, syncMode),
         const Divider(height: 1),
-        _buildExpandableTile(
-          context: context,
-          icon: currentEngine.icon,
-          title: 'Sync Method',
-          statusText: currentEngine.label,
-          onTap: () {
-            setState(() {
-              _activeSubView = _WorkspaceSubView.sync;
-            });
-          },
-        ),
         _buildExpandableTile(
           context: context,
           icon: Icons.switch_account_outlined,
@@ -190,87 +165,6 @@ class _WorkspaceMenuContentState extends ConsumerState<WorkspaceMenuContent> {
     );
   }
 
-  Widget _buildSyncOptionsPanel({
-    required BuildContext context,
-    required SyncEngine currentEngine,
-    required SyncMode syncMode,
-  }) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    const options = [
-      SyncEngine.cloud,
-      SyncEngine.local,
-      SyncEngine.offline,
-    ];
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(8, 8, 16, 8),
-          child: Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_back, size: 20),
-                onPressed: () {
-                  setState(() {
-                    _activeSubView = _WorkspaceSubView.main;
-                  });
-                },
-                tooltip: 'Back',
-              ),
-              const SizedBox(width: 4),
-              Text(
-                'Sync Method',
-                style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-            ],
-          ),
-        ),
-        const Divider(height: 1),
-        ...options.map((engine) {
-          final isSelected = currentEngine == engine;
-          return ListTile(
-            dense: true,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            leading: Icon(
-              engine.icon,
-              color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
-              size: 22,
-            ),
-            title: Text(
-              engine.label,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                color: isSelected ? colorScheme.primary : colorScheme.onSurface,
-              ),
-            ),
-            subtitle: Text(
-              engine.description,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-            trailing: isSelected
-                ? Icon(Icons.check_circle_rounded, color: colorScheme.primary, size: 20)
-                : null,
-            onTap: () async {
-              await _handleSyncChange(engine, ref, syncMode);
-              setState(() {
-                _activeSubView = _WorkspaceSubView.main;
-              });
-            },
-          );
-        }),
-        const SizedBox(height: 8),
-      ],
-    );
-  }
-
   Widget _buildExpandableTile({
     required BuildContext context,
     required IconData icon,
@@ -292,7 +186,7 @@ class _WorkspaceMenuContentState extends ConsumerState<WorkspaceMenuContent> {
             Expanded(
               child: Text(
                 title,
-                style: theme.textTheme.bodyLarge?.copyWith(
+                style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w400,
                 ),
               ),
@@ -467,29 +361,6 @@ class _WorkspaceMenuContentState extends ConsumerState<WorkspaceMenuContent> {
         onTap: onSelect,
       ),
     );
-  }
-
-  Future<void> _handleSyncChange(SyncEngine selectedEngine, WidgetRef ref, SyncMode currentMode) async {
-    final syncNotifier = ref.read(syncModeProvider.notifier);
-    final orchestrator = ref.read(syncOrchestratorProvider);
-
-    SyncMode targetMode;
-    switch (selectedEngine) {
-      case SyncEngine.cloud:
-        targetMode = SyncMode.cloud;
-        break;
-      case SyncEngine.local:
-        targetMode = currentMode.isLocal ? currentMode : SyncMode.localUndefined;
-        break;
-      case SyncEngine.offline:
-        targetMode = SyncMode.offline;
-        break;
-    }
-
-    final success = await syncNotifier.requestModeChange(targetMode);
-    if (success) {
-      orchestrator.triggerSync();
-    }
   }
 
   Future<void> _handleSignIn(BuildContext context) async {

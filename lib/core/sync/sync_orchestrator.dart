@@ -50,12 +50,28 @@ class SyncOrchestrator with WidgetsBindingObserver {
     ref.listen(authStateProvider, (previous, next) {
       _evaluateState();
     });
+
+    // Listen for Workspace Switches
+    ref.listen(activeWorkspaceProvider, (previous, next) {
+      _evaluateState();
+    });
+
+    // Listen for Workspace Switching State Completion
+    ref.listen(workspaceSwitchingProvider, (previous, next) {
+      if (previous?.isSwitching == true && next.isSwitching == false) {
+        AppLogger.d("SyncOrchestrator: Workspace switch finished. Re-evaluating sync state...");
+        _evaluateState();
+      }
+    });
   }
 
   void _stopAllLocalSyncServices() {
     AppLogger.d("SyncOrchestrator: Stopping all Local Wi-Fi Sync services...");
     ref.read(localSyncSessionProvider.notifier).endSession();
   }
+
+  // Public state evaluation method
+  void evaluateState() => _evaluateState();
 
   // The Master Switchboard: Turns background listeners on or off
   void _evaluateState() {
@@ -73,7 +89,7 @@ class SyncOrchestrator with WidgetsBindingObserver {
 
     if (mode.isCloud && isMatchingUser) {
       _stopAllLocalSyncServices();
-      cloudWorker.start();
+      cloudWorker.restart();
     } else if (mode.isLocal) {
       cloudWorker.stop();
     } else {

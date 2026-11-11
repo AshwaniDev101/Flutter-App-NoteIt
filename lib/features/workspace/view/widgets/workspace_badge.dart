@@ -39,12 +39,10 @@ class _WorkspaceBadgeState extends ConsumerState<WorkspaceBadge> {
     final colorScheme = Theme.of(context).colorScheme;
     final isMobile = !PlatformHelper.isWideLayout(context);
 
-    final activePhotoUrl = syncMode.isCloud
-        ? WorkspaceBadgeHelper.getEffectivePhotoUrl(
-            activeWorkspace,
-            authUser,
-          )
-        : null;
+    final activePhotoUrl = WorkspaceBadgeHelper.getEffectivePhotoUrl(
+      authUser,
+      isCloudMode: syncMode.isCloud,
+    );
 
     void openWorkspaceMenu() {
       if (isMobile) {

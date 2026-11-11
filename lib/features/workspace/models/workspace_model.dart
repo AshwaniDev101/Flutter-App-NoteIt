@@ -12,9 +12,6 @@ class Workspace {
   /// SQLite database filename on disk (e.g. 'note_it_db.sqlite', 'workspace_work_1718.sqlite').
   final String dbFileName;
 
-  /// Default sync mode for this workspace ('offline', 'cloud', 'localHost', 'localClient').
-  final String syncMode;
-
   /// Creation timestamp (UTC).
   final DateTime createdAt;
 
@@ -34,7 +31,6 @@ class Workspace {
     required this.id,
     required this.name,
     required this.dbFileName,
-    this.syncMode = 'offline',
     required this.createdAt,
     required this.lastUsedAt,
     this.deletedAt,
@@ -48,7 +44,6 @@ class Workspace {
       'id': id,
       'name': name,
       'dbFileName': dbFileName,
-      'syncMode': syncMode,
       'createdAt': createdAt.toUtc().toIso8601String(),
       'lastUsedAt': lastUsedAt.toUtc().toIso8601String(),
       'deletedAt': deletedAt?.toUtc().toIso8601String(),
@@ -63,7 +58,6 @@ class Workspace {
       id: json['id'] as String,
       name: json['name'] as String,
       dbFileName: json['dbFileName'] as String? ?? 'note_it_db.sqlite',
-      syncMode: json['syncMode'] as String? ?? 'offline',
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'] as String).toUtc()
           : DateTime.now().toUtc(),
@@ -83,7 +77,6 @@ class Workspace {
     String? id,
     String? name,
     String? dbFileName,
-    String? syncMode,
     DateTime? createdAt,
     DateTime? lastUsedAt,
     Object? deletedAt = _undefined,
@@ -94,7 +87,6 @@ class Workspace {
       id: id ?? this.id,
       name: name ?? this.name,
       dbFileName: dbFileName ?? this.dbFileName,
-      syncMode: syncMode ?? this.syncMode,
       createdAt: createdAt ?? this.createdAt,
       lastUsedAt: lastUsedAt ?? this.lastUsedAt,
       deletedAt: deletedAt == _undefined ? this.deletedAt : deletedAt as DateTime?,
@@ -110,7 +102,6 @@ class Workspace {
         other.id == id &&
         other.name == name &&
         other.dbFileName == dbFileName &&
-        other.syncMode == syncMode &&
         other.createdAt == createdAt &&
         other.lastUsedAt == lastUsedAt &&
         other.deletedAt == deletedAt &&
@@ -123,7 +114,6 @@ class Workspace {
         id,
         name,
         dbFileName,
-        syncMode,
         createdAt,
         lastUsedAt,
         deletedAt,

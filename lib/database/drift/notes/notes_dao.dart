@@ -340,7 +340,7 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
   /// MERGE: Upsert notes pulled down from Firebase OR Local Wi-Fi
   Future<void> upsertNoteFromCloud(Map<String, dynamic> incomingData) async {
     final incomingUuid = incomingData['uuid'] as String;
-    final incomingUpdatedAt = _parseNetworkTimestamp(incomingData['updatedAt'])!;
+    final incomingUpdatedAt = _parseNetworkTimestamp(incomingData['updatedAt']) ?? DateTime.now().toUtc();
 
     final noteCompanion = NotesCompanion(
       uuid: Value(incomingUuid),
@@ -364,7 +364,7 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
           : const Value.absent(),
 
       updatedAt: Value(incomingUpdatedAt),
-      createdAt: Value(_parseNetworkTimestamp(incomingData['createdAt'])!),
+      createdAt: Value(_parseNetworkTimestamp(incomingData['createdAt']) ?? DateTime.now().toUtc()),
 
       // Apply the network's conflict resolver counter & HLC
       updateCounter: Value(incomingData['updateCounter'] as int? ?? 1),
@@ -381,7 +381,7 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
   /// MERGE: Upsert notes pulled down from Local Wi-Fi
   Future<void> upsertNoteFromLocal(Map<String, dynamic> incomingData) async {
     final incomingUuid = incomingData['uuid'] as String;
-    final incomingUpdatedAt = _parseNetworkTimestamp(incomingData['updatedAt'])!;
+    final incomingUpdatedAt = _parseNetworkTimestamp(incomingData['updatedAt']) ?? DateTime.now().toUtc();
 
     final noteCompanion = NotesCompanion(
       uuid: Value(incomingUuid),
@@ -404,7 +404,7 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
           : const Value.absent(),
 
       updatedAt: Value(incomingUpdatedAt),
-      createdAt: Value(_parseNetworkTimestamp(incomingData['createdAt'])!),
+      createdAt: Value(_parseNetworkTimestamp(incomingData['createdAt']) ?? DateTime.now().toUtc()),
       updateCounter: Value(incomingData['updateCounter'] as int? ?? 1),
       hlc: Value(incomingData['hlc'] as String?),
 

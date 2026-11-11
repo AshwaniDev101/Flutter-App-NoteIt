@@ -14,21 +14,21 @@ service cloud.firestore {
       // Wildcard fallback: Allow owner full read/write across all sub-paths
       allow read, write: if isOwner();
 
-      // Explicit rules for Profile Manifest: /users/{userId}/profiles_manifest/{profileId}
-      match /profiles_manifest/{profileId} {
+      // Explicit rules for Workspace Manifest: /users/{userId}/workspaces_manifest/{workspaceId}
+      match /workspaces_manifest/{workspaceId} {
         allow read, write: if isOwner();
       }
 
-      // Explicit rules for Workspace Profiles: /users/{userId}/profiles/{profileId}
-      match /profiles/{profileId} {
+      // Explicit rules for Workspaces: /users/{userId}/workspaces/{workspaceId}
+      match /workspaces/{workspaceId} {
         allow read, write: if isOwner();
 
-        // Notes Subcollection: /users/{userId}/profiles/{profileId}/notes/{noteId}
+        // Notes Subcollection: /users/{userId}/workspaces/{workspaceId}/notes/{noteId}
         match /notes/{noteId} {
           allow read, write: if isOwner();
         }
 
-        // Folders Subcollection: /users/{userId}/profiles/{profileId}/folders/{folderId}
+        // Folders Subcollection: /users/{userId}/workspaces/{workspaceId}/folders/{folderId}
         match /folders/{folderId} {
           allow read, write: if isOwner();
         }

@@ -62,9 +62,9 @@ class _SharedDrawerContentState extends ConsumerState<SharedDrawerContent> {
               const SizedBox(width: 8),
               Text(
                 'Clear trash',
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.error,
-                ),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
               ),
             ],
           ),
@@ -139,12 +139,12 @@ class _SharedDrawerContentState extends ConsumerState<SharedDrawerContent> {
           child: Row(
             children: [
               Container(
-                width: 36,
-                height: 36,
-                padding: const EdgeInsets.all(6),
+                width: 32,
+                height: 32,
+                padding: const EdgeInsets.all(5),
                 decoration: BoxDecoration(
                   color: colorScheme.primaryContainer.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: colorScheme.primary.withValues(alpha: 0.2),
                     width: 1,
@@ -155,13 +155,13 @@ class _SharedDrawerContentState extends ConsumerState<SharedDrawerContent> {
                   fit: BoxFit.contain,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               RichText(
                 text: TextSpan(
-                  style: theme.textTheme.titleLarge?.copyWith(
+                  style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w800,
                     letterSpacing: 0.5,
-                    fontSize: 20,
+                    fontSize: 18,
                   ),
                   children: [
                     TextSpan(
@@ -179,9 +179,11 @@ class _SharedDrawerContentState extends ConsumerState<SharedDrawerContent> {
           ),
         ),
 
+
+        const SizedBox(height: 8),
         // --- Account Header & Auth Actions ---
         const _DrawerAuthHeaderWidget(),
-        const SizedBox(height: 4),
+        const SizedBox(height: 8),
 
         // --- 2. Scrollable Navigation ---
         Flexible(
@@ -278,13 +280,13 @@ class _SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(left: 12, top: 16, bottom: 8),
+      padding: const EdgeInsets.only(left: 12, top: 16, bottom: 6),
       child: Text(
         title,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          letterSpacing: 1.2,
-          fontWeight: FontWeight.w700,
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
+          letterSpacing: 1.0,
+          fontWeight: FontWeight.bold,
+          color: Theme.of(context).colorScheme.primary,
         ),
       ),
     );
@@ -330,7 +332,7 @@ class _DrawerTile extends StatelessWidget {
             color: isSelected ? colorScheme.secondaryContainer : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Row(
             children: [
               IconTheme(
