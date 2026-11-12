@@ -2,7 +2,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/sync/sync_engine.dart';
 import '../../../../shared/overlays/snack_bar_manager.dart';
 import '../../models/workspace_model.dart';
 import '../../providers/active_workspace_provider.dart';
@@ -31,10 +30,6 @@ class WorkspaceTile extends ConsumerWidget {
     final isSelected = workspace.id == activeWorkspace.id;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final syncMode = ref.watch(syncModeProvider);
-    final syncEngine = syncMode.isCloud
-        ? SyncEngine.cloud
-        : (syncMode.isLocal ? SyncEngine.local : SyncEngine.offline);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -84,30 +79,6 @@ class WorkspaceTile extends ConsumerWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-            subtitle: isSelected
-                ? Padding(
-                    padding: const EdgeInsets.only(top: 2.0),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          syncEngine.icon,
-                          size: 12,
-                          color: colorScheme.primary,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          syncEngine.label,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            fontSize: 11,
-                            color: colorScheme.primary,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : null,
             trailing: isSelected
                 ? Icon(Icons.check_circle_rounded, color: colorScheme.primary, size: 20)
                 : null,

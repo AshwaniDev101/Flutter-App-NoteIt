@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../core/helpers/platform_helper.dart';
-import 'app_bottom_sheet.dart';
+import 'adaptive_menu_button.dart';
 
 // ==========================================
 // ENUMS
@@ -18,7 +17,7 @@ enum NoteViewType {
   const NoteViewType(this.label, this.icon);
 }
 
-class ViewMenuButton extends StatefulWidget {
+class ViewMenuButton extends StatelessWidget {
   final IconData icon;
   final String tooltip;
   final NoteViewType currentView;
@@ -33,127 +32,27 @@ class ViewMenuButton extends StatefulWidget {
   });
 
   @override
-  State<ViewMenuButton> createState() => _ViewMenuButtonState();
-}
-
-class _ViewMenuButtonState extends State<ViewMenuButton> {
-  final MenuController _menuController = MenuController();
-
-  void _showMobileBottomSheet(BuildContext context) {
-    AppBottomSheet.show(
-      context: context,
-      builder: (context, setModalState) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
-              child: Text(
-                'View Layout',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-            ),
-            const Divider(indent: 16, endIndent: 16),
-            _buildSectionHeader(context, 'LAYOUT'),
-            ...NoteViewType.values.map(
-              (view) => _buildViewTile(context, view, onTap: setModalState),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final isMobile = !PlatformHelper.isWideLayout(context);
-
-    if (isMobile) {
-      return IconButton(
-        icon: Icon(widget.icon),
-        tooltip: widget.tooltip,
-        onPressed: () => _showMobileBottomSheet(context),
-      );
-    }
-
-    return MenuAnchor(
-      controller: _menuController,
-      style: const MenuStyle(
-        padding: WidgetStatePropertyAll(EdgeInsets.zero),
-        backgroundColor: WidgetStatePropertyAll(Colors.transparent),
-        elevation: WidgetStatePropertyAll(0),
+    final sections = [
+      MenuSectionSpec<NoteViewType>(
+        title: 'LAYOUT',
+        items: NoteViewType.values.map((view) {
+          return MenuItemSpec<NoteViewType>(
+            value: view,
+            label: view.label,
+            icon: view.icon,
+            isSelected: view == currentView,
+            onTap: () => onViewSelected(view),
+          );
+        }).toList(),
       ),
-      builder: (BuildContext context, MenuController controller, Widget? child) {
-        return IconButton(
-          onPressed: () {
-            if (controller.isOpen) {
-              controller.close();
-            } else {
-              controller.open();
-            }
-          },
-          icon: Icon(widget.icon),
-          tooltip: widget.tooltip,
-        );
-      },
-      menuChildren: [
-        Card(
-          color: Theme.of(context).colorScheme.surfaceContainer,
-          elevation: 2,
-          margin: const EdgeInsets.all(4.0),
-          child: SizedBox(
-            width: 250,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildSectionHeader(context, 'LAYOUT'),
-                  ...NoteViewType.values.map((view) {
-                    return _buildViewTile(context, view);
-                  }),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+    ];
 
-  Widget _buildSectionHeader(BuildContext context, String title) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
-      child: Text(
-        title,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: colorScheme.primary,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.0,
-            ),
-      ),
-    );
-  }
-
-  Widget _buildViewTile(BuildContext context, NoteViewType view, {StateSetter? onTap}) {
-    final isSelected = view == widget.currentView;
-
-    return AppMenuTile(
-      label: view.label,
-      icon: view.icon,
-      isSelected: isSelected,
-      onTap: () {
-        widget.onViewSelected(view);
-        if (onTap != null) {
-          onTap(() {});
-        }
-      },
+    return AdaptiveMenuButton<NoteViewType>(
+      icon: icon,
+      tooltip: tooltip,
+      sheetTitle: 'View Layout',
+      sections: sections,
     );
   }
 }
-

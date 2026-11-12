@@ -70,6 +70,7 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
         contentVersion: Value(contentVersion),
       ),
     );
+    AppLogger.d("NotesDao: Added new note '$title' (uuid: $newUuid)");
     return newUuid;
   }
 
@@ -85,7 +86,7 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
       final now = DateTime.now().toUtc();
       final newHlc = _generateHlc(counter: newCounter, lastKnownTime: now);
 
-      return await (update(notes)..where((t) => t.uuid.equals(uuid))).write(
+      final success = await (update(notes)..where((t) => t.uuid.equals(uuid))).write(
             NotesCompanion.custom(
               title: Variable(title),
               content: Variable(content),
@@ -100,6 +101,10 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
             ),
           ) >
           0;
+      if (success) {
+        AppLogger.d("NotesDao: Updated note '$title' (uuid: $uuid)");
+      }
+      return success;
     });
   }
 
@@ -173,7 +178,9 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
 
   Future<int> deleteNote(String uuid) async {
     // Hard Delete
-    return await (delete(notes)..where((t) => t.uuid.equals(uuid))).go();
+    final count = await (delete(notes)..where((t) => t.uuid.equals(uuid))).go();
+    AppLogger.d("NotesDao: Hard-deleted note (uuid: $uuid)");
+    return count;
   }
 
   Future<void> softDeleteNotes(Iterable<String> uuids, {required String platform}) async {
@@ -197,6 +204,7 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
           ),
         );
       }
+      AppLogger.d("NotesDao: Soft-deleted ${targetNotes.length} notes (uuids: $uuids)");
     });
   }
 
@@ -208,7 +216,7 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
       final now = DateTime.now().toUtc();
       final newHlc = _generateHlc(counter: newCounter, lastKnownTime: now);
 
-      return await (update(notes)..where((t) => t.uuid.equals(uuid))).write(
+      final success = await (update(notes)..where((t) => t.uuid.equals(uuid))).write(
         NotesCompanion.custom(
           folderId: Variable(folderId),
           cloudSyncStatus: const Variable(0),
@@ -218,6 +226,10 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
           hlc: Variable(newHlc),
         ),
       ) > 0;
+      if (success) {
+        AppLogger.d("NotesDao: Updated folder assignment for note $uuid to folder $folderId");
+      }
+      return success;
     });
   }
 
@@ -468,6 +480,7 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
     } else {
       // Note doesn't exist locally, insert it.
       await into(notes).insert(companion);
+      AppLogger.d("NotesDao: Inserted new note $uuid ('${incomingData['title']}') from network.");
     }
   }
 
@@ -509,7 +522,7 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
       final now = DateTime.now().toUtc();
       final newHlc = _generateHlc(counter: newCounter, lastKnownTime: now);
 
-      return await (update(notes)..where((t) => t.uuid.equals(uuid))).write(
+      final success = await (update(notes)..where((t) => t.uuid.equals(uuid))).write(
             NotesCompanion.custom(
               deletedAt: const Variable(null),
               cloudSyncStatus: const Variable(0),
@@ -518,8 +531,11 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
               updateCounter: Variable(newCounter),
               hlc: Variable(newHlc),
             ),
-          ) >
-          0;
+          ) > 0;
+      if (success) {
+        AppLogger.d("NotesDao: Restored note $uuid from trash.");
+      }
+      return success;
     });
   }
 

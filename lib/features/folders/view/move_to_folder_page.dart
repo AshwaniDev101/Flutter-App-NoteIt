@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/sync/sync_orchestrator.dart';
+import '../../../core/util/logger.dart';
 import '../../../database/drift/folders/folders_dao.dart';
 import '../../../database/drift/local_database.dart';
 import '../../../database/drift/notes/notes_dao.dart';
@@ -60,6 +61,7 @@ class _MoveToFolderPageState extends ConsumerState<MoveToFolderPage> {
     );
 
     if (result != null && mounted) {
+      AppLogger.d("MoveToFolderPage: User triggered folder creation '${result['name']}'");
       final dao = ref.read(foldersDaoProvider);
       await dao.addFolder(
         name: result['name'],

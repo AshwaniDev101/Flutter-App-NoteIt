@@ -422,10 +422,9 @@ class _WorkspaceMenuContentState extends ConsumerState<WorkspaceMenuContent> {
     widget.onCloseMenu();
 
     await ref.read(authRepositoryProvider).signOut();
-    await ref.read(syncModeProvider.notifier).setMode(SyncMode.offline);
 
     SnackBarManager.show(
-      msg: 'Signed out successfully. Switched to offline mode.',
+      msg: 'Signed out successfully.',
       type: SnackBarMessageType.acknowledgment,
     );
   }

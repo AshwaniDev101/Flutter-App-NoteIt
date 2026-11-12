@@ -3,6 +3,7 @@ import '../../../../core/util/logger.dart';
 import '../../../../database/firebase/firebase_database.dart';
 import '../../../workspace/data/workspace_repository.dart';
 import '../../../workspace/models/workspace_model.dart';
+import '../../../workspace/providers/active_workspace_provider.dart';
 import '../../../workspace/providers/workspace_providers.dart';
 import 'cloud_entity_processor.dart';
 
@@ -75,6 +76,12 @@ class CloudWorkspaceProcessor extends CloudEntityProcessor {
           ref.read(workspacesListProvider.notifier).refresh();
           AppLogger.d('CloudWorkspaceProcessor: Merged workspace update for ${incomingWorkspace.name}');
         }
+      }
+
+      // Edge case safety: If active workspace was deleted on another device, switch to default workspace
+      if (incomingWorkspace.deletedAt != null && ref.read(activeWorkspaceProvider).id == incomingWorkspace.id) {
+        AppLogger.w('CloudWorkspaceProcessor: Active workspace "${incomingWorkspace.name}" was remotely deleted! Switching to default workspace...');
+        await ref.read(activeWorkspaceProvider.notifier).switchWorkspace(WorkspaceRepository.defaultWorkspace);
       }
     } catch (e, st) {
       AppLogger.e('CloudWorkspaceProcessor: Failed to process incoming workspace item', error: e, stack: st);

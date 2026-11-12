@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../core/helpers/time_helper.dart';
 import '../../../core/util/hlc.dart';
+import '../../../core/util/logger.dart';
 import '../../shared_preference/shared_preference_manager.dart';
 import '../local_database.dart';
 import 'folders_table.dart';
@@ -58,6 +59,7 @@ class FoldersDao extends DatabaseAccessor<LocalDatabase> with _$FoldersDaoMixin 
         localSyncStatus: const Value(0),
       ),
     );
+    AppLogger.d("FoldersDao: Added new folder '$name' (uuid: $newUuid)");
     return newUuid;
   }
 
@@ -72,7 +74,7 @@ class FoldersDao extends DatabaseAccessor<LocalDatabase> with _$FoldersDaoMixin 
       final now = DateTime.now().toUtc();
       final newHlc = _generateHlc(counter: newCounter, lastKnownTime: now);
 
-      return await (update(folders)..where((t) => t.uuid.equals(uuid))).write(
+      final success = await (update(folders)..where((t) => t.uuid.equals(uuid))).write(
         FoldersCompanion.custom(
           name: Variable(name),
           colorIndex: colorIndex != null ? Variable<int>(colorIndex) : null,
@@ -83,6 +85,10 @@ class FoldersDao extends DatabaseAccessor<LocalDatabase> with _$FoldersDaoMixin 
           hlc: Variable(newHlc),
         ),
       ) > 0;
+      if (success) {
+        AppLogger.d("FoldersDao: Updated folder '$name' (uuid: $uuid)");
+      }
+      return success;
     });
   }
 
@@ -104,6 +110,7 @@ class FoldersDao extends DatabaseAccessor<LocalDatabase> with _$FoldersDaoMixin 
           hlc: Variable(newHlc),
         ),
       );
+      AppLogger.d("FoldersDao: Toggled pin status for folder '$uuid' (pinned: ${newPinnedState != null})");
     });
   }
 
@@ -171,6 +178,7 @@ class FoldersDao extends DatabaseAccessor<LocalDatabase> with _$FoldersDaoMixin 
           ),
         );
       }
+      AppLogger.d("FoldersDao: Soft-deleted folder '$uuid' and unassigned ${affectedNotes.length} notes.");
     });
   }
 
@@ -273,6 +281,8 @@ class FoldersDao extends DatabaseAccessor<LocalDatabase> with _$FoldersDaoMixin 
 
     final existingFolder = await (select(folders)..where((t) => t.uuid.equals(incomingUuid))).getSingleOrNull();
 
+    final sourceLabel = isCloud ? 'cloud' : 'local';
+
     if (existingFolder != null) {
       final incomingUpdateCounter = incomingData['updateCounter'] as int? ?? companion.updateCounter.value;
       final incomingHlc = companion.hlc.value;
@@ -284,9 +294,13 @@ class FoldersDao extends DatabaseAccessor<LocalDatabase> with _$FoldersDaoMixin 
         existingFolder: existingFolder,
       )) {
         await (update(folders)..where((t) => t.uuid.equals(incomingUuid))).write(companion);
+        AppLogger.d("FoldersDao: Overwrote local folder $incomingUuid ('${incomingData['name']}') with newer incoming $sourceLabel network data.");
+      } else {
+        AppLogger.d("FoldersDao: Ignored older/equal incoming $sourceLabel data for folder $incomingUuid ('${incomingData['name']}'). Local is newer.");
       }
     } else {
       await into(folders).insert(companion);
+      AppLogger.d("FoldersDao: Inserted new folder $incomingUuid ('${incomingData['name']}') from $sourceLabel network.");
     }
 
     // If folder is soft-deleted, unassign any local notes referencing this folder

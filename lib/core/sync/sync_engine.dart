@@ -82,7 +82,25 @@ final syncEngineProvider = NotifierProvider<SyncEngineNotifier, SyncEngine>(() {
 class SyncModeNotifier extends Notifier<SyncMode> {
   @override
   SyncMode build() {
-    return SharedPreferenceManager.instance.syncMode;
+    final initialMode = SharedPreferenceManager.instance.syncMode;
+
+    // Reactively bind SyncMode to Google Auth state
+    ref.listen<AsyncValue<dynamic>>(authStateProvider, (previous, next) {
+      if (!next.hasValue) return;
+
+      final user = next.value;
+      final currentMode = state;
+
+      if (user == null && currentMode == SyncMode.cloud) {
+        AppLogger.d("SyncModeNotifier: User unauthenticated. Falling back from Cloud to Offline mode.");
+        Future.microtask(() => setMode(SyncMode.offline));
+      } else if (user != null && currentMode == SyncMode.offline) {
+        AppLogger.d("SyncModeNotifier: User authenticated. Automatically switching from Offline to Cloud mode.");
+        Future.microtask(() => setMode(SyncMode.cloud));
+      }
+    }, fireImmediately: true);
+
+    return initialMode;
   }
 
   Future<void> setMode(SyncMode newMode) async {

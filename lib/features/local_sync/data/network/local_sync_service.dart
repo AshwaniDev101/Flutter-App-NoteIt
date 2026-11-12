@@ -8,6 +8,7 @@ import 'package:noteit/features/local_sync/data/processors/note_sync_processor.d
 import 'package:noteit/features/local_sync/data/processors/sync_entity_processor.dart';
 import 'package:noteit/features/local_sync/data/providers/local_sync_session_manager.dart';
 import 'package:noteit/features/local_sync/data/providers/sync_client_provider.dart';
+import 'package:noteit/features/workspace/providers/active_workspace_provider.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import 'package:noteit/core/util/logger.dart';
@@ -191,6 +192,8 @@ class LocalSyncNotifier extends Notifier<SyncConnectionState> {
 
   /// Broadcast pending local changes across all entity processors in dependency order (Folders -> Notes)
   Future<void> broadcastLocalChanges() async {
+    if (ref.read(activeWorkspaceProvider.notifier).isSwitching) return;
+
     if (_activeChannel == null) {
       final isClientMode = ref.read(syncModeProvider).isClient;
       if (isClientMode) {
@@ -265,6 +268,11 @@ class LocalSyncNotifier extends Notifier<SyncConnectionState> {
       if (type == 'disconnect') {
         AppLogger.d("LocalSyncService: Peer sent disconnect notice. Closing local channel.");
         stop();
+        return;
+      }
+
+      if (ref.read(activeWorkspaceProvider.notifier).isSwitching) {
+        AppLogger.d("LocalSyncService: Workspace switch in progress. Skipping incoming data payload.");
         return;
       }
 

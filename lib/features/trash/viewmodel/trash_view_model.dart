@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/sync/sync_orchestrator.dart';
+import '../../../core/util/logger.dart';
 import '../../../database/drift/folders/folders_dao.dart';
 import '../../../database/drift/local_database.dart';
 import '../../../database/drift/notes/notes_dao.dart';
@@ -122,9 +123,11 @@ class TrashViewModel extends Notifier<TrashState> {
   Future<void> emptyTrash() async {
     state = state.copyWith(isLoading: true, error: null);
     try {
+      AppLogger.d("TrashViewModel: Emptying local and cloud trash");
       await ref.read(noteActionsControllerProvider).emptyLocalAndCloudTrash();
       state = state.copyWith(isLoading: false);
-    } catch (e) {
+    } catch (e, st) {
+      AppLogger.e("TrashViewModel: Failed to empty trash", error: e, stack: st);
       state = state.copyWith(isLoading: false, error: e.toString());
       rethrow;
     }
@@ -136,6 +139,9 @@ class TrashViewModel extends Notifier<TrashState> {
     final foldersDao = ref.read(foldersDaoProvider);
 
     try {
+      final restoredCount = (noteUuids?.length ?? 0) + (folderUuids?.length ?? 0);
+      AppLogger.d("TrashViewModel: Restoring $restoredCount item(s) from trash (${noteUuids?.length ?? 0} notes, ${folderUuids?.length ?? 0} folders)");
+
       if (noteUuids != null) {
         for (final uuid in noteUuids) {
           await notesDao.restoreNote(uuid);
@@ -167,8 +173,9 @@ class TrashViewModel extends Notifier<TrashState> {
         isSelectMode: shouldBeSelectMode,
       );
 
-      return (noteUuids?.length ?? 0) + (folderUuids?.length ?? 0);
-    } catch (e) {
+      return restoredCount;
+    } catch (e, st) {
+      AppLogger.e("TrashViewModel: Failed to restore items", error: e, stack: st);
       state = state.copyWith(isLoading: false, error: e.toString());
       rethrow;
     }
@@ -178,6 +185,9 @@ class TrashViewModel extends Notifier<TrashState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
+      final deleteCount = (noteUuids?.length ?? 0) + (folderUuids?.length ?? 0);
+      AppLogger.d("TrashViewModel: Hard-deleting $deleteCount item(s) from trash");
+
       await ref
           .read(noteActionsControllerProvider)
           .hardDeleteSelection(noteUuids: noteUuids, folderUuids: folderUuids);
@@ -198,7 +208,8 @@ class TrashViewModel extends Notifier<TrashState> {
         selectedFolderIds: updatedFolders,
         isSelectMode: shouldBeSelectMode,
       );
-    } catch (e) {
+    } catch (e, st) {
+      AppLogger.e("TrashViewModel: Failed to delete items", error: e, stack: st);
       state = state.copyWith(isLoading: false, error: e.toString());
       rethrow;
     }

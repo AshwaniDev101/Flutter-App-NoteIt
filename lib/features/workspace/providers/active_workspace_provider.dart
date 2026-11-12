@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/sync/sync_orchestrator.dart';
 import '../../../core/util/logger.dart';
 import '../../../database/shared_preference/shared_preference_manager.dart';
 import '../../../features/cloud_sync/data/cloud_sync_service.dart';
@@ -116,7 +115,6 @@ class ActiveWorkspaceNotifier extends Notifier<Workspace> {
       await Future.delayed(const Duration(milliseconds: 200));
       _isSwitching = false;
       ref.read(workspaceSwitchingProvider.notifier).endSwitch();
-      ref.read(syncOrchestratorProvider).evaluateState();
     }
   }
 

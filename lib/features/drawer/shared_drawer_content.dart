@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:noteit/core/sync/sync_engine.dart';
 import 'package:noteit/database/firebase/auth/firebase_provider.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
 
@@ -484,9 +483,8 @@ class _DrawerAuthHeaderWidget extends ConsumerWidget {
                 onTap: () async {
                   final authRepo = ref.read(authRepositoryProvider);
                   await authRepo.signOut();
-                  await ref.read(syncModeProvider.notifier).setMode(SyncMode.offline);
                   SnackBarManager.show(
-                    msg: 'Signed out. Switched to offline mode.',
+                    msg: 'Signed out successfully.',
                     type: SnackBarMessageType.info,
                   );
                 },

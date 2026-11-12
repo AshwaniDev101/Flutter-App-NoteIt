@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:noteit/core/sync/sync_orchestrator.dart';
+import 'package:noteit/core/util/logger.dart';
 import 'package:noteit/database/drift/folders/folders_dao.dart';
 import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/database/drift/notes/notes_dao.dart';
@@ -106,12 +107,15 @@ class BackupService {
       extension = 'csv';
     }
 
-    return (
+    final resultPayload = (
       content: fileContent,
       extension: extension,
       notesCount: notesToExport.length,
       foldersCount: activeFolders.length,
     );
+
+    AppLogger.d("BackupService: Generated $extension backup (scope: ${scope.name}) containing ${notesToExport.length} notes and ${activeFolders.length} folders.");
+    return resultPayload;
   }
 
   /// Executes database insertion/upsert for raw imported maps
@@ -200,6 +204,8 @@ class BackupService {
     if (notesToInsert.isNotEmpty) {
       await notesDao.importNotes(notesToInsert);
     }
+
+    AppLogger.d("BackupService: Successfully imported ${notesToInsert.length} notes and ${foldersToInsert.length} folders (duplicates: $importAsDuplicates). Triggering sync...");
 
     ref.read(syncOrchestratorProvider).triggerSync();
 

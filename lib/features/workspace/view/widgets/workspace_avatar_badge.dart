@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:noteit/core/helpers/platform_helper.dart';
 
 import '../helpers/workspace_badge_helper.dart';
 
@@ -25,6 +26,12 @@ class _WorkspaceAvatarBadgeState extends State<WorkspaceAvatarBadge> {
   Widget build(BuildContext context) {
     final hasPhoto = widget.photoUrl != null && widget.photoUrl!.isNotEmpty;
 
+    double badgeSize = 32;
+
+    if(PlatformHelper.isWideLayout(context))
+      {
+        badgeSize = 26;
+      }
     return Tooltip(
       message: 'Workspaces',
       child: InkWell(
@@ -43,8 +50,8 @@ class _WorkspaceAvatarBadgeState extends State<WorkspaceAvatarBadge> {
             shape: const CircleBorder(),
             clipBehavior: Clip.antiAlias,
             child: SizedBox(
-              height: 32,
-              width: 32,
+              height: badgeSize,
+              width: badgeSize,
               child: Stack(
                 children: [
                   if (hasPhoto)

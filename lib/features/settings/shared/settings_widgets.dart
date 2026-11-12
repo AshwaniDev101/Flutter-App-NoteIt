@@ -417,48 +417,53 @@ class SettingsSelectionTile extends StatelessWidget {
             : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: ListTile(
-        dense: isDesktop,
-        visualDensity: isDesktop ? VisualDensity.compact : VisualDensity.standard,
-        contentPadding: contentPadding,
-        hoverColor: colorScheme.primary.withValues(alpha: 0.04),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        leading: leadingWidget,
-        title: Text(
-          title,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-            color: isSelected ? colorScheme.primary : theme.textTheme.titleMedium?.color,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        clipBehavior: Clip.antiAlias,
+        child: ListTile(
+          dense: isDesktop,
+          visualDensity: isDesktop ? VisualDensity.compact : VisualDensity.standard,
+          contentPadding: contentPadding,
+          hoverColor: colorScheme.primary.withValues(alpha: 0.04),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          leading: leadingWidget,
+          title: Text(
+            title,
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+              color: isSelected ? colorScheme.primary : theme.textTheme.titleMedium?.color,
+            ),
           ),
-        ),
-        subtitle: subtitle != null
-            ? Text(
-                subtitle!,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              )
-            : null,
-        trailing: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 200),
-          transitionBuilder: (child, animation) => ScaleTransition(
-            scale: animation,
-            child: child,
-          ),
-          child: isSelected
-              ? Icon(
-                  Icons.check_circle_rounded,
-                  key: const ValueKey('selected'),
-                  size: 22,
-                  color: colorScheme.primary,
+          subtitle: subtitle != null
+              ? Text(
+                  subtitle!,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
                 )
-              : const SizedBox(
-                  key: ValueKey('unselected'),
-                  width: 22,
-                  height: 22,
-                ),
+              : null,
+          trailing: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            transitionBuilder: (child, animation) => ScaleTransition(
+              scale: animation,
+              child: child,
+            ),
+            child: isSelected
+                ? Icon(
+                    Icons.check_circle_rounded,
+                    key: const ValueKey('selected'),
+                    size: 22,
+                    color: colorScheme.primary,
+                  )
+                : const SizedBox(
+                    key: ValueKey('unselected'),
+                    width: 22,
+                    height: 22,
+                  ),
+          ),
+          onTap: onTap,
         ),
-        onTap: onTap,
       ),
     );
   }

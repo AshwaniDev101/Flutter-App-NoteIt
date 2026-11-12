@@ -5,9 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/helpers/platform_helper.dart';
-import '../../../shared/app_bars/app_search_bar.dart';
-
 import '../../../core/sync/sync_orchestrator.dart';
+import '../../../core/util/logger.dart';
+import '../../../shared/app_bars/app_search_bar.dart';
 import '../../../database/drift/folders/folders_dao.dart';
 import '../../../database/drift/local_database.dart';
 import '../../../database/drift/notes/notes_dao.dart';
@@ -438,6 +438,7 @@ class _FolderContainerState extends ConsumerState<FolderContainer> {
     );
 
     if (result != null && mounted) {
+      AppLogger.d("FolderSelector: User triggered folder creation '${result['name']}'");
       final dao = ref.read(foldersDaoProvider);
       await dao.addFolder(
         name: result['name'],

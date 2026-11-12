@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import '../../core/helpers/platform_helper.dart';
-import 'app_bottom_sheet.dart';
+
+import 'adaptive_menu_button.dart';
 
 enum HomeMenuAction {
   sortCreated('by created time', Icons.calendar_month_outlined),
@@ -19,12 +19,13 @@ enum HomeMenuAction {
   const HomeMenuAction(this.label, this.icon);
 }
 
-class SortMenuButton extends StatefulWidget {
+class SortMenuButton extends StatelessWidget {
   final IconData icon;
   final String tooltip;
   final HomeMenuAction currentSortSelection;
   final HomeMenuAction currentPlatformSelection;
   final ValueChanged<HomeMenuAction> onSelected;
+  final bool showPlatformFilter;
 
   const SortMenuButton({
     super.key,
@@ -33,144 +34,48 @@ class SortMenuButton extends StatefulWidget {
     required this.currentSortSelection,
     this.currentPlatformSelection = HomeMenuAction.filterAll,
     required this.onSelected,
+    this.showPlatformFilter = false,
   });
 
-  @override
-  State<SortMenuButton> createState() => _SortMenuButtonState();
-}
-
-class _SortMenuButtonState extends State<SortMenuButton> {
-  final MenuController _menuController = MenuController();
-
-  void _showMobileBottomSheet(BuildContext context) {
-    AppBottomSheet.show(
-      context: context,
-      builder: (context, setModalState) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
-              child: Text(
-                'Sort & Filter',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-            ),
-            const Divider(indent: 16, endIndent: 16),
-            _buildSectionHeader(context, 'SORT BY'),
-            _buildActionTile(context, HomeMenuAction.sortCreated, onTap: setModalState),
-            _buildActionTile(context, HomeMenuAction.sortName, onTap: setModalState),
-            _buildActionTile(context, HomeMenuAction.sortUpdated, onTap: setModalState),
-            _buildActionTile(context, HomeMenuAction.sortFolder, onTap: setModalState),
-            _buildActionTile(context, HomeMenuAction.sortReminder, onTap: setModalState),
-            const SizedBox(height: 8),
-            _buildSectionHeader(context, 'FILTER BY DEVICE'),
-            _buildActionTile(context, HomeMenuAction.filterAll, onTap: setModalState),
-            _buildActionTile(context, HomeMenuAction.filterPhone, onTap: setModalState),
-            _buildActionTile(context, HomeMenuAction.filterWindows, onTap: setModalState),
-          ],
-        );
-      },
+  MenuItemSpec<HomeMenuAction> _buildItem(HomeMenuAction action) {
+    return MenuItemSpec<HomeMenuAction>(
+      value: action,
+      label: action.label,
+      icon: action.icon,
+      isSelected: (action == currentSortSelection) || (action == currentPlatformSelection),
+      onTap: () => onSelected(action),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = !PlatformHelper.isWideLayout(context);
-
-    if (isMobile) {
-      return IconButton(
-        icon: Icon(widget.icon),
-        tooltip: widget.tooltip,
-        onPressed: () => _showMobileBottomSheet(context),
-      );
-    }
-
-    return MenuAnchor(
-      controller: _menuController,
-      style: const MenuStyle(
-        padding: WidgetStatePropertyAll(EdgeInsets.zero),
-        backgroundColor: WidgetStatePropertyAll(Colors.transparent),
-        elevation: WidgetStatePropertyAll(0),
+    final sections = [
+      MenuSectionSpec<HomeMenuAction>(
+        title: 'SORT BY',
+        items: [
+          _buildItem(HomeMenuAction.sortCreated),
+          _buildItem(HomeMenuAction.sortName),
+          _buildItem(HomeMenuAction.sortUpdated),
+          _buildItem(HomeMenuAction.sortFolder),
+          _buildItem(HomeMenuAction.sortReminder),
+        ],
       ),
-      builder: (BuildContext context, MenuController controller, Widget? child) {
-        return IconButton(
-          onPressed: () {
-            if (controller.isOpen) {
-              controller.close();
-            } else {
-              controller.open();
-            }
-          },
-          icon: Icon(widget.icon),
-          tooltip: widget.tooltip,
-        );
-      },
-      menuChildren: [
-        Card(
-          color: Theme.of(context).colorScheme.surfaceContainer,
-          elevation: 2,
-          margin: const EdgeInsets.all(4.0),
-          child: SizedBox(
-            width: 250,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildSectionHeader(context, 'SORT BY'),
-                  _buildActionTile(context, HomeMenuAction.sortCreated),
-                  _buildActionTile(context, HomeMenuAction.sortName),
-                  _buildActionTile(context, HomeMenuAction.sortUpdated),
-                  _buildActionTile(context, HomeMenuAction.sortFolder),
-                  _buildActionTile(context, HomeMenuAction.sortReminder),
-                  // const Divider(indent: 12, endIndent: 12),
-                  // _buildSectionHeader(context, 'FILTER BY DEVICE'),
-                  // _buildActionTile(context, HomeMenuAction.filterAll),
-                  // _buildActionTile(context, HomeMenuAction.filterPhone),
-                  // _buildActionTile(context, HomeMenuAction.filterWindows),
-                ],
-              ),
-            ),
-          ),
+      if (showPlatformFilter)
+        MenuSectionSpec<HomeMenuAction>(
+          title: 'FILTER BY DEVICE',
+          items: [
+            _buildItem(HomeMenuAction.filterAll),
+            _buildItem(HomeMenuAction.filterPhone),
+            _buildItem(HomeMenuAction.filterWindows),
+          ],
         ),
-      ],
-    );
-  }
+    ];
 
-  Widget _buildSectionHeader(BuildContext context, String title) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
-      child: Text(
-        title,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: colorScheme.primary,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.0,
-            ),
-      ),
-    );
-  }
-
-  Widget _buildActionTile(BuildContext context, HomeMenuAction action, {StateSetter? onTap}) {
-    final isSelected = (action == widget.currentSortSelection) ||
-        (action == widget.currentPlatformSelection);
-
-    return AppMenuTile(
-      label: action.label,
-      icon: action.icon,
-      isSelected: isSelected,
-      onTap: () {
-        widget.onSelected(action);
-        if (onTap != null) {
-          onTap(() {});
-        }
-      },
+    return AdaptiveMenuButton<HomeMenuAction>(
+      icon: icon,
+      tooltip: tooltip,
+      sheetTitle: 'Sort & Filter',
+      sections: sections,
     );
   }
 }

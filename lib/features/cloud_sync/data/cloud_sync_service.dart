@@ -87,6 +87,8 @@ class CloudSyncService {
     final folderProcessor = ref.read(cloudFolderProcessorProvider);
     final noteProcessor = ref.read(cloudNoteProcessorProvider);
 
+    final activeWorkspace = ref.read(activeWorkspaceProvider);
+
     _manifestSubscription = firebaseDb.watchForManifestChanges(sessionStartTime).listen(
       (docSnapshots) async {
         for (final doc in docSnapshots) {
@@ -101,12 +103,12 @@ class CloudSyncService {
       },
     );
 
-    _folderSubscription = firebaseDb.watchForRemoteChanges('folders', sessionStartTime).listen(
+    _folderSubscription = firebaseDb.watchForRemoteChanges('folders', sessionStartTime, targetWorkspaceId: activeWorkspace.id).listen(
       (docSnapshots) async {
         for (final doc in docSnapshots) {
           final data = doc.data();
           if (data != null) {
-            await folderProcessor.processIncomingCloudItem(data);
+            await folderProcessor.processIncomingCloudItem(data, targetWorkspaceId: activeWorkspace.id);
           }
         }
       },
@@ -115,12 +117,12 @@ class CloudSyncService {
       },
     );
 
-    _noteSubscription = firebaseDb.watchForRemoteChanges('notes', sessionStartTime).listen(
+    _noteSubscription = firebaseDb.watchForRemoteChanges('notes', sessionStartTime, targetWorkspaceId: activeWorkspace.id).listen(
       (docSnapshots) async {
         for (final doc in docSnapshots) {
           final data = doc.data();
           if (data != null) {
-            await noteProcessor.processIncomingCloudItem(data);
+            await noteProcessor.processIncomingCloudItem(data, targetWorkspaceId: activeWorkspace.id);
           }
         }
       },
@@ -134,7 +136,7 @@ class CloudSyncService {
   /// Stage 1: Workspace Manifest Sync (Level 0)
   /// Stage 2: Active Workspace Content Sync (Level 1 Folders -> Level 2 Notes)
   Future<void> executeFullSync() async {
-    if (!_isRunning || _isExecutingFullSync) return;
+    if (!_isRunning || _isExecutingFullSync || ref.read(activeWorkspaceProvider.notifier).isSwitching) return;
 
     final firebaseDb = ref.read(noteFirebaseDatabaseProvider);
     if (firebaseDb == null) {
