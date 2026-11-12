@@ -1,7 +1,33 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/sync/sync_orchestrator.dart';
+import '../../../database/shared_preference/shared_preference_manager.dart';
 import '../data/workspace_repository.dart';
 import '../models/workspace_model.dart';
+
+/// Riverpod provider managing whether workspace selection badge is enabled in the app.
+final workspaceEnableProvider = NotifierProvider<WorkspaceEnableNotifier, bool>(() {
+  return WorkspaceEnableNotifier();
+});
+
+class WorkspaceEnableNotifier extends Notifier<bool> {
+  @override
+  bool build() {
+    final prefs = ref.watch(sharedPreferenceProvider);
+    return prefs.isEnableWorkspace;
+  }
+
+  /// Sets workspace enabled state and updates SharedPreferences.
+  Future<void> setWorkspaceEnable(bool enabled) async {
+    final prefs = ref.read(sharedPreferenceProvider);
+    await prefs.setEnableWorkspace(enabled);
+    state = enabled;
+  }
+
+  /// Toggles workspace enabled state.
+  Future<void> toggleWorkspaceEnable() async {
+    await setWorkspaceEnable(!state);
+  }
+}
 
 /// Riverpod provider exposing access to [WorkspaceRepository].
 final workspaceRepositoryProvider = Provider<WorkspaceRepository>((ref) {

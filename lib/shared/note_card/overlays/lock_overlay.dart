@@ -19,13 +19,13 @@ class LockOverlayWidget extends ConsumerWidget {
 
     // If session unlocked -> Transparent background, small icon top-right
     if (isSessionUnlocked) {
-      return const Positioned(
+      return Positioned(
         top: 0,
         right: 0,
         child: Icon(
           Icons.lock_open_rounded,
           size: 18,
-          color: Colors.grey,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
       );
     }

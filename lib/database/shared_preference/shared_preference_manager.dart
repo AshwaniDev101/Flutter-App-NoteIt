@@ -51,6 +51,12 @@ class SharedPreferenceManager {
   /// Value: String (e.g. `'workspace_default'`, `'workspace_1718'`).
   static const String _keyActiveWorkspaceId = 'active_workspace_id';
 
+  /// Key for enabling or disabling workspace feature/badge visibility.
+  /// Boolean:
+  /// - `true`: Workspace feature is enabled.
+  /// - `false`: Workspace feature is disabled (default).
+  static const String _keyEnableWorkspace = 'enable_workspace';
+
   // --- Sync & P2P Keys ---
 
   /// Key for storing the unified synchronization mode.
@@ -658,6 +664,18 @@ class SharedPreferenceManager {
 
   /// Saves the active workspace ID preference.
   Future<bool> setActiveWorkspaceId(String value) async => await _prefs.setString(_keyActiveWorkspaceId, value);
+
+  /// Whether workspace feature/badge is enabled (defaults to `false`).
+  bool get isEnableWorkspace => _prefs.getBool(_keyEnableWorkspace) ?? false;
+
+  /// Alias for [isEnableWorkspace].
+  bool get isWorkspaceEnabled => isEnableWorkspace;
+
+  /// Sets workspace enabled state.
+  Future<bool> setEnableWorkspace(bool value) async => await _prefs.setBool(_keyEnableWorkspace, value);
+
+  /// Alias for [setEnableWorkspace].
+  Future<bool> setWorkspaceEnable(bool value) async => await setEnableWorkspace(value);
 
   // =========================================================================
   // 10. GENERAL / LIFECYCLE METHODS

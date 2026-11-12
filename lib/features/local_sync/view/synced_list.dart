@@ -272,24 +272,39 @@ class _RoleBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final isHost = role == 'Host';
     final isUnknown = role == 'Unknown';
+    final colorScheme = Theme.of(context).colorScheme;
 
-    final color = isUnknown
-        ? Colors.grey
-        : (isHost ? Colors.deepPurple : Colors.teal);
+    final Color badgeBg;
+    final Color badgeFg;
+    final Color borderCol;
+
+    if (isUnknown) {
+      badgeBg = colorScheme.surfaceContainerHighest;
+      badgeFg = colorScheme.onSurfaceVariant;
+      borderCol = colorScheme.outlineVariant;
+    } else if (isHost) {
+      badgeBg = colorScheme.primaryContainer;
+      badgeFg = colorScheme.onPrimaryContainer;
+      borderCol = colorScheme.primary.withValues(alpha: 0.5);
+    } else {
+      badgeBg = colorScheme.secondaryContainer;
+      badgeFg = colorScheme.onSecondaryContainer;
+      borderCol = colorScheme.secondary.withValues(alpha: 0.5);
+    }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: badgeBg,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.5)),
+        border: Border.all(color: borderCol),
       ),
       child: Text(
         role,
         style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w600,
-          color: color,
+          color: badgeFg,
         ),
       ),
     );

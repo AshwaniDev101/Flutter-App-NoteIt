@@ -230,7 +230,7 @@ class _FindReplaceWidgetState extends State<FindReplaceWidget> {
               border: Border.all(color: colorScheme.outlineVariant, width: 0.5),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
+                  color: colorScheme.shadow.withValues(alpha: 0.1),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 )

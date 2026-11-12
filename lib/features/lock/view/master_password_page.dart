@@ -53,7 +53,7 @@ class _MasterPasswordPageState extends State<MasterPasswordPage> {
               suffixIcon: IconButton(
                 icon: Icon(
                   _obscureText ? Icons.visibility_off : Icons.visibility,
-                  color: Colors.grey,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
                 onPressed: () {
                   setState(() {

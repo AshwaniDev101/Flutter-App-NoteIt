@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/helpers/platform_helper.dart';
 import '../../../../shared/menus/app_bottom_sheet.dart';
 import '../../providers/active_workspace_provider.dart';
+import '../../providers/workspace_providers.dart';
 import '../workspace_menu_content.dart';
 import 'workspace_avatar_badge.dart';
 
@@ -30,6 +31,11 @@ class _WorkspaceBadgeState extends ConsumerState<WorkspaceBadge> {
 
   @override
   Widget build(BuildContext context) {
+    final isWorkspaceEnabled = ref.watch(workspaceEnableProvider);
+    if (!isWorkspaceEnabled) {
+      return const SizedBox.shrink();
+    }
+
     final activeWorkspace = ref.watch(activeWorkspaceProvider);
     final colorScheme = Theme.of(context).colorScheme;
     final isMobile = !PlatformHelper.isWideLayout(context);

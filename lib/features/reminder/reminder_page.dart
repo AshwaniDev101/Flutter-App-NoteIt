@@ -635,10 +635,13 @@ class _ReminderPageState extends ConsumerState<ReminderPage> {
                   FilledButton.icon(
                     onPressed: formState.isSaving ? null : () => _saveReminder(formState, notifier),
                     icon: formState.isSaving
-                        ? const SizedBox(
+                        ? SizedBox(
                             width: 16,
                             height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Theme.of(context).colorScheme.onPrimary,
+                            ),
                           )
                         : const Icon(Icons.check_rounded, size: 18),
                     label: Text(formState.isSaving ? 'Saving...' : 'Done'),

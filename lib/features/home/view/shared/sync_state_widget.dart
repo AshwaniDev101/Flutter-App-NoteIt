@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/helpers/platform_helper.dart';
 import 'package:noteit/core/sync/sync_engine.dart';
 import 'package:noteit/core/sync/sync_orchestrator.dart';
+import 'package:noteit/core/theme/sync_status_colors.dart';
 import 'package:noteit/core/util/logger.dart';
 import 'package:noteit/database/firebase/auth/firebase_provider.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
@@ -19,73 +20,89 @@ enum SyncDisplayState {
   offline(
     label: 'Offline',
     icon: Icons.cloud_off,
-    color: Colors.grey,
     tooltip: 'Sync is disabled in Offline mode. Tap to select Sync mode.',
     isActionable: true,
   ),
   unauthenticated(
     label: 'Not Synced',
     icon: Icons.account_circle_outlined,
-    color: Colors.orangeAccent,
     tooltip: 'Sign in to enable Cloud Sync',
     isActionable: true,
   ),
   hosting(
     label: 'Hosting...',
     icon: Icons.wifi,
-    color: Colors.white,
     tooltip: 'Host server running, waiting for peer...',
     isActionable: true,
   ),
   searching(
     label: 'Scanning...',
     icon: Icons.search_rounded,
-    color: Colors.cyanAccent,
     tooltip: 'Searching local network for Hosts...',
     isActionable: false,
   ),
   disconnected(
     label: 'Disconnected',
     icon: Icons.link_off_rounded,
-    color: Colors.grey,
     tooltip: 'Disconnected from Host. Tap to open Host Searcher.',
     isActionable: true,
   ),
   reconnecting(
     label: 'Reconnecting...',
     icon: Icons.change_circle_outlined,
-    color: Colors.amberAccent,
     tooltip: 'Connection lost, attempting reconnect...',
     isActionable: false,
   ),
   syncing(
     label: 'Syncing...',
     icon: Icons.sync,
-    color: Colors.blueAccent,
     tooltip: 'Synchronizing notes...',
     isActionable: false,
   ),
   synced(
     label: 'Synced',
     icon: Icons.check_circle,
-    color: Colors.greenAccent,
     tooltip: 'All notes are up to date. Tap to force sync.',
     isActionable: true,
   );
 
   final String label;
   final IconData icon;
-  final Color color;
   final String tooltip;
   final bool isActionable;
 
   const SyncDisplayState({
     required this.label,
     required this.icon,
-    required this.color,
     required this.tooltip,
     required this.isActionable,
   });
+
+  Color getColor(BuildContext context) {
+    final theme = Theme.of(context);
+    final ext = theme.extension<SyncStatusColors>();
+    if (ext != null) {
+      switch (this) {
+        case SyncDisplayState.synced:
+          return ext.synced;
+        case SyncDisplayState.syncing:
+          return ext.syncing;
+        case SyncDisplayState.hosting:
+          return ext.hosting;
+        case SyncDisplayState.searching:
+          return ext.searching;
+        case SyncDisplayState.reconnecting:
+          return ext.reconnecting;
+        case SyncDisplayState.unauthenticated:
+          return ext.unauthenticated;
+        case SyncDisplayState.disconnected:
+          return ext.disconnected;
+        case SyncDisplayState.offline:
+          return ext.offline;
+      }
+    }
+    return theme.colorScheme.onSurfaceVariant;
+  }
 }
 
 /// Calculated visual display info including state enum and dynamic tooltip.
@@ -330,6 +347,7 @@ class _SyncStateWidgetState extends ConsumerState<SyncStateWidget> {
   Widget build(BuildContext context) {
     final displayInfo = ref.watch(syncDisplayInfoProvider);
     final displayState = displayInfo.state;
+    final statusColor = displayState.getColor(context);
     final colorScheme = Theme.of(context).colorScheme;
     final isMobile = !PlatformHelper.isWideLayout(context);
 
@@ -345,6 +363,10 @@ class _SyncStateWidgetState extends ConsumerState<SyncStateWidget> {
         },
         child: Container(
           key: ValueKey(displayState),
+          decoration: BoxDecoration(
+            color: statusColor.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(16),
+          ),
           child: Material(
             color: Colors.transparent,
             child: InkWell(
@@ -362,12 +384,12 @@ class _SyncStateWidgetState extends ConsumerState<SyncStateWidget> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      _buildIcon(displayState),
+                      _buildIcon(displayState, statusColor),
                       const SizedBox(width: 6),
                       Text(
                         displayState.label,
                         style: TextStyle(
-                          color: displayState.color,
+                          color: statusColor,
                           fontWeight: FontWeight.w600,
                           fontSize: 13,
                         ),
@@ -418,18 +440,18 @@ class _SyncStateWidgetState extends ConsumerState<SyncStateWidget> {
     );
   }
 
-  Widget _buildIcon(SyncDisplayState displayState) {
+  Widget _buildIcon(SyncDisplayState displayState, Color statusColor) {
     if (displayState == SyncDisplayState.syncing) {
       return SpinningSyncIcon(
         isSyncing: true,
-        color: displayState.color,
+        color: statusColor,
       );
     }
 
     return Icon(
       displayState.icon,
       size: 18,
-      color: displayState.color,
+      color: statusColor,
     );
   }
 }

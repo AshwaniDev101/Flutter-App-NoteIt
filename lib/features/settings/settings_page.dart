@@ -6,6 +6,7 @@ import '../keybinding/keybindings_provider.dart';
 import '../lock/lock_manger/lock_manager.dart';
 import '../lock/password_prompt_helper.dart';
 import '../home/view/desktop/content_panel/core/navigator.dart';
+import '../workspace/providers/workspace_providers.dart';
 import 'shared/settings_widgets.dart';
 
 /// Main Settings Page hub providing top-level configuration sections for
@@ -139,6 +140,20 @@ class SettingsPage extends ConsumerWidget {
           SettingsCard(
             child: Column(
               children: [
+                SettingsSwitchTile(
+                  icon: Icons.workspaces_outlined,
+                  title: 'Enable workspace',
+                  subtitle: 'Show workspace switcher badge on the homepage',
+                  value: ref.watch(workspaceEnableProvider),
+                  onChanged: (bool value) {
+                    ref.read(workspaceEnableProvider.notifier).setWorkspaceEnable(value);
+                  },
+                ),
+                Divider(
+                  height: 1,
+                  indent: 48,
+                  color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+                ),
                 SettingsSwitchTile(
                   icon: Icons.keyboard_alt_outlined,
                   title: 'Show keyboard shortcuts',

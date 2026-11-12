@@ -14,12 +14,12 @@ class AppTypography {
 
     // Note Title
     titleLarge: TextStyle(fontSize: 22, fontWeight: FontWeight.w500, letterSpacing: 0),       // * class_ExportPage-Headers, class_DrawerPage-Profile, class_DesktopLeftPanel-Title, class_DesktopEditPage-NoteTitle
-    titleMedium: TextStyle(fontFamily: 'Roboto', fontSize: 16, fontWeight: FontWeight.w700, letterSpacing: 0),  // * class_NoteCard-Title, class_RoleSelectorPage-RoleTile-Title, class_MobileEditPage-NoteTitle, class_SettingsPage-TileTitle
+    titleMedium: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, letterSpacing: 0),  // * class_NoteCard-Title, class_RoleSelectorPage-RoleTile-Title, class_MobileEditPage-NoteTitle, class_SettingsPage-TileTitle
     titleSmall: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, letterSpacing: 0.1),     // * class_HomepageDrawer-SectionTitle, class_SettingsPage-SectionTitle
 
     // Note Body
     bodyLarge: TextStyle(fontSize: 16, fontWeight: FontWeight.w400, letterSpacing: 0.5, height: 1.5),    // * class_DesktopEditPage-ContentEditor, class_MobileEditPage-ContentEditor
-    bodyMedium: TextStyle(fontFamily: 'Roboto', fontSize: 14, fontWeight: FontWeight.w400, letterSpacing: 0, height: 1.2), // * class_NoteCard-ContentBody, class_RoleSelectorPage-Description, class_SettingsPage-Subtitle, class_SnackBarManager-Text
+    bodyMedium: TextStyle(fontSize: 14, fontWeight: FontWeight.w400, letterSpacing: 0, height: 1.4), // * class_NoteCard-ContentBody, class_RoleSelectorPage-Description, class_SettingsPage-Subtitle, class_SnackBarManager-Text
     bodySmall: TextStyle(fontSize: 12, fontWeight: FontWeight.w400, letterSpacing: 0.4),                 // * class_NoteEditorOptions-OptionLabel, class_RoleSelectorPage-RoleBadge, class_DesktopEditPage-Timestamp, class_TagSortViewMenu-SearchInput
 
     // Metadata (Timestamps, bottom row)

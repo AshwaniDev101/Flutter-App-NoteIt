@@ -452,10 +452,13 @@ class _ImportNotesPageState extends ConsumerState<ImportNotesPage> {
                 child: FilledButton.icon(
                   onPressed: (_selectedFile == null || _isImporting) ? null : _processImport,
                   icon: _isImporting
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 20,
                           height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Theme.of(context).colorScheme.onPrimary,
+                          ),
                         )
                       : const Icon(Icons.restore),
                   label: Text(

@@ -206,7 +206,7 @@ class _NoteEditorSettingsPageState extends ConsumerState<NoteEditorSettingsPage>
           const SettingsSectionHeader(title: 'Reset Settings'),
           SettingsCard(
             child: SettingsTile(
-              leading: const Icon(Icons.restart_alt_rounded, color: Colors.orange),
+              leading: Icon(Icons.restart_alt_rounded, color: colorScheme.tertiary),
               title: 'Reset Editor Settings to Defaults',
               subtitle:
                   'Restores default font sizes, line spacing, and cursor focus preference',

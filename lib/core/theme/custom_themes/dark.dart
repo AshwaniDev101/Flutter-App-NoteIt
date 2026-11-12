@@ -165,6 +165,8 @@ ThemeData get _darkThemeData {
         statusBarBrightness: Brightness.dark,
       ),
     ),
+
+    extensions: [SyncStatusColors.dark()],
   );
 }
 

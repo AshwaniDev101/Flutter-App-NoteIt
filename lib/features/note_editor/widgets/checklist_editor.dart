@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 
-// ==========================================
-// PURE DATA MODEL (For JSON / Database)
-// ==========================================
 class CheckListItemModel {
   final String id;
   final String text;
@@ -14,7 +11,14 @@ class CheckListItemModel {
     required this.isChecked,
   });
 
-  // Convert a single item TO JSON
+  factory CheckListItemModel.fromJson(Map<String, dynamic> json) {
+    return CheckListItemModel(
+      id: json['id'] as String? ?? UniqueKey().toString(),
+      text: json['text'] as String? ?? '',
+      isChecked: json['isChecked'] as bool? ?? false,
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -22,32 +26,14 @@ class CheckListItemModel {
       'isChecked': isChecked,
     };
   }
-
-  // Convert a single item FROM JSON
-  factory CheckListItemModel.fromJson(Map<String, dynamic> json) {
-    return CheckListItemModel(
-      id: json['id'] as String,
-      text: json['text'] as String,
-      isChecked: json['isChecked'] as bool,
-    );
-  }
 }
 
-// ==========================================
-// UI STATE MODEL (For Controllers/Focus)
-// ==========================================
-
-// Custom controller to highlight text while in Edit Mode
 class ChecklistTextController extends TextEditingController {
   String _searchQuery = '';
 
-  ChecklistTextController({super.text});
-
-  String get searchQuery => _searchQuery;
-
-  set searchQuery(String value) {
-    if (_searchQuery != value) {
-      _searchQuery = value;
+  void setSearchQuery(String query) {
+    if (_searchQuery != query) {
+      _searchQuery = query;
       notifyListeners();
     }
   }
@@ -63,6 +49,12 @@ class ChecklistTextController extends TextEditingController {
       return super.buildTextSpan(context: context, style: style, withComposing: withComposing);
     }
 
+    final colorScheme = Theme.of(context).colorScheme;
+    final highlightStyle = TextStyle(
+      backgroundColor: colorScheme.secondaryContainer,
+      color: colorScheme.onSecondaryContainer,
+    );
+
     List<TextSpan> spans = [];
     int currentIndex = 0;
 
@@ -72,8 +64,7 @@ class ChecklistTextController extends TextEditingController {
       }
       spans.add(TextSpan(
         text: text.substring(match.start, match.end),
-        style: style?.copyWith(backgroundColor: Colors.yellow.withValues(alpha: 0.5), color: Colors.black) ??
-            const TextStyle(backgroundColor: Colors.yellow, color: Colors.black),
+        style: style?.merge(highlightStyle) ?? highlightStyle,
       ));
       currentIndex = match.end;
     }
@@ -91,9 +82,11 @@ class ChecklistItemController {
   final FocusNode focusNode;
   bool isChecked;
 
-  ChecklistItemController({String? initialId, String text = '', this.isChecked = false})
-      : id = initialId ?? UniqueKey().toString(),
-        textController = ChecklistTextController(text: text),
+  ChecklistItemController({
+    required this.id,
+    required String text,
+    this.isChecked = false,
+  })  : textController = ChecklistTextController()..text = text,
         focusNode = FocusNode();
 
   void dispose() {
@@ -102,18 +95,15 @@ class ChecklistItemController {
   }
 }
 
-// ==========================================
-// THE WIDGET
-// ==========================================
 class CheckListWidget extends StatefulWidget {
-  final List<CheckListItemModel>? initialData;
-  final Function(List<CheckListItemModel>)? onChange;
-  final Function(List<CheckListItemModel>)? onSubmit;
+  final List<CheckListItemModel> initialData;
+  final ValueChanged<List<CheckListItemModel>>? onChange;
+  final ValueChanged<List<CheckListItemModel>>? onSubmit;
   final String searchQuery;
 
   const CheckListWidget({
     super.key,
-    this.initialData,
+    required this.initialData,
     this.onChange,
     this.onSubmit,
     this.searchQuery = '',
@@ -124,37 +114,33 @@ class CheckListWidget extends StatefulWidget {
 }
 
 class _CheckListWidgetState extends State<CheckListWidget> {
-  final List<ChecklistItemController> fieldItems = [];
-  bool _isEditing = true;
+  late List<ChecklistItemController> fieldItems;
+  bool _isEditing = false;
 
   @override
   void initState() {
     super.initState();
-
-    if (widget.initialData != null && widget.initialData!.isNotEmpty) {
-      _isEditing = false;
-      for (var item in widget.initialData!) {
-        final uiItem = ChecklistItemController(
-          initialId: item.id,
-          text: item.text,
-          isChecked: item.isChecked,
-        );
-        uiItem.textController.searchQuery = widget.searchQuery;
-        fieldItems.add(uiItem);
-      }
-    } else {
-      _isEditing = true;
-    }
+    fieldItems = widget.initialData
+        .map((item) => ChecklistItemController(
+              id: item.id,
+              text: item.text,
+              isChecked: item.isChecked,
+            ))
+        .toList();
+    _updateSearchQuery();
   }
 
-  // Pushes search updates down to the internal checklist fields
   @override
   void didUpdateWidget(CheckListWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.searchQuery != oldWidget.searchQuery) {
-      for (var item in fieldItems) {
-        item.textController.searchQuery = widget.searchQuery;
-      }
+      _updateSearchQuery();
+    }
+  }
+
+  void _updateSearchQuery() {
+    for (var item in fieldItems) {
+      item.textController.setSearchQuery(widget.searchQuery);
     }
   }
 
@@ -166,81 +152,53 @@ class _CheckListWidgetState extends State<CheckListWidget> {
     super.dispose();
   }
 
-  // Generates pure data from UI state
-  List<CheckListItemModel> _generateExportData() {
-    return fieldItems
-        .where((item) => item.textController.text.trim().isNotEmpty)
-        .map((item) => CheckListItemModel(
-      id: item.id,
-      text: item.textController.text.trim(),
-      isChecked: item.isChecked,
-    ))
-        .toList();
-  }
-
   void _notifyChange() {
-    if (widget.onChange != null) {
-      widget.onChange!(_generateExportData());
-    }
+    final updatedData = fieldItems
+        .map((item) => CheckListItemModel(
+              id: item.id,
+              text: item.textController.text,
+              isChecked: item.isChecked,
+            ))
+        .toList();
+    widget.onChange?.call(updatedData);
   }
 
-  void _addTopItem() {
-    final newItem = ChecklistItemController();
-    newItem.textController.searchQuery = widget.searchQuery;
-    setState(() {
-      fieldItems.insert(0, newItem);
-    });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      newItem.focusNode.requestFocus();
-    });
-    _notifyChange();
-  }
+  void _addItem() {
+    final newItem = ChecklistItemController(
+      id: UniqueKey().toString(),
+      text: '',
+    );
 
-  void _addBottomItem() {
-    final newItem = ChecklistItemController();
-    newItem.textController.searchQuery = widget.searchQuery;
     setState(() {
       fieldItems.add(newItem);
     });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      newItem.focusNode.requestFocus();
-    });
+
     _notifyChange();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        newItem.focusNode.requestFocus();
+      }
+    });
   }
 
   void _removeItem(int index) {
     setState(() {
-      final removedItem = fieldItems.removeAt(index);
-      removedItem.dispose();
+      final removed = fieldItems.removeAt(index);
+      removed.dispose();
     });
     _notifyChange();
   }
 
-  void _onReorderItem(int oldIndex, int newIndex) {
+  void _onReorder(int oldIndex, int newIndex) {
     setState(() {
+      if (newIndex > oldIndex) {
+        newIndex -= 1;
+      }
       final item = fieldItems.removeAt(oldIndex);
       fieldItems.insert(newIndex, item);
     });
     _notifyChange();
-  }
-
-  void _saveList() {
-    setState(() {
-      final emptyItems = fieldItems
-          .where((item) => item.textController.text.trim().isEmpty)
-          .toList();
-
-      for (var item in emptyItems) {
-        fieldItems.remove(item);
-        item.dispose();
-      }
-
-      _isEditing = false;
-    });
-
-    if (widget.onSubmit != null) {
-      widget.onSubmit!(_generateExportData());
-    }
   }
 
   void _editList() {
@@ -249,12 +207,35 @@ class _CheckListWidgetState extends State<CheckListWidget> {
     });
   }
 
-  // Custom renderer for highlighted text while in View Mode
-  Widget _buildHighlightedText(String text, String query, TextStyle style) {
-    if (query.isEmpty) return Text(text, style: style);
+  void _doneEditing() {
+    setState(() {
+      _isEditing = false;
+    });
+    final updatedData = fieldItems
+        .map((item) => CheckListItemModel(
+              id: item.id,
+              text: item.textController.text,
+              isChecked: item.isChecked,
+            ))
+        .toList();
+    widget.onSubmit?.call(updatedData);
+  }
 
-    final matches = query.toLowerCase().allMatches(text.toLowerCase());
-    if (matches.isEmpty) return Text(text, style: style);
+  Widget _buildHighlightedText(BuildContext context, String text, String searchQuery, TextStyle style) {
+    if (searchQuery.isEmpty) {
+      return Text(text, style: style);
+    }
+
+    final matches = searchQuery.toLowerCase().allMatches(text.toLowerCase());
+    if (matches.isEmpty) {
+      return Text(text, style: style);
+    }
+
+    final colorScheme = Theme.of(context).colorScheme;
+    final highlightStyle = TextStyle(
+      backgroundColor: colorScheme.secondaryContainer,
+      color: colorScheme.onSecondaryContainer,
+    );
 
     List<TextSpan> spans = [];
     int currentIndex = 0;
@@ -265,7 +246,7 @@ class _CheckListWidgetState extends State<CheckListWidget> {
       }
       spans.add(TextSpan(
         text: text.substring(match.start, match.end),
-        style: style.copyWith(backgroundColor: Colors.yellow.withValues(alpha: 0.5), color: Colors.black),
+        style: style.merge(highlightStyle),
       ));
       currentIndex = match.end;
     }
@@ -278,6 +259,8 @@ class _CheckListWidgetState extends State<CheckListWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     if (!_isEditing) {
       return InkWell(
         onTap: _editList,
@@ -290,9 +273,9 @@ class _CheckListWidgetState extends State<CheckListWidget> {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (fieldItems.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: Text("Empty checklist. Tap to edit.", style: TextStyle(color: Colors.grey)),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text("Empty checklist. Tap to edit.", style: TextStyle(color: colorScheme.onSurfaceVariant)),
                 ),
 
               ...fieldItems.map((item) => Row(
@@ -309,12 +292,13 @@ class _CheckListWidgetState extends State<CheckListWidget> {
                   ),
                   Expanded(
                     child: _buildHighlightedText(
+                      context,
                       item.textController.text.trim(),
                       widget.searchQuery,
                       TextStyle(
                         fontSize: 16,
                         decoration: item.isChecked ? TextDecoration.lineThrough : null,
-                        color: item.isChecked ? Colors.grey : Colors.white,
+                        color: item.isChecked ? colorScheme.onSurfaceVariant : colorScheme.onSurface,
                       ),
                     ),
                   ),
@@ -328,56 +312,47 @@ class _CheckListWidgetState extends State<CheckListWidget> {
 
     return Column(
       children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            TextButton(
+              onPressed: _doneEditing,
+              child: const Text("Done"),
+            ),
+          ],
+        ),
+        ReorderableListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: fieldItems.length,
+          onReorder: _onReorder,
+          itemBuilder: (context, index) {
+            final item = fieldItems[index];
+            return ReorderableChecklistTile(
+              key: ValueKey(item.id),
+              index: index,
+              controller: item.textController,
+              focusNode: item.focusNode,
+              onClose: () => _removeItem(index),
+            );
+          },
+        ),
         DummyChecklistTile(
           hintText: "Add item",
-          onTap: _addTopItem,
+          onTap: _addItem,
         ),
-
-        Flexible(
-          child: ReorderableListView.builder(
-            shrinkWrap: true,
-            buildDefaultDragHandles: false,
-            itemCount: fieldItems.length,
-            onReorderItem: _onReorderItem,
-            itemBuilder: (context, index) {
-              final itemData = fieldItems[index];
-
-              return ChecklistTile(
-                key: ValueKey(itemData.id),
-                index: index,
-                controller: itemData.textController,
-                focusNode: itemData.focusNode,
-                onClose: () => _removeItem(index),
-              );
-            },
-          ),
-        ),
-
-        DummyChecklistTile(
-          hintText: "Add item",
-          onTap: _addBottomItem,
-        ),
-
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: ElevatedButton(
-            onPressed: _saveList,
-            child:const Text('Submit'),
-          ),
-        )
       ],
     );
   }
 }
 
-// --- Other Widgets ---
-class ChecklistTile extends StatelessWidget {
+class ReorderableChecklistTile extends StatelessWidget {
   final int index;
   final TextEditingController controller;
   final FocusNode focusNode;
-  final Function() onClose;
+  final VoidCallback onClose;
 
-  const ChecklistTile({
+  const ReorderableChecklistTile({
     super.key,
     required this.index,
     required this.controller,
@@ -387,15 +362,17 @@ class ChecklistTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       color: Theme.of(context).scaffoldBackgroundColor,
       child: Row(
         children: [
           ReorderableDragStartListener(
             index: index,
-            child: const Padding(
-              padding: EdgeInsets.fromLTRB(16.0, 12.0, 8.0, 12.0),
-              child: Icon(Icons.drag_indicator_rounded, color: Colors.grey),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16.0, 12.0, 8.0, 12.0),
+              child: Icon(Icons.drag_indicator_rounded, color: colorScheme.onSurfaceVariant),
             ),
           ),
           Expanded(
@@ -430,6 +407,8 @@ class DummyChecklistTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return InkWell(
       onTap: onTap,
       child: Container(
@@ -437,15 +416,15 @@ class DummyChecklistTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 4.0),
         child: Row(
           children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16.0, 12.0, 8.0, 12.0),
-              child: Icon(Icons.add, color: Colors.blue),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16.0, 12.0, 8.0, 12.0),
+              child: Icon(Icons.add, color: colorScheme.primary),
             ),
             Expanded(
               child: Text(
                 hintText,
                 style: TextStyle(
-                  color: Colors.grey.shade600,
+                  color: colorScheme.onSurfaceVariant,
                   fontSize: 16,
                 ),
               ),

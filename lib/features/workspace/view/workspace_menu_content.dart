@@ -125,6 +125,21 @@ class _WorkspaceMenuContentState extends ConsumerState<WorkspaceMenuContent> {
             );
           },
         ),
+        const Divider(height: 1),
+        _buildActionItem(
+          context: context,
+          icon: Icons.visibility_off_outlined,
+          title: 'Hide workspace',
+          subtitle: 'Can be re-enabled from Settings',
+          onTap: () async {
+            widget.onCloseMenu();
+            await ref.read(workspaceEnableProvider.notifier).setWorkspaceEnable(false);
+            SnackBarManager.show(
+              msg: 'Workspace badge hidden. You can re-enable it in Settings.',
+              type: SnackBarMessageType.acknowledgment,
+            );
+          },
+        ),
         // if (syncMode.isCloud) ...[
         //   const Divider(height: 1),
         //   if (authUser != null)
@@ -376,6 +391,7 @@ class _WorkspaceMenuContentState extends ConsumerState<WorkspaceMenuContent> {
     required BuildContext context,
     required IconData icon,
     required String title,
+    String? subtitle,
     required VoidCallback onTap,
     Widget? trailing,
   }) {
@@ -389,11 +405,26 @@ class _WorkspaceMenuContentState extends ConsumerState<WorkspaceMenuContent> {
             Icon(icon, size: 24, color: theme.colorScheme.onSurfaceVariant),
             const SizedBox(width: 16),
             Expanded(
-              child: Text(
-                title,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w400,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
             if (trailing != null) ...[trailing],

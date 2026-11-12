@@ -171,7 +171,7 @@ class _UpdatePasswordPageState extends ConsumerState<UpdatePasswordPage> {
                     _obscureCurrent
                         ? Icons.visibility_off
                         : Icons.visibility,
-                    color: Colors.grey,
+                    color: colorScheme.onSurfaceVariant,
                   ),
                   onPressed: () {
                     setState(() {
@@ -199,7 +199,7 @@ class _UpdatePasswordPageState extends ConsumerState<UpdatePasswordPage> {
                     _obscureNew
                         ? Icons.visibility_off
                         : Icons.visibility,
-                    color: Colors.grey,
+                    color: colorScheme.onSurfaceVariant,
                   ),
                   onPressed: () {
                     setState(() {
@@ -228,7 +228,7 @@ class _UpdatePasswordPageState extends ConsumerState<UpdatePasswordPage> {
                     _obscureConfirm
                         ? Icons.visibility_off
                         : Icons.visibility,
-                    color: Colors.grey,
+                    color: colorScheme.onSurfaceVariant,
                   ),
                   onPressed: () {
                     setState(() {

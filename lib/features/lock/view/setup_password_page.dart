@@ -64,18 +64,18 @@ class _SetupPasswordPageState extends State<SetupPasswordPage> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.redAccent.withValues(alpha: 0.1),
+              color: colorScheme.errorContainer,
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: Colors.redAccent.withValues(alpha: 0.5),
+                color: colorScheme.error.withValues(alpha: 0.5),
               ),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(
+                Icon(
                   Icons.warning_amber_rounded,
-                  color: Colors.redAccent,
+                  color: colorScheme.error,
                   size: 20,
                 ),
                 const SizedBox(width: 8),
@@ -83,7 +83,7 @@ class _SetupPasswordPageState extends State<SetupPasswordPage> {
                   child: Text(
                     "WARNING: There is no password recovery. If you forget this password, you will permanently lose access to all locked notes.",
                     style: textTheme.bodySmall?.copyWith(
-                      color: Colors.redAccent,
+                      color: colorScheme.onErrorContainer,
                     ),
                   ),
                 ),
@@ -107,7 +107,7 @@ class _SetupPasswordPageState extends State<SetupPasswordPage> {
               suffixIcon: IconButton(
                 icon: Icon(
                   _obscurePass ? Icons.visibility_off : Icons.visibility,
-                  color: Colors.grey,
+                  color: colorScheme.onSurfaceVariant,
                 ),
                 onPressed: () {
                   setState(() {
@@ -134,7 +134,7 @@ class _SetupPasswordPageState extends State<SetupPasswordPage> {
               suffixIcon: IconButton(
                 icon: Icon(
                   _obscureConfirm ? Icons.visibility_off : Icons.visibility,
-                  color: Colors.grey,
+                  color: colorScheme.onSurfaceVariant,
                 ),
                 onPressed: () {
                   setState(() {

@@ -373,6 +373,7 @@ class _KeybindingSettingsPageState extends ConsumerState<KeybindingSettingsPage>
     KeybindingsDao dao,
     String platform,
   ) async {
+    final colorScheme = Theme.of(context).colorScheme;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -387,7 +388,7 @@ class _KeybindingSettingsPageState extends ConsumerState<KeybindingSettingsPage>
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Reset All', style: TextStyle(color: Colors.red)),
+            child: Text('Reset All', style: TextStyle(color: colorScheme.error)),
           ),
         ],
       ),

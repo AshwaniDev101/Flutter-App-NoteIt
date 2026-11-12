@@ -313,7 +313,7 @@ class _DefaultSettingsPageState extends ConsumerState<DefaultSettingsPage> {
             child: Column(
               children: [
                 SettingsTile(
-                  leading: const Icon(Icons.restart_alt, color: Colors.orange),
+                  leading: Icon(Icons.restart_alt, color: colorScheme.tertiary),
                   title: 'Reset Page Views to Defaults',
                   subtitle:
                       'Clears page-specific view/sort overrides and uses configured defaults',
@@ -334,7 +334,7 @@ class _DefaultSettingsPageState extends ConsumerState<DefaultSettingsPage> {
                   color: colorScheme.outlineVariant.withValues(alpha: 0.5),
                 ),
                 SettingsTile(
-                  leading: const Icon(Icons.delete_sweep_outlined, color: Colors.redAccent),
+                  leading: Icon(Icons.delete_sweep_outlined, color: colorScheme.error),
                   title: 'Clear All Preferences',
                   subtitle:
                       'Resets all app settings, views, and cached preferences to factory defaults',
@@ -354,9 +354,9 @@ class _DefaultSettingsPageState extends ConsumerState<DefaultSettingsPage> {
                           ),
                           TextButton(
                             onPressed: () => Navigator.of(ctx).pop(true),
-                            child: const Text(
+                            child: Text(
                               'Clear All',
-                              style: TextStyle(color: Colors.red),
+                              style: TextStyle(color: colorScheme.error),
                             ),
                           ),
                         ],

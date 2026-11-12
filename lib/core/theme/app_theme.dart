@@ -5,17 +5,32 @@ import 'package:noteit/core/helpers/platform_helper.dart';
 import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
 
 import 'app_typography.dart';
+import 'sync_status_colors.dart';
 
 part 'custom_themes/light.dart';
-
 part 'custom_themes/dark.dart';
-
 part 'custom_themes/amoled.dart';
-
 part 'custom_themes/sepia.dart';
+part 'custom_themes/dracula.dart';
+part 'custom_themes/nord.dart';
+part 'custom_themes/catppuccin.dart';
+part 'custom_themes/forest.dart';
+part 'custom_themes/cyberpunk.dart';
+part 'custom_themes/ocean.dart';
 
 // THEME ENUM
-enum AppThemeType { light, dark, amoled, sepia }
+enum AppThemeType {
+  light,
+  dark,
+  amoled,
+  sepia,
+  dracula,
+  nord,
+  catppuccin,
+  forest,
+  cyberpunk,
+  ocean,
+}
 
 final themeProvider = NotifierProvider<ThemeNotifier, AppThemeType>(ThemeNotifier.new);
 
@@ -54,6 +69,24 @@ class Themes {
         break;
       case AppThemeType.sepia:
         theme = _sepiaThemeData;
+        break;
+      case AppThemeType.dracula:
+        theme = _draculaThemeData;
+        break;
+      case AppThemeType.nord:
+        theme = _nordThemeData;
+        break;
+      case AppThemeType.catppuccin:
+        theme = _catppuccinThemeData;
+        break;
+      case AppThemeType.forest:
+        theme = _forestThemeData;
+        break;
+      case AppThemeType.cyberpunk:
+        theme = _cyberpunkThemeData;
+        break;
+      case AppThemeType.ocean:
+        theme = _oceanThemeData;
         break;
     }
 
