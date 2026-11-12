@@ -10,6 +10,7 @@ import '../../../shared/app_bars/app_search_bar.dart';
 import '../../../shared/overlays/app_scaffold.dart';
 import '../../home/view/desktop/content_panel/core/navigator.dart';
 import '../core/providers.dart';
+import '../viewmodel/folder_view_model.dart';
 import 'folder_selector.dart';
 
 /// Full-page / right-panel folder selector & management page in a Grid format.
@@ -62,12 +63,10 @@ class _MoveToFolderPageState extends ConsumerState<MoveToFolderPage> {
 
     if (result != null && mounted) {
       AppLogger.d("MoveToFolderPage: User triggered folder creation '${result['name']}'");
-      final dao = ref.read(foldersDaoProvider);
-      await dao.addFolder(
+      await ref.read(folderViewModelProvider.notifier).createFolder(
         name: result['name'],
         colorIndex: result['colorIndex'],
       );
-      ref.read(syncOrchestratorProvider).triggerSync();
     }
   }
 
@@ -148,12 +147,6 @@ class _MoveToFolderPageState extends ConsumerState<MoveToFolderPage> {
       constraints: const BoxConstraints(minWidth: 160),
       items: [
         PopupMenuItem(
-          value: 'open',
-          height: 40,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: _buildMenuItem(Icons.folder_open_rounded, 'Select'),
-        ),
-        PopupMenuItem(
           value: 'pin',
           height: 40,
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -162,13 +155,13 @@ class _MoveToFolderPageState extends ConsumerState<MoveToFolderPage> {
             isPinned ? 'Unpin' : 'Pin',
           ),
         ),
-        const PopupMenuDivider(height: 8),
         PopupMenuItem(
           value: 'update',
           height: 40,
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: _buildMenuItem(Icons.edit_outlined, 'Update'),
+          child: _buildMenuItem(Icons.edit_outlined, 'Edit'),
         ),
+        const PopupMenuDivider(height: 8),
         PopupMenuItem(
           value: 'delete',
           height: 40,
@@ -184,16 +177,11 @@ class _MoveToFolderPageState extends ConsumerState<MoveToFolderPage> {
   }
 
   Future<void> _handleContextMenuAction(String action, Folder folder) async {
-    final dao = ref.read(foldersDaoProvider);
+    final viewModel = ref.read(folderViewModelProvider.notifier);
 
     switch (action) {
-      case 'open':
-        await _handleFolderSelected(folder);
-        break;
-
       case 'pin':
-        await dao.toggleFolderPinStatus(folder.uuid);
-        ref.read(syncOrchestratorProvider).triggerSync();
+        await viewModel.togglePinStatus(folder.uuid);
         break;
 
       case 'update':
@@ -206,12 +194,11 @@ class _MoveToFolderPageState extends ConsumerState<MoveToFolderPage> {
         );
 
         if (result != null && mounted) {
-          await dao.updateFolder(
+          await viewModel.updateFolder(
             uuid: folder.uuid,
             name: result['name'],
             colorIndex: result['colorIndex'],
           );
-          ref.read(syncOrchestratorProvider).triggerSync();
         }
         break;
 
@@ -241,8 +228,7 @@ class _MoveToFolderPageState extends ConsumerState<MoveToFolderPage> {
         );
 
         if (confirm == true && mounted) {
-          await dao.softDeleteFolder(folder.uuid, platform: 'desktop');
-          ref.read(syncOrchestratorProvider).triggerSync();
+          await viewModel.softDeleteFolder(folder.uuid, platform: 'desktop');
         }
         break;
     }
@@ -480,7 +466,7 @@ class _FolderGridCardState extends ConsumerState<_FolderGridCard> {
                         child: Icon(
                           isPinned ? Icons.push_pin_rounded : Icons.push_pin_outlined,
                           size: 14,
-                          color: isPinned ? colorScheme.primary : colorScheme.onSurfaceVariant,
+                          color: isPinned ? folderAccentColor : folderAccentColor.withValues(alpha: 0.2),
                         ),
                       ),
                     )

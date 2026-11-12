@@ -34,6 +34,16 @@ class _FolderEditorDialogState extends State<FolderEditorDialog> {
     super.dispose();
   }
 
+  void _submit() {
+    final name = _nameController.text.trim();
+    if (name.isNotEmpty) {
+      Navigator.pop(context, {
+        'name': name,
+        'colorIndex': _selectedColorIndex,
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -41,14 +51,14 @@ class _FolderEditorDialogState extends State<FolderEditorDialog> {
 
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-      contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+      titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+      contentPadding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
       title: Text(
-        _isEditing ? 'Update Folder' : 'New Folder',
+        _isEditing ? 'Edit Folder' : 'New Folder',
         style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
       ),
       content: SizedBox(
-        width: 300,
+        width: 280,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -58,6 +68,8 @@ class _FolderEditorDialogState extends State<FolderEditorDialog> {
               autofocus: true,
               style: textTheme.bodyMedium,
               onChanged: (value) => setState(() {}),
+              onSubmitted: (_) => _submit(),
+              textInputAction: TextInputAction.done,
               decoration: InputDecoration(
                 isDense: true,
                 filled: true,
@@ -67,10 +79,10 @@ class _FolderEditorDialogState extends State<FolderEditorDialog> {
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
             Text(
               "COLOR",
               style: textTheme.labelSmall?.copyWith(
@@ -79,10 +91,10 @@ class _FolderEditorDialogState extends State<FolderEditorDialog> {
                 color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             Wrap(
-              spacing: 12,
-              runSpacing: 12,
+              spacing: 8,
+              runSpacing: 8,
               children: List.generate(Colors.primaries.length, (index) {
                 final color = Colors.primaries[index];
                 final isSelected = _selectedColorIndex == index;
@@ -91,27 +103,27 @@ class _FolderEditorDialogState extends State<FolderEditorDialog> {
                   onTap: () => setState(() => _selectedColorIndex = index),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 150),
-                    width: 32,
-                    height: 32,
+                    width: 28,
+                    height: 28,
                     decoration: BoxDecoration(
                       color: color,
                       shape: BoxShape.circle,
                       boxShadow: isSelected ? [
                         BoxShadow(
                           color: color.withValues(alpha: 0.4),
-                          blurRadius: 6,
+                          blurRadius: 4,
                           offset: const Offset(0, 2),
                         )
                       ] : null,
                       border: isSelected
-                          ? Border.all(color: colorScheme.onSurface, width: 2.5)
-                          : Border.all(color: Colors.transparent, width: 2.5),
+                          ? Border.all(color: colorScheme.onSurface, width: 2.0)
+                          : Border.all(color: Colors.transparent, width: 2.0),
                     ),
                     child: isSelected
                         ? Icon(
                       Icons.check_rounded,
                       color: color.computeLuminance() > 0.5 ? Colors.black87 : Colors.white,
-                      size: 18,
+                      size: 16,
                     )
                         : null,
                   ),
@@ -121,26 +133,19 @@ class _FolderEditorDialogState extends State<FolderEditorDialog> {
           ],
         ),
       ),
-      actionsPadding: const EdgeInsets.fromLTRB(16, 16, 24, 24),
+      actionsPadding: const EdgeInsets.fromLTRB(16, 12, 20, 16),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
           style: TextButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           ),
           child: const Text('Cancel'),
         ),
         FilledButton(
-          onPressed: _nameController.text.trim().isEmpty
-              ? null
-              : () {
-            Navigator.pop(context, {
-              'name': _nameController.text.trim(),
-              'colorIndex': _selectedColorIndex,
-            });
-          },
+          onPressed: _nameController.text.trim().isEmpty ? null : _submit,
           style: FilledButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
             elevation: 0,
           ),
           child: Text(_isEditing ? 'Save' : 'Create', style: const TextStyle(fontWeight: FontWeight.w600)),

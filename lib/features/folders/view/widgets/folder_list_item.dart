@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -26,6 +27,7 @@ class FolderListItem extends ConsumerStatefulWidget {
 
 class _FolderListItemState extends ConsumerState<FolderListItem> {
   bool _isHovering = false;
+  Offset? _lastTapDownPosition;
 
   @override
   Widget build(BuildContext context) {
@@ -46,15 +48,29 @@ class _FolderListItemState extends ConsumerState<FolderListItem> {
           hoverColor: colorScheme.onSurface.withValues(alpha: 0.04),
           highlightColor: colorScheme.onSurface.withValues(alpha: 0.08),
           splashColor: colorScheme.onSurface.withValues(alpha: 0.12),
+          onTapDown: (details) => _lastTapDownPosition = details.globalPosition,
           onTap: widget.onSelect,
-          onLongPress: widget.onContextMenu != null ? () => widget.onContextMenu!(null) : null,
+          onLongPress: widget.onContextMenu != null
+              ? () => widget.onContextMenu!(
+                    _lastTapDownPosition != null
+                        ? TapUpDetails(
+                            kind: PointerDeviceKind.touch,
+                            globalPosition: _lastTapDownPosition!,
+                          )
+                        : null,
+                  )
+              : null,
           onSecondaryTapUp: widget.onContextMenu,
           onHover: (hovering) => setState(() => _isHovering = hovering),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
             padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+
+            // Selection Background Color
             decoration: BoxDecoration(
-              color: widget.isSelected ? colorScheme.secondaryContainer : Colors.transparent,
+              color: widget.isSelected
+                  ? colorScheme.primaryContainer.withValues(alpha: 0.4)
+                  : Colors.transparent,
               borderRadius: BorderRadius.circular(10),
             ),
             child: LayoutBuilder(
@@ -77,7 +93,7 @@ class _FolderListItemState extends ConsumerState<FolderListItem> {
                             isPinned ? Icons.push_pin_rounded : Icons.push_pin_outlined,
                             size: 16,
                           ),
-                          color: isPinned ? colorScheme.primary : colorScheme.onSurfaceVariant,
+                          color: isPinned ? folderAccentColor : folderAccentColor,
                           padding: EdgeInsets.zero,
                           visualDensity: VisualDensity.compact,
                           splashRadius: 16,
@@ -99,7 +115,7 @@ class _FolderListItemState extends ConsumerState<FolderListItem> {
                         style: textTheme.bodyMedium?.copyWith(
                           fontWeight: widget.isSelected ? FontWeight.w600 : FontWeight.w500,
                           color: widget.isSelected
-                              ? colorScheme.onSecondaryContainer
+                              ? colorScheme.primary
                               : colorScheme.onSurfaceVariant,
                         ),
                         overflow: TextOverflow.ellipsis,
@@ -113,8 +129,8 @@ class _FolderListItemState extends ConsumerState<FolderListItem> {
                         padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
                         decoration: BoxDecoration(
                           color: widget.isSelected
-                              ? colorScheme.onSecondaryContainer.withValues(alpha: 0.1)
-                              : colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                              ? colorScheme.primaryContainer.withValues(alpha: 0.6)
+                              : colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -122,8 +138,8 @@ class _FolderListItemState extends ConsumerState<FolderListItem> {
                           style: textTheme.labelSmall?.copyWith(
                             fontWeight: FontWeight.w700,
                             color: widget.isSelected
-                                ? colorScheme.onSecondaryContainer
-                                : colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                                ? colorScheme.primary
+                                : colorScheme.onSurfaceVariant,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.clip,
