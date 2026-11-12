@@ -25,13 +25,14 @@ class _WorkspaceAvatarBadgeState extends State<WorkspaceAvatarBadge> {
   @override
   Widget build(BuildContext context) {
     final hasPhoto = widget.photoUrl != null && widget.photoUrl!.isNotEmpty;
+    final badgeColor = WorkspaceBadgeHelper.getColor(context, widget.activeWorkspaceName);
+    final textColor = badgeColor.computeLuminance() > 0.5 ? Colors.black87 : Colors.white;
 
     double badgeSize = 32;
 
-    if(PlatformHelper.isWideLayout(context))
-      {
-        badgeSize = 26;
-      }
+    if (PlatformHelper.isWideLayout(context)) {
+      badgeSize = 26;
+    }
     return Tooltip(
       message: 'Workspaces',
       child: InkWell(
@@ -46,7 +47,7 @@ class _WorkspaceAvatarBadgeState extends State<WorkspaceAvatarBadge> {
         child: Padding(
           padding: const EdgeInsets.all(4.0),
           child: Material(
-            color: WorkspaceBadgeHelper.getColor(widget.activeWorkspaceName),
+            color: badgeColor,
             shape: const CircleBorder(),
             clipBehavior: Clip.antiAlias,
             child: SizedBox(
@@ -63,9 +64,9 @@ class _WorkspaceAvatarBadgeState extends State<WorkspaceAvatarBadge> {
                           return Center(
                             child: Text(
                               WorkspaceBadgeHelper.getInitial(widget.activeWorkspaceName),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 13,
-                                color: Colors.white,
+                                color: textColor,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -77,9 +78,9 @@ class _WorkspaceAvatarBadgeState extends State<WorkspaceAvatarBadge> {
                     Center(
                       child: Text(
                         WorkspaceBadgeHelper.getInitial(widget.activeWorkspaceName),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
-                          color: Colors.white,
+                          color: textColor,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -90,7 +91,7 @@ class _WorkspaceAvatarBadgeState extends State<WorkspaceAvatarBadge> {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: _isHovered
-                            ? Colors.white.withValues(alpha: 0.25)
+                            ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15)
                             : Colors.transparent,
                       ),
                     ),

@@ -9,6 +9,8 @@ class MdnsBroadcastIndicator extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Watch strictly for active mDNS registrations
     final isBroadcasting = ref.watch(mdnsBroadcastProvider) != null;
+    final colorScheme = Theme.of(context).colorScheme;
+    final iconColor = colorScheme.onSurface;
 
     Widget content = Container(
       width: 32,
@@ -20,15 +22,13 @@ class MdnsBroadcastIndicator extends ConsumerWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             boxShadow: [
-              // Inner tight glow
-              BoxShadow(color: Colors.white.withValues(alpha: 0.5), blurRadius: 3, spreadRadius: 0),
-              // Outer soft glow
-              BoxShadow(color: Colors.white.withValues(alpha: 0.3), blurRadius: 4, spreadRadius: 1),
+              BoxShadow(color: iconColor.withValues(alpha: 0.3), blurRadius: 3, spreadRadius: 0),
+              BoxShadow(color: iconColor.withValues(alpha: 0.15), blurRadius: 4, spreadRadius: 1),
             ],
           ),
-          child: const Icon(
-            Icons.wifi, // Or Icons.sensors
-            color: Colors.white,
+          child: Icon(
+            Icons.wifi,
+            color: iconColor,
             size: 16,
           ),
         ),

@@ -1,41 +1,13 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:noteit/core/theme/workspace_theme_colors.dart';
 
 import '../../models/workspace_model.dart';
 
 class WorkspaceBadgeHelper {
-  static const List<Color> _palette = [
-    Color(0xFFE53935), Color(0xFFD32F2F), Color(0xFFC62828),
-    Color(0xFFD81B60), Color(0xFFC2185B), Color(0xFFAD1457),
-    Color(0xFF8E24AA), Color(0xFF7B1FA2), Color(0xFF6A1B9A),
-    Color(0xFF5E35B1), Color(0xFF512DA8), Color(0xFF4527A0),
-    Color(0xFF3949AB), Color(0xFF303F9F), Color(0xFF283593),
-    Color(0xFF1E88E5), Color(0xFF1976D2), Color(0xFF1565C0),
-    Color(0xFF0288D1), Color(0xFF0277BD),
-    Color(0xFF00838F),
-    Color(0xFF00796B), Color(0xFF00695C),
-    Color(0xFF388E3C), Color(0xFF2E7D32),
-    Color(0xFFEF6C00),
-    Color(0xFFF4511E), Color(0xFFE64A19),
-    Color(0xFF6D4C41), Color(0xFF5D4037),
-    Color(0xFF546E7A), Color(0xFF455A65),
-  ];
-
-  static int _generateHash(String text) {
-    int hash = 5381;
-    for (int i = 0; i < text.length; i++) {
-      hash = ((hash << 5) + hash) + text.codeUnitAt(i);
-    }
-    return hash.abs();
-  }
-
-  static Color getColor(String name) {
-    if (name.trim().isEmpty) return const Color(0xFF9E9E9E);
-
-    final normalized = name.trim().toLowerCase();
-    final index = (_generateHash(normalized) % _palette.length).abs();
-
-    return _palette[index];
+  static Color getColor(BuildContext context, String name) {
+    if (name.trim().isEmpty) return Theme.of(context).colorScheme.surfaceContainerHighest;
+    return WorkspaceThemeColors.of(context, name);
   }
 
   static String getInitial(String name) {

@@ -291,11 +291,11 @@ class _TrashPageState extends ConsumerState<TrashPage> with WidgetsBindingObserv
             Expanded(
               child: filteredNotesAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (error, _) => Center(child: Text('Error: $error')),
+                error: (error, _) => Center(child: Text('Failed to load trash: $error')),
                 data: (filteredNotes) {
                   return filteredFoldersAsync.when(
                     loading: () => const Center(child: CircularProgressIndicator()),
-                    error: (error, _) => Center(child: Text('Error: $error')),
+                    error: (error, _) => Center(child: Text('Failed to load trash: $error')),
                     data: (filteredFolders) {
                       return TrashContentArea(
                         filteredNotes: filteredNotes,

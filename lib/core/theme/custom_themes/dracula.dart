@@ -118,6 +118,11 @@ ThemeData get _draculaThemeData {
       ),
     ),
 
-    extensions: [SyncStatusColors.dracula()],
+    extensions: [
+      SyncStatusColors.dracula(),
+      FolderThemeColors.dracula(),
+      NetworkSignalColors.dracula(),
+      WorkspaceThemeColors.dracula(),
+    ],
   );
 }

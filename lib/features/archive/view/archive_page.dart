@@ -394,7 +394,7 @@ class _ArchivePageState extends ConsumerState<ArchivePage> with WidgetsBindingOb
             Expanded(
               child: archivedNotesState.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (error, _) => Center(child: Text('Error: $error')),
+                error: (error, _) => Center(child: Text('Failed to load archive: $error')),
                 data: (notes) {
                   final filteredNotes = _getFilteredNotes(
                     notes: notes,

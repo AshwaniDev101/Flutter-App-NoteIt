@@ -9,6 +9,8 @@ class MdnsSearchIndicator extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     //  Watch strictly for the scanning status
     final isSearching = ref.watch(mdnsSearcherProvider).status == ScanStatus.scanning;
+    final colorScheme = Theme.of(context).colorScheme;
+    final primaryColor = colorScheme.primary;
 
     Widget content = Container(
       width: 32,
@@ -19,12 +21,12 @@ class MdnsSearchIndicator extends ConsumerWidget {
           height: 24,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            boxShadow: [// Inner tight glow
-              BoxShadow(color: Colors.blueAccent.withValues(alpha: 0.5), blurRadius: 3, spreadRadius: 0),
-              // Outer soft glow
-              BoxShadow(color: Colors.blueAccent.withValues(alpha: 0.3), blurRadius: 4, spreadRadius: 1),],
+            boxShadow: [
+              BoxShadow(color: primaryColor.withValues(alpha: 0.4), blurRadius: 3, spreadRadius: 0),
+              BoxShadow(color: primaryColor.withValues(alpha: 0.2), blurRadius: 4, spreadRadius: 1),
+            ],
           ),
-          child: const Icon(Icons.wifi_find_rounded, color: Colors.white, size: 16),
+          child: Icon(Icons.wifi_find_rounded, color: primaryColor, size: 16),
         ),
       ),
     );

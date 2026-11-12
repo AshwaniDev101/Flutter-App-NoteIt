@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:noteit/core/theme/folder_theme_colors.dart';
 
 class FolderEditorDialog extends StatefulWidget {
   final String? initialName;
@@ -25,7 +26,7 @@ class _FolderEditorDialogState extends State<FolderEditorDialog> {
     super.initState();
     _isEditing = widget.initialName != null;
     _nameController = TextEditingController(text: widget.initialName ?? '');
-    _selectedColorIndex = widget.initialColorIndex ?? Random().nextInt(Colors.primaries.length);
+    _selectedColorIndex = widget.initialColorIndex ?? Random().nextInt(12);
   }
 
   @override
@@ -95,8 +96,8 @@ class _FolderEditorDialogState extends State<FolderEditorDialog> {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: List.generate(Colors.primaries.length, (index) {
-                final color = Colors.primaries[index];
+              children: List.generate(12, (index) {
+                final color = FolderThemeColors.of(context, index);
                 final isSelected = _selectedColorIndex == index;
 
                 return GestureDetector(
@@ -121,10 +122,10 @@ class _FolderEditorDialogState extends State<FolderEditorDialog> {
                     ),
                     child: isSelected
                         ? Icon(
-                      Icons.check_rounded,
-                      color: color.computeLuminance() > 0.5 ? Colors.black87 : Colors.white,
-                      size: 16,
-                    )
+                            Icons.check_rounded,
+                            color: color.computeLuminance() > 0.5 ? Colors.black87 : Colors.white,
+                            size: 16,
+                          )
                         : null,
                   ),
                 );
@@ -133,22 +134,18 @@ class _FolderEditorDialogState extends State<FolderEditorDialog> {
           ],
         ),
       ),
-      actionsPadding: const EdgeInsets.fromLTRB(16, 12, 20, 16),
+      actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
           style: TextButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            foregroundColor: colorScheme.onSurfaceVariant,
           ),
           child: const Text('Cancel'),
         ),
         FilledButton(
-          onPressed: _nameController.text.trim().isEmpty ? null : _submit,
-          style: FilledButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-            elevation: 0,
-          ),
-          child: Text(_isEditing ? 'Save' : 'Create', style: const TextStyle(fontWeight: FontWeight.w600)),
+          onPressed: _nameController.text.trim().isNotEmpty ? _submit : null,
+          child: Text(_isEditing ? 'Save' : 'Create'),
         ),
       ],
     );

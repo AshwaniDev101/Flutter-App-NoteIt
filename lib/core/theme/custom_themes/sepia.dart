@@ -118,6 +118,11 @@ ThemeData get _sepiaThemeData {
       ),
     ),
 
-    extensions: [SyncStatusColors.sepia()],
+    extensions: [
+      SyncStatusColors.sepia(),
+      FolderThemeColors.sepia(),
+      NetworkSignalColors.sepia(),
+      WorkspaceThemeColors.sepia(),
+    ],
   );
 }

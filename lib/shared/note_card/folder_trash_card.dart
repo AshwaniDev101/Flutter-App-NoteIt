@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'package:noteit/core/theme/folder_theme_colors.dart';
 import '../../database/drift/local_database.dart';
 import 'core/note_action.dart';
 
@@ -26,14 +28,10 @@ class _FolderTrashCardState extends State<FolderTrashCard> {
   bool _isFocused = false;
   final MenuController _menuController = MenuController();
 
-  Color get _folderAccentColor {
-    return Colors.primaries[widget.folder.colorIndex % Colors.primaries.length];
-  }
-
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final accentColor = _folderAccentColor;
+    final accentColor = FolderThemeColors.of(context, widget.folder.colorIndex);
 
     return MenuAnchor(
       controller: _menuController,

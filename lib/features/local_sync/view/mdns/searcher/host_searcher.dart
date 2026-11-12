@@ -60,7 +60,7 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Connect to Host IP'),
+          title: const Text('Connect via Host IP'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [

@@ -166,7 +166,12 @@ ThemeData get _darkThemeData {
       ),
     ),
 
-    extensions: [SyncStatusColors.dark()],
+    extensions: [
+      SyncStatusColors.dark(),
+      FolderThemeColors.dark(),
+      NetworkSignalColors.dark(),
+      WorkspaceThemeColors.dark(),
+    ],
   );
 }
 

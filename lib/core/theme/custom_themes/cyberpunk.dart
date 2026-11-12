@@ -118,6 +118,11 @@ ThemeData get _cyberpunkThemeData {
       ),
     ),
 
-    extensions: [SyncStatusColors.cyberpunk()],
+    extensions: [
+      SyncStatusColors.cyberpunk(),
+      FolderThemeColors.cyberpunk(),
+      NetworkSignalColors.cyberpunk(),
+      WorkspaceThemeColors.cyberpunk(),
+    ],
   );
 }

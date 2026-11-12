@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:noteit/core/theme/folder_theme_colors.dart';
+
 import '../../../core/sync/sync_orchestrator.dart';
 import '../../../core/util/logger.dart';
 import '../../../database/drift/folders/folders_dao.dart';
@@ -408,7 +410,7 @@ class _FolderGridCardState extends ConsumerState<_FolderGridCard> {
     final folder = widget.folderWithCount.folder;
     final noteCount = widget.folderWithCount.noteCount;
     final isPinned = folder.pinnedAt != null;
-    final folderAccentColor = Colors.primaries[folder.colorIndex % Colors.primaries.length];
+    final folderAccentColor = FolderThemeColors.of(context, folder.colorIndex);
 
     return Material(
       color: Colors.transparent,

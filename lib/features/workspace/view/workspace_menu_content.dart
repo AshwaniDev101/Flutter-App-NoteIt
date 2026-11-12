@@ -285,6 +285,8 @@ class _WorkspaceMenuContentState extends ConsumerState<WorkspaceMenuContent> {
   Widget _buildHeader(BuildContext context, Workspace activeWorkspace, User? authUser, SyncMode syncMode) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final bgCol = WorkspaceBadgeHelper.getColor(context, activeWorkspace.name);
+    final fgCol = bgCol.computeLuminance() > 0.5 ? Colors.black87 : Colors.white;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
@@ -293,11 +295,11 @@ class _WorkspaceMenuContentState extends ConsumerState<WorkspaceMenuContent> {
         children: [
           CircleAvatar(
             radius: 20,
-            backgroundColor: WorkspaceBadgeHelper.getColor(activeWorkspace.name),
+            backgroundColor: bgCol,
             child: Text(
               WorkspaceBadgeHelper.getInitial(activeWorkspace.name),
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: fgCol,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),

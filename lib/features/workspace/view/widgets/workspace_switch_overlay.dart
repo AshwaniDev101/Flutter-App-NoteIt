@@ -28,6 +28,9 @@ class WorkspaceSwitchOverlay extends ConsumerWidget {
     final targetWorkspace = switchingState.targetWorkspace;
     final workspaceName = targetWorkspace?.name ?? 'Workspace';
 
+    final bgCol = WorkspaceBadgeHelper.getColor(context, workspaceName);
+    final fgCol = bgCol.computeLuminance() > 0.5 ? Colors.black87 : Colors.white;
+
     final syncEngine = syncMode.isCloud
         ? SyncEngine.cloud
         : (syncMode.isLocal ? SyncEngine.local : SyncEngine.offline);
@@ -74,13 +77,13 @@ class WorkspaceSwitchOverlay extends ConsumerWidget {
                                         children: [
                                           CircleAvatar(
                                             radius: 20,
-                                            backgroundColor: WorkspaceBadgeHelper.getColor(workspaceName),
+                                            backgroundColor: bgCol,
                                             child: Text(
                                               WorkspaceBadgeHelper.getInitial(workspaceName),
-                                              style: const TextStyle(
+                                              style: TextStyle(
                                                 fontSize: 16,
                                                 fontWeight: FontWeight.bold,
-                                                color: Colors.white,
+                                                color: fgCol,
                                               ),
                                             ),
                                           ),

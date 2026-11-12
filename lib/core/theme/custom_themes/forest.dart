@@ -118,6 +118,11 @@ ThemeData get _forestThemeData {
       ),
     ),
 
-    extensions: [SyncStatusColors.forest()],
+    extensions: [
+      SyncStatusColors.forest(),
+      FolderThemeColors.forest(),
+      NetworkSignalColors.forest(),
+      WorkspaceThemeColors.forest(),
+    ],
   );
 }

@@ -118,6 +118,11 @@ ThemeData get _lightThemeData {
       ),
     ),
 
-    extensions: [SyncStatusColors.light()],
+    extensions: [
+      SyncStatusColors.light(),
+      FolderThemeColors.light(),
+      NetworkSignalColors.light(),
+      WorkspaceThemeColors.light(),
+    ],
   );
 }

@@ -118,6 +118,11 @@ ThemeData get _oceanThemeData {
       ),
     ),
 
-    extensions: [SyncStatusColors.ocean()],
+    extensions: [
+      SyncStatusColors.ocean(),
+      FolderThemeColors.ocean(),
+      NetworkSignalColors.ocean(),
+      WorkspaceThemeColors.ocean(),
+    ],
   );
 }

@@ -30,6 +30,8 @@ class WorkspaceTile extends ConsumerWidget {
     final isSelected = workspace.id == activeWorkspace.id;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final bgCol = WorkspaceBadgeHelper.getColor(context, workspace.name);
+    final fgCol = bgCol.computeLuminance() > 0.5 ? Colors.black87 : Colors.white;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -60,11 +62,11 @@ class WorkspaceTile extends ConsumerWidget {
             ),
             leading: CircleAvatar(
               radius: 14,
-              backgroundColor: WorkspaceBadgeHelper.getColor(workspace.name),
+              backgroundColor: bgCol,
               child: Text(
                 WorkspaceBadgeHelper.getInitial(workspace.name),
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: fgCol,
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),

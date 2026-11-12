@@ -1,5 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+
+import 'package:noteit/core/theme/folder_theme_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/sync/sync_orchestrator.dart';
@@ -36,7 +38,7 @@ class _FolderListItemState extends ConsumerState<FolderListItem> {
 
     final folderData = widget.folderWithCount.folder;
     final noteCount = widget.folderWithCount.noteCount.toString();
-    final folderAccentColor = Colors.primaries[folderData.colorIndex % Colors.primaries.length];
+    final folderAccentColor = FolderThemeColors.of(context, folderData.colorIndex);
     final bool isPinned = folderData.pinnedAt != null;
 
     return Padding(

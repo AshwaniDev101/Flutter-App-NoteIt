@@ -118,6 +118,11 @@ ThemeData get _amoledThemeData {
       ),
     ),
 
-    extensions: [SyncStatusColors.amoled()],
+    extensions: [
+      SyncStatusColors.amoled(),
+      FolderThemeColors.amoled(),
+      NetworkSignalColors.amoled(),
+      WorkspaceThemeColors.amoled(),
+    ],
   );
 }

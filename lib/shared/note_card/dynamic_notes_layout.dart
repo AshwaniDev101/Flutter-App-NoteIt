@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'package:noteit/core/theme/folder_theme_colors.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/util/device_info.dart';
@@ -55,7 +57,7 @@ class DynamicNotesLayout extends ConsumerWidget {
       error: (error, stack) => Center(child: Text('Error: $error')),
       data: (notes) {
         if (notes.isEmpty) {
-          return _emptyNotePlaceholder(colorScheme, textTheme, activeFolder: activeFolder);
+          return _emptyNotePlaceholder(context, colorScheme, textTheme, activeFolder: activeFolder);
         }
 
         return RefreshIndicator(
@@ -326,7 +328,7 @@ class DynamicNotesLayout extends ConsumerWidget {
   }
 
   // Empty note placeholder
-  Widget _emptyNotePlaceholder(ColorScheme colorScheme, TextTheme textTheme, {Folder? activeFolder}) {
+  Widget _emptyNotePlaceholder(BuildContext context, ColorScheme colorScheme, TextTheme textTheme, {Folder? activeFolder}) {
     final isFolderSelected = activeFolder != null;
 
     return Center(
@@ -372,7 +374,7 @@ class DynamicNotesLayout extends ConsumerWidget {
                             width: 8,
                             height: 8,
                             decoration: BoxDecoration(
-                              color: Colors.primaries[activeFolder.colorIndex % Colors.primaries.length],
+                              color: FolderThemeColors.of(context, activeFolder.colorIndex),
                               shape: BoxShape.circle,
                             ),
                           ),

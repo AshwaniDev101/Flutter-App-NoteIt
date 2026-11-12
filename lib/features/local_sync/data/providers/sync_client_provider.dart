@@ -193,7 +193,7 @@ class SyncClientNotifier extends Notifier<WebSocketChannel?> {
 
       if (mdnsResult.protocolVersion != AppConfig.syncProtocolVersion) {
         AppLogger.d('SyncClientNotifier: AutoConnect: BLOCKING CONNECTION - Version mismatch!');
-        SnackBarManager.show(msg: "Please update NoteIt on your Device");
+        SnackBarManager.show(msg: "Please update NoteIt on your device.");
         return false;
       }
 

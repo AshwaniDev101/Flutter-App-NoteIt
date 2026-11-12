@@ -1,6 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+
+import 'package:noteit/core/theme/folder_theme_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:noteit/core/helpers/time_helper.dart';
@@ -68,9 +70,9 @@ class _NoteCardState extends ConsumerState<NoteCard> {
   bool get _isPinned => _note.pinnedAt != null;
   bool get _isLocked => _note.lockedAt != null;
 
-  Color? get _folderAccentColor {
+  Color? _getFolderAccentColor(BuildContext context) {
     if (_folder == null) return null;
-    return Colors.primaries[_folder!.colorIndex % Colors.primaries.length];
+    return FolderThemeColors.of(context, _folder!.colorIndex);
   }
 
   @override
@@ -477,7 +479,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
 
   Widget _getFolderLabel(BuildContext context, {TextStyle? textStyle}) {
     final theme = Theme.of(context);
-    final accent = _folderAccentColor;
+    final accent = _getFolderAccentColor(context);
     final effectiveStyle = textStyle ??
         theme.textTheme.labelSmall?.copyWith(
           color: theme.colorScheme.onSurfaceVariant,

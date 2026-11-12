@@ -118,6 +118,11 @@ ThemeData get _catppuccinThemeData {
       ),
     ),
 
-    extensions: [SyncStatusColors.catppuccin()],
+    extensions: [
+      SyncStatusColors.catppuccin(),
+      FolderThemeColors.catppuccin(),
+      NetworkSignalColors.catppuccin(),
+      WorkspaceThemeColors.catppuccin(),
+    ],
   );
 }

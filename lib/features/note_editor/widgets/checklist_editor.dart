@@ -338,7 +338,7 @@ class _CheckListWidgetState extends State<CheckListWidget> {
           },
         ),
         DummyChecklistTile(
-          hintText: "Add item",
+          hintText: "Add an item",
           onTap: _addItem,
         ),
       ],

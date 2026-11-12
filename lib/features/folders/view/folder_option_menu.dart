@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:noteit/core/helpers/platform_helper.dart';
+import 'package:noteit/core/theme/folder_theme_colors.dart';
 import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/features/folders/view/folder_selector.dart';
 import 'package:noteit/shared/menus/app_bottom_sheet.dart';
@@ -64,7 +65,7 @@ class _FolderOptionMenuState extends ConsumerState<FolderOptionMenu> {
 
     final currentName = activeFolder?.name ?? widget.emptyLabel;
     final currentColor = activeFolder != null
-        ? Colors.primaries[activeFolder.colorIndex % Colors.primaries.length]
+        ? FolderThemeColors.of(context, activeFolder.colorIndex)
         : colorScheme.onSurfaceVariant;
 
     return Material(

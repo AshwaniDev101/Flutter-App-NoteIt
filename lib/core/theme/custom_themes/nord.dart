@@ -118,6 +118,11 @@ ThemeData get _nordThemeData {
       ),
     ),
 
-    extensions: [SyncStatusColors.nord()],
+    extensions: [
+      SyncStatusColors.nord(),
+      FolderThemeColors.nord(),
+      NetworkSignalColors.nord(),
+      WorkspaceThemeColors.nord(),
+    ],
   );
 }

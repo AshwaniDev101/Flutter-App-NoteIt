@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:noteit/core/theme/network_signal_colors.dart';
 import '../../../../../../shared/overlays/app_scaffold.dart';
 import '../../../../../../shared/overlays/snack_bar_manager.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
@@ -57,15 +58,21 @@ class _PinEntryDialogState extends State<PinEntryDialog> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // Lock Icon Badge
-                  Center(
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.amber.withValues(alpha: 0.15),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.lock_rounded, size: 36, color: Colors.amber),
-                    ),
+                  Builder(
+                    builder: (context) {
+                      final netColors = Theme.of(context).extension<NetworkSignalColors>();
+                      final pinColor = netColors?.pinRequired ?? colorScheme.tertiary;
+                      return Center(
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: pinColor.withValues(alpha: 0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(Icons.lock_rounded, size: 36, color: pinColor),
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 16),
 

@@ -1,29 +1,44 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/helpers/platform_helper.dart';
+import 'package:noteit/core/theme/network_signal_colors.dart';
 import 'package:noteit/features/local_sync/data/network/local_sync_service.dart';
 import 'package:noteit/features/local_sync/data/providers/sync_server_provider.dart';
 
 /// Represents the high-level WebSocket connection lifecycle states.
 enum WebSocketActivity {
-  disconnected(icon: Icons.signal_wifi_connected_no_internet_4, color: Colors.transparent, tooltip: "Disconnected"),
+  disconnected(icon: Icons.signal_wifi_connected_no_internet_4, tooltip: "Disconnected"),
   hosting(
     icon: Icons.wifi_tethering_rounded,
-    color: Colors.white,
     tooltip: 'Host server running, waiting for client...',
   ),
   reconnecting(
     icon: Icons.change_circle_outlined,
-    color: Colors.amberAccent,
     tooltip: 'Connection lost, attempting fast reconnect...',
   ),
-  connected(icon: Icons.check_circle, color: Colors.greenAccent, tooltip: 'Sync connected!');
+  connected(icon: Icons.check_circle, tooltip: 'Sync connected!');
 
   final IconData icon;
-  final Color color;
   final String tooltip;
 
-  const WebSocketActivity({required this.icon, required this.color, required this.tooltip});
+  const WebSocketActivity({required this.icon, required this.tooltip});
+
+  Color getColor(BuildContext context) {
+    final netColors = Theme.of(context).extension<NetworkSignalColors>();
+    if (netColors != null) {
+      switch (this) {
+        case WebSocketActivity.connected:
+          return netColors.connected;
+        case WebSocketActivity.reconnecting:
+          return netColors.connecting;
+        case WebSocketActivity.hosting:
+          return Theme.of(context).colorScheme.onSurface;
+        case WebSocketActivity.disconnected:
+          return netColors.failed;
+      }
+    }
+    return Theme.of(context).colorScheme.onSurfaceVariant;
+  }
 }
 
 class WebSocketConnectionIndicator extends ConsumerWidget {
@@ -50,23 +65,9 @@ class WebSocketConnectionIndicator extends ConsumerWidget {
     }
 
     final isWide = PlatformHelper.isWideLayout(context);
+    final color = activity.getColor(context);
 
-    Widget dot = Icon(activity.icon, color: activity.color);
-    // Widget dot = Container(
-    //   width: 10,
-    //   height: 10,
-    //   decoration: BoxDecoration(
-    //     color: activity.color,
-    //     shape: BoxShape.circle,
-    //     boxShadow: [
-    //       BoxShadow(
-    //         color: activity.color.withValues(alpha: 0.6),
-    //         blurRadius: 4,
-    //         spreadRadius: 1,
-    //       ),
-    //     ],
-    //   ),
-    // );
+    Widget dot = Icon(activity.icon, color: color);
 
     if (isWide) {
       return Tooltip(
