@@ -209,14 +209,18 @@ class LocalSyncNotifier extends Notifier<SyncConnectionState> {
       }
     }
 
-    ref.read(isSyncingProvider.notifier).setSyncing(true);
-    ref.read(localSyncSessionProvider.notifier).setSyncing(true);
-
     try {
+      bool hasBroadcasted = false;
       for (final processor in _processors) {
         final pendingItems = await processor.getPendingLocalChanges();
 
         if (pendingItems.isEmpty) continue;
+
+        if (!hasBroadcasted) {
+          hasBroadcasted = true;
+          ref.read(isSyncingProvider.notifier).setSyncing(true);
+          ref.read(localSyncSessionProvider.notifier).setSyncing(true);
+        }
 
         final payload = jsonEncode({
           'type': processor.batchType,

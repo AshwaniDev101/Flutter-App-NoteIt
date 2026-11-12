@@ -22,41 +22,45 @@ class CloudFolderProcessor extends CloudEntityProcessor {
   int get dependencyLevel => 1;
 
   @override
-  Future<void> pushPendingChanges(NoteFirestoreDatabase firebaseDb, {String? targetWorkspaceId}) async {
+  Future<int> pushPendingChanges(NoteFirestoreDatabase firebaseDb, {String? targetWorkspaceId}) async {
     final wsId = targetWorkspaceId ?? firebaseDb.profileId;
     try {
       final foldersDao = ref.read(foldersDaoProvider);
       final pendingFolders = await foldersDao.getPendingCloudFolders();
       if (pendingFolders.isEmpty) {
         AppLogger.d('CloudFolderProcessor: No pending folders to push for workspace $wsId.');
-        return;
+        return 0;
       }
 
       final folderMaps = pendingFolders.map((f) => f.toJson()).toList();
       await firebaseDb.pushBatch('folders', folderMaps, targetWorkspaceId: targetWorkspaceId);
       await foldersDao.markAsCloudSynced(pendingFolders.map((f) => f.uuid));
       AppLogger.d('CloudFolderProcessor: Pushed ${pendingFolders.length} pending folders for workspace $wsId.');
+      return pendingFolders.length;
     } catch (e, st) {
       AppLogger.e('CloudFolderProcessor: Failed to push pending folders for workspace $wsId', error: e, stack: st);
+      return 0;
     }
   }
 
   @override
-  Future<void> pullRemoteChanges(NoteFirestoreDatabase firebaseDb, int lastSyncTime, {String? targetWorkspaceId}) async {
+  Future<int> pullRemoteChanges(NoteFirestoreDatabase firebaseDb, int lastSyncTime, {String? targetWorkspaceId}) async {
     final wsId = targetWorkspaceId ?? firebaseDb.profileId;
     try {
       final remoteDocs = await firebaseDb.pullChanges('folders', lastSyncTime, targetWorkspaceId: targetWorkspaceId);
       if (remoteDocs.isEmpty) {
         AppLogger.d('CloudFolderProcessor: No remote folders found since lastSyncTime: $lastSyncTime for workspace $wsId.');
-        return;
+        return 0;
       }
       for (final doc in remoteDocs) {
         final data = doc.data();
         await processIncomingCloudItem(data, targetWorkspaceId: targetWorkspaceId);
       }
       AppLogger.d('CloudFolderProcessor: Pulled and merged ${remoteDocs.length} folders from cloud for workspace $wsId.');
+      return remoteDocs.length;
     } catch (e, st) {
       AppLogger.e('CloudFolderProcessor: Failed to pull remote folders for workspace $wsId', error: e, stack: st);
+      return 0;
     }
   }
 

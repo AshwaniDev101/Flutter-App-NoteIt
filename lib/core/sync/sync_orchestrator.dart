@@ -112,13 +112,13 @@ class SyncOrchestrator with WidgetsBindingObserver {
     }
   }
 
-  // When EditNoteViewModel calls this, it routes the data to the correct engine.
-  void triggerSync() {
+  // When EditNoteViewModel or manual UI tap calls this, it routes the data to the correct engine.
+  void triggerSync({bool isUserInitiated = true}) {
     final mode = ref.read(syncModeProvider);
 
     if (mode.isCloud) {
       AppLogger.d("SyncOrchestrator: UI triggered sync. Routing to Cloud Engine.");
-      ref.read(cloudSyncServiceProvider).executeFullSync();
+      ref.read(cloudSyncServiceProvider).executeFullSync(isUserInitiated: isUserInitiated);
     } else if (mode.isLocal) {
       AppLogger.d("SyncOrchestrator: UI triggered sync. Routing to Local Wi-Fi Engine.");
       ref.read(localSyncServiceProvider.notifier).broadcastLocalChanges();

@@ -95,6 +95,7 @@ class MobileBottomControlBar extends ConsumerWidget {
           : Row(
               key: const ValueKey('standard_control_bar'),
               children: [
+                SizedBox(width: 16,),
                 FolderButton(
                   selectedFolder: ref.watch(activeFolderProvider),
                   emptyLabel: 'All Notes',

@@ -91,11 +91,17 @@ class CloudSyncService {
 
     _manifestSubscription = firebaseDb.watchForManifestChanges(sessionStartTime).listen(
       (docSnapshots) async {
-        for (final doc in docSnapshots) {
-          final data = doc.data();
-          if (data != null) {
-            await workspaceProcessor.processIncomingCloudItem(data);
+        if (docSnapshots.isEmpty) return;
+        ref.read(isSyncingProvider.notifier).setSyncing(true);
+        try {
+          for (final doc in docSnapshots) {
+            final data = doc.data();
+            if (data != null) {
+              await workspaceProcessor.processIncomingCloudItem(data);
+            }
           }
+        } finally {
+          ref.read(isSyncingProvider.notifier).setSyncing(false);
         }
       },
       onError: (e, st) {
@@ -105,11 +111,17 @@ class CloudSyncService {
 
     _folderSubscription = firebaseDb.watchForRemoteChanges('folders', sessionStartTime, targetWorkspaceId: activeWorkspace.id).listen(
       (docSnapshots) async {
-        for (final doc in docSnapshots) {
-          final data = doc.data();
-          if (data != null) {
-            await folderProcessor.processIncomingCloudItem(data, targetWorkspaceId: activeWorkspace.id);
+        if (docSnapshots.isEmpty) return;
+        ref.read(isSyncingProvider.notifier).setSyncing(true);
+        try {
+          for (final doc in docSnapshots) {
+            final data = doc.data();
+            if (data != null) {
+              await folderProcessor.processIncomingCloudItem(data, targetWorkspaceId: activeWorkspace.id);
+            }
           }
+        } finally {
+          ref.read(isSyncingProvider.notifier).setSyncing(false);
         }
       },
       onError: (e, st) {
@@ -119,11 +131,17 @@ class CloudSyncService {
 
     _noteSubscription = firebaseDb.watchForRemoteChanges('notes', sessionStartTime, targetWorkspaceId: activeWorkspace.id).listen(
       (docSnapshots) async {
-        for (final doc in docSnapshots) {
-          final data = doc.data();
-          if (data != null) {
-            await noteProcessor.processIncomingCloudItem(data, targetWorkspaceId: activeWorkspace.id);
+        if (docSnapshots.isEmpty) return;
+        ref.read(isSyncingProvider.notifier).setSyncing(true);
+        try {
+          for (final doc in docSnapshots) {
+            final data = doc.data();
+            if (data != null) {
+              await noteProcessor.processIncomingCloudItem(data, targetWorkspaceId: activeWorkspace.id);
+            }
           }
+        } finally {
+          ref.read(isSyncingProvider.notifier).setSyncing(false);
         }
       },
       onError: (e, st) {
@@ -135,7 +153,7 @@ class CloudSyncService {
   /// Master sync coordinator executing entity processors in strict dependency order:
   /// Stage 1: Workspace Manifest Sync (Level 0)
   /// Stage 2: Active Workspace Content Sync (Level 1 Folders -> Level 2 Notes)
-  Future<void> executeFullSync() async {
+  Future<void> executeFullSync({bool isUserInitiated = false}) async {
     if (!_isRunning || _isExecutingFullSync || ref.read(activeWorkspaceProvider.notifier).isSwitching) return;
 
     final firebaseDb = ref.read(noteFirebaseDatabaseProvider);
@@ -146,32 +164,47 @@ class CloudSyncService {
 
     _isExecutingFullSync = true;
     final activeWorkspace = ref.read(activeWorkspaceProvider);
-    AppLogger.d("CloudSyncService: Executing prioritized sync for active workspace ${activeWorkspace.name} (${activeWorkspace.id})...");
-    ref.read(isSyncingProvider.notifier).setSyncing(true);
+    AppLogger.d("CloudSyncService: Executing prioritized sync for active workspace ${activeWorkspace.name} (${activeWorkspace.id}) [isUserInitiated: $isUserInitiated]...");
+
+    if (isUserInitiated) {
+      ref.read(isSyncingProvider.notifier).setSyncing(true);
+    }
 
     try {
       final prefs = ref.read(sharedPreferenceProvider);
       final lastSyncTime = prefs.lastCloudSyncTime;
+      int totalItemsTransferred = 0;
 
       // STAGE 1: WORKSPACE MANIFEST SYNC (Level 0)
       final workspaceProcessor = ref.read(cloudWorkspaceProcessorProvider);
-      await workspaceProcessor.pushPendingChanges(firebaseDb);
-      await workspaceProcessor.pullRemoteChanges(firebaseDb, lastSyncTime);
+      final pushedWorkspaces = await workspaceProcessor.pushPendingChanges(firebaseDb);
+      final pulledWorkspaces = await workspaceProcessor.pullRemoteChanges(firebaseDb, lastSyncTime);
+      totalItemsTransferred += pushedWorkspaces + pulledWorkspaces;
+
+      if (totalItemsTransferred > 0 && !isUserInitiated) {
+        ref.read(isSyncingProvider.notifier).setSyncing(true);
+      }
 
       // STAGE 2: ACTIVE WORKSPACE CONTENT SYNC (Level 1 Folders -> Level 2 Notes)
       final activeWorkspaceProcessors = _processors.where((p) => p.dependencyLevel > 0).toList()
         ..sort((a, b) => a.dependencyLevel.compareTo(b.dependencyLevel));
 
       for (final processor in activeWorkspaceProcessors) {
-        await processor.pushPendingChanges(firebaseDb, targetWorkspaceId: activeWorkspace.id);
-        await processor.pullRemoteChanges(firebaseDb, lastSyncTime, targetWorkspaceId: activeWorkspace.id);
+        final pushed = await processor.pushPendingChanges(firebaseDb, targetWorkspaceId: activeWorkspace.id);
+        final pulled = await processor.pullRemoteChanges(firebaseDb, lastSyncTime, targetWorkspaceId: activeWorkspace.id);
+        
+        final stageTransferred = pushed + pulled;
+        if (stageTransferred > 0 && totalItemsTransferred == 0 && !isUserInitiated) {
+          ref.read(isSyncingProvider.notifier).setSyncing(true);
+        }
+        totalItemsTransferred += stageTransferred;
       }
 
       // UPDATE GLOBAL LAST SYNC TIMESTAMP
       final now = DateTime.now().millisecondsSinceEpoch;
       await prefs.setLastCloudSyncTime(now);
 
-      AppLogger.d("CloudSyncService: Prioritized sync completed successfully for active workspace ${activeWorkspace.name}.");
+      AppLogger.d("CloudSyncService: Prioritized sync completed successfully for active workspace ${activeWorkspace.name} (Total items transferred: $totalItemsTransferred).");
     } catch (e, st) {
       AppLogger.e("CloudSyncService: Error executing full sync", error: e, stack: st);
     } finally {

@@ -22,41 +22,45 @@ class CloudNoteProcessor extends CloudEntityProcessor {
   int get dependencyLevel => 2;
 
   @override
-  Future<void> pushPendingChanges(NoteFirestoreDatabase firebaseDb, {String? targetWorkspaceId}) async {
+  Future<int> pushPendingChanges(NoteFirestoreDatabase firebaseDb, {String? targetWorkspaceId}) async {
     final wsId = targetWorkspaceId ?? firebaseDb.profileId;
     try {
       final notesDao = ref.read(notesDaoProvider);
       final pendingNotes = await notesDao.getPendingCloudNotes();
       if (pendingNotes.isEmpty) {
         AppLogger.d('CloudNoteProcessor: No pending notes to push for workspace $wsId.');
-        return;
+        return 0;
       }
 
       final noteMaps = pendingNotes.map((n) => n.toJson()).toList();
       await firebaseDb.pushBatch('notes', noteMaps, targetWorkspaceId: targetWorkspaceId);
       await notesDao.markAsCloudSynced(pendingNotes.map((n) => n.uuid));
       AppLogger.d('CloudNoteProcessor: Pushed ${pendingNotes.length} pending notes for workspace $wsId.');
+      return pendingNotes.length;
     } catch (e, st) {
       AppLogger.e('CloudNoteProcessor: Failed to push pending notes for workspace $wsId', error: e, stack: st);
+      return 0;
     }
   }
 
   @override
-  Future<void> pullRemoteChanges(NoteFirestoreDatabase firebaseDb, int lastSyncTime, {String? targetWorkspaceId}) async {
+  Future<int> pullRemoteChanges(NoteFirestoreDatabase firebaseDb, int lastSyncTime, {String? targetWorkspaceId}) async {
     final wsId = targetWorkspaceId ?? firebaseDb.profileId;
     try {
       final remoteDocs = await firebaseDb.pullChanges('notes', lastSyncTime, targetWorkspaceId: targetWorkspaceId);
       if (remoteDocs.isEmpty) {
         AppLogger.d('CloudNoteProcessor: No remote notes found since lastSyncTime: $lastSyncTime for workspace $wsId.');
-        return;
+        return 0;
       }
       for (final doc in remoteDocs) {
         final data = doc.data();
         await processIncomingCloudItem(data, targetWorkspaceId: targetWorkspaceId);
       }
       AppLogger.d('CloudNoteProcessor: Pulled and merged ${remoteDocs.length} notes from cloud for workspace $wsId.');
+      return remoteDocs.length;
     } catch (e, st) {
       AppLogger.e('CloudNoteProcessor: Failed to pull remote notes for workspace $wsId', error: e, stack: st);
+      return 0;
     }
   }
 

@@ -27,6 +27,9 @@ class Workspace {
   /// Hybrid Logical Clock (HLC) string checkpoint.
   final String? hlc;
 
+  /// True if this workspace metadata has been synced to Firebase cloud.
+  final bool isCloudSynced;
+
   const Workspace({
     required this.id,
     required this.name,
@@ -36,6 +39,7 @@ class Workspace {
     this.deletedAt,
     this.updateCounter = 1,
     this.hlc,
+    this.isCloudSynced = false,
   });
 
   /// Serializes [Workspace] to a JSON Map.
@@ -49,6 +53,7 @@ class Workspace {
       'deletedAt': deletedAt?.toUtc().toIso8601String(),
       'updateCounter': updateCounter,
       'hlc': hlc,
+      'isCloudSynced': isCloudSynced,
     };
   }
 
@@ -69,6 +74,7 @@ class Workspace {
           : null,
       updateCounter: json['updateCounter'] as int? ?? 1,
       hlc: json['hlc'] as String?,
+      isCloudSynced: json['isCloudSynced'] as bool? ?? false,
     );
   }
 
@@ -82,6 +88,7 @@ class Workspace {
     Object? deletedAt = _undefined,
     int? updateCounter,
     Object? hlc = _undefined,
+    bool? isCloudSynced,
   }) {
     return Workspace(
       id: id ?? this.id,
@@ -92,6 +99,7 @@ class Workspace {
       deletedAt: deletedAt == _undefined ? this.deletedAt : deletedAt as DateTime?,
       updateCounter: updateCounter ?? this.updateCounter,
       hlc: hlc == _undefined ? this.hlc : hlc as String?,
+      isCloudSynced: isCloudSynced ?? this.isCloudSynced,
     );
   }
 
@@ -106,7 +114,8 @@ class Workspace {
         other.lastUsedAt == lastUsedAt &&
         other.deletedAt == deletedAt &&
         other.updateCounter == updateCounter &&
-        other.hlc == hlc;
+        other.hlc == hlc &&
+        other.isCloudSynced == isCloudSynced;
   }
 
   @override
@@ -119,6 +128,7 @@ class Workspace {
         deletedAt,
         updateCounter,
         hlc,
+        isCloudSynced,
       );
 }
 

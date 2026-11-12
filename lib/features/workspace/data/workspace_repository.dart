@@ -123,6 +123,7 @@ class WorkspaceRepository {
       dbFileName: dbFileName,
       createdAt: DateTime.now().toUtc(),
       lastUsedAt: DateTime.now().toUtc(),
+      isCloudSynced: false,
     );
 
     _workspaces.add(newWorkspace);
@@ -147,15 +148,35 @@ class WorkspaceRepository {
 
   /// Updates an existing workspace's metadata and persists changes to disk.
   Future<bool> updateWorkspace(Workspace updatedWorkspace) async {
-    return await upsertWorkspace(updatedWorkspace);
+    final updated = updatedWorkspace.copyWith(isCloudSynced: false);
+    return await upsertWorkspace(updated);
+  }
+
+  /// Marks workspace IDs as synced to Firebase Cloud.
+  Future<void> markAsCloudSynced(List<String> ids) async {
+    bool changed = false;
+    for (int i = 0; i < _workspaces.length; i++) {
+      if (ids.contains(_workspaces[i].id) && !_workspaces[i].isCloudSynced) {
+        _workspaces[i] = _workspaces[i].copyWith(isCloudSynced: true);
+        changed = true;
+      }
+    }
+    if (changed) {
+      await _saveManifest();
+    }
   }
 
   /// Updates the [lastUsedAt] timestamp for [workspaceId].
   Future<void> touchWorkspaceLastUsed(String workspaceId) async {
     final workspace = getWorkspaceById(workspaceId);
     if (workspace != null) {
+      // Preserve existing isCloudSynced state when touching lastUsedAt
       final updated = workspace.copyWith(lastUsedAt: DateTime.now().toUtc());
-      await upsertWorkspace(updated);
+      final index = _workspaces.indexWhere((p) => p.id == updated.id);
+      if (index != -1) {
+        _workspaces[index] = updated;
+        await _saveManifest();
+      }
     }
   }
 
@@ -171,6 +192,7 @@ class WorkspaceRepository {
     final updated = workspace.copyWith(
       deletedAt: now,
       updateCounter: workspace.updateCounter + 1,
+      isCloudSynced: false,
     );
 
     await upsertWorkspace(updated);

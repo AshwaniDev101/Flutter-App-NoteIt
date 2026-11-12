@@ -220,7 +220,7 @@ SyncDisplayInfo calculateSyncDisplayInfo({
 /// Derived Riverpod provider computing [SyncDisplayInfo] with fine-grained reactivity filters.
 final syncDisplayInfoProvider = Provider<SyncDisplayInfo>((ref) {
   final syncMode = ref.watch(syncModeProvider);
-  final isAuthenticated = ref.watch(authStateProvider.select((a) => a.value != null));
+  final isAuthenticated = ref.watch(authStateProvider.select((a) => a.unwrapPrevious().value != null));
   final localSyncState = ref.watch(localSyncServiceProvider);
   final isHosting = ref.watch(syncServerProvider.select((s) => s != null));
   final isSyncing = ref.watch(isSyncingProvider);
