@@ -18,6 +18,7 @@ import '../../../../shared/note_card/dynamic_notes_layout.dart';
 import '../../../drawer/mobile_app_drawer.dart';
 import '../../../workspace/view/widgets/workspace_badge.dart';
 import '../../../workspace/view/widgets/workspace_switch_overlay.dart';
+import 'package:noteit/core/util/app_warmup_service.dart';
 import '../../core/note_tap_handler.dart';
 import '../../core/providers.dart';
 import '../../viewmodel/viewmodel.dart';
@@ -47,6 +48,9 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> with WidgetsBin
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(syncOrchestratorProvider).triggerSync();
+      if (mounted) {
+        ref.read(appWarmupServiceProvider.notifier).scheduleWarmup(context);
+      }
     });
   }
 

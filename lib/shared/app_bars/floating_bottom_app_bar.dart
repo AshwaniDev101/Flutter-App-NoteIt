@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 /// A floating bottom app bar dock that cleanly elevates off screen edges.
 ///
-/// Uses standard Material 3 page margins (16dp) and smooth rounded corners by default.
+/// Uses 8dp page margins and smooth rounded corners by default to align with note cards.
 /// Automatically handles virtual keyboard visibility and gesture navigation insets.
 class FloatingBottomAppBar extends StatelessWidget {
   final Widget child;
@@ -17,9 +17,9 @@ class FloatingBottomAppBar extends StatelessWidget {
     required this.child,
     this.padding,
     this.elevation = 3.0,
-    this.horizontalMargin = 16.0,
-    this.bottomMargin = 12.0,
-    this.borderRadius = 24.0,
+    this.horizontalMargin = 8.0,
+    this.bottomMargin = 8.0,
+    this.borderRadius = 16.0,
   });
 
   @override
@@ -49,7 +49,7 @@ class FloatingBottomAppBar extends StatelessWidget {
                 ),
               ),
         clipBehavior: Clip.antiAlias,
-        padding: padding ?? const EdgeInsets.symmetric(horizontal: 12.0),
+        padding: padding ?? const EdgeInsets.symmetric(horizontal: 6.0),
         child: child,
       ),
     );

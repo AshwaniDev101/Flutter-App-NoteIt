@@ -18,20 +18,22 @@ class AppDrawer extends ConsumerWidget {
       width: 280,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
       child: SafeArea(
-        // Pass the shared UI right into the Drawer
-        child: SharedDrawerContent(
-          selectedOption: selectedOption,
-          onOptionSelected: (option) {
-            if (Scaffold.of(context).isDrawerOpen) {
-              Scaffold.of(context).closeDrawer();
-            }
-            ref.read(drawerNavigationProvider).navigate(context, option);
-          },
-          onClose: () {
-            if (Scaffold.of(context).isDrawerOpen) {
-              Scaffold.of(context).closeDrawer();
-            }
-          },
+        // Pass the shared UI right into the Drawer with layer isolation
+        child: RepaintBoundary(
+          child: SharedDrawerContent(
+            selectedOption: selectedOption,
+            onOptionSelected: (option) {
+              if (Scaffold.of(context).isDrawerOpen) {
+                Scaffold.of(context).closeDrawer();
+              }
+              ref.read(drawerNavigationProvider).navigate(context, option);
+            },
+            onClose: () {
+              if (Scaffold.of(context).isDrawerOpen) {
+                Scaffold.of(context).closeDrawer();
+              }
+            },
+          ),
         ),
       ),
     );

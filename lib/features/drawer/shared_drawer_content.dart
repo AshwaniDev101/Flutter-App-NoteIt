@@ -128,10 +128,11 @@ class _SharedDrawerContentState extends ConsumerState<SharedDrawerContent> {
     final trashCount = trashNotesState.value?.length;
     final archiveCount = archivedNotesState.value?.length;
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+    return RepaintBoundary(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
         // --- App Branding Header ---
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
@@ -272,7 +273,8 @@ class _SharedDrawerContentState extends ConsumerState<SharedDrawerContent> {
           ),
         ),
       ],
-    );
+    ),
+  );
   }
 }
 

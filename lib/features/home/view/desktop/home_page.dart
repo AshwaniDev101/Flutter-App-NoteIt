@@ -8,6 +8,7 @@ import 'package:noteit/features/home/core/note_tap_handler.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
 import 'package:uuid/uuid.dart';
 
+import 'package:noteit/core/util/app_warmup_service.dart';
 import 'package:noteit/core/sync/sync_orchestrator.dart';
 import 'package:noteit/database/drift/keybindings/keybindings_dao.dart';
 import 'package:noteit/database/drift/notes/notes_dao.dart';
@@ -65,6 +66,9 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePanel> {
     FocusManager.instance.addHighlightModeListener(_handleHighlightModeChange);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(syncOrchestratorProvider).triggerSync();
+      if (mounted) {
+        ref.read(appWarmupServiceProvider.notifier).scheduleWarmup(context);
+      }
     });
     HardwareKeyboard.instance.addHandler(_handleKeyEvent);
   }

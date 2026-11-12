@@ -41,6 +41,7 @@ class AdaptiveMenuButton<T> extends StatefulWidget {
   final String sheetTitle;
   final List<MenuSectionSpec<T>> sections;
   final double desktopWidth;
+  final bool closeOnSelect;
 
   const AdaptiveMenuButton({
     super.key,
@@ -49,6 +50,7 @@ class AdaptiveMenuButton<T> extends StatefulWidget {
     this.sheetTitle = '',
     this.tooltip = '',
     this.desktopWidth = 250.0,
+    this.closeOnSelect = true,
   });
 
   @override
@@ -61,7 +63,7 @@ class _AdaptiveMenuButtonState<T> extends State<AdaptiveMenuButton<T>> {
   void _showMobileBottomSheet(BuildContext context) {
     AppBottomSheet.show(
       context: context,
-      builder: (context, setModalState) {
+      builder: (bottomSheetContext, setModalState) {
         return Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -84,7 +86,17 @@ class _AdaptiveMenuButtonState<T> extends State<AdaptiveMenuButton<T>> {
               if (widget.sections[i].title != null)
                 _buildSectionHeader(context, widget.sections[i].title!),
               for (final item in widget.sections[i].items)
-                _buildActionTile(context, item, onTap: setModalState),
+                _buildActionTile(
+                  context,
+                  item,
+                  onSelect: () {
+                    if (widget.closeOnSelect) {
+                      Navigator.of(bottomSheetContext).pop();
+                    } else {
+                      setModalState(() {});
+                    }
+                  },
+                ),
             ],
           ],
         );
@@ -143,7 +155,15 @@ class _AdaptiveMenuButtonState<T> extends State<AdaptiveMenuButton<T>> {
                     if (widget.sections[i].title != null)
                       _buildSectionHeader(context, widget.sections[i].title!),
                     for (final item in widget.sections[i].items)
-                      _buildActionTile(context, item),
+                      _buildActionTile(
+                        context,
+                        item,
+                        onSelect: () {
+                          if (widget.closeOnSelect) {
+                            _menuController.close();
+                          }
+                        },
+                      ),
                   ],
                 ],
               ),
@@ -169,7 +189,11 @@ class _AdaptiveMenuButtonState<T> extends State<AdaptiveMenuButton<T>> {
     );
   }
 
-  Widget _buildActionTile(BuildContext context, MenuItemSpec<T> item, {StateSetter? onTap}) {
+  Widget _buildActionTile(
+    BuildContext context,
+    MenuItemSpec<T> item, {
+    VoidCallback? onSelect,
+  }) {
     return AppMenuTile(
       label: item.label,
       icon: item.icon,
@@ -177,9 +201,7 @@ class _AdaptiveMenuButtonState<T> extends State<AdaptiveMenuButton<T>> {
       isSelected: item.isSelected,
       onTap: () {
         item.onTap();
-        if (onTap != null) {
-          onTap(() {});
-        }
+        onSelect?.call();
       },
     );
   }
