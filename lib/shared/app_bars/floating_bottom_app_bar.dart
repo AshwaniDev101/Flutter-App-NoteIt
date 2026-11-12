@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
-/// A floating bottom app bar dock that cleanly elevates off screen edges.
+/// A docked bottom app bar that spans edge-to-edge off screen edges.
 ///
-/// Uses 8dp page margins and smooth rounded corners by default to align with note cards.
-/// Automatically handles virtual keyboard visibility and gesture navigation insets.
+/// Docked flush at the screen bottom by default with zero margins.
+/// Automatically handles virtual keyboard visibility and gesture navigation insets,
+/// and updates the Android system navigation bar background color to match.
 class FloatingBottomAppBar extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
@@ -11,46 +13,62 @@ class FloatingBottomAppBar extends StatelessWidget {
   final double horizontalMargin;
   final double bottomMargin;
   final double borderRadius;
+  final double? height;
 
   const FloatingBottomAppBar({
     super.key,
     required this.child,
     this.padding,
-    this.elevation = 3.0,
-    this.horizontalMargin = 8.0,
-    this.bottomMargin = 8.0,
-    this.borderRadius = 16.0,
+    this.elevation = 0.0,
+    this.horizontalMargin = 0.0,
+    this.bottomMargin = 0.0,
+    this.borderRadius = 0.0,
+    this.height = 56.0,
   });
 
   @override
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
     final bottomInset = mediaQuery.viewInsets.bottom;
-    final viewPaddingBottom = mediaQuery.viewPadding.bottom;
     final isKeyboardOpen = bottomInset > 0;
 
-    final effectiveBottomMargin = isKeyboardOpen ? bottomInset : (bottomMargin + viewPaddingBottom);
+    final effectiveBottomMargin = isKeyboardOpen ? bottomInset : bottomMargin;
     final effectiveHorizontalMargin = isKeyboardOpen ? 0.0 : horizontalMargin;
     final effectiveRadius = isKeyboardOpen ? 0.0 : borderRadius;
 
-    return Padding(
-      padding: EdgeInsets.only(
-        left: effectiveHorizontalMargin,
-        right: effectiveHorizontalMargin,
-        bottom: effectiveBottomMargin,
-      ),
-      child: BottomAppBar(
-        elevation: elevation,
-        shape: isKeyboardOpen
-            ? null
-            : AutomaticNotchedShape(
-                RoundedRectangleBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(effectiveRadius)),
-                ),
-              ),
-        clipBehavior: Clip.antiAlias,
-        padding: padding ?? const EdgeInsets.symmetric(horizontal: 6.0),
-        child: child,
+    final theme = Theme.of(context);
+    final navBarColor = theme.bottomAppBarTheme.color ?? theme.colorScheme.surfaceContainer;
+    final isDark = theme.brightness == Brightness.dark;
+
+    final systemUiOverlayStyle = SystemUiOverlayStyle(
+      systemNavigationBarColor: navBarColor,
+      systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+      systemNavigationBarDividerColor: Colors.transparent,
+      systemNavigationBarContrastEnforced: false,
+    );
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: systemUiOverlayStyle,
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: effectiveHorizontalMargin,
+          right: effectiveHorizontalMargin,
+          bottom: effectiveBottomMargin,
+        ),
+        child: BottomAppBar(
+          height: height,
+          elevation: elevation,
+          shape: (effectiveRadius > 0 && !isKeyboardOpen)
+              ? AutomaticNotchedShape(
+                  RoundedRectangleBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(effectiveRadius)),
+                  ),
+                )
+              : null,
+          clipBehavior: Clip.antiAlias,
+          padding: padding ?? const EdgeInsets.symmetric(horizontal: 6.0, vertical: 0.0),
+          child: child,
+        ),
       ),
     );
   }

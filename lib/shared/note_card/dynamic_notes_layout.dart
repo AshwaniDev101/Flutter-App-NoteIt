@@ -306,11 +306,11 @@ class DynamicNotesLayout extends ConsumerWidget {
       return isMobile
           ? const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
-        childAspectRatio: 0.85,
+        childAspectRatio: 1.0,
       )
           : const SliverGridDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: 200,
-        childAspectRatio: 0.85,
+        childAspectRatio: 1.0,
       );
     }
 

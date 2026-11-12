@@ -218,13 +218,13 @@ class _ArchivePageState extends ConsumerState<ArchivePage> with WidgetsBindingOb
         return isMobile
             ? const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 3,
-                childAspectRatio: 0.85,
+                childAspectRatio: 1.0,
                 crossAxisSpacing: 4,
                 mainAxisSpacing: 4,
               )
             : const SliverGridDelegateWithMaxCrossAxisExtent(
                 maxCrossAxisExtent: 200,
-                childAspectRatio: 0.85,
+                childAspectRatio: 1.0,
                 crossAxisSpacing: 4,
                 mainAxisSpacing: 4,
               );

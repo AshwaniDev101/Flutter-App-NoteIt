@@ -99,7 +99,7 @@ class BottomSelectModeAppBar extends ConsumerWidget {
     final remainingActions = noteActions.skip(4).toList();
 
     return FloatingBottomAppBar(
-      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      padding: const EdgeInsets.symmetric(horizontal: 4.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
