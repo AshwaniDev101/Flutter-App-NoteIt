@@ -113,6 +113,7 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> with WidgetsBin
         WorkspaceBadge(),
         SizedBox(width: 8,),
         SyncStateWidget(),
+        SizedBox(width: 8,),
         DesktopWindowControls(),
       ],
     );

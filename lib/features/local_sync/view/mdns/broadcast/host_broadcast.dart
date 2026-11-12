@@ -12,8 +12,10 @@ import 'package:noteit/features/local_sync/data/network/mdns_broadcast.dart';
 import 'package:noteit/features/local_sync/data/providers/local_sync_session_manager.dart';
 import 'package:noteit/features/local_sync/data/providers/sync_server_provider.dart';
 import 'package:noteit/features/local_sync/data/providers/sync_session_provider.dart';
+import 'package:noteit/features/local_sync/view/widgets/alternative_sync_cards.dart';
 import 'package:noteit/features/local_sync/view/widgets/sync_history_button.dart';
 import 'package:noteit/shared/overlays/app_scaffold.dart';
+import 'package:noteit/shared/overlays/snack_bar_manager.dart';
 
 import '../../../../home/view/shared/sync_state_widget.dart';
 
@@ -104,6 +106,105 @@ class _HostBroadcastPageState extends ConsumerState<HostBroadcastPage> {
       ref.read(desktopRightPanelViewProvider.notifier).setView(RightPanelPageOptions.localSync);
     } else {
       context.pushReplacement(RightPanelPageOptions.localSync.route);
+    }
+  }
+
+  void _confirmAndSwitchToCloudMode() {
+    final activeSession = ref.read(localSyncSessionProvider);
+    if (activeSession.isSyncing) {
+      showDialog(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Sync in Progress'),
+          content: const Text('Data transfer is currently active. Are you sure you want to switch to Cloud mode?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                _switchToCloudMode();
+              },
+              child: const Text('Switch Mode'),
+            ),
+          ],
+        ),
+      );
+    } else {
+      _switchToCloudMode();
+    }
+  }
+
+  void _confirmAndSwitchToOfflineMode() {
+    final activeSession = ref.read(localSyncSessionProvider);
+    if (activeSession.isSyncing) {
+      showDialog(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Sync in Progress'),
+          content: const Text('Data transfer is currently active. Are you sure you want to turn off sync?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                _switchToOfflineMode();
+              },
+              child: const Text('Turn Off Sync'),
+            ),
+          ],
+        ),
+      );
+    } else {
+      _switchToOfflineMode();
+    }
+  }
+
+  Future<void> _switchToCloudMode() async {
+    _syncServerNotifier.stopHosting();
+    _mdnsBroadcastNotifier.stopBroadcasting();
+    _localSyncNotifier.stop();
+
+    final success = await ref.read(syncModeProvider.notifier).requestModeChange(SyncMode.cloud);
+    if (success && mounted) {
+      SnackBarManager.show(
+        msg: 'Switched to Cloud Sync Mode',
+        type: SnackBarMessageType.info,
+      );
+      _exitToDefaultView();
+    }
+  }
+
+  Future<void> _switchToOfflineMode() async {
+    _syncServerNotifier.stopHosting();
+    _mdnsBroadcastNotifier.stopBroadcasting();
+    _localSyncNotifier.stop();
+
+    await ref.read(syncModeProvider.notifier).setMode(SyncMode.offline);
+    if (mounted) {
+      SnackBarManager.show(
+        msg: 'Sync turned off (Offline Mode)',
+        type: SnackBarMessageType.info,
+      );
+      _exitToDefaultView();
+    }
+  }
+
+  void _exitToDefaultView() {
+    if (PlatformHelper.isWideLayout(context)) {
+      ref.read(desktopRightPanelViewProvider.notifier).setView(RightPanelPageOptions.noteEditor);
+    } else {
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.pushReplacement(RightPanelPageOptions.noteEditor.route);
+      }
     }
   }
 
@@ -358,6 +459,13 @@ class _HostBroadcastPageState extends ConsumerState<HostBroadcastPage> {
                                   ),
                                 ],
                               ),
+                              const SizedBox(height: 28),
+
+                              // --- ALTERNATIVE SYNC OPTIONS ---
+                              AlternativeSyncCards(
+                                onSelectCloud: _confirmAndSwitchToCloudMode,
+                                onSelectOffline: _confirmAndSwitchToOfflineMode,
+                              ),
                             ],
                           ),
                         ),
@@ -374,6 +482,7 @@ class _HostBroadcastPageState extends ConsumerState<HostBroadcastPage> {
         if(!PlatformHelper.isWideLayout(context))
           // IconTray(),
           SyncStateWidget(),
+          SizedBox(width: 8,),
       ],
     );
   }

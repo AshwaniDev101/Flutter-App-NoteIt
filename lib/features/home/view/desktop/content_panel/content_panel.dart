@@ -68,6 +68,7 @@ class DesktopContentPanel extends ConsumerWidget {
               const WorkspaceBadge(),
               SizedBox(width: 8,),
               const SyncStateWidget(),
+              SizedBox(width: 8,),
               const DesktopWindowControls(),
             ],
           ),
