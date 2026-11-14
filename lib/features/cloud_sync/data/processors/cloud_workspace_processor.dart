@@ -40,7 +40,7 @@ class CloudWorkspaceProcessor extends CloudEntityProcessor {
       if (!hasPending) return 0;
 
       final manifestMaps = localWorkspaces.map((w) => w.toJson()).toList();
-      await firebaseDb.pushProfileManifest(manifestMaps);
+      await firebaseDb.pushWorkspaceManifest(manifestMaps);
       await repo.markAsCloudSynced(localWorkspaces.map((w) => w.id).toList());
 
       AppLogger.d('CloudWorkspaceProcessor: Pushed ${manifestMaps.length} workspace manifest items to cloud.');
@@ -54,7 +54,7 @@ class CloudWorkspaceProcessor extends CloudEntityProcessor {
   @override
   Future<int> pullRemoteChanges(NoteFirestoreDatabase firebaseDb, int lastSyncTime, {String? targetWorkspaceId}) async {
     try {
-      final remoteDocs = await firebaseDb.pullProfileManifest();
+      final remoteDocs = await firebaseDb.pullWorkspaceManifest();
       if (remoteDocs.isEmpty) return 0;
 
       int mergedCount = 0;

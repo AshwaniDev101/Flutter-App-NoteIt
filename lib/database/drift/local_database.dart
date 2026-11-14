@@ -32,7 +32,7 @@ final localDatabaseProvider = Provider((ref) {
   return db;
 });
 
-/// Physically deletes the SQLite database files (`note_it_db*`) from the
+/// Physically deletes all local database and manifest files from the
 /// application support directory.
 Future<void> deleteDatabaseFiles() async {
   try {
@@ -44,7 +44,8 @@ Future<void> deleteDatabaseFiles() async {
         if (entity is File &&
             (entity.path.contains('note_it_db') ||
                 entity.path.contains('workspace_') ||
-                entity.path.contains('profile_'))) {
+                entity.path.contains('profile_') ||
+                entity.path.endsWith('manifest.json'))) {
           try {
             await entity.delete();
           } catch (_) {}
@@ -76,5 +77,5 @@ class LocalDatabase extends _$LocalDatabase {
   }
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 1;
 }

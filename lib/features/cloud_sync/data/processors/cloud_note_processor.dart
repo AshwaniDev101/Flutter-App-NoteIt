@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/crypto/crypto_engine.dart';
 import '../../../../core/util/logger.dart';
 import '../../../../database/drift/notes/notes_dao.dart';
 import '../../../../database/firebase/firebase_database.dart';
@@ -23,7 +24,7 @@ class CloudNoteProcessor extends CloudEntityProcessor {
 
   @override
   Future<int> pushPendingChanges(NoteFirestoreDatabase firebaseDb, {String? targetWorkspaceId}) async {
-    final wsId = targetWorkspaceId ?? firebaseDb.profileId;
+    final wsId = targetWorkspaceId ?? firebaseDb.workspaceId;
     try {
       final notesDao = ref.read(notesDaoProvider);
       final pendingNotes = await notesDao.getPendingCloudNotes();
@@ -45,7 +46,7 @@ class CloudNoteProcessor extends CloudEntityProcessor {
 
   @override
   Future<int> pullRemoteChanges(NoteFirestoreDatabase firebaseDb, int lastSyncTime, {String? targetWorkspaceId}) async {
-    final wsId = targetWorkspaceId ?? firebaseDb.profileId;
+    final wsId = targetWorkspaceId ?? firebaseDb.workspaceId;
     try {
       final remoteDocs = await firebaseDb.pullChanges('notes', lastSyncTime, targetWorkspaceId: targetWorkspaceId);
       if (remoteDocs.isEmpty) {
@@ -80,6 +81,23 @@ class CloudNoteProcessor extends CloudEntityProcessor {
       AppLogger.d('CloudNoteProcessor: Merged note ${data['uuid']} (${data['title']})');
     } catch (e, st) {
       AppLogger.e('CloudNoteProcessor: Failed to process incoming cloud note ${data['uuid']}', error: e, stack: st);
+    }
+  }
+
+  /// Device B Password Trapdoor: Validates password against remote validation marker
+  Future<bool> validateRemotePasswordMarker(NoteFirestoreDatabase firebaseDb, List<int> masterKeyBytes) async {
+    try {
+      final remoteMarker = await firebaseDb.pullValidationMarker();
+      if (remoteMarker == null) return true;
+
+      final isValid = await CryptoEngine.verifyValidationMarker(remoteMarker, masterKeyBytes);
+      if (!isValid) {
+        AppLogger.e('CloudNoteProcessor: Device B Trapdoor check failed! Master password mismatch.');
+      }
+      return isValid;
+    } catch (e) {
+      AppLogger.e('CloudNoteProcessor: Failed to validate remote password marker', error: e);
+      return false;
     }
   }
 }

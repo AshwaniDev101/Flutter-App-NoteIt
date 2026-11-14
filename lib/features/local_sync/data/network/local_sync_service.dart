@@ -1,8 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/core/crypto/crypto_engine.dart';
+import 'package:noteit/core/crypto/secure_storage_manager.dart';
 import 'package:noteit/core/sync/sync_engine.dart';
 import 'package:noteit/core/sync/sync_orchestrator.dart';
+import 'package:noteit/features/lock/lock_manger/lock_manager.dart';
 import 'package:noteit/features/local_sync/data/processors/folder_sync_processor.dart';
 import 'package:noteit/features/local_sync/data/processors/note_sync_processor.dart';
 import 'package:noteit/features/local_sync/data/processors/sync_entity_processor.dart';
@@ -36,6 +39,7 @@ class LocalSyncNotifier extends Notifier<SyncConnectionState> {
   DateTime? _lastActivityTime;
   Completer<bool>? _probeCompleter;
   int _latencyMs = 0;
+  bool _isPeerVerified = false;
 
   int get latencyMs => _latencyMs;
 
@@ -60,6 +64,7 @@ class LocalSyncNotifier extends Notifier<SyncConnectionState> {
     _lastPingSentTime = null;
     _lastActivityTime = null;
     _latencyMs = 0;
+    _isPeerVerified = false;
 
     if (_probeCompleter != null && !_probeCompleter!.isCompleted) {
       _probeCompleter!.complete(false);
@@ -97,6 +102,9 @@ class LocalSyncNotifier extends Notifier<SyncConnectionState> {
     _lastActivityTime = DateTime.now();
     state = SyncConnectionState.connected;
 
+    final hasMasterPassword = ref.read(lockManagerProvider).hasMasterPassword;
+    _isPeerVerified = !hasMasterPassword;
+
     AppLogger.d("LocalSyncService: Active connection established!");
 
     _streamSubscription = _activeChannel!.stream.listen(
@@ -112,9 +120,27 @@ class LocalSyncNotifier extends Notifier<SyncConnectionState> {
     );
 
     _startHeartbeatTimer();
+    _sendValidationHandshake();
 
-    // Broadcast local changes immediately upon connecting
-    broadcastLocalChanges();
+    // Broadcast local changes immediately upon connecting ONLY if no master password is set
+    if (!hasMasterPassword) {
+      broadcastLocalChanges();
+    }
+  }
+
+  Future<void> _sendValidationHandshake() async {
+    if (_activeChannel == null) return;
+    try {
+      final marker = await SecureStorageManager.instance.getLocalValidationMarker();
+      final payload = jsonEncode({
+        'type': 'validation_handshake',
+        'marker': marker,
+      });
+      _activeChannel?.sink.add(payload);
+      AppLogger.d("LocalSyncService: Sent validation handshake marker to peer.");
+    } catch (e) {
+      AppLogger.w("LocalSyncService: Failed to send validation handshake to peer: $e");
+    }
   }
 
   /// Starts a periodic 5-second timer checking for idle time and ghost sockets
@@ -272,6 +298,50 @@ class LocalSyncNotifier extends Notifier<SyncConnectionState> {
       if (type == 'disconnect') {
         AppLogger.d("LocalSyncService: Peer sent disconnect notice. Closing local channel.");
         stop();
+        return;
+      }
+
+      if (type == 'validation_handshake') {
+        final peerMarker = message['marker'] as Map<String, dynamic>?;
+        final hasMasterPassword = ref.read(lockManagerProvider).hasMasterPassword;
+        final masterKeyBytes = ref.read(lockManagerProvider).masterKeyBytes;
+
+        if (hasMasterPassword) {
+          if (peerMarker == null || masterKeyBytes == null) {
+            AppLogger.w("LocalSyncService: Peer missing marker or session locked! Closing with code 4001.");
+            _activeChannel?.sink.close(4001, 'Locked or Missing Marker');
+            _isPeerVerified = false;
+            stop(reason: SyncConnectionState.error);
+            return;
+          }
+
+          final isValid = await CryptoEngine.verifyValidationMarker(peerMarker, masterKeyBytes);
+          if (!isValid) {
+            AppLogger.w("LocalSyncService: Mutual P2P validation marker check failed! Closing with code 4001.");
+            _activeChannel?.sink.close(4001, 'Password Mismatch');
+            _isPeerVerified = false;
+            stop(reason: SyncConnectionState.error);
+            return;
+          }
+        } else if (peerMarker != null) {
+          AppLogger.w("LocalSyncService: Remote peer requires master password but local device has none! Closing with code 4001.");
+          _activeChannel?.sink.close(4001, 'Peer Requires Master Password');
+          _isPeerVerified = false;
+          stop(reason: SyncConnectionState.error);
+          return;
+        }
+
+        final wasVerified = _isPeerVerified;
+        _isPeerVerified = true;
+        AppLogger.d("LocalSyncService: Peer validation handshake succeeded.");
+        if (!wasVerified) {
+          broadcastLocalChanges();
+        }
+        return;
+      }
+
+      if (ref.read(lockManagerProvider).hasMasterPassword && !_isPeerVerified) {
+        AppLogger.w("LocalSyncService: Received entity payload before peer validation! Dropping payload.");
         return;
       }
 

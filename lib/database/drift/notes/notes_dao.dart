@@ -1,10 +1,13 @@
+import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../core/crypto/crypto_engine.dart';
 import '../../../core/helpers/time_helper.dart';
 import '../../../core/util/hlc.dart';
 import '../../../core/util/logger.dart';
+import '../../../features/lock/crypto/reencryption_isolate.dart';
 import '../../shared_preference/shared_preference_manager.dart';
 import '../folders/folders_table.dart';
 import '../local_database.dart';
@@ -79,6 +82,7 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
     required String title,
     required String content,
     required int contentVersion,
+    List<int>? masterKeyBytes,
   }) async {
     return await transaction(() async {
       final existing = await (select(notes)..where((t) => t.uuid.equals(uuid))).getSingleOrNull();
@@ -86,14 +90,34 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
       final now = DateTime.now().toUtc();
       final newHlc = _generateHlc(counter: newCounter, lastKnownTime: now);
 
+      String finalContent = content;
+      String? encryptedPayload;
+      String? encryptionIv;
+
+      // EXPLICIT PLAIN TEXT CONTENT NULLIFICATION FOR LOCKED NOTES:
+      // If note is locked, encrypt content and clear plain text content column to empty string
+      if (existing != null && existing.lockedAt != null) {
+        if (masterKeyBytes == null) {
+          AppLogger.e('NotesDao: Cannot update locked note $uuid without masterKeyBytes.');
+          return false;
+        }
+        final encrypted = await CryptoEngine.encryptPayload(content, masterKeyBytes);
+        encryptedPayload = jsonEncode({
+          'ciphertext': encrypted['ciphertext'],
+          'authTag': encrypted['authTag'],
+        });
+        encryptionIv = encrypted['iv'];
+        finalContent = ''; // Explicitly nullify plain text content column
+      }
+
       final success = await (update(notes)..where((t) => t.uuid.equals(uuid))).write(
             NotesCompanion.custom(
               title: Variable(title),
-              content: Variable(content),
+              content: Variable(finalContent),
+              encryptedPayload: Variable(encryptedPayload),
+              encryptionIv: Variable(encryptionIv),
               cloudSyncStatus: const Variable(0),
-              // Trigger Cloud Worker
               localSyncStatus: const Variable(0),
-              // Trigger Local Worker
               updatedAt: Variable(now),
               updateCounter: Variable(newCounter),
               hlc: Variable(newHlc),
@@ -233,15 +257,75 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
     });
   }
 
-  Future<bool> lockNote(String uuid, {required bool isLocked}) async {
+  Future<bool> lockNote(
+    String uuid, {
+    required bool isLocked,
+    List<int>? masterKeyBytes,
+  }) async {
     return await transaction(() async {
       final existing = await (select(notes)..where((t) => t.uuid.equals(uuid))).getSingleOrNull();
-      final newCounter = (existing?.updateCounter ?? 0) + 1;
+      if (existing == null) return false;
+
+      final newCounter = existing.updateCounter + 1;
       final now = DateTime.now().toUtc();
       final newHlc = _generateHlc(counter: newCounter, lastKnownTime: now);
 
+      String finalContent = existing.content;
+      String? encryptedPayload = existing.encryptedPayload;
+      String? encryptionIv = existing.encryptionIv;
+
+      if (isLocked) {
+        if (masterKeyBytes == null) {
+          AppLogger.e('NotesDao: Cannot lock note $uuid without masterKeyBytes.');
+          return false;
+        }
+        if (existing.content.isNotEmpty) {
+          final encrypted = await CryptoEngine.encryptPayload(existing.content, masterKeyBytes);
+          encryptedPayload = jsonEncode({
+            'ciphertext': encrypted['ciphertext'],
+            'authTag': encrypted['authTag'],
+          });
+          encryptionIv = encrypted['iv'];
+        }
+        finalContent = ''; // Clear plain text content column
+      } else {
+        // UNLOCK & RESTORE DECRYPTED CONTENT IF AVAILABLE
+        if (masterKeyBytes == null) {
+          AppLogger.e('NotesDao: Cannot unlock note $uuid without masterKeyBytes.');
+          return false;
+        }
+        if (existing.encryptedPayload != null && existing.encryptionIv != null) {
+          try {
+            String ciphertextBase64 = existing.encryptedPayload!;
+            String authTagBase64 = existing.encryptedPayload!;
+            if (existing.encryptedPayload!.startsWith('{')) {
+              final map = jsonDecode(existing.encryptedPayload!) as Map<String, dynamic>;
+              ciphertextBase64 = map['ciphertext'] as String? ?? ciphertextBase64;
+              authTagBase64 = map['authTag'] as String? ?? authTagBase64;
+            }
+
+            final decrypted = await CryptoEngine.decryptPayload(
+              ciphertextBase64: ciphertextBase64,
+              ivBase64: existing.encryptionIv!,
+              authTagBase64: authTagBase64,
+              masterKey: masterKeyBytes,
+            );
+            finalContent = decrypted;
+          } catch (e) {
+            AppLogger.e('NotesDao: Failed to decrypt note $uuid during unlock: $e');
+            return false;
+          }
+        }
+        encryptedPayload = null;
+        encryptionIv = null;
+      }
+
       return await (update(notes)..where((t) => t.uuid.equals(uuid))).write(
             NotesCompanion.custom(
+              title: Variable(existing.title),
+              content: Variable(finalContent),
+              encryptedPayload: Variable(encryptedPayload),
+              encryptionIv: Variable(encryptionIv),
               lockedAt: Variable(isLocked ? now : null),
               cloudSyncStatus: const Variable(0),
               localSyncStatus: const Variable(0),
@@ -297,7 +381,11 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
     }).toList();
   }
 
-  Future<int> unlockAllNotes() async {
+  Future<int> unlockAllNotes({List<int>? masterKeyBytes}) async {
+    if (masterKeyBytes == null) {
+      AppLogger.e('NotesDao: Cannot unlock all notes without masterKeyBytes.');
+      throw StateError('Cannot unlock notes without master key');
+    }
     return await transaction(() async {
       final lockedNotes = await (select(notes)..where((t) => t.lockedAt.isNotNull())).get();
       final now = DateTime.now().toUtc();
@@ -307,8 +395,34 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
         final newCounter = note.updateCounter + 1;
         final newHlc = _generateHlc(counter: newCounter, lastKnownTime: now);
 
+        String restoredContent = note.content;
+        if (note.encryptedPayload != null && note.encryptionIv != null) {
+          try {
+            String ciphertextBase64 = note.encryptedPayload!;
+            String authTagBase64 = note.encryptedPayload!;
+            if (note.encryptedPayload!.startsWith('{')) {
+              final map = jsonDecode(note.encryptedPayload!) as Map<String, dynamic>;
+              ciphertextBase64 = map['ciphertext'] as String? ?? ciphertextBase64;
+              authTagBase64 = map['authTag'] as String? ?? authTagBase64;
+            }
+
+            restoredContent = await CryptoEngine.decryptPayload(
+              ciphertextBase64: ciphertextBase64,
+              ivBase64: note.encryptionIv!,
+              authTagBase64: authTagBase64,
+              masterKey: masterKeyBytes,
+            );
+          } catch (e) {
+            AppLogger.e('NotesDao: Failed to decrypt note ${note.uuid} during unlockAll: $e.');
+            throw StateError('Failed to decrypt note ${note.uuid} during unlockAll');
+          }
+        }
+
         final res = await (update(notes)..where((t) => t.uuid.equals(note.uuid))).write(
           NotesCompanion.custom(
+            content: Variable(restoredContent),
+            encryptedPayload: const Variable(null),
+            encryptionIv: const Variable(null),
             lockedAt: const Variable(null),
             cloudSyncStatus: const Variable(0),
             localSyncStatus: const Variable(0),
@@ -318,6 +432,66 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
           ),
         );
         updatedCount += res;
+      }
+      return updatedCount;
+    });
+  }
+
+  /// Re-encrypts all locked notes in database from [oldMasterKey] to [newMasterKey]
+  /// offloading decryption and re-encryption to a background Isolate worker.
+  Future<int> reencryptAllLockedNotes({
+    required List<int> oldMasterKey,
+    required List<int> newMasterKey,
+  }) async {
+    final lockedNotes = await (select(notes)..where((t) => t.lockedAt.isNotNull())).get();
+    if (lockedNotes.isEmpty) return 0;
+
+    final itemsToReencrypt = <ReencryptionItem>[];
+    for (final note in lockedNotes) {
+      if (note.encryptedPayload != null && note.encryptionIv != null) {
+        itemsToReencrypt.add(ReencryptionItem(
+          uuid: note.uuid,
+          encryptedPayload: note.encryptedPayload!,
+          encryptionIv: note.encryptionIv!,
+        ));
+      }
+    }
+    if (itemsToReencrypt.isEmpty) return 0;
+
+    // 1. Offload 100% of CPU-heavy decryption and re-encryption to background Isolate
+    final reencryptedResults = await ReencryptionIsolateWorker.batchReencrypt(
+      notes: itemsToReencrypt,
+      oldMasterKey: oldMasterKey,
+      newMasterKey: newMasterKey,
+    );
+
+    // 2. Perform atomic batch update in SQLite on main thread
+    return await transaction(() async {
+      final now = DateTime.now().toUtc();
+      int updatedCount = 0;
+
+      for (final result in reencryptedResults) {
+        final existingNote = lockedNotes.firstWhere((n) => n.uuid == result.uuid);
+        final newPayload = jsonEncode({
+          'ciphertext': result.ciphertext,
+          'authTag': result.authTag,
+        });
+
+        final newCounter = existingNote.updateCounter + 1;
+        final newHlc = _generateHlc(counter: newCounter, lastKnownTime: now);
+
+        final res = await (update(notes)..where((t) => t.uuid.equals(result.uuid))).write(
+          NotesCompanion.custom(
+            encryptedPayload: Variable(newPayload),
+            encryptionIv: Variable(result.iv),
+            cloudSyncStatus: const Variable(0),
+            localSyncStatus: const Variable(0),
+            updatedAt: Variable(now),
+            updateCounter: Variable(newCounter),
+            hlc: Variable(newHlc),
+          ),
+        );
+        if (res > 0) updatedCount++;
       }
       return updatedCount;
     });

@@ -169,13 +169,43 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> with WidgetsBin
         //   searchFocusNode: _searchFocusNode,
         // ),
         body: WorkspaceSwitchOverlay(
-          child: DynamicNotesLayout(
-            isSelectMode: homeState.isSelectMode,
-            noteIds: homeState.selectedNoteIds,
-            activeNoteId: null,
-            onToggleSelection: viewModel.toggleSelection,
-            onEnableSelectMode: viewModel.enableSelectMode,
-            onNoteTap: _handleNoteTap,
+          child: Column(
+            children: [
+              if (ref.watch(hasExcludedLockedNotesFromSearchProvider))
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.lock_outline_rounded, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Locked note contents excluded from search',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                fontSize: 11,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              Expanded(
+                child: DynamicNotesLayout(
+                  isSelectMode: homeState.isSelectMode,
+                  noteIds: homeState.selectedNoteIds,
+                  activeNoteId: null,
+                  onToggleSelection: viewModel.toggleSelection,
+                  onEnableSelectMode: viewModel.enableSelectMode,
+                  onNoteTap: _handleNoteTap,
+                ),
+              ),
+            ],
           ),
         ),
       ),

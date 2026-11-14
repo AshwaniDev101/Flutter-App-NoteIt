@@ -6,6 +6,7 @@ import 'package:noteit/core/util/logger.dart';
 import 'package:noteit/database/firebase/auth/firebase_provider.dart';
 import 'package:noteit/database/firebase/firebase_database.dart';
 import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
+import 'package:noteit/features/lock/lock_manger/lock_manager.dart';
 import 'package:noteit/features/workspace/providers/active_workspace_provider.dart';
 
 import 'processors/cloud_entity_processor.dart';
@@ -180,6 +181,17 @@ class CloudSyncService {
       final pushedWorkspaces = await workspaceProcessor.pushPendingChanges(firebaseDb);
       final pulledWorkspaces = await workspaceProcessor.pullRemoteChanges(firebaseDb, lastSyncTime);
       totalItemsTransferred += pushedWorkspaces + pulledWorkspaces;
+
+      // Validate remote password marker trapdoor
+      final masterKeyBytes = ref.read(lockManagerProvider).masterKeyBytes;
+      if (masterKeyBytes != null) {
+        final noteProcessor = ref.read(cloudNoteProcessorProvider);
+        final isValidRemoteKey = await noteProcessor.validateRemotePasswordMarker(firebaseDb, masterKeyBytes);
+        if (!isValidRemoteKey) {
+          AppLogger.w("CloudSyncService: Remote password marker mismatch! Clearing local session keys.");
+          ref.read(lockManagerProvider.notifier).clearAllSessions();
+        }
+      }
 
       if (totalItemsTransferred > 0 && !isUserInitiated) {
         ref.read(isSyncingProvider.notifier).setSyncing(true);

@@ -54,6 +54,11 @@ class Notes extends Table {
 
   DateTimeColumn get lockedAt => dateTime().nullable()();
 
+  // ENCRYPTION FIELDS FOR LOCKED NOTES
+  // Holds base64 encoded AES-256-GCM ciphertext + AuthTag when note is locked (lockedAt != null).
+  TextColumn get encryptedPayload => text().nullable()();
+  TextColumn get encryptionIv => text().nullable()();
+
   // ATTACHMENTS
   // Avoids storing heavy BLOBs in SQLite to keep the database fast.
   // localAttachmentPath: The file path on the current Android/Windows device.

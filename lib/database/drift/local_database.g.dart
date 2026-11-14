@@ -109,6 +109,28 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _encryptedPayloadMeta = const VerificationMeta(
+    'encryptedPayload',
+  );
+  @override
+  late final GeneratedColumn<String> encryptedPayload = GeneratedColumn<String>(
+    'encrypted_payload',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _encryptionIvMeta = const VerificationMeta(
+    'encryptionIv',
+  );
+  @override
+  late final GeneratedColumn<String> encryptionIv = GeneratedColumn<String>(
+    'encryption_iv',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _localAttachmentPathMeta =
       const VerificationMeta('localAttachmentPath');
   @override
@@ -352,6 +374,8 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
     pinnedAt,
     archivedAt,
     lockedAt,
+    encryptedPayload,
+    encryptionIv,
     localAttachmentPath,
     cloudAttachmentUrl,
     folderId,
@@ -448,6 +472,24 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
       context.handle(
         _lockedAtMeta,
         lockedAt.isAcceptableOrUnknown(data['locked_at']!, _lockedAtMeta),
+      );
+    }
+    if (data.containsKey('encrypted_payload')) {
+      context.handle(
+        _encryptedPayloadMeta,
+        encryptedPayload.isAcceptableOrUnknown(
+          data['encrypted_payload']!,
+          _encryptedPayloadMeta,
+        ),
+      );
+    }
+    if (data.containsKey('encryption_iv')) {
+      context.handle(
+        _encryptionIvMeta,
+        encryptionIv.isAcceptableOrUnknown(
+          data['encryption_iv']!,
+          _encryptionIvMeta,
+        ),
       );
     }
     if (data.containsKey('local_attachment_path')) {
@@ -660,6 +702,14 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}locked_at'],
       ),
+      encryptedPayload: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}encrypted_payload'],
+      ),
+      encryptionIv: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}encryption_iv'],
+      ),
       localAttachmentPath: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}local_attachment_path'],
@@ -763,6 +813,8 @@ class Note extends DataClass implements Insertable<Note> {
   final DateTime? pinnedAt;
   final DateTime? archivedAt;
   final DateTime? lockedAt;
+  final String? encryptedPayload;
+  final String? encryptionIv;
   final String? localAttachmentPath;
   final String? cloudAttachmentUrl;
   final String? folderId;
@@ -794,6 +846,8 @@ class Note extends DataClass implements Insertable<Note> {
     this.pinnedAt,
     this.archivedAt,
     this.lockedAt,
+    this.encryptedPayload,
+    this.encryptionIv,
     this.localAttachmentPath,
     this.cloudAttachmentUrl,
     this.folderId,
@@ -833,6 +887,12 @@ class Note extends DataClass implements Insertable<Note> {
     }
     if (!nullToAbsent || lockedAt != null) {
       map['locked_at'] = Variable<DateTime>(lockedAt);
+    }
+    if (!nullToAbsent || encryptedPayload != null) {
+      map['encrypted_payload'] = Variable<String>(encryptedPayload);
+    }
+    if (!nullToAbsent || encryptionIv != null) {
+      map['encryption_iv'] = Variable<String>(encryptionIv);
     }
     if (!nullToAbsent || localAttachmentPath != null) {
       map['local_attachment_path'] = Variable<String>(localAttachmentPath);
@@ -907,6 +967,12 @@ class Note extends DataClass implements Insertable<Note> {
       lockedAt: lockedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(lockedAt),
+      encryptedPayload: encryptedPayload == null && nullToAbsent
+          ? const Value.absent()
+          : Value(encryptedPayload),
+      encryptionIv: encryptionIv == null && nullToAbsent
+          ? const Value.absent()
+          : Value(encryptionIv),
       localAttachmentPath: localAttachmentPath == null && nullToAbsent
           ? const Value.absent()
           : Value(localAttachmentPath),
@@ -974,6 +1040,8 @@ class Note extends DataClass implements Insertable<Note> {
       pinnedAt: serializer.fromJson<DateTime?>(json['pinnedAt']),
       archivedAt: serializer.fromJson<DateTime?>(json['archivedAt']),
       lockedAt: serializer.fromJson<DateTime?>(json['lockedAt']),
+      encryptedPayload: serializer.fromJson<String?>(json['encryptedPayload']),
+      encryptionIv: serializer.fromJson<String?>(json['encryptionIv']),
       localAttachmentPath: serializer.fromJson<String?>(
         json['localAttachmentPath'],
       ),
@@ -1020,6 +1088,8 @@ class Note extends DataClass implements Insertable<Note> {
       'pinnedAt': serializer.toJson<DateTime?>(pinnedAt),
       'archivedAt': serializer.toJson<DateTime?>(archivedAt),
       'lockedAt': serializer.toJson<DateTime?>(lockedAt),
+      'encryptedPayload': serializer.toJson<String?>(encryptedPayload),
+      'encryptionIv': serializer.toJson<String?>(encryptionIv),
       'localAttachmentPath': serializer.toJson<String?>(localAttachmentPath),
       'cloudAttachmentUrl': serializer.toJson<String?>(cloudAttachmentUrl),
       'folderId': serializer.toJson<String?>(folderId),
@@ -1054,6 +1124,8 @@ class Note extends DataClass implements Insertable<Note> {
     Value<DateTime?> pinnedAt = const Value.absent(),
     Value<DateTime?> archivedAt = const Value.absent(),
     Value<DateTime?> lockedAt = const Value.absent(),
+    Value<String?> encryptedPayload = const Value.absent(),
+    Value<String?> encryptionIv = const Value.absent(),
     Value<String?> localAttachmentPath = const Value.absent(),
     Value<String?> cloudAttachmentUrl = const Value.absent(),
     Value<String?> folderId = const Value.absent(),
@@ -1085,6 +1157,10 @@ class Note extends DataClass implements Insertable<Note> {
     pinnedAt: pinnedAt.present ? pinnedAt.value : this.pinnedAt,
     archivedAt: archivedAt.present ? archivedAt.value : this.archivedAt,
     lockedAt: lockedAt.present ? lockedAt.value : this.lockedAt,
+    encryptedPayload: encryptedPayload.present
+        ? encryptedPayload.value
+        : this.encryptedPayload,
+    encryptionIv: encryptionIv.present ? encryptionIv.value : this.encryptionIv,
     localAttachmentPath: localAttachmentPath.present
         ? localAttachmentPath.value
         : this.localAttachmentPath,
@@ -1144,6 +1220,12 @@ class Note extends DataClass implements Insertable<Note> {
           ? data.archivedAt.value
           : this.archivedAt,
       lockedAt: data.lockedAt.present ? data.lockedAt.value : this.lockedAt,
+      encryptedPayload: data.encryptedPayload.present
+          ? data.encryptedPayload.value
+          : this.encryptedPayload,
+      encryptionIv: data.encryptionIv.present
+          ? data.encryptionIv.value
+          : this.encryptionIv,
       localAttachmentPath: data.localAttachmentPath.present
           ? data.localAttachmentPath.value
           : this.localAttachmentPath,
@@ -1208,6 +1290,8 @@ class Note extends DataClass implements Insertable<Note> {
           ..write('pinnedAt: $pinnedAt, ')
           ..write('archivedAt: $archivedAt, ')
           ..write('lockedAt: $lockedAt, ')
+          ..write('encryptedPayload: $encryptedPayload, ')
+          ..write('encryptionIv: $encryptionIv, ')
           ..write('localAttachmentPath: $localAttachmentPath, ')
           ..write('cloudAttachmentUrl: $cloudAttachmentUrl, ')
           ..write('folderId: $folderId, ')
@@ -1244,6 +1328,8 @@ class Note extends DataClass implements Insertable<Note> {
     pinnedAt,
     archivedAt,
     lockedAt,
+    encryptedPayload,
+    encryptionIv,
     localAttachmentPath,
     cloudAttachmentUrl,
     folderId,
@@ -1279,6 +1365,8 @@ class Note extends DataClass implements Insertable<Note> {
           other.pinnedAt == this.pinnedAt &&
           other.archivedAt == this.archivedAt &&
           other.lockedAt == this.lockedAt &&
+          other.encryptedPayload == this.encryptedPayload &&
+          other.encryptionIv == this.encryptionIv &&
           other.localAttachmentPath == this.localAttachmentPath &&
           other.cloudAttachmentUrl == this.cloudAttachmentUrl &&
           other.folderId == this.folderId &&
@@ -1312,6 +1400,8 @@ class NotesCompanion extends UpdateCompanion<Note> {
   final Value<DateTime?> pinnedAt;
   final Value<DateTime?> archivedAt;
   final Value<DateTime?> lockedAt;
+  final Value<String?> encryptedPayload;
+  final Value<String?> encryptionIv;
   final Value<String?> localAttachmentPath;
   final Value<String?> cloudAttachmentUrl;
   final Value<String?> folderId;
@@ -1344,6 +1434,8 @@ class NotesCompanion extends UpdateCompanion<Note> {
     this.pinnedAt = const Value.absent(),
     this.archivedAt = const Value.absent(),
     this.lockedAt = const Value.absent(),
+    this.encryptedPayload = const Value.absent(),
+    this.encryptionIv = const Value.absent(),
     this.localAttachmentPath = const Value.absent(),
     this.cloudAttachmentUrl = const Value.absent(),
     this.folderId = const Value.absent(),
@@ -1377,6 +1469,8 @@ class NotesCompanion extends UpdateCompanion<Note> {
     this.pinnedAt = const Value.absent(),
     this.archivedAt = const Value.absent(),
     this.lockedAt = const Value.absent(),
+    this.encryptedPayload = const Value.absent(),
+    this.encryptionIv = const Value.absent(),
     this.localAttachmentPath = const Value.absent(),
     this.cloudAttachmentUrl = const Value.absent(),
     this.folderId = const Value.absent(),
@@ -1411,6 +1505,8 @@ class NotesCompanion extends UpdateCompanion<Note> {
     Expression<DateTime>? pinnedAt,
     Expression<DateTime>? archivedAt,
     Expression<DateTime>? lockedAt,
+    Expression<String>? encryptedPayload,
+    Expression<String>? encryptionIv,
     Expression<String>? localAttachmentPath,
     Expression<String>? cloudAttachmentUrl,
     Expression<String>? folderId,
@@ -1444,6 +1540,8 @@ class NotesCompanion extends UpdateCompanion<Note> {
       if (pinnedAt != null) 'pinned_at': pinnedAt,
       if (archivedAt != null) 'archived_at': archivedAt,
       if (lockedAt != null) 'locked_at': lockedAt,
+      if (encryptedPayload != null) 'encrypted_payload': encryptedPayload,
+      if (encryptionIv != null) 'encryption_iv': encryptionIv,
       if (localAttachmentPath != null)
         'local_attachment_path': localAttachmentPath,
       if (cloudAttachmentUrl != null)
@@ -1484,6 +1582,8 @@ class NotesCompanion extends UpdateCompanion<Note> {
     Value<DateTime?>? pinnedAt,
     Value<DateTime?>? archivedAt,
     Value<DateTime?>? lockedAt,
+    Value<String?>? encryptedPayload,
+    Value<String?>? encryptionIv,
     Value<String?>? localAttachmentPath,
     Value<String?>? cloudAttachmentUrl,
     Value<String?>? folderId,
@@ -1517,6 +1617,8 @@ class NotesCompanion extends UpdateCompanion<Note> {
       pinnedAt: pinnedAt ?? this.pinnedAt,
       archivedAt: archivedAt ?? this.archivedAt,
       lockedAt: lockedAt ?? this.lockedAt,
+      encryptedPayload: encryptedPayload ?? this.encryptedPayload,
+      encryptionIv: encryptionIv ?? this.encryptionIv,
       localAttachmentPath: localAttachmentPath ?? this.localAttachmentPath,
       cloudAttachmentUrl: cloudAttachmentUrl ?? this.cloudAttachmentUrl,
       folderId: folderId ?? this.folderId,
@@ -1571,6 +1673,12 @@ class NotesCompanion extends UpdateCompanion<Note> {
     }
     if (lockedAt.present) {
       map['locked_at'] = Variable<DateTime>(lockedAt.value);
+    }
+    if (encryptedPayload.present) {
+      map['encrypted_payload'] = Variable<String>(encryptedPayload.value);
+    }
+    if (encryptionIv.present) {
+      map['encryption_iv'] = Variable<String>(encryptionIv.value);
     }
     if (localAttachmentPath.present) {
       map['local_attachment_path'] = Variable<String>(
@@ -1655,6 +1763,8 @@ class NotesCompanion extends UpdateCompanion<Note> {
           ..write('pinnedAt: $pinnedAt, ')
           ..write('archivedAt: $archivedAt, ')
           ..write('lockedAt: $lockedAt, ')
+          ..write('encryptedPayload: $encryptedPayload, ')
+          ..write('encryptionIv: $encryptionIv, ')
           ..write('localAttachmentPath: $localAttachmentPath, ')
           ..write('cloudAttachmentUrl: $cloudAttachmentUrl, ')
           ..write('folderId: $folderId, ')
@@ -4412,6 +4522,8 @@ typedef $$NotesTableCreateCompanionBuilder =
       Value<DateTime?> pinnedAt,
       Value<DateTime?> archivedAt,
       Value<DateTime?> lockedAt,
+      Value<String?> encryptedPayload,
+      Value<String?> encryptionIv,
       Value<String?> localAttachmentPath,
       Value<String?> cloudAttachmentUrl,
       Value<String?> folderId,
@@ -4446,6 +4558,8 @@ typedef $$NotesTableUpdateCompanionBuilder =
       Value<DateTime?> pinnedAt,
       Value<DateTime?> archivedAt,
       Value<DateTime?> lockedAt,
+      Value<String?> encryptedPayload,
+      Value<String?> encryptionIv,
       Value<String?> localAttachmentPath,
       Value<String?> cloudAttachmentUrl,
       Value<String?> folderId,
@@ -4521,6 +4635,16 @@ class $$NotesTableFilterComposer
 
   ColumnFilters<DateTime> get lockedAt => $composableBuilder(
     column: $table.lockedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get encryptedPayload => $composableBuilder(
+    column: $table.encryptedPayload,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get encryptionIv => $composableBuilder(
+    column: $table.encryptionIv,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4684,6 +4808,16 @@ class $$NotesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get encryptedPayload => $composableBuilder(
+    column: $table.encryptedPayload,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get encryptionIv => $composableBuilder(
+    column: $table.encryptionIv,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get localAttachmentPath => $composableBuilder(
     column: $table.localAttachmentPath,
     builder: (column) => ColumnOrderings(column),
@@ -4832,6 +4966,16 @@ class $$NotesTableAnnotationComposer
   GeneratedColumn<DateTime> get lockedAt =>
       $composableBuilder(column: $table.lockedAt, builder: (column) => column);
 
+  GeneratedColumn<String> get encryptedPayload => $composableBuilder(
+    column: $table.encryptedPayload,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get encryptionIv => $composableBuilder(
+    column: $table.encryptionIv,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get localAttachmentPath => $composableBuilder(
     column: $table.localAttachmentPath,
     builder: (column) => column,
@@ -4961,6 +5105,8 @@ class $$NotesTableTableManager
                 Value<DateTime?> pinnedAt = const Value.absent(),
                 Value<DateTime?> archivedAt = const Value.absent(),
                 Value<DateTime?> lockedAt = const Value.absent(),
+                Value<String?> encryptedPayload = const Value.absent(),
+                Value<String?> encryptionIv = const Value.absent(),
                 Value<String?> localAttachmentPath = const Value.absent(),
                 Value<String?> cloudAttachmentUrl = const Value.absent(),
                 Value<String?> folderId = const Value.absent(),
@@ -4993,6 +5139,8 @@ class $$NotesTableTableManager
                 pinnedAt: pinnedAt,
                 archivedAt: archivedAt,
                 lockedAt: lockedAt,
+                encryptedPayload: encryptedPayload,
+                encryptionIv: encryptionIv,
                 localAttachmentPath: localAttachmentPath,
                 cloudAttachmentUrl: cloudAttachmentUrl,
                 folderId: folderId,
@@ -5027,6 +5175,8 @@ class $$NotesTableTableManager
                 Value<DateTime?> pinnedAt = const Value.absent(),
                 Value<DateTime?> archivedAt = const Value.absent(),
                 Value<DateTime?> lockedAt = const Value.absent(),
+                Value<String?> encryptedPayload = const Value.absent(),
+                Value<String?> encryptionIv = const Value.absent(),
                 Value<String?> localAttachmentPath = const Value.absent(),
                 Value<String?> cloudAttachmentUrl = const Value.absent(),
                 Value<String?> folderId = const Value.absent(),
@@ -5059,6 +5209,8 @@ class $$NotesTableTableManager
                 pinnedAt: pinnedAt,
                 archivedAt: archivedAt,
                 lockedAt: lockedAt,
+                encryptedPayload: encryptedPayload,
+                encryptionIv: encryptionIv,
                 localAttachmentPath: localAttachmentPath,
                 cloudAttachmentUrl: cloudAttachmentUrl,
                 folderId: folderId,

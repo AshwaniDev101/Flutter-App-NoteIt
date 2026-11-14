@@ -104,6 +104,155 @@ Hosting and connecting: uses mDNS for broadcasting device names over a custom TC
 * **Zero-Cloud Local Sync:** To make the app truly offline-first, I implemented mDNS (Multicast DNS) using the `nsd` package. This allows Windows and Android devices on the same local subnet to automatically discover each other without manual IP entry, establishing a WebSocket connection for zero-latency local data transfer.
 * **Complex Querying:** Instead of using a simple key-value store, I chose Drift (SQLite) for local persistence. The relational database structure allows for efficient execution of complex queries, such as the multi-parameter sorting (Name/Date) and device-origin filtering features.
 
+## 🔒 Security Architecture
+
+Note-It is engineered with a **Zero-Knowledge End-to-End Encryption (E2EE)** framework. Password-protected notes are encrypted locally before touching storage or network streams. The server or local sync peers never possess raw master passwords or unencrypted payload keys.
+
+---
+
+### 🛡️ Security Measures & Core Principles
+
+1. **Zero-Knowledge Password Verification**: Raw master passwords are **never** stored on disk. `SharedPreferences` retains only a boolean `hasMasterPassword` flag. Password verification uses encrypted canary payloads (validation markers) that prove password correctness without saving hashes or plaintext strings.
+2. **Hardware-Backed Secure Storage**: Cryptographic salt, local validation markers, hardware keys, and key-wrapping payloads are stored in platform hardware keystores via `FlutterSecureStorage` (Android Keystore, iOS Keychain, and Windows DPAPI/Credential Guard).
+3. **Authenticated AES-256-GCM Encryption**: Note contents are encrypted using AES-256-GCM with unique 12-byte initialization vectors (IVs) and 16-byte MAC authentication tags.
+4. **PBKDF2 Key Derivation**: Master keys are derived using PBKDF2 with SHA-256 and **600,000 iterations**, providing high resistance against offline GPU/dictionary attacks.
+5. **Secure Memory Hygiene & Auto-Purging**: When the application is paused or backgrounded (`AppLifecycleState.paused` / `hidden`), `masterKeyBytes` in memory is zeroed out byte-by-byte (`_zeroOutMasterKeyMemory`), and active BIP39 seed phrases (`activeRecoveryPhrase`) are cleared.
+6. **Key-Wrapping & Atomic Password Re-encryption**: Master keys are wrapped (encrypted) with BIP39 12-word seed recovery keys. When updating passwords or recovering via 12-word phrases, notes are re-encrypted atomically (`reencryptAllLockedNotes`) in SQLite transactions.
+7. **P2P Wi-Fi Sync Mutual Handshake**: Over-the-air P2P WebSocket connections enforce a mutual `validation_handshake` using encrypted markers. Initial note payload broadcasts are gated (`_isPeerVerified`) until handshake verification succeeds, closing invalid connections immediately with code 4001.
+
+---
+
+### ⚙️ Key Cryptographic Functions
+
+| Class / Module | Important Function | Description |
+| :--- | :--- | :--- |
+| `CryptoEngine` | `deriveMasterKey(password, salt)` | Derives a 256-bit AES master key using PBKDF2 (SHA-256, 600,000 iterations). |
+| `CryptoEngine` | `encryptPayload(plainText, masterKey)` | Encrypts note content via AES-256-GCM, returning Base64-encoded `iv`, `ciphertext`, and `authTag`. |
+| `CryptoEngine` | `decryptPayload(...)` | Decrypts AES-256-GCM ciphertext and validates MAC auth tag; throws `SecretBoxAuthenticationError` if key/data is invalid. |
+| `CryptoEngine` | `createValidationMarker(...)` / `verifyValidationMarker(...)` | Generates and verifies zero-knowledge canary payloads for password authentication. |
+| `CryptoEngine` | `wrapKey(...)` / `unwrapKey(...)` | Encrypts/decrypts master keys using recovery keys derived from BIP39 seed phrases. |
+| `LockNotifier` | `setupMasterPassword(password)` | Generates salt, master key, recovery phrase, validation markers, and hardware storage keys. |
+| `LockNotifier` | `recoverWithPhrase(words, newPassword)` | Restores access using a 12-word recovery phrase, unwraps the master key, and re-encrypts all locked notes. |
+| `LockNotifier` | `_zeroOutMasterKeyMemory()` | Clears `masterKeyBytes` byte-by-byte and resets state when backgrounded. |
+| `NotesDao` | `lockNote(...)` | Encrypts content and clears plain text `content` column in SQLite, storing structured JSON payloads. |
+| `NotesDao` | `reencryptAllLockedNotes(...)` | Offloads batch note decryption & re-encryption to `ReencryptionIsolateWorker` and writes SQLite updates. |
+| `ReencryptionIsolateWorker` | `batchReencrypt(...)` | Executes 100% of CPU-bound AES-256-GCM decryption & re-encryption off the main thread in a background Dart Isolate via `compute()`. |
+| `LocalSyncNotifier` | `setActiveConnection(...)` / `_handleIncomingSyncPayload(...)` | Manages P2P socket lifecycle, transmits outbound validation handshakes, and gates note payloads until peer verification. |
+
+---
+
+### 🔄 Data Flow Pipelines
+
+#### 1. Locking & Encrypting a Note
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User
+    participant UI as Note Editor UI
+    participant Lock as LockNotifier
+    participant DAO as NotesDao
+    participant Crypto as CryptoEngine
+    participant DB as SQLite (Drift)
+
+    User->>UI: Toggle Note Lock
+    UI->>Lock: togglePersistentLock(uuid, password)
+    Lock->>Crypto: deriveMasterKey(password, salt)
+    Crypto-->>Lock: masterKeyBytes
+    Lock->>DAO: lockNote(uuid, isLocked: true, masterKeyBytes)
+    DAO->>Crypto: encryptPayload(content, masterKeyBytes)
+    Crypto-->>DAO: {iv, ciphertext, authTag}
+    DAO->>DB: Update Note: set content='', encryptedPayload=JSON, lockedAt=now
+    DB-->>UI: Lock Complete (Plain text cleared from DB)
+```
+
+#### 2. Unlocking & Decrypting a Note
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User
+    participant UI as Password Prompt
+    participant Lock as LockNotifier
+    participant Crypto as CryptoEngine
+    participant DAO as NotesDao
+
+    User->>UI: Enter Master Password
+    UI->>Lock: verifyPassword(password)
+    Lock->>Crypto: deriveMasterKey(password, salt)
+    Lock->>Crypto: verifyValidationMarker(marker, derivedKey)
+    alt Password Correct
+        Crypto-->>Lock: Marker Verification Success
+        Lock-->>UI: Return Valid (masterKeyBytes cached in memory)
+        UI->>DAO: lockNote(uuid, isLocked: false, masterKeyBytes)
+        DAO->>Crypto: decryptPayload(ciphertext, iv, authTag, masterKey)
+        Crypto-->>DAO: Restored plain text content
+        DAO-->>UI: Render decrypted content
+    else Password Incorrect
+        Crypto-->>Lock: Verification Error
+        Lock-->>UI: Return Incorrect Password
+    end
+```
+
+#### 3. Password Recovery & Atomic Re-encryption (Background Isolate Pipeline)
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User
+    participant UI as Recovery Page
+    participant Lock as LockNotifier
+    participant Crypto as CryptoEngine
+    participant DAO as NotesDao
+    participant Worker as ReencryptionIsolateWorker (Background Isolate)
+    participant Secure as SecureStorageManager
+    participant DB as SQLite (Drift)
+
+    User->>UI: Enter 12-Word Recovery Seed & New Password
+    UI->>Lock: recoverWithPhrase(words, newPassword)
+    Lock->>Crypto: deriveRecoveryKey(words, salt)
+    Lock->>Crypto: verifyValidationMarker(recoveryMarker, recoveryKey)
+    Lock->>Crypto: unwrapKey(wrappedMasterKey, recoveryKey)
+    Crypto-->>Lock: recoveredMasterKey
+    Lock->>Crypto: deriveMasterKey(newPassword, salt)
+    Crypto-->>Lock: newMasterKeyBytes
+    Lock->>DAO: reencryptAllLockedNotes(recoveredMasterKey, newMasterKeyBytes)
+    DAO->>Worker: batchReencrypt(notes, oldKey, newKey)
+    Note over Worker: Runs 100% of CPU-bound AES-256-GCM<br/>Decryption & Re-encryption off main thread
+    Worker-->>DAO: List<ReencryptedResult>
+    DAO->>DB: SQLite Batch Transaction: Update encrypted payloads
+    Lock->>Secure: Save new local markers, hardware keys & wrapped master key
+    Secure-->>UI: Recovery & Re-encryption Complete
+```
+
+#### 4. P2P Wi-Fi Sync Handshake Gating
+```mermaid
+sequenceDiagram
+    autonumber
+    participant DeviceA as Device A (Local)
+    participant DeviceB as Device B (Peer)
+
+    DeviceA->>DeviceB: Establish WebSocket Connection
+    DeviceA->>DeviceB: Send {type: 'validation_handshake', marker: markerA}
+    DeviceB->>DeviceA: Send {type: 'validation_handshake', marker: markerB}
+    DeviceA->>DeviceA: verifyValidationMarker(markerB, masterKeyA)
+    DeviceB->>DeviceB: verifyValidationMarker(markerA, masterKeyB)
+    alt Verification Successful on Both Peers
+        DeviceA->>DeviceA: Set _isPeerVerified = true
+        DeviceB->>DeviceB: Set _isPeerVerified = true
+        DeviceA->>DeviceB: Broadcast Local Note Payloads
+    else Password / Marker Mismatch
+        DeviceA->>DeviceB: Close Socket (Code 4001: Password Mismatch)
+        DeviceB->>DeviceB: Drop Incoming Payloads & Terminate Session
+    end
+```
+
+---
+
+### 💡 Developer Perspectives & Challenges Faced
+
+* **PBKDF2 Computational Cost vs UI Performance**: Deriving master keys using 600,000 PBKDF2 iterations takes ~0.5 seconds on mobile devices. While essential to block GPU-accelerated dictionary attacks, re-running KDF on every single note tap caused noticeable UI stutters. To solve this, I implemented an in-memory session key cache (`masterKeyBytes`) combined with fast-path session unlocks (`sessionUnlockWithActiveKey`), restricting expensive KDF iterations strictly to initial password entry or setup.
+* **Dart Memory Management & Zeroing**: Dart garbage collection does not guarantee immediate zeroing of sensitive buffers. Furthermore, views extracted from key objects can return unmodifiable lists. Calling `.fillRange()` on unmodifiable views threw runtime `UnsupportedError` exceptions when backgrounding the app. I resolved this by copying derived key bytes into explicit mutable `Uint8List` buffers, zeroing them element-by-element during lifecycle transitions, and updating `LockState.copyWith` with explicit null-clearing flags (`clearMasterKey: true`).
+* **Atomic Recovery Without Data Loss**: A major challenge during password recovery or password updates was preventing "orphaned" encrypted notes. If a password is updated without re-encrypting existing locked notes, old notes become permanently unreadable. I solved this by implementing `reencryptAllLockedNotes` inside an atomic SQLite transaction. If any single note fails to decrypt or re-encrypt, the transaction throws a `StateError` and rolls back entirely before secure storage keys are modified.
+* **P2P Handshake Race Conditions**: In early Wi-Fi sync implementations, devices fired initial note sync broadcasts immediately upon socket connection. If Device A transmitted note payloads before Device B processed Device A's validation handshake, Device B dropped the payloads due to unverified state gates. I resolved this by deferring `broadcastLocalChanges()` until the mutual `validation_handshake` exchanges complete successfully.
+
 ## 📦 Dependencies
 
 **Core & State Management**

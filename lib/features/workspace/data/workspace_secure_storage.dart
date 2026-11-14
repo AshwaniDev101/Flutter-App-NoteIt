@@ -98,4 +98,19 @@ class WorkspaceSecureStorage {
       return false;
     }
   }
+
+  /// Clears all workspace OAuth and credential tokens stored in secure storage.
+  Future<void> clearAll() async {
+    try {
+      final allKeys = await _storage.readAll();
+      for (final key in allKeys.keys) {
+        if (key.startsWith('auth_token_') || key.startsWith('oauth_tokens_')) {
+          await _storage.delete(key: key);
+        }
+      }
+      AppLogger.d('WorkspaceSecureStorage: Cleared workspace secure storage keys');
+    } catch (e, st) {
+      AppLogger.w('WorkspaceSecureStorage: Failed to clear workspace secure storage keys', e, st);
+    }
+  }
 }

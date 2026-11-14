@@ -95,9 +95,9 @@ class SharedPreferenceManager {
 
   // --- Security & Session Keys ---
 
-  /// Key for storing the master password used to lock notes.
-  /// Value: String (Hashed password or null if unset).
+  /// Key for storing the master password status flag.
   static const String _keyMasterPassword = 'master_password';
+  static const String _keyHasMasterPassword = 'has_master_password';
 
   /// Key for keeping notes unlocked throughout the app session.
   /// Boolean:
@@ -357,20 +357,23 @@ class SharedPreferenceManager {
   // 3. SECURITY & SESSION METHODS
   // =========================================================================
 
-  /// Master password used for note locking/encryption.
-  String? get masterPassword => _prefs.getString(_keyMasterPassword);
-
-  /// Saves a new master password.
-  Future<bool> setMasterPassword(String password) async {
-    return await _prefs.setString(_keyMasterPassword, password);
+  /// Sets whether a master password has been configured (clears any legacy plaintext password).
+  Future<bool> setHasMasterPassword(bool hasPassword) async {
+    if (_prefs.containsKey(_keyMasterPassword)) {
+      await _prefs.remove(_keyMasterPassword);
+    }
+    return await _prefs.setBool(_keyHasMasterPassword, hasPassword);
   }
 
   /// Checks if a master password has been configured.
-  bool get hasMasterPassword => _prefs.containsKey(_keyMasterPassword);
+  bool get hasMasterPassword => _prefs.getBool(_keyHasMasterPassword) ?? _prefs.containsKey(_keyMasterPassword);
 
-  /// Removes the stored master password.
+  /// Removes the master password status flag and legacy plaintext password.
   Future<bool> removeMasterPassword() async {
-    return await _prefs.remove(_keyMasterPassword);
+    if (_prefs.containsKey(_keyMasterPassword)) {
+      await _prefs.remove(_keyMasterPassword);
+    }
+    return await _prefs.remove(_keyHasMasterPassword);
   }
 
   /// Whether notes remain unlocked for the duration of the current app session once unlocked.

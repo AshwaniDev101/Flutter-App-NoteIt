@@ -282,6 +282,27 @@ class DesktopListPanel extends ConsumerWidget {
 
                     // Notes Layout
                     const SizedBox(height: 4),
+                    if (ref.watch(hasExcludedLockedNotesFromSearchProvider))
+                      Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.lock_outline_rounded, size: 14, color: colorScheme.onSurfaceVariant),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Locked note contents excluded from search',
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11, color: colorScheme.onSurfaceVariant),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     Expanded(
                       child: FocusTraversalOrder(
                         order: const NumericFocusOrder(2),

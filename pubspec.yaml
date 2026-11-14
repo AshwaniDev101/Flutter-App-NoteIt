@@ -40,6 +40,12 @@ dependencies:
   network_info_plus: ^8.2.1
   nsd: ^5.0.1
 
+  # Security & Encryption
+  cryptography: ^2.9.0
+  local_auth: ^3.0.2
+  zxcvbn: ^1.0.0
+  bip39: ^1.0.6
+
   # Hardware & Camera Features
   device_info_plus: ^13.2.0
   qr_flutter: ^4.1.0

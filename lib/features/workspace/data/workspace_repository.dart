@@ -8,9 +8,9 @@ import '../models/workspace_model.dart';
 import 'workspace_secure_storage.dart';
 
 /// Centralized repository for creating, reading, updating, and deleting
-/// user workspaces stored in `profiles_manifest.json`.
+/// user workspaces stored in `workspace_manifest.json`.
 class WorkspaceRepository {
-  static const String _manifestFileName = 'profiles_manifest.json';
+  static const String _manifestFileName = 'workspace_manifest.json';
   static final WorkspaceRepository instance = WorkspaceRepository._internal();
 
   WorkspaceRepository._internal();

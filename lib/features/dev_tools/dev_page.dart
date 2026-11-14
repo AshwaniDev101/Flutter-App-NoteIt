@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/core/crypto/secure_storage_manager.dart';
 import 'package:noteit/core/helpers/platform_helper.dart';
 import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/database/firebase/auth/firebase_provider.dart';
@@ -128,7 +129,8 @@ class DevPage extends ConsumerWidget {
                                 await db.close();
                                 await deleteDatabaseFiles();
                                 ref.invalidate(localDatabaseProvider);
-                                await WorkspaceSecureStorage.instance.deleteWorkspaceToken('profile_default');
+                                await WorkspaceSecureStorage.instance.clearAll();
+                                await SecureStorageManager.instance.clearAllCredentials();
                                 await ref.read(sharedPreferenceProvider).clearAll();
                                 await ref.read(authRepositoryProvider).signOut();
 

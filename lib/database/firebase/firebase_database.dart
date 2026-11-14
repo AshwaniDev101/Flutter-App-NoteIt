@@ -18,25 +18,25 @@ final noteFirebaseDatabaseProvider = Provider<NoteFirestoreDatabase?>((ref) {
   return NoteFirestoreDatabase(
     firestore: firestore,
     userId: authUser.uid,
-    profileId: activeWorkspace.id,
+    workspaceId: activeWorkspace.id,
   );
 });
 
 class NoteFirestoreDatabase {
   final FirebaseFirestore _firestore;
   final String userId;
-  final String profileId;
+  final String workspaceId;
 
   NoteFirestoreDatabase({
     required FirebaseFirestore firestore,
     required this.userId,
-    required this.profileId,
+    required this.workspaceId,
   }) : _firestore = firestore;
 
-  /// Returns collection reference for entity collections scoped to a specific workspace ID (defaults to active workspace profileId):
+  /// Returns collection reference for entity collections scoped to a specific workspace ID (defaults to active workspace workspaceId):
   /// /users/{userId}/workspaces/{targetWorkspaceId}/{collectionName}
   CollectionReference<Map<String, dynamic>> _collectionRef(String collectionName, {String? targetWorkspaceId}) {
-    final wsId = targetWorkspaceId ?? profileId;
+    final wsId = targetWorkspaceId ?? workspaceId;
     final pathName = collectionName.endsWith('s') ? collectionName : '${collectionName}s';
     return _firestore
         .collection('users')
@@ -112,7 +112,7 @@ class NoteFirestoreDatabase {
     if (items.isEmpty) return;
 
     final ref = _collectionRef(collectionName, targetWorkspaceId: targetWorkspaceId);
-    final activeWsId = targetWorkspaceId ?? profileId;
+    final activeWsId = targetWorkspaceId ?? workspaceId;
 
     for (var i = 0; i < items.length; i += 500) {
       final chunk = items.sublist(i, i + 500 > items.length ? items.length : i + 500);
@@ -138,7 +138,7 @@ class NoteFirestoreDatabase {
     if (uuids.isEmpty) return;
 
     final ref = _collectionRef(collectionName, targetWorkspaceId: targetWorkspaceId);
-    final activeWsId = targetWorkspaceId ?? profileId;
+    final activeWsId = targetWorkspaceId ?? workspaceId;
     for (var i = 0; i < uuids.length; i += 500) {
       final chunk = uuids.sublist(i, i + 500 > uuids.length ? uuids.length : i + 500);
       final batch = _firestore.batch();
@@ -153,12 +153,12 @@ class NoteFirestoreDatabase {
   }
 
   /// PUSH MANIFEST: Push workspace manifest items to /users/{userId}/workspaces_manifest
-  Future<void> pushProfileManifest(List<Map<String, dynamic>> profileItems) async {
-    if (profileItems.isEmpty) return;
+  Future<void> pushWorkspaceManifest(List<Map<String, dynamic>> workspaceItems) async {
+    if (workspaceItems.isEmpty) return;
     final ref = manifestRef();
     final batch = _firestore.batch();
 
-    for (final item in profileItems) {
+    for (final item in workspaceItems) {
       final id = item['id'] as String;
       final docRef = ref.doc(id);
       final data = Map<String, dynamic>.from(item);
@@ -167,12 +167,33 @@ class NoteFirestoreDatabase {
     }
 
     await batch.commit();
-    AppLogger.d("NoteFirestoreDatabase: Pushed ${profileItems.length} workspace manifest items to cloud.");
+    AppLogger.d("NoteFirestoreDatabase: Pushed ${workspaceItems.length} workspace manifest items to cloud.");
   }
 
   /// PULL MANIFEST: Fetch all workspace manifest items from /users/{userId}/workspaces_manifest
-  Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>> pullProfileManifest() async {
+  Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>> pullWorkspaceManifest() async {
     final querySnapshot = await manifestRef().get();
     return querySnapshot.docs;
+  }
+
+  /// Security collection ref: /users/{userId}/security/validation_marker
+  DocumentReference<Map<String, dynamic>> validationMarkerRef() {
+    return _firestore.collection('users').doc(userId).collection('security').doc('validation_marker');
+  }
+
+  /// PUSH Security Validation Marker
+  Future<void> pushValidationMarker(Map<String, dynamic> marker) async {
+    final ref = validationMarkerRef();
+    final data = Map<String, dynamic>.from(marker);
+    data['cloudUpdatedAt'] = FieldValue.serverTimestamp();
+    await ref.set(data, SetOptions(merge: true));
+    AppLogger.d("NoteFirestoreDatabase: Uploaded security validation marker to cloud.");
+  }
+
+  /// PULL Security Validation Marker
+  Future<Map<String, dynamic>?> pullValidationMarker() async {
+    final doc = await validationMarkerRef().get();
+    if (!doc.exists || doc.data() == null) return null;
+    return doc.data();
   }
 }

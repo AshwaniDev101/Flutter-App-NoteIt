@@ -23,7 +23,7 @@ class CloudFolderProcessor extends CloudEntityProcessor {
 
   @override
   Future<int> pushPendingChanges(NoteFirestoreDatabase firebaseDb, {String? targetWorkspaceId}) async {
-    final wsId = targetWorkspaceId ?? firebaseDb.profileId;
+    final wsId = targetWorkspaceId ?? firebaseDb.workspaceId;
     try {
       final foldersDao = ref.read(foldersDaoProvider);
       final pendingFolders = await foldersDao.getPendingCloudFolders();
@@ -45,7 +45,7 @@ class CloudFolderProcessor extends CloudEntityProcessor {
 
   @override
   Future<int> pullRemoteChanges(NoteFirestoreDatabase firebaseDb, int lastSyncTime, {String? targetWorkspaceId}) async {
-    final wsId = targetWorkspaceId ?? firebaseDb.profileId;
+    final wsId = targetWorkspaceId ?? firebaseDb.workspaceId;
     try {
       final remoteDocs = await firebaseDb.pullChanges('folders', lastSyncTime, targetWorkspaceId: targetWorkspaceId);
       if (remoteDocs.isEmpty) {

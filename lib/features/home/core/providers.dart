@@ -54,6 +54,19 @@ final filteredNotesProvider = Provider<AsyncValue<List<NoteWithFolder>>>((ref) {
   });
 });
 
+/// Indicates whether locked notes exist that are omitted from content search
+final hasExcludedLockedNotesFromSearchProvider = Provider<bool>((ref) {
+  final searchQuery = ref.watch(searchQueryProvider).trim();
+  if (searchQuery.isEmpty) return false;
+  final notesAsync = ref.watch(sortedNotesStreamProvider);
+  final lockState = ref.watch(lockManagerProvider);
+
+  return notesAsync.maybeWhen(
+    data: (notes) => notes.any((n) => n.note.lockedAt != null && !lockState.sessionUnlockedNoteIds.contains(n.note.uuid)),
+    orElse: () => false,
+  );
+});
+
 
 /// PLATFORM FILTER FOR HOME / LIST PANEL
 enum FilterPlatformOptions { all, android, windows } // State Holder : holds for platform filter
