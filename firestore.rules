@@ -14,6 +14,11 @@ service cloud.firestore {
       // Wildcard fallback: Allow owner full read/write across all sub-paths
       allow read, write: if isOwner();
 
+      // Explicit rules for Security collection: /users/{userId}/security/{docId}
+      match /security/{docId} {
+        allow read, write: if isOwner();
+      }
+
       // Explicit rules for Workspace Manifest: /users/{userId}/workspaces_manifest/{workspaceId}
       match /workspaces_manifest/{workspaceId} {
         allow read, write: if isOwner();

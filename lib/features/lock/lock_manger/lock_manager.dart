@@ -342,8 +342,11 @@ class LockNotifier extends Notifier<LockState> with WidgetsBindingObserver {
     required bool shouldLock,
     bool ignorePassword = false,
   }) async {
+    AppLogger.d('LockNotifier: togglePersistentLock called for note $uuid (shouldLock: $shouldLock, hasKeyInMemory: ${state.masterKeyBytes != null})');
+
     if ((shouldLock || !ignorePassword) && state.masterKeyBytes == null) {
       if (password.isNotEmpty) {
+        AppLogger.d('LockNotifier: Master key is null in memory. Verifying password before toggle...');
         final valid = await verifyPassword(password);
         if (!valid) {
           AppLogger.w('LockNotifier: Incorrect password during note lock toggle for $uuid');
@@ -351,6 +354,7 @@ class LockNotifier extends Notifier<LockState> with WidgetsBindingObserver {
           return false;
         }
       } else {
+        AppLogger.w('LockNotifier: Cannot toggle lock state for $uuid because master key is null and password is empty');
         state = state.copyWith(error: 'Password required');
         return false;
       }
@@ -364,6 +368,7 @@ class LockNotifier extends Notifier<LockState> with WidgetsBindingObserver {
     }
 
     if (state.masterKeyBytes == null) {
+      AppLogger.w('LockNotifier: Lock toggle aborted for $uuid - masterKeyBytes is null');
       state = state.copyWith(error: 'Session locked');
       return false;
     }

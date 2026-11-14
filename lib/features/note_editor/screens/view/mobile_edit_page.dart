@@ -107,6 +107,10 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
     _contentController.addListener(_syncTitleFromContent);
     _titleController.addListener(_onTitleChanged);
 
+    if (_currentNoteWithFolder != null && _isLocked) {
+      _loadDecryptedContentIfLocked();
+    }
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && !_isLocked) {
         if (_currentNoteWithFolder != null) {
@@ -120,6 +124,24 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
         }
       }
     });
+  }
+
+  Future<void> _loadDecryptedContentIfLocked() async {
+    if (_currentNoteWithFolder == null) return;
+    final lockState = ref.read(lockManagerProvider);
+    final notesDao = ref.read(notesDaoProvider);
+    final decrypted = await notesDao.getDecryptedNoteContent(
+      _currentNoteWithFolder!.note,
+      lockState.masterKeyBytes,
+    );
+    if (mounted && decrypted.isNotEmpty) {
+      _contentController.text = decrypted;
+      if (_currentNoteWithFolder!.note.contentVersion == ContentVersion.checklist.value) {
+        setState(() {
+          _currentChecklist = _convertTextToChecklist(decrypted.trim());
+        });
+      }
+    }
   }
 
   @override

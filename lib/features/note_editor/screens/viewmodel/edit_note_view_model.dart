@@ -4,6 +4,7 @@ import 'package:noteit/core/sync/sync_orchestrator.dart';
 import 'package:noteit/core/util/device_info.dart';
 import 'package:noteit/core/util/logger.dart';
 import 'package:noteit/database/drift/notes/notes_dao.dart';
+import 'package:noteit/features/lock/lock_manger/lock_manager.dart';
 
 // Features
 import 'package:noteit/features/note_editor/screens/view/desktop_edit_page.dart';
@@ -107,6 +108,7 @@ class EditNoteViewModel extends Notifier<EditNoteState> {
         title: title,
         content: content,
         contentVersion: contentVersion.value,
+        masterKeyBytes: ref.read(lockManagerProvider).masterKeyBytes,
       );
 
       AppLogger.d('EditNoteViewModel: Updated note ($uuid)');
@@ -125,18 +127,16 @@ class EditNoteViewModel extends Notifier<EditNoteState> {
   ///
   /// [uuid] The unique identifier of the note.
   /// [isLocked] Determines whether to lock (true) or unlock (false) the note. Defaults to true.
-  Future<void> lockNote(String uuid, {bool isLocked = true}) async {
+  Future<void> lockNote(String uuid, {bool isLocked = true, String password = ''}) async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      if (isLocked) {
-        await ref.read(noteActionsControllerProvider).lockNotes([uuid]);
-      } else {
-        await ref.read(notesDaoProvider).lockNote(uuid, isLocked: false);
-        AppLogger.d('EditNoteViewModel: Unlocked note $uuid');
-        ref.read(syncOrchestratorProvider).triggerSync();
-      }
-
+      await ref.read(lockManagerProvider.notifier).togglePersistentLock(
+            uuid,
+            password,
+            shouldLock: isLocked,
+          );
+      AppLogger.d('EditNoteViewModel: Toggled lock for note $uuid (isLocked: $isLocked)');
       state = state.copyWith(isLoading: false);
     } catch (e, st) {
       AppLogger.e('EditNoteViewModel: Error locking note $uuid', error: e, stack: st);

@@ -143,7 +143,38 @@ Note-It is engineered with a **Zero-Knowledge End-to-End Encryption (E2EE)** fra
 
 ### 🔄 Data Flow Pipelines
 
-#### 1. Locking & Encrypting a Note
+#### 1. Password Setup & Master Key Creation
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as User
+    participant Page as SetupPasswordPage
+    participant Helper as PasswordPromptHelper
+    participant Lock as LockNotifier
+    participant Crypto as CryptoEngine
+    participant Secure as SecureStorageManager
+    participant Dialog as SeedPhraseDisplayDialog
+
+    User->>Page: Type Password (Zxcvbn evaluates entropy)
+    User->>Page: Click "Set Password & Lock"
+    Page-->>Helper: Return raw password string
+    Helper->>Lock: setupMasterPassword(password)
+    Lock->>Crypto: generateRandomBytes(16) -> KDF Salt
+    Lock->>Crypto: deriveMasterKey(password, salt, 600k iterations)
+    Crypto-->>Lock: masterKeyBytes
+    Lock->>Crypto: generateRecoveryPhrase() -> 12-Word BIP39 Seed
+    Crypto-->>Lock: activeRecoveryPhrase
+    Lock->>Crypto: deriveRecoveryKey(phrase, salt)
+    Lock->>Crypto: createValidationMarker(masterKeyBytes) -> localMarker
+    Lock->>Crypto: createValidationMarker(recoveryKey) -> recoveryMarker
+    Lock->>Crypto: wrapKey(masterKeyBytes, recoveryKey) -> wrappedMasterKey
+    Lock->>Secure: Save salt, localMarker, recoveryMarker, hardwareKey & wrappedKey
+    Helper->>Dialog: Launch SeedPhraseDisplayDialog(phrase)
+    User->>Dialog: View 12 Words & Tap "I Have Saved It"
+    Dialog->>Lock: clearActiveRecoveryPhrase() -> Purge 12-word string from RAM
+```
+
+#### 2. Locking & Encrypting a Note
 ```mermaid
 sequenceDiagram
     autonumber
@@ -165,7 +196,7 @@ sequenceDiagram
     DB-->>UI: Lock Complete (Plain text cleared from DB)
 ```
 
-#### 2. Unlocking & Decrypting a Note
+#### 3. Unlocking & Decrypting a Note
 ```mermaid
 sequenceDiagram
     autonumber
@@ -192,7 +223,7 @@ sequenceDiagram
     end
 ```
 
-#### 3. Password Recovery & Atomic Re-encryption (Background Isolate Pipeline)
+#### 4. Password Recovery & Atomic Re-encryption (Background Isolate Pipeline)
 ```mermaid
 sequenceDiagram
     autonumber
@@ -222,7 +253,7 @@ sequenceDiagram
     Secure-->>UI: Recovery & Re-encryption Complete
 ```
 
-#### 4. P2P Wi-Fi Sync Handshake Gating
+#### 5. P2P Wi-Fi Sync Handshake Gating
 ```mermaid
 sequenceDiagram
     autonumber

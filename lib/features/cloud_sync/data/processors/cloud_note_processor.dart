@@ -96,8 +96,8 @@ class CloudNoteProcessor extends CloudEntityProcessor {
       }
       return isValid;
     } catch (e) {
-      AppLogger.e('CloudNoteProcessor: Failed to validate remote password marker', error: e);
-      return false;
+      AppLogger.w('CloudNoteProcessor: Could not read remote password marker (network or permission error). Skipping remote check.');
+      return true; // Return true on exception so local session key is NOT wiped on network/permission error
     }
   }
 }

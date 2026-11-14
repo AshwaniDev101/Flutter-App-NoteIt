@@ -200,6 +200,36 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
     )).getSingle();
   }
 
+  /// Decrypts the content of a locked note using [masterKeyBytes].
+  /// Returns the decrypted plain text content, or [note.content] if not locked or decryption fails.
+  Future<String> getDecryptedNoteContent(Note note, List<int>? masterKeyBytes) async {
+    if (note.lockedAt == null || note.encryptedPayload == null || note.encryptionIv == null) {
+      return note.content;
+    }
+    if (masterKeyBytes == null) {
+      return note.content;
+    }
+    try {
+      String ciphertextBase64 = note.encryptedPayload!;
+      String authTagBase64 = note.encryptedPayload!;
+      if (note.encryptedPayload!.startsWith('{')) {
+        final map = jsonDecode(note.encryptedPayload!) as Map<String, dynamic>;
+        ciphertextBase64 = map['ciphertext'] as String? ?? ciphertextBase64;
+        authTagBase64 = map['authTag'] as String? ?? authTagBase64;
+      }
+
+      return await CryptoEngine.decryptPayload(
+        ciphertextBase64: ciphertextBase64,
+        ivBase64: note.encryptionIv!,
+        authTagBase64: authTagBase64,
+        masterKey: masterKeyBytes,
+      );
+    } catch (e) {
+      AppLogger.w('NotesDao: Failed to decrypt content for note ${note.uuid}: $e');
+      return note.content;
+    }
+  }
+
   Future<int> deleteNote(String uuid) async {
     // Hard Delete
     final count = await (delete(notes)..where((t) => t.uuid.equals(uuid))).go();

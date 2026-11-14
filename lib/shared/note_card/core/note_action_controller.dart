@@ -7,6 +7,7 @@ import 'package:noteit/core/util/logger.dart';
 import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/database/firebase/firebase_database.dart';
 import 'package:noteit/features/home/core/providers.dart';
+import 'package:noteit/features/lock/lock_manger/lock_manager.dart';
 
 import '../../../database/drift/notes/notes_dao.dart';
 
@@ -97,9 +98,13 @@ class NoteActionsController {
   }
 
   /// Locks a list of notes.
-  Future<void> lockNotes(List<String> uuids) async {
+  Future<void> lockNotes(List<String> uuids, {String password = ''}) async {
     for (final uuid in uuids) {
-      await db.notesDao.lockNote(uuid, isLocked: true);
+      await ref.read(lockManagerProvider.notifier).togglePersistentLock(
+            uuid,
+            password,
+            shouldLock: true,
+          );
     }
     AppLogger.d('NoteActionsController: Locked notes ($uuids)');
     ref.read(syncOrchestratorProvider).triggerSync();

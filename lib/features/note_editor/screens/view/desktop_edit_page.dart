@@ -129,6 +129,10 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
     _titleController.addListener(_scheduleAutoSave);
     _highlightedContentController.addListener(_scheduleAutoSave);
 
+    if (_currentNoteWithFolder != null && _isLocked) {
+      _loadDecryptedContentIfLocked();
+    }
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && !_isLocked) {
         final settings = ref.read(noteEditorSettingsProvider);
@@ -139,6 +143,24 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
         }
       }
     });
+  }
+
+  Future<void> _loadDecryptedContentIfLocked() async {
+    if (_currentNoteWithFolder == null) return;
+    final lockState = ref.read(lockManagerProvider);
+    final notesDao = ref.read(notesDaoProvider);
+    final decrypted = await notesDao.getDecryptedNoteContent(
+      _currentNoteWithFolder!.note,
+      lockState.masterKeyBytes,
+    );
+    if (mounted && decrypted.isNotEmpty) {
+      _highlightedContentController.text = decrypted;
+      if (_currentNoteWithFolder!.note.contentVersion == ContentVersion.checklist.value) {
+        setState(() {
+          _currentChecklist = _convertTextToChecklist(decrypted.trim());
+        });
+      }
+    }
   }
 
   @override
