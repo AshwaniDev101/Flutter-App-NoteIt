@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -57,12 +58,15 @@ final lockManagerProvider = NotifierProvider<LockNotifier, LockState>(() => Lock
 
 class LockNotifier extends Notifier<LockState> with WidgetsBindingObserver {
   final LocalAuthentication _localAuth = LocalAuthentication();
+  Timer? _syncDebounceTimer;
 
   @override
   LockState build() {
     WidgetsBinding.instance.addObserver(this);
     ref.onDispose(() {
       WidgetsBinding.instance.removeObserver(this);
+      _syncDebounceTimer?.cancel();
+      _syncDebounceTimer = null;
       _zeroOutMasterKeyMemory();
     });
 
@@ -84,6 +88,8 @@ class LockNotifier extends Notifier<LockState> with WidgetsBindingObserver {
   }
 
   void _zeroOutMasterKeyMemory() {
+    _syncDebounceTimer?.cancel();
+    _syncDebounceTimer = null;
     if (state.masterKeyBytes != null) {
       try {
         for (int i = 0; i < state.masterKeyBytes!.length; i++) {
@@ -344,25 +350,19 @@ class LockNotifier extends Notifier<LockState> with WidgetsBindingObserver {
   }) async {
     AppLogger.d('LockNotifier: togglePersistentLock called for note $uuid (shouldLock: $shouldLock, hasKeyInMemory: ${state.masterKeyBytes != null})');
 
-    if ((shouldLock || !ignorePassword) && state.masterKeyBytes == null) {
+    // Verify password if masterKeyBytes is null OR if an explicit non-empty password string was provided
+    if ((state.masterKeyBytes == null || password.isNotEmpty) && !ignorePassword) {
       if (password.isNotEmpty) {
-        AppLogger.d('LockNotifier: Master key is null in memory. Verifying password before toggle...');
+        AppLogger.d('LockNotifier: Verifying explicit password string for lock toggle $uuid...');
         final valid = await verifyPassword(password);
         if (!valid) {
           AppLogger.w('LockNotifier: Incorrect password during note lock toggle for $uuid');
           state = state.copyWith(error: 'Incorrect Password');
           return false;
         }
-      } else {
+      } else if (state.masterKeyBytes == null) {
         AppLogger.w('LockNotifier: Cannot toggle lock state for $uuid because master key is null and password is empty');
         state = state.copyWith(error: 'Password required');
-        return false;
-      }
-    } else if (!shouldLock && !ignorePassword) {
-      final valid = await verifyPassword(password);
-      if (!valid) {
-        AppLogger.w('LockNotifier: Incorrect password during note lock toggle for $uuid');
-        state = state.copyWith(error: 'Incorrect Password');
         return false;
       }
     }
@@ -390,7 +390,10 @@ class LockNotifier extends Notifier<LockState> with WidgetsBindingObserver {
       state = state.copyWith(sessionUnlockedNoteIds: updatedSet);
 
       AppLogger.d('LockNotifier: Toggled persistent lock for note $uuid (isLocked: $shouldLock)');
-      ref.read(syncOrchestratorProvider).triggerSync();
+      _syncDebounceTimer?.cancel();
+      _syncDebounceTimer = Timer(const Duration(milliseconds: 500), () {
+        ref.read(syncOrchestratorProvider).triggerSync();
+      });
       return true;
     } catch (e, st) {
       AppLogger.e('LockNotifier: Failed to toggle note lock', error: e, stack: st);

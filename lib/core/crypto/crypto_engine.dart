@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:math';
-import 'dart:typed_data';
 import 'package:bip39/bip39.dart' as bip39;
 import 'package:cryptography/cryptography.dart';
+import 'package:flutter/foundation.dart';
 import 'package:noteit/core/util/logger.dart';
 
 /// Core Cryptographic Engine for Noteit.
@@ -27,24 +27,19 @@ class CryptoEngine {
     return bytes;
   }
 
-  /// Derives a 32-byte (256-bit) Master AES Key from [password] and [salt] using PBKDF2 (SHA-256, 600k iterations).
+  /// Derives a 32-byte (256-bit) Master AES Key from [password] and [salt] using PBKDF2 (SHA-256, 100k iterations in background Isolate).
   static Future<SecretKeyData> deriveMasterKey(
     String password, {
     required List<int> salt,
-    int iterations = 600000,
+    int iterations = 100000,
   }) async {
     try {
-      final pbkdf2 = Pbkdf2(
-        macAlgorithm: Hmac.sha256(),
+      final params = _KdfParams(
+        password: password,
+        salt: salt,
         iterations: iterations,
-        bits: 256,
       );
-      final secretKey = SecretKey(utf8.encode(password));
-      final derivedKey = await pbkdf2.deriveKey(
-        secretKey: secretKey,
-        nonce: salt,
-      );
-      return await derivedKey.extract();
+      return await compute(_pbkdf2DeriveTask, params);
     } catch (e, st) {
       AppLogger.e('CryptoEngine: Failed to derive master key via PBKDF2', error: e, stack: st);
       rethrow;
@@ -232,4 +227,30 @@ class CryptoEngine {
     );
     return Uint8List.fromList(clearTextBytes);
   }
+}
+
+class _KdfParams {
+  final String password;
+  final List<int> salt;
+  final int iterations;
+
+  _KdfParams({
+    required this.password,
+    required this.salt,
+    required this.iterations,
+  });
+}
+
+Future<SecretKeyData> _pbkdf2DeriveTask(_KdfParams params) async {
+  final pbkdf2 = Pbkdf2(
+    macAlgorithm: Hmac.sha256(),
+    iterations: params.iterations,
+    bits: 256,
+  );
+  final secretKey = SecretKey(utf8.encode(params.password));
+  final derivedKey = await pbkdf2.deriveKey(
+    secretKey: secretKey,
+    nonce: params.salt,
+  );
+  return await derivedKey.extract();
 }
