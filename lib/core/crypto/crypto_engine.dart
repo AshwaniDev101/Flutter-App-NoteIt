@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:math';
-import 'package:bip39/bip39.dart' as bip39;
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter/foundation.dart';
 import 'package:noteit/core/util/logger.dart';
@@ -11,7 +10,6 @@ import 'package:noteit/core/util/logger.dart';
 /// - KDF Key Derivation: PBKDF2 (SHA-256, 600,000 iterations) with 16-byte random salt.
 /// - Authenticated Encryption: AES-256-GCM with 12-byte IVs and MAC AuthTags.
 /// - Zero-Knowledge Validation Markers: Random gibberish canary payloads verified via `SecretBoxAuthenticationError`.
-/// - Recovery Seed Phrase: BIP39 12-word mnemonic phrase derivation.
 class CryptoEngine {
   CryptoEngine._();
 
@@ -164,68 +162,6 @@ class CryptoEngine {
       AppLogger.d('CryptoEngine: Validation marker verification failed (incorrect password attempt)');
       return false;
     }
-  }
-
-  /// Generates a random 12-word BIP39 recovery mnemonic seed phrase.
-  static String generateRecoveryPhrase() {
-    return bip39.generateMnemonic();
-  }
-
-  /// Derives a 32-byte recovery key from a list of 12 mnemonic words and salt.
-  static Future<SecretKeyData> deriveRecoveryKey(
-    List<String> words, {
-    required List<int> salt,
-  }) async {
-    final mnemonic = words.join(' ').trim().toLowerCase();
-    return await deriveMasterKey(mnemonic, salt: salt);
-  }
-
-  /// Encrypts raw bytes (e.g., master key) using a wrapping key (e.g., recovery key).
-  static Future<String> wrapKey({
-    required List<int> keyToWrap,
-    required List<int> wrappingKey,
-  }) async {
-    final secretKey = SecretKey(wrappingKey);
-    final nonce = _aesGcm.newNonce();
-    final secretBox = await _aesGcm.encrypt(
-      keyToWrap,
-      secretKey: secretKey,
-      nonce: nonce,
-    );
-    final jsonPayload = {
-      'iv': base64Encode(secretBox.nonce),
-      'ciphertext': base64Encode(secretBox.cipherText),
-      'authTag': base64Encode(secretBox.mac.bytes),
-    };
-    return jsonEncode(jsonPayload);
-  }
-
-  /// Decrypts a wrapped key JSON payload using a wrapping key (e.g., recovery key).
-  static Future<Uint8List> unwrapKey({
-    required String wrappedKeyJson,
-    required List<int> wrappingKey,
-  }) async {
-    final map = jsonDecode(wrappedKeyJson) as Map<String, dynamic>;
-    final ciphertextBase64 = map['ciphertext'] as String;
-    final ivBase64 = map['iv'] as String;
-    final authTagBase64 = map['authTag'] as String;
-
-    final secretKey = SecretKey(wrappingKey);
-    final cipherText = base64Decode(ciphertextBase64);
-    final nonce = base64Decode(ivBase64);
-    final macBytes = base64Decode(authTagBase64);
-
-    final secretBox = SecretBox(
-      cipherText,
-      nonce: nonce,
-      mac: Mac(macBytes),
-    );
-
-    final clearTextBytes = await _aesGcm.decrypt(
-      secretBox,
-      secretKey: secretKey,
-    );
-    return Uint8List.fromList(clearTextBytes);
   }
 }
 

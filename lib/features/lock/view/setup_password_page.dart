@@ -116,6 +116,31 @@ class _SetupPasswordPageState extends State<SetupPasswordPage> {
           ),
           const SizedBox(height: 12),
 
+          // Warning Banner
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: colorScheme.errorContainer.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.warning_amber_rounded, size: 20, color: colorScheme.error),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    "Note-It is Zero-Knowledge. If you forget this password, there is no recovery.",
+                    style: textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onErrorContainer,
+                      fontSize: 11,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+
           // New Password Field
           TextField(
             controller: _passController,

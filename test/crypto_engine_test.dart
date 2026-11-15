@@ -67,18 +67,6 @@ void main() {
       expect(isValidWithWrongKey, isFalse);
     });
 
-    test('Generates and derives 12-word recovery mnemonic seed phrase', () async {
-      final phrase = CryptoEngine.generateRecoveryPhrase();
-      final words = phrase.split(' ');
-
-      expect(words.length, equals(12));
-
-      final salt = CryptoEngine.generateRandomBytes(16);
-      final recoveryKeyData = await CryptoEngine.deriveRecoveryKey(words, salt: salt);
-
-      expect(recoveryKeyData.bytes.length, equals(32));
-    });
-
     test('ReencryptionIsolateWorker batch re-encrypts payloads in background isolate', () async {
       final salt = CryptoEngine.generateRandomBytes(16);
       final oldKeyData = await CryptoEngine.deriveMasterKey('OldPass123!', salt: salt, iterations: 1000);

@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zxcvbn/zxcvbn.dart';
 import '../../../shared/overlays/snack_bar_manager.dart';
 import '../lock_manger/lock_manager.dart';
-import '../password_prompt_helper.dart';
 import 'widgets/lock_dialog_shell.dart';
 
 class UpdatePasswordPage extends ConsumerStatefulWidget {
@@ -100,9 +99,6 @@ class _UpdatePasswordPageState extends ConsumerState<UpdatePasswordPage> {
     if (mounted) {
       if (success) {
         Navigator.pop(context);
-        if (context.mounted) {
-          await PasswordPromptHelper.showSeedPhraseDialog(context, ref);
-        }
         SnackBarManager.show(
           msg: 'Master Password Updated!',
           type: SnackBarMessageType.acknowledgment,

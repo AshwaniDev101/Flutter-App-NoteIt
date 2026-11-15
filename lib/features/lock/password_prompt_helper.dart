@@ -5,7 +5,6 @@ import 'package:noteit/shared/overlays/snack_bar_manager.dart';
 
 import 'lock_manger/lock_manager.dart';
 import 'view/master_password_page.dart';
-import 'view/seed_phrase_dialog.dart';
 import 'view/setup_password_page.dart';
 import 'view/update_password_page.dart';
 
@@ -36,9 +35,6 @@ class PasswordPromptHelper {
           newPassword.isNotEmpty &&
           context.mounted) {
         await lockManager.setupMasterPassword(newPassword);
-        if (context.mounted) {
-          await showSeedPhraseDialog(context, ref);
-        }
         SnackBarManager.show(
           msg: 'Master Password Created!',
           type: SnackBarMessageType.acknowledgment,
@@ -108,9 +104,6 @@ class PasswordPromptHelper {
           newPassword.isNotEmpty &&
           context.mounted) {
         await lockManager.setupMasterPassword(newPassword);
-        if (context.mounted) {
-          await showSeedPhraseDialog(context, ref);
-        }
         SnackBarManager.show(
           msg: 'Master Password Created!',
           type: SnackBarMessageType.acknowledgment,
@@ -153,25 +146,6 @@ class PasswordPromptHelper {
     }
 
     return false;
-  }
-
-  static Future<void> showSeedPhraseDialog(BuildContext context, WidgetRef ref) async {
-    final phrase = ref.read(lockManagerProvider).activeRecoveryPhrase;
-    if (phrase != null && phrase.isNotEmpty && context.mounted) {
-      await showGeneralDialog(
-        context: context,
-        barrierDismissible: false,
-        barrierLabel: 'Dismiss Recovery Seed Dialog',
-        barrierColor: Colors.black45,
-        transitionDuration: const Duration(milliseconds: 200),
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            SeedPhraseDisplayDialog(phrase: phrase),
-        transitionBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(opacity: animation, child: child);
-        },
-      );
-      ref.read(lockManagerProvider.notifier).clearActiveRecoveryPhrase();
-    }
   }
 
   static Future<void> showMasterPasswordManagement(

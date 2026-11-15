@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'recovery_page.dart';
 import 'widgets/lock_dialog_shell.dart';
 
 class MasterPasswordPage extends StatefulWidget {
@@ -64,28 +63,6 @@ class _MasterPasswordPageState extends State<MasterPasswordPage> {
               ),
             ),
             onSubmitted: (_) => _unlock(),
-          ),
-          const SizedBox(height: 4),
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(
-              onPressed: () async {
-                Navigator.pop(context);
-                await showGeneralDialog(
-                  context: context,
-                  barrierDismissible: true,
-                  barrierLabel: 'Dismiss Recovery Page',
-                  barrierColor: Colors.black45,
-                  transitionDuration: const Duration(milliseconds: 200),
-                  pageBuilder: (context, animation, secondaryAnimation) =>
-                      const RecoveryPage(),
-                  transitionBuilder: (context, animation, secondaryAnimation, child) {
-                    return FadeTransition(opacity: animation, child: child);
-                  },
-                );
-              },
-              child: const Text('Forgot Password?', style: TextStyle(fontSize: 12)),
-            ),
           ),
           const SizedBox(height: 20),
           Row(

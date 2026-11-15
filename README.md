@@ -113,11 +113,11 @@ Note-It is engineered with a **Zero-Knowledge End-to-End Encryption (E2EE)** fra
 ### 🛡️ Security Measures & Core Principles
 
 1. **Zero-Knowledge Password Verification**: Raw master passwords are **never** stored on disk. `SharedPreferences` retains only a boolean `hasMasterPassword` flag. Password verification uses encrypted canary payloads (validation markers) that prove password correctness without saving hashes or plaintext strings.
-2. **Hardware-Backed Secure Storage**: Cryptographic salt, local validation markers, hardware keys, and key-wrapping payloads are stored in platform hardware keystores via `FlutterSecureStorage` (Android Keystore, iOS Keychain, and Windows DPAPI/Credential Guard).
+2. **Hardware-Backed Secure Storage**: Cryptographic salt, local validation markers, and hardware keys are stored in platform hardware keystores via `FlutterSecureStorage` (Android Keystore, iOS Keychain, and Windows DPAPI/Credential Guard).
 3. **Authenticated AES-256-GCM Encryption**: Note contents are encrypted using AES-256-GCM with unique 12-byte initialization vectors (IVs) and 16-byte MAC authentication tags.
 4. **PBKDF2 Key Derivation**: Master keys are derived using PBKDF2 with SHA-256 and **600,000 iterations**, providing high resistance against offline GPU/dictionary attacks.
-5. **Secure Memory Hygiene & Auto-Purging**: When the application is paused or backgrounded (`AppLifecycleState.paused` / `hidden`), `masterKeyBytes` in memory is zeroed out byte-by-byte (`_zeroOutMasterKeyMemory`), and active BIP39 seed phrases (`activeRecoveryPhrase`) are cleared.
-6. **Key-Wrapping & Atomic Password Re-encryption**: Master keys are wrapped (encrypted) with BIP39 12-word seed recovery keys. When updating passwords or recovering via 12-word phrases, notes are re-encrypted atomically (`reencryptAllLockedNotes`) in SQLite transactions.
+5. **Secure Memory Hygiene & Auto-Purging**: When the application is paused or backgrounded (`AppLifecycleState.paused` / `hidden`), `masterKeyBytes` in memory is zeroed out byte-by-byte (`_zeroOutMasterKeyMemory`).
+6. **Atomic Password Re-encryption**: When updating passwords, notes are re-encrypted atomically (`reencryptAllLockedNotes`) in SQLite transactions off the main thread.
 7. **P2P Wi-Fi Sync Mutual Handshake**: Over-the-air P2P WebSocket connections enforce a mutual `validation_handshake` using encrypted markers. Initial note payload broadcasts are gated (`_isPeerVerified`) until handshake verification succeeds, closing invalid connections immediately with code 4001.
 
 ---
@@ -130,9 +130,7 @@ Note-It is engineered with a **Zero-Knowledge End-to-End Encryption (E2EE)** fra
 | `CryptoEngine` | `encryptPayload(plainText, masterKey)` | Encrypts note content via AES-256-GCM, returning Base64-encoded `iv`, `ciphertext`, and `authTag`. |
 | `CryptoEngine` | `decryptPayload(...)` | Decrypts AES-256-GCM ciphertext and validates MAC auth tag; throws `SecretBoxAuthenticationError` if key/data is invalid. |
 | `CryptoEngine` | `createValidationMarker(...)` / `verifyValidationMarker(...)` | Generates and verifies zero-knowledge canary payloads for password authentication. |
-| `CryptoEngine` | `wrapKey(...)` / `unwrapKey(...)` | Encrypts/decrypts master keys using recovery keys derived from BIP39 seed phrases. |
-| `LockNotifier` | `setupMasterPassword(password)` | Generates salt, master key, recovery phrase, validation markers, and hardware storage keys. |
-| `LockNotifier` | `recoverWithPhrase(words, newPassword)` | Restores access using a 12-word recovery phrase, unwraps the master key, and re-encrypts all locked notes. |
+| `LockNotifier` | `setupMasterPassword(password)` | Generates salt, master key, validation markers, and hardware storage keys. Re-encrypts notes if master key changes. |
 | `LockNotifier` | `_zeroOutMasterKeyMemory()` | Clears `masterKeyBytes` byte-by-byte and resets state when backgrounded. |
 | `NotesDao` | `lockNote(...)` | Encrypts content and clears plain text `content` column in SQLite, storing structured JSON payloads. |
 | `NotesDao` | `reencryptAllLockedNotes(...)` | Offloads batch note decryption & re-encryption to `ReencryptionIsolateWorker` and writes SQLite updates. |
@@ -153,7 +151,6 @@ sequenceDiagram
     participant Lock as LockNotifier
     participant Crypto as CryptoEngine
     participant Secure as SecureStorageManager
-    participant Dialog as SeedPhraseDisplayDialog
 
     User->>Page: Type Password (Zxcvbn evaluates entropy)
     User->>Page: Click "Set Password & Lock"
@@ -162,16 +159,9 @@ sequenceDiagram
     Lock->>Crypto: generateRandomBytes(16) -> KDF Salt
     Lock->>Crypto: deriveMasterKey(password, salt, 600k iterations)
     Crypto-->>Lock: masterKeyBytes
-    Lock->>Crypto: generateRecoveryPhrase() -> 12-Word BIP39 Seed
-    Crypto-->>Lock: activeRecoveryPhrase
-    Lock->>Crypto: deriveRecoveryKey(phrase, salt)
     Lock->>Crypto: createValidationMarker(masterKeyBytes) -> localMarker
-    Lock->>Crypto: createValidationMarker(recoveryKey) -> recoveryMarker
-    Lock->>Crypto: wrapKey(masterKeyBytes, recoveryKey) -> wrappedMasterKey
-    Lock->>Secure: Save salt, localMarker, recoveryMarker, hardwareKey & wrappedKey
-    Helper->>Dialog: Launch SeedPhraseDisplayDialog(phrase)
-    User->>Dialog: View 12 Words & Tap "I Have Saved It"
-    Dialog->>Lock: clearActiveRecoveryPhrase() -> Purge 12-word string from RAM
+    Lock->>Secure: Save salt, localMarker & hardwareKey
+    Helper-->>User: Master Password Created!
 ```
 
 #### 2. Locking & Encrypting a Note
@@ -223,12 +213,12 @@ sequenceDiagram
     end
 ```
 
-#### 4. Password Recovery & Atomic Re-encryption (Background Isolate Pipeline)
+#### 4. Master Password Update & Atomic Re-encryption (Background Isolate Pipeline)
 ```mermaid
 sequenceDiagram
     autonumber
     actor User
-    participant UI as Recovery Page
+    participant UI as UpdatePasswordPage
     participant Lock as LockNotifier
     participant Crypto as CryptoEngine
     participant DAO as NotesDao
@@ -236,21 +226,21 @@ sequenceDiagram
     participant Secure as SecureStorageManager
     participant DB as SQLite (Drift)
 
-    User->>UI: Enter 12-Word Recovery Seed & New Password
-    UI->>Lock: recoverWithPhrase(words, newPassword)
-    Lock->>Crypto: deriveRecoveryKey(words, salt)
-    Lock->>Crypto: verifyValidationMarker(recoveryMarker, recoveryKey)
-    Lock->>Crypto: unwrapKey(wrappedMasterKey, recoveryKey)
-    Crypto-->>Lock: recoveredMasterKey
+    User->>UI: Enter Current & New Password
+    UI->>Lock: verifyPassword(currentPassword)
+    Lock-->>UI: Verification Success (oldMasterKey in state)
+    UI->>Lock: setupMasterPassword(newPassword)
+    Lock->>Crypto: generateRandomBytes(16) -> New KDF Salt
     Lock->>Crypto: deriveMasterKey(newPassword, salt)
     Crypto-->>Lock: newMasterKeyBytes
-    Lock->>DAO: reencryptAllLockedNotes(recoveredMasterKey, newMasterKeyBytes)
+    Lock->>DAO: reencryptAllLockedNotes(oldMasterKey, newMasterKeyBytes)
     DAO->>Worker: batchReencrypt(notes, oldKey, newKey)
     Note over Worker: Runs 100% of CPU-bound AES-256-GCM<br/>Decryption & Re-encryption off main thread
     Worker-->>DAO: List<ReencryptedResult>
     DAO->>DB: SQLite Batch Transaction: Update encrypted payloads
-    Lock->>Secure: Save new local markers, hardware keys & wrapped master key
-    Secure-->>UI: Recovery & Re-encryption Complete
+    Lock->>Crypto: createValidationMarker(newMasterKeyBytes) -> newLocalMarker
+    Lock->>Secure: Save new salt, local marker & hardware key
+    Secure-->>UI: Password Update & Re-encryption Complete
 ```
 
 #### 5. P2P Wi-Fi Sync Handshake Gating

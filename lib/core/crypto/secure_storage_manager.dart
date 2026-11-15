@@ -24,9 +24,7 @@ class SecureStorageManager {
 
   static const String _keyMasterSalt = 'sec_kdf_salt';
   static const String _keyLocalValidationMarker = 'sec_local_validation_marker';
-  static const String _keyRecoveryValidationMarker = 'sec_recovery_validation_marker';
   static const String _keyMasterKeyHardware = 'sec_master_key_hardware';
-  static const String _keyWrappedMasterKey = 'sec_wrapped_master_key';
 
   /// Saves the 16-byte KDF Salt in hardware-backed secure storage.
   Future<void> saveMasterSalt(List<int> salt) async {
@@ -70,27 +68,6 @@ class SecureStorageManager {
     }
   }
 
-  /// Saves the 12-word Recovery Validation Marker JSON map.
-  Future<void> saveRecoveryValidationMarker(Map<String, dynamic> marker) async {
-    try {
-      await _storage.write(key: _keyRecoveryValidationMarker, value: jsonEncode(marker));
-    } catch (e, st) {
-      AppLogger.e("SecureStorageManager: Failed to save recovery validation marker", error: e, stack: st);
-    }
-  }
-
-  /// Retrieves the 12-word Recovery Validation Marker JSON map.
-  Future<Map<String, dynamic>?> getRecoveryValidationMarker() async {
-    try {
-      final str = await _storage.read(key: _keyRecoveryValidationMarker);
-      if (str == null) return null;
-      return jsonDecode(str) as Map<String, dynamic>;
-    } catch (e, st) {
-      AppLogger.e("SecureStorageManager: Failed to read recovery validation marker", error: e, stack: st);
-      return null;
-    }
-  }
-
   /// Saves the hardware-backed Master AES Key (used for fast biometric unlock).
   Future<void> saveHardwareMasterKey(List<int> aesKey) async {
     try {
@@ -112,33 +89,12 @@ class SecureStorageManager {
     }
   }
 
-  /// Saves the Master AES Key encrypted with recovery key (for seed phrase password recovery).
-  Future<void> saveWrappedMasterKey(String wrappedKeyJson) async {
-    try {
-      await _storage.write(key: _keyWrappedMasterKey, value: wrappedKeyJson);
-    } catch (e, st) {
-      AppLogger.e("SecureStorageManager: Failed to save wrapped master key", error: e, stack: st);
-    }
-  }
-
-  /// Retrieves the wrapped Master AES Key JSON string.
-  Future<String?> getWrappedMasterKey() async {
-    try {
-      return await _storage.read(key: _keyWrappedMasterKey);
-    } catch (e, st) {
-      AppLogger.e("SecureStorageManager: Failed to read wrapped master key", error: e, stack: st);
-      return null;
-    }
-  }
-
   /// Clears all hardware encryption credentials upon master password removal.
   Future<void> clearAllCredentials() async {
     try {
       await _storage.delete(key: _keyMasterSalt);
       await _storage.delete(key: _keyLocalValidationMarker);
-      await _storage.delete(key: _keyRecoveryValidationMarker);
       await _storage.delete(key: _keyMasterKeyHardware);
-      await _storage.delete(key: _keyWrappedMasterKey);
       AppLogger.d("SecureStorageManager: Cleared hardware encryption credentials.");
     } catch (e, st) {
       AppLogger.e("SecureStorageManager: Failed to clear credentials", error: e, stack: st);

@@ -44,7 +44,6 @@ dependencies:
   cryptography: ^2.9.0
   local_auth: ^3.0.2
   zxcvbn: ^1.0.0
-  bip39: ^1.0.6
 
   # Hardware & Camera Features
   device_info_plus: ^13.2.0

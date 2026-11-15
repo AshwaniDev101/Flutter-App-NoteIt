@@ -19,7 +19,6 @@ class LockState {
   final bool keepUnlockedDuringSession;
   final bool hasMasterPassword;
   final List<int>? masterKeyBytes;
-  final String? activeRecoveryPhrase;
 
   const LockState({
     this.sessionUnlockedNoteIds = const {},
@@ -28,7 +27,6 @@ class LockState {
     this.keepUnlockedDuringSession = false,
     this.hasMasterPassword = false,
     this.masterKeyBytes,
-    this.activeRecoveryPhrase,
   });
 
   LockState copyWith({
@@ -39,8 +37,6 @@ class LockState {
     bool? hasMasterPassword,
     List<int>? masterKeyBytes,
     bool clearMasterKey = false,
-    String? activeRecoveryPhrase,
-    bool clearActiveRecoveryPhrase = false,
   }) {
     return LockState(
       sessionUnlockedNoteIds: sessionUnlockedNoteIds ?? this.sessionUnlockedNoteIds,
@@ -49,7 +45,6 @@ class LockState {
       keepUnlockedDuringSession: keepUnlockedDuringSession ?? this.keepUnlockedDuringSession,
       hasMasterPassword: hasMasterPassword ?? this.hasMasterPassword,
       masterKeyBytes: clearMasterKey ? null : (masterKeyBytes ?? this.masterKeyBytes),
-      activeRecoveryPhrase: clearActiveRecoveryPhrase ? null : (activeRecoveryPhrase ?? this.activeRecoveryPhrase),
     );
   }
 }
@@ -99,14 +94,8 @@ class LockNotifier extends Notifier<LockState> with WidgetsBindingObserver {
     }
     state = state.copyWith(
       clearMasterKey: true,
-      clearActiveRecoveryPhrase: true,
       sessionUnlockedNoteIds: const {},
     );
-  }
-
-  /// Clears active seed recovery phrase from state memory once displayed to user.
-  void clearActiveRecoveryPhrase() {
-    state = state.copyWith(clearActiveRecoveryPhrase: true);
   }
 
   bool get hasMasterPassword => ref.read(sharedPreferenceProvider).hasMasterPassword;
@@ -197,15 +186,11 @@ class LockNotifier extends Notifier<LockState> with WidgetsBindingObserver {
     }
   }
 
-  /// Sets up a new Master Password with KDF, validation markers, and 12-word recovery phrase
-  Future<bool> setupMasterPassword(
-    String password, {
-    Uint8List? existingMasterKeyBytes,
-  }) async {
+  /// Sets up a new Master Password with KDF and local zero-knowledge validation marker
+  Future<bool> setupMasterPassword(String password) async {
     state = state.copyWith(isAuthenticating: true, error: null);
     try {
-      final oldMasterKey = existingMasterKeyBytes ??
-          (state.masterKeyBytes != null ? Uint8List.fromList(state.masterKeyBytes!) : null);
+      final oldMasterKey = state.masterKeyBytes != null ? Uint8List.fromList(state.masterKeyBytes!) : null;
 
       final salt = CryptoEngine.generateRandomBytes(16);
       final derivedKeyData = await CryptoEngine.deriveMasterKey(password, salt: salt);
@@ -219,19 +204,10 @@ class LockNotifier extends Notifier<LockState> with WidgetsBindingObserver {
       }
 
       final localMarker = await CryptoEngine.createValidationMarker(masterKeyBytes, salt: salt);
-      final phrase = CryptoEngine.generateRecoveryPhrase();
-      final recoveryKeyData = await CryptoEngine.deriveRecoveryKey(phrase.split(' '), salt: salt);
-      final recoveryMarker = await CryptoEngine.createValidationMarker(recoveryKeyData.bytes, salt: salt);
-      final wrappedMasterKey = await CryptoEngine.wrapKey(
-        keyToWrap: masterKeyBytes,
-        wrappingKey: recoveryKeyData.bytes,
-      );
 
       await SecureStorageManager.instance.saveMasterSalt(salt);
       await SecureStorageManager.instance.saveLocalValidationMarker(localMarker);
-      await SecureStorageManager.instance.saveRecoveryValidationMarker(recoveryMarker);
       await SecureStorageManager.instance.saveHardwareMasterKey(masterKeyBytes);
-      await SecureStorageManager.instance.saveWrappedMasterKey(wrappedMasterKey);
 
       await ref.read(sharedPreferenceProvider).setHasMasterPassword(true);
 
@@ -244,67 +220,16 @@ class LockNotifier extends Notifier<LockState> with WidgetsBindingObserver {
         AppLogger.w('LockNotifier: Failed to push validation marker to cloud: $e');
       }
 
-
-      // Todo: activeRecoveryPhrase: Temporarily holds the 12-word seed phrase right after setup so the UI can display it to the user to write down.
       AppLogger.d('LockNotifier: Master password & zero-knowledge validation markers created');
       state = state.copyWith(
         isAuthenticating: false,
         hasMasterPassword: true,
         masterKeyBytes: masterKeyBytes,
-        activeRecoveryPhrase: phrase,
       );
       return true;
     } catch (e, st) {
       AppLogger.e('LockNotifier: Failed to setup master password', error: e, stack: st);
       state = state.copyWith(isAuthenticating: false, error: 'Failed to save password');
-      return false;
-    }
-  }
-
-  // Todo: We don't see or show these recoverWithPhrase strings
-  /// Restores access using 12-word recovery seed phrase and sets new password
-  Future<bool> recoverWithPhrase(List<String> words, String newPassword) async {
-    state = state.copyWith(isAuthenticating: true, error: null);
-    try {
-      final salt = await SecureStorageManager.instance.getMasterSalt();
-      final recoveryMarker = await SecureStorageManager.instance.getRecoveryValidationMarker();
-      final wrappedKeyJson = await SecureStorageManager.instance.getWrappedMasterKey();
-
-      if (salt == null || recoveryMarker == null) {
-        state = state.copyWith(isAuthenticating: false, error: 'No recovery key found');
-        return false;
-      }
-
-      final recoveryKeyData = await CryptoEngine.deriveRecoveryKey(words, salt: salt);
-      final isValid = await CryptoEngine.verifyValidationMarker(recoveryMarker, recoveryKeyData.bytes);
-
-      if (!isValid) {
-        state = state.copyWith(isAuthenticating: false, error: 'Invalid recovery phrase');
-        return false;
-      }
-
-      Uint8List? recoveredMasterKey;
-      if (wrappedKeyJson != null) {
-        try {
-          recoveredMasterKey = await CryptoEngine.unwrapKey(
-            wrappedKeyJson: wrappedKeyJson,
-            wrappingKey: recoveryKeyData.bytes,
-          );
-        } catch (e) {
-          AppLogger.w('LockNotifier: Failed to unwrap master key during recovery: $e');
-        }
-      }
-
-      if (recoveredMasterKey == null) {
-        state = state.copyWith(isAuthenticating: false, error: 'Failed to unwrap recovery key');
-        return false;
-      }
-
-      // Password recovered successfully; setup new master password while keeping existing master key
-      return await setupMasterPassword(newPassword, existingMasterKeyBytes: recoveredMasterKey);
-    } catch (e, st) {
-      AppLogger.e('LockNotifier: Password recovery failed', error: e, stack: st);
-      state = state.copyWith(isAuthenticating: false, error: 'Recovery failed');
       return false;
     }
   }
