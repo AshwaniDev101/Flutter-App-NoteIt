@@ -166,102 +166,7 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
     }
   }
 
-  void _confirmAndSwitchToCloudMode() {
-    final activeSession = ref.read(localSyncSessionProvider);
-    if (activeSession.isSyncing) {
-      showDialog(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: const Text('Sync in Progress'),
-          content: const Text('Data transfer is currently active. Are you sure you want to switch to Cloud mode?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-                _switchToCloudMode();
-              },
-              child: const Text('Switch Mode'),
-            ),
-          ],
-        ),
-      );
-    } else {
-      _switchToCloudMode();
-    }
-  }
 
-  void _confirmAndSwitchToOfflineMode() {
-    final activeSession = ref.read(localSyncSessionProvider);
-    if (activeSession.isSyncing) {
-      showDialog(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: const Text('Sync in Progress'),
-          content: const Text('Data transfer is currently active. Are you sure you want to turn off sync?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-                _switchToOfflineMode();
-              },
-              child: const Text('Turn Off Sync'),
-            ),
-          ],
-        ),
-      );
-    } else {
-      _switchToOfflineMode();
-    }
-  }
-
-  Future<void> _switchToCloudMode() async {
-    _mdnsNotifier.stopScan();
-    ref.read(syncClientProvider.notifier).disconnect();
-
-    final success = await ref.read(syncModeProvider.notifier).requestModeChange(SyncMode.cloud);
-    if (success && mounted) {
-      SnackBarManager.show(
-        msg: 'Switched to Cloud Sync Mode',
-        type: SnackBarMessageType.info,
-      );
-      _exitToDefaultView();
-    }
-  }
-
-  Future<void> _switchToOfflineMode() async {
-    _mdnsNotifier.stopScan();
-    ref.read(syncClientProvider.notifier).disconnect();
-
-    await ref.read(syncModeProvider.notifier).setMode(SyncMode.offline);
-    if (mounted) {
-      SnackBarManager.show(
-        msg: 'Sync turned off (Offline Mode)',
-        type: SnackBarMessageType.info,
-      );
-      _exitToDefaultView();
-    }
-  }
-
-  void _exitToDefaultView() {
-    if (PlatformHelper.isWideLayout(context)) {
-      ref.read(desktopRightPanelViewProvider.notifier).setView(RightPanelPageOptions.noteEditor);
-    } else {
-      if (context.canPop()) {
-        context.pop();
-      } else {
-        context.pushReplacement(RightPanelPageOptions.noteEditor.route);
-      }
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -852,10 +757,7 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
                           const SizedBox(height: 28),
 
                           // --- ALTERNATIVE SYNC OPTIONS ---
-                          AlternativeSyncCards(
-                            onSelectCloud: _confirmAndSwitchToCloudMode,
-                            onSelectOffline: _confirmAndSwitchToOfflineMode,
-                          ),
+                          const AlternativeSyncCards(),
                         ],
                       ),
                     ),

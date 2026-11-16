@@ -1,23 +1,152 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:noteit/core/helpers/platform_helper.dart';
+import 'package:noteit/core/sync/sync_engine.dart';
+import 'package:noteit/features/home/core/providers.dart';
+import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
+import 'package:noteit/features/local_sync/data/network/mdns_broadcast.dart';
+import 'package:noteit/features/local_sync/data/network/mdns_searcher.dart';
+import 'package:noteit/features/local_sync/data/providers/local_sync_session_manager.dart';
+import 'package:noteit/features/local_sync/data/providers/sync_client_provider.dart';
+import 'package:noteit/features/local_sync/data/providers/sync_server_provider.dart';
+import 'package:noteit/shared/overlays/snack_bar_manager.dart';
 
 /// Reusable expandable cards displayed at the bottom of local sync screens to allow users
 /// who entered local sync by mistake to switch to Cloud or Offline mode directly.
-class AlternativeSyncCards extends StatefulWidget {
-  final VoidCallback onSelectCloud;
-  final VoidCallback onSelectOffline;
+class AlternativeSyncCards extends ConsumerStatefulWidget {
+  final VoidCallback? onSelectCloud;
+  final VoidCallback? onSelectOffline;
 
   const AlternativeSyncCards({
     super.key,
-    required this.onSelectCloud,
-    required this.onSelectOffline,
+    this.onSelectCloud,
+    this.onSelectOffline,
   });
 
   @override
-  State<AlternativeSyncCards> createState() => _AlternativeSyncCardsState();
+  ConsumerState<AlternativeSyncCards> createState() => _AlternativeSyncCardsState();
 }
 
-class _AlternativeSyncCardsState extends State<AlternativeSyncCards> {
+class _AlternativeSyncCardsState extends ConsumerState<AlternativeSyncCards> {
   bool _isExpanded = false;
+
+  void _handleSelectCloud() {
+    if (widget.onSelectCloud != null) {
+      widget.onSelectCloud!();
+    } else {
+      _confirmAndSwitchToCloudMode();
+    }
+  }
+
+  void _handleSelectOffline() {
+    if (widget.onSelectOffline != null) {
+      widget.onSelectOffline!();
+    } else {
+      _confirmAndSwitchToOfflineMode();
+    }
+  }
+
+  void _confirmAndSwitchToCloudMode() {
+    final activeSession = ref.read(localSyncSessionProvider);
+    if (activeSession.isSyncing) {
+      showDialog(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Sync in Progress'),
+          content: const Text('Data transfer is currently active. Are you sure you want to switch to Cloud mode?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                _switchToCloudMode();
+              },
+              child: const Text('Switch Mode'),
+            ),
+          ],
+        ),
+      );
+    } else {
+      _switchToCloudMode();
+    }
+  }
+
+  void _confirmAndSwitchToOfflineMode() {
+    final activeSession = ref.read(localSyncSessionProvider);
+    if (activeSession.isSyncing) {
+      showDialog(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Sync in Progress'),
+          content: const Text('Data transfer is currently active. Are you sure you want to turn off sync?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                _switchToOfflineMode();
+              },
+              child: const Text('Turn Off Sync'),
+            ),
+          ],
+        ),
+      );
+    } else {
+      _switchToOfflineMode();
+    }
+  }
+
+  Future<void> _switchToCloudMode() async {
+    ref.read(syncServerProvider.notifier).stopHosting();
+    ref.read(mdnsBroadcastProvider.notifier).stopBroadcasting();
+    ref.read(syncClientProvider.notifier).disconnect();
+    ref.read(mdnsSearcherProvider.notifier).stopScan();
+
+    final success = await ref.read(syncModeProvider.notifier).requestModeChange(SyncMode.cloud);
+    if (success && mounted) {
+      SnackBarManager.show(
+        msg: 'Switched to Cloud Sync Mode',
+        type: SnackBarMessageType.info,
+      );
+      _exitToDefaultView();
+    }
+  }
+
+  Future<void> _switchToOfflineMode() async {
+    ref.read(syncServerProvider.notifier).stopHosting();
+    ref.read(mdnsBroadcastProvider.notifier).stopBroadcasting();
+    ref.read(syncClientProvider.notifier).disconnect();
+    ref.read(mdnsSearcherProvider.notifier).stopScan();
+
+    await ref.read(syncModeProvider.notifier).setMode(SyncMode.offline);
+    if (mounted) {
+      SnackBarManager.show(
+        msg: 'Sync turned off (Offline Mode)',
+        type: SnackBarMessageType.info,
+      );
+      _exitToDefaultView();
+    }
+  }
+
+  void _exitToDefaultView() {
+    if (PlatformHelper.isWideLayout(context)) {
+      ref.read(desktopRightPanelViewProvider.notifier).setView(RightPanelPageOptions.noteEditor);
+    } else {
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.pushReplacement(RightPanelPageOptions.noteEditor.route);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -95,24 +224,24 @@ class _AlternativeSyncCardsState extends State<AlternativeSyncCards> {
                     children: [
                       _buildOptionCard(
                         context: context,
-                        title: 'Cloud Mode?',
+                        title: 'Cloud',
                         subtitle: 'Sync notes seamlessly over the internet across all your devices',
                         icon: Icons.cloud_outlined,
                         accentColor: colorScheme.primary,
-                        backgroundColor: colorScheme.primaryContainer.withValues(alpha: 0.18),
-                        borderColor: colorScheme.primary.withValues(alpha: 0.25),
-                        onTap: widget.onSelectCloud,
+                        backgroundColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+                        borderColor: colorScheme.outlineVariant.withValues(alpha: 0.4),
+                        onTap: _handleSelectCloud,
                       ),
                       const SizedBox(height: 10),
                       _buildOptionCard(
                         context: context,
-                        title: 'No Syncing?',
+                        title: 'Offline',
                         subtitle: 'Turn off sync and keep notes stored on this device only',
                         icon: Icons.signal_wifi_off_rounded,
-                        accentColor: colorScheme.onSurfaceVariant,
+                        accentColor: colorScheme.primary,
                         backgroundColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
                         borderColor: colorScheme.outlineVariant.withValues(alpha: 0.4),
-                        onTap: widget.onSelectOffline,
+                        onTap: _handleSelectOffline,
                       ),
                     ],
                   ),

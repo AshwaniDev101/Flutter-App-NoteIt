@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/helpers/platform_helper.dart';
 import 'package:noteit/core/sync/sync_engine.dart';
-import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
 import 'package:noteit/features/local_sync/data/network/mdns_broadcast.dart';
 import 'package:noteit/features/local_sync/data/network/mdns_searcher.dart';
 import 'package:noteit/features/local_sync/data/providers/sync_client_provider.dart';
 import 'package:noteit/features/local_sync/data/providers/sync_server_provider.dart';
 import 'package:noteit/features/local_sync/data/providers/sync_session_provider.dart';
+import 'package:noteit/features/local_sync/view/widgets/alternative_sync_cards.dart';
 import 'package:noteit/features/local_sync/view/widgets/sync_history_button.dart';
 import 'package:noteit/shared/overlays/app_scaffold.dart';
 
@@ -165,7 +165,6 @@ class _RoleSelectorPageState extends ConsumerState<RoleSelectorPage> {
             key: ValueKey<bool>(_isClient),
             onPressed: () async {
               final nav = ref.read(drawerNavigationProvider);
-              final currentContext = context;
               if (_isClient) {
                 // CLIENT MODE: Stop any active Host server & mDNS broadcasting
                 ref.read(syncServerProvider.notifier).stopHosting();
@@ -174,7 +173,7 @@ class _RoleSelectorPageState extends ConsumerState<RoleSelectorPage> {
 
                 if (!mounted) return;
                 final option = RightPanelPageOptions.clientMode;
-                nav.navigate(currentContext, option);
+                nav.navigate(context, option);
               } else {
                 // HOST MODE: Stop any active Client dialer & mDNS scanning
                 ref.read(syncClientProvider.notifier).disconnect();
@@ -187,7 +186,7 @@ class _RoleSelectorPageState extends ConsumerState<RoleSelectorPage> {
                 ref.invalidate(serverHostingProvider);
 
                 if (!mounted) return;
-                nav.navigate(currentContext, RightPanelPageOptions.hostMode);
+                nav.navigate(context, RightPanelPageOptions.hostMode);
               }
             },
             icon: Icon(_isClient ? Icons.search_rounded : Icons.wifi_tethering_rounded),
@@ -204,6 +203,10 @@ class _RoleSelectorPageState extends ConsumerState<RoleSelectorPage> {
 
         // History Button
         const SyncHistoryButton(),
+        const SizedBox(height: 24),
+
+        // Alternative Sync Options
+        const AlternativeSyncCards(),
       ],
     );
   }
