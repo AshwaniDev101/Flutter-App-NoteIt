@@ -538,6 +538,25 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
             body: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+
+                // const SizedBox(width: 32),
+                Padding(
+                  padding: const EdgeInsets.only(left: 21,),
+                  child: Row(
+
+                    // mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                    const SizedBox(width: 16),
+                    Text(
+                        _isNewNote?_getFormattedDate():
+                      'Edited ${_getFormattedDate()}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    ),
+
+                    const SizedBox(width: 16),
+                    _buildNewLabel(),
+                  ],),
+                ),
                 if (_isFind)
                   FindReplaceWidget(
                     contentController: _highlightedContentController,
@@ -582,100 +601,101 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
   Widget _buildTopMetaRow(Folder? currentFolder) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      child: Row(
+      child: Column(
         children: [
-          const SizedBox(width: 8),
-          FolderOptionMenu(
-            selectedFolder: currentFolder,
-            emptyLabel: 'none',
-            onFolderSelected: (folder) async {
-              final newFolderId = folder?.uuid;
+          Row(
+            children: [
+              const SizedBox(width: 8),
+              FolderOptionMenu(
+                selectedFolder: currentFolder,
+                emptyLabel: 'none',
+                onFolderSelected: (folder) async {
+                  final newFolderId = folder?.uuid;
 
-              if (_currentNoteWithFolder?.note.folderId == newFolderId) return;
+                  if (_currentNoteWithFolder?.note.folderId == newFolderId) return;
 
-              if (!_isNewNote && _currentNoteWithFolder != null) {
-                await ref.read(notesDaoProvider).updateNoteFolder(_currentNoteWithFolder!.note.uuid, newFolderId);
-                ref.read(syncOrchestratorProvider).triggerSync();
-              }
+                  if (!_isNewNote && _currentNoteWithFolder != null) {
+                    await ref.read(notesDaoProvider).updateNoteFolder(_currentNoteWithFolder!.note.uuid, newFolderId);
+                    ref.read(syncOrchestratorProvider).triggerSync();
+                  }
 
-              setState(() {
-                if (_currentNoteWithFolder != null) {
-                  final updatedDriftNote = _currentNoteWithFolder!.note.copyWith(folderId: drift.Value(newFolderId));
-                  _currentNoteWithFolder = NoteWithFolder(note: updatedDriftNote, folder: folder);
-                } else {
-                  _selectedFolderForNewNote = folder;
-                }
-              });
-            },
-          ),
-          const SizedBox(width: 16),
-          Text(
-            'Edited ${_getFormattedDate()}',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-          ),
-          const SizedBox(width: 16),
-          SmartActionWidget(
-            action: AppActions.saveNote,
-            scope: ShortcutScope.editor,
-            baseTooltip: 'Save Note',
-            badgeTop: -2,
-            badgeRight: -2,
-            child: ValueListenableBuilder<bool>(
-              valueListenable: _isSaved,
-              builder: (context, isSaved, child) {
-                return isSaved
-                    ? Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.done_all, size: 16, color: Theme.of(context).colorScheme.outline),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Saved',
-                              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                                    color: Theme.of(context).colorScheme.outline,
-                                    fontStyle: FontStyle.italic,
-                                  ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(4),
-                          onTap: () {
-                            _executeSave(isManualSave: true);
-                          },
-                          child: Padding(
+                  setState(() {
+                    if (_currentNoteWithFolder != null) {
+                      final updatedDriftNote = _currentNoteWithFolder!.note.copyWith(folderId: drift.Value(newFolderId));
+                      _currentNoteWithFolder = NoteWithFolder(note: updatedDriftNote, folder: folder);
+                    } else {
+                      _selectedFolderForNewNote = folder;
+                    }
+                  });
+                },
+              ),
+
+              const SizedBox(width: 16),
+              SmartActionWidget(
+                action: AppActions.saveNote,
+                scope: ShortcutScope.editor,
+                baseTooltip: 'Save Note',
+                badgeTop: -2,
+                badgeRight: -2,
+                child: ValueListenableBuilder<bool>(
+                  valueListenable: _isSaved,
+                  builder: (context, isSaved, child) {
+                    return isSaved
+                        ? Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.done, size: 16, color: Theme.of(context).colorScheme.primary),
+                                Icon(Icons.done_all, size: 16, color: Theme.of(context).colorScheme.outline),
                                 const SizedBox(width: 4),
                                 Text(
-                                  'Save',
+                                  'Saved',
                                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                                        color: Theme.of(context).colorScheme.primary,
-                                        fontWeight: FontWeight.bold,
+                                        color: Theme.of(context).colorScheme.outline,
+                                        fontStyle: FontStyle.italic,
                                       ),
                                 ),
                               ],
                             ),
-                          ),
-                        ),
-                      );
-              },
-            ),
+                          )
+                        : Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(4),
+                              onTap: () {
+                                _executeSave(isManualSave: true);
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.done, size: 16, color: Theme.of(context).colorScheme.primary),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Save',
+                                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                            color: Theme.of(context).colorScheme.primary,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                  },
+                ),
+              ),
+              if (_currentNoteWithFolder?.note.reminderAt != null) ...[
+                const SizedBox(width: 8),
+                _buildReminderChip(context, _currentNoteWithFolder!.note.reminderAt!),
+              ],
+
+            ],
           ),
-          if (_currentNoteWithFolder?.note.reminderAt != null) ...[
-            const SizedBox(width: 8),
-            _buildReminderChip(context, _currentNoteWithFolder!.note.reminderAt!),
-          ],
-          const SizedBox(width: 16),
-          _buildNewLabel(),
+
+
         ],
       ),
     );

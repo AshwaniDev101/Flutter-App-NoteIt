@@ -48,56 +48,14 @@ class GoogleLogoBadge extends StatelessWidget {
       ),
       alignment: Alignment.center,
       child: Padding(
-        padding: EdgeInsets.all(size * 0.18),
-        child: CustomPaint(
-          size: Size(size, size),
-          painter: const _GoogleGLogoPainter(),
+        padding: EdgeInsets.all(size * 0.15),
+        child: Image.asset(
+          'assets/icons/google_icon.png',
+          width: size,
+          height: size,
+          fit: BoxFit.contain,
         ),
       ),
     );
   }
-}
-
-class _GoogleGLogoPainter extends CustomPainter {
-  const _GoogleGLogoPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final double w = size.width;
-    final double h = size.height;
-    final center = Offset(w / 2, h / 2);
-    final outerRadius = w / 2;
-    final innerRadius = w * 0.28;
-
-    final rect = Rect.fromCircle(center: center, radius: (outerRadius + innerRadius) / 2);
-    final strokeWidth = outerRadius - innerRadius;
-
-    final Paint paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth;
-
-    paint.color = const Color(0xFFEA4335);
-    canvas.drawArc(rect, -2.356, 1.484, false, paint);
-
-    paint.color = const Color(0xFFFBBC05);
-    canvas.drawArc(rect, 2.18, 1.0, false, paint);
-
-    paint.color = const Color(0xFF34A853);
-    canvas.drawArc(rect, 0.2, 1.98, false, paint);
-
-    paint.color = const Color(0xFF4285F4);
-    canvas.drawArc(rect, -0.87, 1.07, false, paint);
-
-    final barPaint = Paint()
-      ..color = const Color(0xFF4285F4)
-      ..style = PaintingStyle.fill;
-
-    canvas.drawRect(
-      Rect.fromLTRB(w * 0.45, h * 0.38, w * 0.95, h * 0.62),
-      barPaint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

@@ -35,7 +35,7 @@ class NoteEditorOptionButton extends StatelessWidget {
     this.isChecklist = false,
     this.hasReminder = false,
     this.options = defaultOptions,
-    this.icon = Icons.segment,
+    this.icon = Icons.more_vert,
   });
 
   void _showMobileBottomSheet(BuildContext context) {

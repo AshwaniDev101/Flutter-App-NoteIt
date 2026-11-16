@@ -4,6 +4,7 @@ import 'package:noteit/database/firebase/auth/firebase_provider.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
 
 import '../../core/config/app_env.dart';
+import '../../core/sync/sync_engine.dart';
 import '../../shared/note_card/core/note_action_controller.dart';
 import '../../shared/overlays/snack_bar_manager.dart';
 import '../archive/providers/archive_providers.dart';
@@ -433,12 +434,35 @@ class _DrawerAuthHeaderWidgetState extends ConsumerState<_DrawerAuthHeaderWidget
                       const GoogleLogoBadge(size: 20),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: Text(
-                          'Sign in to sync',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: colorScheme.onSurface,
-                          ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Sign in',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+
+
+                            Row(
+                              children: [
+                                Icon(SyncEngine.cloud.icon,size: 16,color: colorScheme.onSurfaceVariant,),
+                                SizedBox(width: 8,),
+                                Text(
+                                  SyncEngine.cloud.label,
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                          ],
                         ),
                       ),
                       Icon(
