@@ -323,7 +323,7 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
 
       if (success && mounted) {
         setState(() => _isLocked = !_isLocked);
-        if (!_isLocked) {
+        if (_isLocked) {
           context.pop();
         }
       } else if (mounted) {

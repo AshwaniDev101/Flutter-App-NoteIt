@@ -19,7 +19,7 @@ import '../../../shared/overlays/app_scaffold.dart';
 import '../../../shared/overlays/snack_bar_manager.dart';
 import '../../home/core/note_tap_handler.dart';
 import '../../home/core/providers.dart';
-import '../../home/view/shared/desktop_close_button.dart';
+import '../../home/view/shared/window/desktop_close_button.dart';
 import '../../folders/view/folder_option_menu.dart';
 import '../providers/archive_providers.dart';
 

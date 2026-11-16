@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/core/network/network_reachability_service.dart';
 import 'package:noteit/core/sync/sync_orchestrator.dart';
 import 'package:noteit/core/util/logger.dart';
 import 'package:noteit/database/firebase/auth/firebase_provider.dart';
 import 'package:noteit/database/firebase/firebase_database.dart';
 import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
 import 'package:noteit/features/lock/lock_manger/lock_manager.dart';
+import 'package:noteit/features/workspace/models/workspace_model.dart';
 import 'package:noteit/features/workspace/providers/active_workspace_provider.dart';
 
 import 'processors/cloud_entity_processor.dart';
@@ -107,6 +109,7 @@ class CloudSyncService {
       },
       onError: (e, st) {
         AppLogger.e("CloudSyncService: Error in workspace manifest realtime stream", error: e, stack: st);
+        ref.read(networkReachabilityProvider.notifier).setConnected(false);
       },
     );
 
@@ -127,6 +130,7 @@ class CloudSyncService {
       },
       onError: (e, st) {
         AppLogger.e("CloudSyncService: Error in folder realtime stream", error: e, stack: st);
+        ref.read(networkReachabilityProvider.notifier).setConnected(false);
       },
     );
 
@@ -147,6 +151,7 @@ class CloudSyncService {
       },
       onError: (e, st) {
         AppLogger.e("CloudSyncService: Error in note realtime stream", error: e, stack: st);
+        ref.read(networkReachabilityProvider.notifier).setConnected(false);
       },
     );
   }
@@ -172,56 +177,73 @@ class CloudSyncService {
     }
 
     try {
-      final prefs = ref.read(sharedPreferenceProvider);
-      final lastSyncTime = prefs.lastCloudSyncTime;
-      int totalItemsTransferred = 0;
-
-      // STAGE 1: WORKSPACE MANIFEST SYNC (Level 0)
-      final workspaceProcessor = ref.read(cloudWorkspaceProcessorProvider);
-      final pushedWorkspaces = await workspaceProcessor.pushPendingChanges(firebaseDb);
-      final pulledWorkspaces = await workspaceProcessor.pullRemoteChanges(firebaseDb, lastSyncTime);
-      totalItemsTransferred += pushedWorkspaces + pulledWorkspaces;
-
-      // Validate remote password marker trapdoor
-      final masterKeyBytes = ref.read(lockManagerProvider).masterKeyBytes;
-      if (masterKeyBytes != null) {
-        final noteProcessor = ref.read(cloudNoteProcessorProvider);
-        final isValidRemoteKey = await noteProcessor.validateRemotePasswordMarker(firebaseDb, masterKeyBytes);
-        if (!isValidRemoteKey) {
-          AppLogger.w("CloudSyncService: Remote password marker mismatch! Clearing local session keys.");
-          ref.read(lockManagerProvider.notifier).clearAllSessions();
-        }
-      }
-
-      if (totalItemsTransferred > 0 && !isUserInitiated) {
-        ref.read(isSyncingProvider.notifier).setSyncing(true);
-      }
-
-      // STAGE 2: ACTIVE WORKSPACE CONTENT SYNC (Level 1 Folders -> Level 2 Notes)
-      final activeWorkspaceProcessors = _processors.where((p) => p.dependencyLevel > 0).toList()
-        ..sort((a, b) => a.dependencyLevel.compareTo(b.dependencyLevel));
-
-      for (final processor in activeWorkspaceProcessors) {
-        final pushed = await processor.pushPendingChanges(firebaseDb, targetWorkspaceId: activeWorkspace.id);
-        final pulled = await processor.pullRemoteChanges(firebaseDb, lastSyncTime, targetWorkspaceId: activeWorkspace.id);
-        
-        final stageTransferred = pushed + pulled;
-        if (stageTransferred > 0 && totalItemsTransferred == 0 && !isUserInitiated) {
-          ref.read(isSyncingProvider.notifier).setSyncing(true);
-        }
-        totalItemsTransferred += stageTransferred;
-      }
-
-      // UPDATE GLOBAL LAST SYNC TIMESTAMP
-      final now = DateTime.now().millisecondsSinceEpoch;
-      await prefs.setLastCloudSyncTime(now);
-
-      AppLogger.d("CloudSyncService: Prioritized sync completed successfully for active workspace ${activeWorkspace.name} (Total items transferred: $totalItemsTransferred).");
+      await _performSyncPipeline(firebaseDb, activeWorkspace, isUserInitiated).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw TimeoutException("Cloud sync pipeline timed out after 30 seconds due to network unreachability.");
+        },
+      );
+      ref.read(networkReachabilityProvider.notifier).setConnected(true);
+    } on TimeoutException catch (_) {
+      AppLogger.w("CloudSyncService: Sync pipeline timed out! Marking No Internet state.");
+      ref.read(networkReachabilityProvider.notifier).setConnected(false);
     } catch (e, st) {
       AppLogger.e("CloudSyncService: Error executing full sync", error: e, stack: st);
     } finally {
       _isExecutingFullSync = false;
       ref.read(isSyncingProvider.notifier).setSyncing(false);
     }
+  }
+
+  Future<void> _performSyncPipeline(
+    NoteFirestoreDatabase firebaseDb,
+    Workspace activeWorkspace,
+    bool isUserInitiated,
+  ) async {
+    final prefs = ref.read(sharedPreferenceProvider);
+    final lastSyncTime = prefs.lastCloudSyncTime;
+    int totalItemsTransferred = 0;
+
+    // STAGE 1: WORKSPACE MANIFEST SYNC (Level 0)
+    final workspaceProcessor = ref.read(cloudWorkspaceProcessorProvider);
+    final pushedWorkspaces = await workspaceProcessor.pushPendingChanges(firebaseDb);
+    final pulledWorkspaces = await workspaceProcessor.pullRemoteChanges(firebaseDb, lastSyncTime);
+    totalItemsTransferred += pushedWorkspaces + pulledWorkspaces;
+
+    // Validate remote password marker trapdoor
+    final masterKeyBytes = ref.read(lockManagerProvider).masterKeyBytes;
+    if (masterKeyBytes != null) {
+      final noteProcessor = ref.read(cloudNoteProcessorProvider);
+      final isValidRemoteKey = await noteProcessor.validateRemotePasswordMarker(firebaseDb, masterKeyBytes);
+      if (!isValidRemoteKey) {
+        AppLogger.w("CloudSyncService: Remote password marker mismatch! Clearing local session keys.");
+        ref.read(lockManagerProvider.notifier).clearAllSessions();
+      }
+    }
+
+    if (totalItemsTransferred > 0 && !isUserInitiated) {
+      ref.read(isSyncingProvider.notifier).setSyncing(true);
+    }
+
+    // STAGE 2: ACTIVE WORKSPACE CONTENT SYNC (Level 1 Folders -> Level 2 Notes)
+    final activeWorkspaceProcessors = _processors.where((p) => p.dependencyLevel > 0).toList()
+      ..sort((a, b) => a.dependencyLevel.compareTo(b.dependencyLevel));
+
+    for (final processor in activeWorkspaceProcessors) {
+      final pushed = await processor.pushPendingChanges(firebaseDb, targetWorkspaceId: activeWorkspace.id);
+      final pulled = await processor.pullRemoteChanges(firebaseDb, lastSyncTime, targetWorkspaceId: activeWorkspace.id);
+
+      final stageTransferred = pushed + pulled;
+      if (stageTransferred > 0 && totalItemsTransferred == 0 && !isUserInitiated) {
+        ref.read(isSyncingProvider.notifier).setSyncing(true);
+      }
+      totalItemsTransferred += stageTransferred;
+    }
+
+    // UPDATE GLOBAL LAST SYNC TIMESTAMP
+    final now = DateTime.now().millisecondsSinceEpoch;
+    await prefs.setLastCloudSyncTime(now);
+
+    AppLogger.d("CloudSyncService: Prioritized sync completed successfully for active workspace ${activeWorkspace.name} (Total items transferred: $totalItemsTransferred).");
   }
 }

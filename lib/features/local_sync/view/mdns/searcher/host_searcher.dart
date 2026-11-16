@@ -17,7 +17,7 @@ import 'package:noteit/features/local_sync/view/widgets/sync_history_button.dart
 import 'package:noteit/shared/overlays/app_scaffold.dart';
 import 'package:noteit/shared/overlays/snack_bar_manager.dart';
 
-import '../../../../home/view/shared/sync_state_widget.dart';
+import '../../../../home/view/shared/sync/sync_status_badge.dart';
 
 class HostSearcher extends ConsumerStatefulWidget {
   const HostSearcher({super.key});
@@ -868,7 +868,7 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
       ),
       actions: [
         if(!PlatformHelper.isWideLayout(context))...[
-          SyncStateWidget(),
+          SyncStatusBadge(),
           SizedBox(width: 8,),
           // IconTray(),
         ]

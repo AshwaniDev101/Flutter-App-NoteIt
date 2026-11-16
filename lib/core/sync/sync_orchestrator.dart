@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/core/network/network_reachability_service.dart';
 import 'package:noteit/core/sync/sync_engine.dart';
 import 'package:noteit/core/util/logger.dart';
 import 'package:noteit/database/firebase/auth/firebase_provider.dart';
@@ -61,6 +62,16 @@ class SyncOrchestrator with WidgetsBindingObserver {
       if (previous?.isSwitching == true && next.isSwitching == false) {
         AppLogger.d("SyncOrchestrator: Workspace switch finished. Re-evaluating sync state...");
         _evaluateState();
+      }
+    });
+
+    // Listen for Network Reachability Restoration (Offline -> Online)
+    ref.listen(networkReachabilityProvider, (previous, next) {
+      if (previous == false && next == true) {
+        if (ref.read(syncModeProvider).isCloud) {
+          AppLogger.d("SyncOrchestrator: Internet connection restored. Triggering Cloud Sync...");
+          ref.read(cloudSyncServiceProvider).executeFullSync();
+        }
       }
     });
   }

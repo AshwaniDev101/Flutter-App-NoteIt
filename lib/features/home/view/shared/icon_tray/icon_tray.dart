@@ -3,12 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/sync/sync_engine.dart';
 import 'package:noteit/core/sync/sync_orchestrator.dart';
 import 'package:noteit/database/firebase/auth/firebase_provider.dart';
-import 'package:noteit/features/home/view/shared/icon_tray/spinning_sync_icon.dart';
-import 'package:noteit/features/home/view/shared/icon_tray/websocket_connection_indicator.dart';
+import 'package:noteit/features/home/view/shared/sync/indicators/mdns_host_indicator.dart';
+import 'package:noteit/features/home/view/shared/sync/indicators/mdns_search_indicator.dart';
+import 'package:noteit/features/home/view/shared/sync/indicators/websocket_connection_indicator.dart';
 import 'package:noteit/features/local_sync/data/network/local_sync_service.dart';
 import 'package:noteit/shared/overlays/snack_bar_manager.dart';
-import 'mdns_broadcast_indicator.dart';
-import 'mdns_search_indicator.dart';
+import 'package:noteit/shared/widgets/spinning_icon.dart';
 
 /// ============================================================================
 /// MASTER BUTTON VISIBILITY POLICY MATRIX
@@ -48,7 +48,7 @@ class IconTray extends ConsumerWidget {
       children: [
         // mDNS Activity & WebSocket Status - Strictly relevant in Local Sync mode
         if (syncMode.isLocal) ...[
-          const MdnsBroadcastIndicator(),
+          const MdnsHostIndicator(),
           const MdnsSearchIndicator(),
           const WebSocketConnectionIndicator(),
         ],
@@ -70,7 +70,7 @@ class IconTray extends ConsumerWidget {
                   children: [
                     const SizedBox(width: 8),
                     IconButton(
-                      icon: SpinningSyncIcon(isSyncing: isSyncing),
+                      icon: SpinningIcon(icon: Icons.sync, color: Colors.blue,),
                       tooltip: 'Sync Notes',
                       onPressed: () {
                         ref.read(syncOrchestratorProvider).triggerSync();

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:noteit/features/home/view/shared/sync_state_widget.dart';
+import 'package:noteit/features/home/view/shared/sync/sync_status_badge.dart';
 import 'package:noteit/shared/app_bars/bottom_select_mode_appbar.dart';
 
 import 'package:window_manager/window_manager.dart';
@@ -112,7 +112,7 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> with WidgetsBin
         // IconTray(),
         WorkspaceBadge(),
         SizedBox(width: 8,),
-        SyncStateWidget(),
+        SyncStatusBadge(),
         SizedBox(width: 8,),
         DesktopWindowControls(),
       ],

@@ -17,7 +17,7 @@ import 'package:noteit/features/local_sync/view/widgets/sync_history_button.dart
 import 'package:noteit/shared/overlays/app_scaffold.dart';
 import 'package:noteit/shared/overlays/snack_bar_manager.dart';
 
-import '../../../../home/view/shared/sync_state_widget.dart';
+import '../../../../home/view/shared/sync/sync_status_badge.dart';
 
 class HostBroadcastPage extends ConsumerStatefulWidget {
   const HostBroadcastPage({super.key});
@@ -481,7 +481,7 @@ class _HostBroadcastPageState extends ConsumerState<HostBroadcastPage> {
       actions: [
         if(!PlatformHelper.isWideLayout(context))
           // IconTray(),
-          SyncStateWidget(),
+          SyncStatusBadge(),
           SizedBox(width: 8,),
       ],
     );

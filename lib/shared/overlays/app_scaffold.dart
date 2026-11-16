@@ -5,7 +5,7 @@ import 'package:window_manager/window_manager.dart';
 import '../../core/helpers/platform_helper.dart';
 import 'package:noteit/features/home/core/providers.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
-import '../../features/home/view/shared/desktop_close_button.dart';
+import '../../features/home/view/shared/window/desktop_close_button.dart';
 
 /// A centralized Scaffold wrapper that provides a consistent AppBar, 
 /// background styling, desktop back button, and desktop close button integration across pages.

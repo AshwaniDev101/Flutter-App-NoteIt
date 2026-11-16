@@ -10,6 +10,7 @@ class SyncStatusColors extends ThemeExtension<SyncStatusColors> {
   final Color unauthenticated;
   final Color disconnected;
   final Color offline;
+  final Color noInternet;
 
   const SyncStatusColors({
     required this.synced,
@@ -20,6 +21,7 @@ class SyncStatusColors extends ThemeExtension<SyncStatusColors> {
     required this.unauthenticated,
     required this.disconnected,
     required this.offline,
+    required this.noInternet,
   });
 
   factory SyncStatusColors.dark() => const SyncStatusColors(
@@ -31,6 +33,7 @@ class SyncStatusColors extends ThemeExtension<SyncStatusColors> {
         unauthenticated: Color(0xFFFFB74D),
         disconnected: Color(0xFF8F95B2),
         offline: Color(0xFF8F95B2),
+        noInternet: Color(0xFFFF9800),
       );
 
   factory SyncStatusColors.light() => const SyncStatusColors(
@@ -42,6 +45,7 @@ class SyncStatusColors extends ThemeExtension<SyncStatusColors> {
         unauthenticated: Color(0xFFE65100),
         disconnected: Color(0xFF78716C),
         offline: Color(0xFF78716C),
+        noInternet: Color(0xFFEF6C00),
       );
 
   factory SyncStatusColors.amoled() => const SyncStatusColors(
@@ -53,6 +57,7 @@ class SyncStatusColors extends ThemeExtension<SyncStatusColors> {
         unauthenticated: Color(0xFFFFCC80),
         disconnected: Color(0xFFA0A0A0),
         offline: Color(0xFFA0A0A0),
+        noInternet: Color(0xFFFFA726),
       );
 
   factory SyncStatusColors.sepia() => const SyncStatusColors(
@@ -64,6 +69,7 @@ class SyncStatusColors extends ThemeExtension<SyncStatusColors> {
         unauthenticated: Color(0xFFF57C00),
         disconnected: Color(0xFF78624E),
         offline: Color(0xFF78624E),
+        noInternet: Color(0xFFEF6C00),
       );
 
   factory SyncStatusColors.dracula() => const SyncStatusColors(
@@ -75,6 +81,7 @@ class SyncStatusColors extends ThemeExtension<SyncStatusColors> {
         unauthenticated: Color(0xFFFFB86C),
         disconnected: Color(0xFF6272A4),
         offline: Color(0xFF6272A4),
+        noInternet: Color(0xFFFFB86C),
       );
 
   factory SyncStatusColors.nord() => const SyncStatusColors(
@@ -86,6 +93,7 @@ class SyncStatusColors extends ThemeExtension<SyncStatusColors> {
         unauthenticated: Color(0xFFEBCB8B),
         disconnected: Color(0xFFD8DEE9),
         offline: Color(0xFFD8DEE9),
+        noInternet: Color(0xFFD08770),
       );
 
   factory SyncStatusColors.catppuccin() => const SyncStatusColors(
@@ -97,6 +105,7 @@ class SyncStatusColors extends ThemeExtension<SyncStatusColors> {
         unauthenticated: Color(0xFFFAB387),
         disconnected: Color(0xFFA6ADC8),
         offline: Color(0xFFA6ADC8),
+        noInternet: Color(0xFFFAB387),
       );
 
   factory SyncStatusColors.forest() => const SyncStatusColors(
@@ -108,6 +117,7 @@ class SyncStatusColors extends ThemeExtension<SyncStatusColors> {
         unauthenticated: Color(0xFFD8A47F),
         disconnected: Color(0xFF94A89A),
         offline: Color(0xFF94A89A),
+        noInternet: Color(0xFFD8A47F),
       );
 
   factory SyncStatusColors.cyberpunk() => const SyncStatusColors(
@@ -119,6 +129,7 @@ class SyncStatusColors extends ThemeExtension<SyncStatusColors> {
         unauthenticated: Color(0xFFFFB800),
         disconnected: Color(0xFFA59ABF),
         offline: Color(0xFFA59ABF),
+        noInternet: Color(0xFFFFB800),
       );
 
   factory SyncStatusColors.ocean() => const SyncStatusColors(
@@ -130,6 +141,7 @@ class SyncStatusColors extends ThemeExtension<SyncStatusColors> {
         unauthenticated: Color(0xFFE65100),
         disconnected: Color(0xFF486581),
         offline: Color(0xFF486581),
+        noInternet: Color(0xFFE65100),
       );
 
   @override
@@ -142,6 +154,7 @@ class SyncStatusColors extends ThemeExtension<SyncStatusColors> {
     Color? unauthenticated,
     Color? disconnected,
     Color? offline,
+    Color? noInternet,
   }) {
     return SyncStatusColors(
       synced: synced ?? this.synced,
@@ -152,6 +165,7 @@ class SyncStatusColors extends ThemeExtension<SyncStatusColors> {
       unauthenticated: unauthenticated ?? this.unauthenticated,
       disconnected: disconnected ?? this.disconnected,
       offline: offline ?? this.offline,
+      noInternet: noInternet ?? this.noInternet,
     );
   }
 
@@ -167,6 +181,7 @@ class SyncStatusColors extends ThemeExtension<SyncStatusColors> {
       unauthenticated: Color.lerp(unauthenticated, other.unauthenticated, t)!,
       disconnected: Color.lerp(disconnected, other.disconnected, t)!,
       offline: Color.lerp(offline, other.offline, t)!,
+      noInternet: Color.lerp(noInternet, other.noInternet, t)!,
     );
   }
 }

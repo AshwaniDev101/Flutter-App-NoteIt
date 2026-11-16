@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/helpers/platform_helper.dart';
+import 'package:noteit/core/network/network_reachability_service.dart';
 import 'package:noteit/core/sync/sync_engine.dart';
 import 'package:noteit/core/sync/sync_orchestrator.dart';
 import 'package:noteit/core/theme/sync_status_colors.dart';
 import 'package:noteit/core/util/logger.dart';
 import 'package:noteit/database/firebase/auth/firebase_provider.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
-import 'package:noteit/features/home/view/shared/icon_tray/spinning_sync_icon.dart';
 import 'package:noteit/features/local_sync/data/network/local_sync_service.dart';
 import 'package:noteit/features/local_sync/data/network/mdns_searcher.dart';
 import 'package:noteit/features/local_sync/data/providers/sync_server_provider.dart';
 import 'package:noteit/shared/menus/app_bottom_sheet.dart';
 import 'package:noteit/shared/overlays/snack_bar_manager.dart';
+import 'package:noteit/shared/widgets/spinning_icon.dart';
+import '../../../../../shared/widgets/flashing_icon.dart';
 import 'sync_menu_content.dart';
 
 /// Enumeration of all visual display states for the sync badge.
@@ -27,6 +29,12 @@ enum SyncDisplayState {
     label: 'Not Synced',
     icon: Icons.account_circle_outlined,
     tooltip: 'Sign in to enable Cloud Sync',
+    isActionable: true,
+  ),
+  noInternet(
+    label: 'No Internet',
+    icon: Icons.info_outline,
+    tooltip: 'No internet connection. Changes saved locally; will sync when reconnected.',
     isActionable: true,
   ),
   hosting(
@@ -99,6 +107,8 @@ enum SyncDisplayState {
           return ext.disconnected;
         case SyncDisplayState.offline:
           return ext.offline;
+        case SyncDisplayState.noInternet:
+          return ext.noInternet;
       }
     }
     return theme.colorScheme.onSurfaceVariant;
@@ -136,6 +146,7 @@ SyncDisplayInfo calculateSyncDisplayInfo({
   required bool isHosting,
   required bool isSyncing,
   required bool isSearching,
+  required bool isCloudReachable,
 }) {
   // 1. Offline Mode
   if (syncMode.isOffline) {
@@ -151,6 +162,12 @@ SyncDisplayInfo calculateSyncDisplayInfo({
       return SyncDisplayInfo(
         state: SyncDisplayState.unauthenticated,
         tooltip: SyncDisplayState.unauthenticated.tooltip,
+      );
+    }
+    if (!isCloudReachable) {
+      return SyncDisplayInfo(
+        state: SyncDisplayState.noInternet,
+        tooltip: SyncDisplayState.noInternet.tooltip,
       );
     }
     if (isSyncing) {
@@ -242,6 +259,7 @@ final syncDisplayInfoProvider = Provider<SyncDisplayInfo>((ref) {
   final isHosting = ref.watch(syncServerProvider.select((s) => s != null));
   final isSyncing = ref.watch(isSyncingProvider);
   final isSearching = ref.watch(mdnsSearcherProvider.select((s) => s.status == ScanStatus.scanning));
+  final isCloudReachable = ref.watch(networkReachabilityProvider);
 
   final info = calculateSyncDisplayInfo(
     syncMode: syncMode,
@@ -250,24 +268,25 @@ final syncDisplayInfoProvider = Provider<SyncDisplayInfo>((ref) {
     isHosting: isHosting,
     isSyncing: isSyncing,
     isSearching: isSearching,
+    isCloudReachable: isCloudReachable,
   );
 
   AppLogger.d(
-    'SyncStateWidget: State -> ${info.state.name} [mode: $syncMode, auth: $isAuthenticated, localState: $localSyncState, hosting: $isHosting, syncing: $isSyncing, searching: $isSearching]',
+    'SyncStateWidget: State -> ${info.state.name} [mode: $syncMode, auth: $isAuthenticated, reachable: $isCloudReachable, localState: $localSyncState, hosting: $isHosting, syncing: $isSyncing, searching: $isSearching]',
   );
 
   return info;
 });
 
 /// Single self-contained status widget for note synchronization.
-class SyncStateWidget extends ConsumerStatefulWidget {
-  const SyncStateWidget({super.key});
+class SyncStatusBadge extends ConsumerStatefulWidget {
+  const SyncStatusBadge({super.key});
 
   @override
-  ConsumerState<SyncStateWidget> createState() => _SyncStateWidgetState();
+  ConsumerState<SyncStatusBadge> createState() => _SyncStatusBadgeState();
 }
 
-class _SyncStateWidgetState extends ConsumerState<SyncStateWidget> {
+class _SyncStatusBadgeState extends ConsumerState<SyncStatusBadge> {
   final MenuController _menuController = MenuController();
 
   void _showMobileBottomSheet(BuildContext context) {
@@ -303,26 +322,45 @@ class _SyncStateWidgetState extends ConsumerState<SyncStateWidget> {
       return;
     }
 
-    // 2. Undefined Role -> Role Selector Page
+    // 2. No Internet -> Immediate Visual Feedback & Connection Retry
+    if (displayState == SyncDisplayState.noInternet) {
+      SnackBarManager.show(
+        msg: 'Checking connection...',
+        type: SnackBarMessageType.info,
+      );
+      ref.read(networkReachabilityProvider.notifier).checkReachability().then((reachable) {
+        if (reachable && ref.read(syncModeProvider).isCloud) {
+          ref.read(syncOrchestratorProvider).triggerSync();
+        } else if (!reachable) {
+          SnackBarManager.show(
+            msg: 'Still no internet connection.',
+            type: SnackBarMessageType.error,
+          );
+        }
+      });
+      return;
+    }
+
+    // 3. Undefined Role -> Role Selector Page
     if (syncMode == SyncMode.localUndefined) {
       ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.localSync);
       return;
     }
 
-    // 3. Host waiting / Host error -> Host Broadcaster Screen
+    // 4. Host waiting / Host error -> Host Broadcaster Screen
     if (displayState == SyncDisplayState.hosting ||
         (syncMode.isHost && displayState == SyncDisplayState.disconnected)) {
       ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.hostMode);
       return;
     }
 
-    // 4. Client disconnected / Client error -> Host Searcher Screen
+    // 5. Client disconnected / Client error -> Host Searcher Screen
     if (displayState == SyncDisplayState.disconnected) {
       ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.clientMode);
       return;
     }
 
-    // 5. Unauthenticated Cloud Mode -> Google Sign In
+    // 6. Unauthenticated Cloud Mode -> Google Sign In
     if (displayState == SyncDisplayState.unauthenticated) {
       SnackBarManager.show(
         msg: 'Please sign in with Google to enable Cloud Sync',
@@ -332,7 +370,7 @@ class _SyncStateWidgetState extends ConsumerState<SyncStateWidget> {
       return;
     }
 
-    // 6. Synced -> Force Sync
+    // 7. Synced -> Force Sync
     if (displayState == SyncDisplayState.synced) {
       ref.read(syncOrchestratorProvider).triggerSync();
       SnackBarManager.show(
@@ -441,17 +479,26 @@ class _SyncStateWidgetState extends ConsumerState<SyncStateWidget> {
   }
 
   Widget _buildIcon(SyncDisplayState displayState, Color statusColor) {
-    if (displayState == SyncDisplayState.syncing) {
-      return SpinningSyncIcon(
-        isSyncing: true,
-        color: statusColor,
-      );
+    switch (displayState) {
+      case SyncDisplayState.syncing:
+        return SpinningIcon(
+          icon: displayState.icon,
+          color: statusColor,
+          size: 18,
+        );
+      case SyncDisplayState.hosting:
+      case SyncDisplayState.searching:
+        return FlashingIcon(
+          icon: displayState.icon,
+          color: statusColor,
+          size: 18,
+        );
+      default:
+        return Icon(
+          displayState.icon,
+          color: statusColor,
+          size: 18,
+        );
     }
-
-    return Icon(
-      displayState.icon,
-      size: 18,
-      color: statusColor,
-    );
   }
 }

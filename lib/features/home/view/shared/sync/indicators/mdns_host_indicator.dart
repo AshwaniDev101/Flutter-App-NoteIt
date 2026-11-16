@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/features/local_sync/data/network/mdns_broadcast.dart';
 
-class MdnsBroadcastIndicator extends ConsumerWidget {
-  const MdnsBroadcastIndicator({super.key});
+class MdnsHostIndicator extends ConsumerWidget {
+  const MdnsHostIndicator({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -50,3 +50,6 @@ class MdnsBroadcastIndicator extends ConsumerWidget {
     );
   }
 }
+
+/// Backward compatibility alias for MdnsHostIndicator.
+typedef MdnsBroadcastIndicator = MdnsHostIndicator;

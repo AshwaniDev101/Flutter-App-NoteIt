@@ -7,7 +7,7 @@ class MdnsSearchIndicator extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    //  Watch strictly for the scanning status
+    // Watch strictly for the scanning status
     final isSearching = ref.watch(mdnsSearcherProvider).status == ScanStatus.scanning;
     final colorScheme = Theme.of(context).colorScheme;
     final primaryColor = colorScheme.primary;

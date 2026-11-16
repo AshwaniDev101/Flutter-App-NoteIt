@@ -9,7 +9,7 @@ import 'package:noteit/features/backup/import_page.dart';
 import 'package:noteit/features/dev_tools/dev_page.dart';
 import 'package:noteit/features/home/core/providers.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
-import 'package:noteit/features/home/view/shared/sync_state_widget.dart';
+import 'package:noteit/features/home/view/shared/sync/sync_status_badge.dart';
 import 'package:noteit/features/local_sync/view/mdns/broadcast/host_broadcast.dart';
 import 'package:noteit/features/local_sync/view/mdns/searcher/host_searcher.dart';
 import 'package:noteit/features/local_sync/view/mdns/searcher/pin_dialog/pin_entry_dialog.dart';
@@ -67,7 +67,7 @@ class DesktopContentPanel extends ConsumerWidget {
               // IconTray(),
               const WorkspaceBadge(),
               SizedBox(width: 8,),
-              const SyncStateWidget(),
+              const SyncStatusBadge(),
               SizedBox(width: 8,),
               const DesktopWindowControls(),
             ],

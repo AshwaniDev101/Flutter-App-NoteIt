@@ -362,7 +362,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
         if (mounted) {
           setState(() => _isLocked = !_isLocked);
         }
-        if (!_isLocked) {
+        if (_isLocked) {
           _handleCloseNote();
         }
       } else if (mounted) {

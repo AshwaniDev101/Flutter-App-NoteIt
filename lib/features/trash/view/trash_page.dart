@@ -10,7 +10,7 @@ import '../../../shared/app_bars/top_select_mode_appbar.dart';
 import '../../../shared/note_card/core/note_action.dart';
 import '../../../shared/overlays/app_scaffold.dart';
 import '../../../shared/overlays/snack_bar_manager.dart';
-import '../../home/view/shared/desktop_close_button.dart';
+import '../../home/view/shared/window/desktop_close_button.dart';
 import '../providers/trash_providers.dart';
 import 'widgets/trash_content_area.dart';
 import 'widgets/trash_control_bar.dart';
