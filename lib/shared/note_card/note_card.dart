@@ -161,30 +161,38 @@ class _NoteCardState extends ConsumerState<NoteCard> {
     }
   }
 
+  Color? _getBackgroundColor(ColorScheme colorScheme, {required bool isCard}) {
+    if (widget.isSelected) {
+      return colorScheme.primary.withValues(alpha: NoteCard.selectedAlpha);
+    }
+    if (widget.isActive) {
+      return colorScheme.primary.withValues(alpha: NoteCard.activeAlpha);
+    }
+    if (_isFocused) {
+      return isCard ? null : colorScheme.surfaceContainerHighest;
+    }
+    return isCard ? null : colorScheme.surface;
+  }
+
+  Color _getBorderColor(ColorScheme colorScheme, {required bool isHighlighted}) {
+    return isHighlighted
+        ? colorScheme.primary
+        : colorScheme.outlineVariant.withValues(alpha: NoteCard.outlineAlpha);
+  }
+
   Widget _buildCardWrapper(BuildContext context, {required Widget child}) {
     final colorScheme = Theme.of(context).colorScheme;
     final bool showPrimaryBorder = widget.isSelected || _isFocused;
-
-    final Color? cardColor;
-    if (widget.isSelected) {
-      cardColor = colorScheme.primary.withValues(alpha: NoteCard.selectedAlpha);
-    } else if (widget.isActive) {
-      cardColor = colorScheme.primary.withValues(alpha: NoteCard.activeAlpha);
-    } else {
-      cardColor = null;
-    }
 
     return Card(
       margin: const EdgeInsets.all(4.0),
       elevation: widget.isSelected ? 2 : (widget.isActive ? 1 : (_isFocused ? 4 : 0)),
       clipBehavior: Clip.antiAlias,
-      color: cardColor,
+      color: _getBackgroundColor(colorScheme, isCard: true),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
         side: BorderSide(
-          color: showPrimaryBorder
-              ? colorScheme.primary
-              : colorScheme.outlineVariant.withValues(alpha: NoteCard.outlineAlpha),
+          color: _getBorderColor(colorScheme, isHighlighted: showPrimaryBorder),
           width: showPrimaryBorder ? 2 : 1,
         ),
       ),
@@ -199,27 +207,13 @@ class _NoteCardState extends ConsumerState<NoteCard> {
 
   Widget _buildFlatListWrapper(BuildContext context, {required Widget child}) {
     final colorScheme = Theme.of(context).colorScheme;
-
-    final Color backgroundColor;
-    if (widget.isSelected) {
-      backgroundColor = colorScheme.primary.withValues(alpha: NoteCard.selectedAlpha);
-    } else if (widget.isActive) {
-      backgroundColor = colorScheme.primary.withValues(alpha: NoteCard.activeAlpha);
-    } else if (_isFocused) {
-      backgroundColor = colorScheme.surfaceContainerHighest;
-    } else {
-      backgroundColor = colorScheme.surface;
-    }
-
     final bool showPrimaryBorder = widget.isSelected;
 
     return Material(
-      color: backgroundColor,
+      color: _getBackgroundColor(colorScheme, isCard: false),
       shape: Border(
         bottom: BorderSide(
-          color: showPrimaryBorder
-              ? colorScheme.primary
-              : colorScheme.outlineVariant.withValues(alpha: NoteCard.outlineAlpha),
+          color: _getBorderColor(colorScheme, isHighlighted: showPrimaryBorder),
           width: showPrimaryBorder ? 2 : 1,
         ),
         left: showPrimaryBorder

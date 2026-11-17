@@ -372,7 +372,15 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
 
   @override
   Widget build(BuildContext context) {
-    final panelColor = Theme.of(context).colorScheme.surfaceContainerLow;
+
+    // final panelColor = Theme.of(context).colorScheme.surfaceContainerHighest;
+    // final panelColor = Theme.of(context).colorScheme.surfaceContainerHigh;
+    final panelColor = Theme.of(context).colorScheme.surfaceContainer;
+    // final panelColor = Theme.of(context).colorScheme.surfaceContainerLow;
+    // final panelColor = Theme.of(context).colorScheme.surfaceContainerLowest;
+
+
+
 
     return PopScope(
       canPop: false,

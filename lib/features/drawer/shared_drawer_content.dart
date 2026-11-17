@@ -413,7 +413,8 @@ class _DrawerAuthHeaderWidgetState extends ConsumerState<_DrawerAuthHeaderWidget
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Material(
-              color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+              // color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+              color: colorScheme.surfaceContainerLowest,
               borderRadius: BorderRadius.circular(14),
               child: InkWell(
                 borderRadius: BorderRadius.circular(14),

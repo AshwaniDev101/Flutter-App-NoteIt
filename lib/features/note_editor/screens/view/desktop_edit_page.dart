@@ -416,7 +416,8 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
 
   @override
   Widget build(BuildContext context) {
-    final panelColor = Theme.of(context).colorScheme.surfaceContainerLow;
+    final panelColor = Theme.of(context).colorScheme.surfaceContainer;
+    // final panelColor = Theme.of(context).colorScheme.surfaceContainerLow;
     final currentFolder = _currentNoteWithFolder?.folder ?? _selectedFolderForNewNote;
     final shortcuts = ref.watch(keybindingsProvider).value ?? {};
 

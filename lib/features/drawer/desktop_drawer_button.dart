@@ -32,6 +32,9 @@ class _DrawerMenuButtonState extends ConsumerState<DrawerMenuButton> {
 
   @override
   Widget build(BuildContext context) {
+
+    final colorScheme = Theme.of(context).colorScheme;
+
     return MenuAnchor(
       controller: _menuController,
       style: const MenuStyle(
@@ -54,7 +57,8 @@ class _DrawerMenuButtonState extends ConsumerState<DrawerMenuButton> {
       },
       menuChildren: [
         Card(
-          color: Theme.of(context).colorScheme.surface,
+          // color: Theme.of(context).colorScheme.surface,
+          color: colorScheme.surfaceContainerLow,
           elevation: 12,
           clipBehavior: Clip.antiAlias,
           shape: RoundedRectangleBorder(

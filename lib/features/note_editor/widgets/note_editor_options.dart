@@ -84,12 +84,34 @@ class NoteEditorOptionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final isMobile = !PlatformHelper.isWideLayout(context);
 
+    final colorScheme = Theme.of(context).colorScheme;
+
     if (isMobile) {
+
       return IconButton(
         tooltip: "Option Menu",
         icon: Icon(icon),
         onPressed: () => _showMobileBottomSheet(context),
+        style: IconButton.styleFrom(
+
+          // backgroundColor: colorSchema.surfaceContainerLow,
+          backgroundColor: colorScheme.surfaceContainerLowest, // The background color
+          // backgroundColor: colorSchema.surfaceContainer,
+          // backgroundColor: colorSchema.surfaceContainerHigh,
+          // backgroundColor: colorSchema.surfaceContainerHighest,
+
+          foregroundColor: colorScheme.onSurface, // The icon color
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.0),
+          ),
+          // padding: EdgeInsets.all(0.0), // Adjust padding if the background is too tight
+        ),
       );
+      // return IconButton(
+      //   tooltip: "Option Menu",
+      //   icon: Icon(icon),
+      //   onPressed: () => _showMobileBottomSheet(context),
+      // );
     }
 
     return MenuAnchor(

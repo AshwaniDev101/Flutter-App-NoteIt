@@ -93,8 +93,15 @@ class Themes {
         break;
     }
 
+    final colorScheme = theme.colorScheme;
+    theme = theme.copyWith(
+      cardTheme: CardThemeData(
+        color: colorScheme.surfaceContainer,
+        // color: colorScheme.surfaceContainerLow,
+      ),
+    );
+
     if (PlatformHelper.isDesktopScreen) {
-      final colorScheme = theme.colorScheme;
       return theme.copyWith(
         visualDensity: VisualDensity.compact,
         switchTheme: SwitchThemeData(

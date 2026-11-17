@@ -11,8 +11,11 @@ class AppDrawer extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+
+    final colorScheme = Theme.of(context).colorScheme;
     return Drawer(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      // backgroundColor: colorScheme.surface,
+      backgroundColor: colorScheme.surfaceContainerLow,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       width: 280,

@@ -119,11 +119,17 @@ class _FolderButtonState extends ConsumerState<FolderButton> {
                       : colorScheme.outlineVariant.withValues(alpha: 0.4),
                 ),
                 borderRadius: BorderRadius.circular(10),
+                // color: isOpen
+                //     ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.6)
+                //     : _isHovering
+                //     ? colorScheme.surfaceContainerLowest
+                //     : Colors.transparent,
+
                 color: isOpen
-                    ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.6)
+                    ? colorScheme.surfaceContainerLow
                     : _isHovering
-                    ? colorScheme.surfaceContainerLowest
-                    : Colors.transparent,
+                    ? colorScheme.surfaceContainer
+                    : colorScheme.surfaceContainerLow
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
