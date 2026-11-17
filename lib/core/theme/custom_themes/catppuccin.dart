@@ -123,6 +123,7 @@ ThemeData get _catppuccinThemeData {
       FolderThemeColors.catppuccin(),
       NetworkSignalColors.catppuccin(),
       WorkspaceThemeColors.catppuccin(),
+      SnackBarThemeColor.catppuccin(),
     ],
   );
 }

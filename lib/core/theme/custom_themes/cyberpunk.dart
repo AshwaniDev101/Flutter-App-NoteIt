@@ -123,6 +123,7 @@ ThemeData get _cyberpunkThemeData {
       FolderThemeColors.cyberpunk(),
       NetworkSignalColors.cyberpunk(),
       WorkspaceThemeColors.cyberpunk(),
+      SnackBarThemeColor.cyberpunk(),
     ],
   );
 }

@@ -123,6 +123,7 @@ ThemeData get _lightThemeData {
       FolderThemeColors.light(),
       NetworkSignalColors.light(),
       WorkspaceThemeColors.light(),
+      SnackBarThemeColor.light(),
     ],
   );
 }

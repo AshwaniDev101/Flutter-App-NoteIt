@@ -123,6 +123,7 @@ ThemeData get _draculaThemeData {
       FolderThemeColors.dracula(),
       NetworkSignalColors.dracula(),
       WorkspaceThemeColors.dracula(),
+      SnackBarThemeColor.dracula(),
     ],
   );
 }

@@ -123,6 +123,7 @@ ThemeData get _forestThemeData {
       FolderThemeColors.forest(),
       NetworkSignalColors.forest(),
       WorkspaceThemeColors.forest(),
+      SnackBarThemeColor.forest(),
     ],
   );
 }

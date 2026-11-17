@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:noteit/core/theme/snack_bar_theme_color.dart';
 import 'package:toastification/toastification.dart';
 
 final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
@@ -8,9 +9,8 @@ enum SnackBarMessageType {
   error,          // For failures/critical alerts
   info,           // For general information
   acknowledgment, // For success/saves (e.g., "Note saved")
-  suggestion,     // For tips, recommendations, or warnings
-
-  //SnackBarMessageType.warning Todo add warning type
+  suggestion,     // For tips, recommendations
+  warning,        // For warnings/cautionary alerts
 }
 
 
@@ -25,22 +25,20 @@ class SnackBarManager {
     VoidCallback? onTap,
     bool showProgressBar = false,
     bool closable = false,
+    BuildContext? context,
   }) {
-    final context = scaffoldMessengerKey.currentContext;
+    final effectiveContext = context ?? scaffoldMessengerKey.currentContext;
 
     // Calculate 33% of the screen width (fallback to 400 if context is null)
-    final toastWidth = context != null
-        ? MediaQuery.sizeOf(context).width * 0.33
+    final toastWidth = effectiveContext != null
+        ? MediaQuery.sizeOf(effectiveContext).width * 0.33
         : 400.0;
 
-    // Grab the active theme so we can dynamically adapt the colors
-    final theme = context != null ? Theme.of(context) : null;
-
-    // Fetch the correct background and foreground colors based strictly on the active theme
-    final (backgroundColor, foregroundColor) = _getColorsForType(type, theme);
+    // Fetch background and foreground colors directly from SnackBarThemeColor
+    final (backgroundColor, foregroundColor) = SnackBarThemeColor.of(effectiveContext, type);
 
     toastification.show(
-      context: context,
+      context: effectiveContext,
       type: _getToastType(type),
       style: ToastificationStyle.fillColored,
 
@@ -104,42 +102,6 @@ class SnackBarManager {
     );
   }
 
-  /// Maps the custom Enum to colors dynamically pulled from YOUR active ThemeData.
-  /// It now strictly uses your Primary, Secondary, Tertiary, and Error containers.
-  static (Color, Color) _getColorsForType(SnackBarMessageType type, ThemeData? theme) {
-    final colorScheme = theme?.colorScheme;
-
-    switch (type) {
-      case SnackBarMessageType.error:
-      // Uses your theme's errorContainer
-        return (
-        colorScheme?.errorContainer ?? const Color(0xFF8C1D18),
-        colorScheme?.onErrorContainer ?? const Color(0xFFFFDAD6),
-        );
-
-      case SnackBarMessageType.info:
-      // Uses your theme's secondaryContainer
-        return (
-        colorScheme?.secondaryContainer ?? const Color(0xFF004F53),
-        colorScheme?.onSecondaryContainer ?? const Color(0xFF99F5F8),
-        );
-
-      case SnackBarMessageType.suggestion:
-      // Uses your theme's tertiaryContainer
-        return (
-        colorScheme?.tertiaryContainer ?? const Color(0xFF75122B),
-        colorScheme?.onTertiaryContainer ?? const Color(0xFFFFD9DF),
-        );
-
-      case SnackBarMessageType.acknowledgment:
-      // Since Material 3 has no "Success" color, we map standard saves/successes
-        return (
-        colorScheme?.primaryContainer ?? const Color(0xFF262E7A),
-        colorScheme?.onPrimaryContainer ?? const Color(0xFFDFE2FF),
-        );
-    }
-  }
-
   /// Maps your custom enum to Toastification's internal types
   static ToastificationType _getToastType(SnackBarMessageType type) {
     switch (type) {
@@ -150,6 +112,8 @@ class SnackBarManager {
       case SnackBarMessageType.acknowledgment:
         return ToastificationType.success;
       case SnackBarMessageType.suggestion:
+        return ToastificationType.info;
+      case SnackBarMessageType.warning:
         return ToastificationType.warning;
     }
   }
@@ -167,6 +131,8 @@ class SnackBarManager {
         return Icon(Icons.check_circle_outline_rounded, color: iconColor);
       case SnackBarMessageType.suggestion:
         return Icon(Icons.lightbulb_outline_rounded, color: iconColor);
+      case SnackBarMessageType.warning:
+        return Icon(Icons.warning_amber_rounded, color: iconColor);
     }
   }
 }

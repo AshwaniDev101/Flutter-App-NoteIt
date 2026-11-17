@@ -81,6 +81,9 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
   bool _hasCreatedNewNote = false;
 
   final ValueNotifier<bool> _isSaved = ValueNotifier(true);
+  String _lastSavedTitle = '';
+  String _lastSavedContent = '';
+  ContentVersion _lastSavedContentVersion = ContentVersion.plainText;
 
   Timer? _autoSaveTimer;
   late final FocusNode _titleFocusNode;
@@ -119,6 +122,10 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
       }
     }
 
+    _lastSavedTitle = _titleController.text;
+    _lastSavedContent = _highlightedContentController.text;
+    _lastSavedContentVersion = _contentVersion;
+
     _titleFocusNode = FocusNode();
     _contentFocusNode = FocusNode();
 
@@ -155,6 +162,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
     );
     if (mounted && decrypted.isNotEmpty) {
       _highlightedContentController.text = decrypted;
+      _lastSavedContent = decrypted;
       if (_currentNoteWithFolder!.note.contentVersion == ContentVersion.checklist.value) {
         setState(() {
           _currentChecklist = _convertTextToChecklist(decrypted.trim());
@@ -261,6 +269,22 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
   // =============================================================================
 
   void _scheduleAutoSave() {
+    final currentTitle = _titleController.text;
+    final currentContent = _highlightedContentController.text;
+    final isChanged = currentTitle != _lastSavedTitle ||
+        currentContent != _lastSavedContent ||
+        _contentVersion != _lastSavedContentVersion;
+
+    if (!isChanged) {
+      if (!_isSaved.value) {
+        _isSaved.value = true;
+      }
+      if (_autoSaveTimer?.isActive ?? false) {
+        _autoSaveTimer!.cancel();
+      }
+      return;
+    }
+
     if (_isSaved.value) {
       _isSaved.value = false;
     }
@@ -301,6 +325,9 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
         setState(() {
           _currentNoteWithFolder = newlySavedNote;
         });
+        _lastSavedTitle = _titleController.text;
+        _lastSavedContent = _highlightedContentController.text;
+        _lastSavedContentVersion = _contentVersion;
         _isSaved.value = true;
         ref.read(activeNoteProvider.notifier).setNote(newlySavedNote);
 
@@ -316,10 +343,18 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
         try {
           final updatedNote = await ref.read(notesDaoProvider).getNoteById(_currentNoteWithFolder!.note.uuid);
           ref.read(activeNoteProvider.notifier).setNote(updatedNote);
+          if (mounted) {
+            setState(() {
+              _currentNoteWithFolder = updatedNote;
+            });
+          }
         } catch (_) {}
       }
 
       if (!isDisposing && mounted) {
+        _lastSavedTitle = _titleController.text;
+        _lastSavedContent = _highlightedContentController.text;
+        _lastSavedContentVersion = _contentVersion;
         _isSaved.value = true;
         if (isManualSave) {
           SnackBarManager.show(msg: 'Saved!', type: SnackBarMessageType.acknowledgment);
@@ -641,50 +676,71 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
                 child: ValueListenableBuilder<bool>(
                   valueListenable: _isSaved,
                   builder: (context, isSaved, child) {
-                    return isSaved
-                        ? Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                    // Extract theme variables to keep the code clean
+                    final theme = Theme.of(context);
+                    final colorScheme = theme.colorScheme;
+                    final textTheme = theme.textTheme;
+
+                    // Added AnimatedSwitcher for a smooth fade when toggling states
+                    return AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 200),
+                      child: isSaved
+                          ? Padding(
+                        key: const ValueKey('saved'),
+                        // Slightly wider horizontal padding balances the new pill shape
+                        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.done_all, size: 16, color: colorScheme.outline),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Saved',
+                              style: textTheme.labelMedium?.copyWith(
+                                color: colorScheme.outline,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                          : Material(
+                        key: const ValueKey('save'),
+                        // PILL SHAPE BACKGROUND
+                        color: colorScheme.surfaceContainerLowest, // Pill background color
+
+                        borderRadius: BorderRadius.circular(24.0), // Fully rounds the corners
+                        clipBehavior: Clip.antiAlias, // Keeps InkWell ripple inside the pill
+                        child: InkWell(
+                          onTap: () {
+                            _executeSave(isManualSave: true);
+                          },
+                          child: Padding(
+                            // Match padding with the saved state to prevent layout jumping
+                            padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.done_all, size: 16, color: Theme.of(context).colorScheme.outline),
+                                Icon(
+                                  Icons.done,
+                                  size: 16,
+                                  // onPrimaryContainer ensures high contrast against the background
+                                  color: colorScheme.onPrimaryContainer,
+                                ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  'Saved',
-                                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                                        color: Theme.of(context).colorScheme.outline,
-                                        fontStyle: FontStyle.italic,
-                                      ),
+                                  'Save',
+                                  style: textTheme.labelMedium?.copyWith(
+                                    color: colorScheme.onPrimaryContainer,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ],
                             ),
-                          )
-                        : Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(4),
-                              onTap: () {
-                                _executeSave(isManualSave: true);
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.done, size: 16, color: Theme.of(context).colorScheme.primary),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      'Save',
-                                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                                            color: Theme.of(context).colorScheme.primary,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
+                          ),
+                        ),
+                      ),
+                    );
                   },
                 ),
               ),

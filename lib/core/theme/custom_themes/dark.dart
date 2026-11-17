@@ -171,6 +171,7 @@ ThemeData get _darkThemeData {
       FolderThemeColors.dark(),
       NetworkSignalColors.dark(),
       WorkspaceThemeColors.dark(),
+      SnackBarThemeColor.dark(),
     ],
   );
 }

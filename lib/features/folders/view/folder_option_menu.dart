@@ -87,8 +87,9 @@ class _FolderOptionMenuState extends ConsumerState<FolderOptionMenu> {
             color: isOpen
                 ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.6)
                 : _isHovering
-                    ? colorScheme.surfaceContainerLowest
-                    : Colors.transparent,
+                    ? colorScheme.surfaceContainerLow
+                    // : Colors.transparent,
+                    : colorScheme.surfaceContainerLowest,
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,

@@ -123,6 +123,7 @@ ThemeData get _nordThemeData {
       FolderThemeColors.nord(),
       NetworkSignalColors.nord(),
       WorkspaceThemeColors.nord(),
+      SnackBarThemeColor.nord(),
     ],
   );
 }

@@ -94,11 +94,11 @@ class NoteEditorOptionButton extends StatelessWidget {
         onPressed: () => _showMobileBottomSheet(context),
         style: IconButton.styleFrom(
 
-          // backgroundColor: colorSchema.surfaceContainerLow,
+          // backgroundColor: colorScheme.surfaceContainerLow,
           backgroundColor: colorScheme.surfaceContainerLowest, // The background color
-          // backgroundColor: colorSchema.surfaceContainer,
-          // backgroundColor: colorSchema.surfaceContainerHigh,
-          // backgroundColor: colorSchema.surfaceContainerHighest,
+          // backgroundColor: colorScheme.surfaceContainer,
+          // backgroundColor: colorScheme.surfaceContainerHigh,
+          // backgroundColor: colorScheme.surfaceContainerHighest,
 
           foregroundColor: colorScheme.onSurface, // The icon color
           shape: RoundedRectangleBorder(
@@ -130,6 +130,26 @@ class NoteEditorOptionButton extends StatelessWidget {
               controller.open();
             }
           },
+
+          // before: without the style
+          style: IconButton.styleFrom(
+
+            // backgroundColor: colorScheme.surfaceContainerLow,
+            backgroundColor: colorScheme.surfaceContainerLowest, // The background color
+            // backgroundColor: colorScheme.surfaceContainer,
+            // backgroundColor: colorScheme.surfaceContainerHigh,
+            // backgroundColor: colorScheme.surfaceContainerHighest,
+
+            foregroundColor: colorScheme.onSurface, // The icon color
+
+            hoverColor: colorScheme.surfaceContainerLow,
+
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16.0),
+            ),
+            padding: EdgeInsets.all(0.0), // Adjust padding if the background is too tight
+
+          ),
           icon: Icon(icon),
         );
       },
@@ -226,7 +246,7 @@ class NoteEditorOptionMenu extends StatelessWidget {
     }
 
     return Card(
-      color: colorScheme.surfaceContainer,
+      color: colorScheme.surfaceContainerLowest,
       elevation: 2,
       margin: const EdgeInsets.all(4.0),
       child: content,

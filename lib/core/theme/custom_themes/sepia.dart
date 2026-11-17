@@ -123,6 +123,7 @@ ThemeData get _sepiaThemeData {
       FolderThemeColors.sepia(),
       NetworkSignalColors.sepia(),
       WorkspaceThemeColors.sepia(),
+      SnackBarThemeColor.sepia(),
     ],
   );
 }

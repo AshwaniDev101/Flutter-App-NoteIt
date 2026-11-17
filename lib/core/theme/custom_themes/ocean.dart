@@ -123,6 +123,7 @@ ThemeData get _oceanThemeData {
       FolderThemeColors.ocean(),
       NetworkSignalColors.ocean(),
       WorkspaceThemeColors.ocean(),
+      SnackBarThemeColor.ocean(),
     ],
   );
 }

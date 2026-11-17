@@ -123,6 +123,7 @@ ThemeData get _amoledThemeData {
       FolderThemeColors.amoled(),
       NetworkSignalColors.amoled(),
       WorkspaceThemeColors.amoled(),
+      SnackBarThemeColor.amoled(),
     ],
   );
 }
