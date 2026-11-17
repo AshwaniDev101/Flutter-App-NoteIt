@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/sync/sync_orchestrator.dart';
 import '../../../core/util/logger.dart';
 import '../../../database/drift/folders/folders_dao.dart';
+import '../../../database/drift/notes/notes_dao.dart';
 
 class FolderState {
   final String searchQuery;
@@ -87,6 +88,28 @@ class FolderViewModel extends Notifier<FolderState> {
       ref.read(syncOrchestratorProvider).triggerSync();
     } catch (e, stack) {
       AppLogger.e("FolderViewModel: Error soft-deleting folder", error: e, stack: stack);
+    }
+  }
+
+  Future<int> moveNotesToFolder({required List<String> targetUuids, required String folderUuid}) async {
+    try {
+      final notesDao = ref.read(notesDaoProvider);
+      int updatedCount = 0;
+
+      for (final uuid in targetUuids) {
+        final success = await notesDao.updateNoteFolder(uuid, folderUuid);
+        if (success) updatedCount++;
+      }
+
+      if (updatedCount > 0) {
+        ref.read(syncOrchestratorProvider).triggerSync();
+      }
+
+      AppLogger.d("FolderViewModel: Moved $updatedCount notes to folder '$folderUuid'");
+      return updatedCount;
+    } catch (e, stack) {
+      AppLogger.e("FolderViewModel: Error moving notes to folder", error: e, stack: stack);
+      rethrow;
     }
   }
 }

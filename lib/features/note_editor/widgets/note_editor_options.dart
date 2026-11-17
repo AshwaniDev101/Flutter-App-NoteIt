@@ -130,27 +130,27 @@ class NoteEditorOptionButton extends StatelessWidget {
               controller.open();
             }
           },
+          // 1. Remove the default minimum box constraints
+          constraints: const BoxConstraints(),
 
-          // before: without the style
           style: IconButton.styleFrom(
-
-            // backgroundColor: colorScheme.surfaceContainerLow,
-            backgroundColor: colorScheme.surfaceContainerLowest, // The background color
-            // backgroundColor: colorScheme.surfaceContainer,
-            // backgroundColor: colorScheme.surfaceContainerHigh,
-            // backgroundColor: colorScheme.surfaceContainerHighest,
-
-            foregroundColor: colorScheme.onSurface, // The icon color
-
+            backgroundColor: colorScheme.surfaceContainerLowest,
+            foregroundColor: colorScheme.onSurface,
             hoverColor: colorScheme.surfaceContainerLow,
 
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16.0),
-            ),
-            padding: EdgeInsets.all(0.0), // Adjust padding if the background is too tight
+            // 2. Shrink the tap target to match the visible button size
+            minimumSize: Size.zero,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
 
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+
+            // 3. Define the exact internal spacing you want around the icon
+            // (e.g., 8.0 will make the button total 32x32 if the icon is 16)
+            padding: const EdgeInsets.all(2),
           ),
-          icon: Icon(icon),
+          icon: Icon(icon,),
         );
       },
       menuChildren: [

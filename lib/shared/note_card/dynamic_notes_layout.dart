@@ -10,7 +10,7 @@ import 'package:noteit/features/reminder/reminder_page.dart';
 
 import 'package:noteit/core/helpers/platform_helper.dart';
 import 'package:noteit/core/sync/sync_orchestrator.dart';
-import '../../features/folders/core/providers.dart';
+import '../../features/folders/providers/folder_providers.dart';
 import '../menus/view_menu_button.dart';
 import 'core/note_action.dart';
 import 'core/note_action_controller.dart';

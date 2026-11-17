@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/helpers/platform_helper.dart';
 import 'package:noteit/core/theme/folder_theme_colors.dart';
 import 'package:noteit/database/drift/local_database.dart';
-import 'package:noteit/features/folders/view/folder_selector.dart';
+import 'widgets/folder_selector_container.dart';
 import 'package:noteit/shared/menus/app_bottom_sheet.dart';
 
 /// A dropdown selector widget for choosing a folder for a note.
@@ -47,6 +47,7 @@ class _FolderOptionMenuState extends ConsumerState<FolderOptionMenu> {
           showEmptyNoteCount: false,
           searchBarPosition: SearchBarPosition.top,
           allowContextMenus: true,
+          hideEmptyOptionWhenNoFolders: true,
           onFolderSelected: (folder) {
             widget.onFolderSelected(folder);
             setModalState(() {
@@ -202,6 +203,7 @@ class _FolderOptionMenuState extends ConsumerState<FolderOptionMenu> {
                 showEmptyNoteCount: false,
                 searchBarPosition: SearchBarPosition.top,
                 allowContextMenus: true,
+                hideEmptyOptionWhenNoFolders: true,
                 onFolderSelected: (folder) {
                   widget.onFolderSelected(folder);
                   _menuController.close();

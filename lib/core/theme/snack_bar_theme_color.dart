@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:noteit/shared/overlays/snack_bar_manager.dart';
 
+
 @immutable
 class SnackBarThemeColor extends ThemeExtension<SnackBarThemeColor> {
   final Color errorBackground;
@@ -51,50 +52,33 @@ class SnackBarThemeColor extends ThemeExtension<SnackBarThemeColor> {
   /// using the active theme's [SnackBarThemeColor] extension or fallback colors.
   static (Color, Color) of(BuildContext? context, SnackBarMessageType type) {
     if (context != null) {
-      final ext = Theme.of(context).extension<SnackBarThemeColor>();
+      final theme = Theme.of(context);
+      final ext = theme.extension<SnackBarThemeColor>();
       if (ext != null) {
+        // Return existing theme color
         return ext.getColors(type);
       }
+      // Return generated
+      return SnackBarThemeColor.fromColorScheme(theme.colorScheme).getColors(type);
     }
-    return ofTheme(context != null ? Theme.of(context) : null, type);
+    return SnackBarThemeColor.light().getColors(type);
   }
 
-  /// Resolves colors directly from a [ThemeData] instance.
-  static (Color, Color) ofTheme(ThemeData? theme, SnackBarMessageType type) {
-    final ext = theme?.extension<SnackBarThemeColor>();
-    if (ext != null) {
-      return ext.getColors(type);
-    }
 
-    final colorScheme = theme?.colorScheme;
-    switch (type) {
-      case SnackBarMessageType.error:
-        return (
-          colorScheme?.errorContainer ?? const Color(0xFF8C1D18),
-          colorScheme?.onErrorContainer ?? const Color(0xFFFFDAD6),
-        );
-      case SnackBarMessageType.info:
-        return (
-          colorScheme?.secondaryContainer ?? const Color(0xFF004F53),
-          colorScheme?.onSecondaryContainer ?? const Color(0xFF99F5F8),
-        );
-      case SnackBarMessageType.suggestion:
-        return (
-          colorScheme?.tertiaryContainer ?? const Color(0xFF75122B),
-          colorScheme?.onTertiaryContainer ?? const Color(0xFFFFD9DF),
-        );
-      case SnackBarMessageType.warning:
-        return (
-          const Color(0xFF633B00),
-          const Color(0xFFFFDDBE),
-        );
-      case SnackBarMessageType.acknowledgment:
-        return (
-          colorScheme?.primaryContainer ?? const Color(0xFF262E7A),
-          colorScheme?.onPrimaryContainer ?? const Color(0xFFDFE2FF),
-        );
-    }
-  }
+
+  /// Dynamic factory generating snackBar colors automatically from a [ColorScheme].
+  factory SnackBarThemeColor.fromColorScheme(ColorScheme scheme) => SnackBarThemeColor(
+        errorBackground: scheme.errorContainer,
+        errorForeground: scheme.onErrorContainer,
+        infoBackground: scheme.secondaryContainer,
+        infoForeground: scheme.onSecondaryContainer,
+        acknowledgmentBackground: scheme.primaryContainer,
+        acknowledgmentForeground: scheme.onPrimaryContainer,
+        suggestionBackground: scheme.tertiaryContainer,
+        suggestionForeground: scheme.onTertiaryContainer,
+        warningBackground: scheme.surfaceContainerHighest,
+        warningForeground: scheme.onSurfaceVariant,
+      );
 
   factory SnackBarThemeColor.light() => const SnackBarThemeColor(
         errorBackground: Color(0xFFFCDADA),
@@ -110,17 +94,22 @@ class SnackBarThemeColor extends ThemeExtension<SnackBarThemeColor> {
       );
 
   factory SnackBarThemeColor.dark() => const SnackBarThemeColor(
-        errorBackground: Color(0xFF5C1D1D),
-        errorForeground: Color(0xFFFFB4AB),
-        infoBackground: Color(0xFF0F3854),
-        infoForeground: Color(0xFF89CFF0),
-        acknowledgmentBackground: Color(0xFF1E3A2B),
-        acknowledgmentForeground: Color(0xFF86EFAC),
-        suggestionBackground: Color(0xFF4A3410),
-        suggestionForeground: Color(0xFFFDE047),
-        warningBackground: Color(0xFF523305),
-        warningForeground: Color(0xFFFCD34D),
-      );
+
+    errorBackground: Color(0xFF421C1A),
+    errorForeground: Color(0xFFFF897D),
+
+    infoBackground: Color(0xFF1D375C),
+    infoForeground: Color(0xFFABC7D3),
+
+    acknowledgmentBackground: Color(0xFF004F53),
+    acknowledgmentForeground: Color(0xFF5CE1E6),
+
+    suggestionBackground: Color(0xFF3C4BA2),
+    suggestionForeground: Color(0xFFCACDF5),
+
+    warningBackground: Color(0xFF4A3B10),
+    warningForeground: Color(0xFFE2C53A),
+  );
 
   factory SnackBarThemeColor.amoled() => const SnackBarThemeColor(
         errorBackground: Color(0xFF2C0B0E),
@@ -269,4 +258,14 @@ class SnackBarThemeColor extends ThemeExtension<SnackBarThemeColor> {
       warningForeground: Color.lerp(warningForeground, other.warningForeground, t)!,
     );
   }
+}
+
+extension SnackBarThemeContextX on BuildContext {
+  /// Convenient accessor for active [SnackBarThemeColor] extension
+  SnackBarThemeColor get snackBarTheme =>
+      Theme.of(this).extension<SnackBarThemeColor>() ?? SnackBarThemeColor.light();
+
+  /// Convenient accessor for background & foreground color pair for a message type
+  (Color background, Color foreground) snackBarColors(SnackBarMessageType type) =>
+      snackBarTheme.getColors(type);
 }

@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/helpers/platform_helper.dart';
 import '../../features/lock/lock_manger/lock_manager.dart';
 import '../../features/lock/password_prompt_helper.dart';
-import '../../features/folders/core/providers.dart';
+import '../../features/folders/providers/folder_providers.dart';
 import '../../features/home/view/desktop/content_panel/core/navigator.dart';
 import '../../features/home/viewmodel/viewmodel.dart';
 import '../note_card/core/note_action.dart';

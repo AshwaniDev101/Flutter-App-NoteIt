@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/util/logger.dart';
 import '../../../database/shared_preference/shared_preference_manager.dart';
 import '../../../features/cloud_sync/data/cloud_sync_service.dart';
-import '../../../features/folders/core/providers.dart';
+import '../../../features/folders/providers/folder_providers.dart';
 import '../../../features/home/core/providers.dart';
 import '../../../features/lock/lock_manger/lock_manager.dart';
 import '../../../features/reminder/reminder_manager.dart';

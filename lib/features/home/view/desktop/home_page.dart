@@ -12,7 +12,7 @@ import 'package:noteit/core/util/app_warmup_service.dart';
 import 'package:noteit/core/sync/sync_orchestrator.dart';
 import 'package:noteit/database/drift/keybindings/keybindings_dao.dart';
 import 'package:noteit/database/drift/notes/notes_dao.dart';
-import '../../../folders/core/providers.dart';
+import '../../../folders/providers/folder_providers.dart';
 import '../../../keybinding/shortcut_config.dart';
 import 'package:noteit/features/home/core/providers.dart';
 import '../../viewmodel/viewmodel.dart';

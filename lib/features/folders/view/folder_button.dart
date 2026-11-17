@@ -1,28 +1,13 @@
-export 'dialogs/folder_editor_dialog.dart';
-export 'widgets/folder_list_item.dart';
-export 'widgets/folder_selector_container.dart';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:noteit/core/theme/folder_theme_colors.dart';
 
 import '../../../core/helpers/platform_helper.dart';
-import '../../../database/drift/folders/folders_dao.dart';
 import '../../../database/drift/local_database.dart';
-import '../../../database/drift/notes/notes_dao.dart';
 import '../../../shared/menus/app_bottom_sheet.dart';
+import '../providers/folder_providers.dart';
 import 'widgets/folder_selector_container.dart';
-
-final activeFoldersStreamProvider = StreamProvider<List<FolderWithCount>>((ref) {
-  final foldersDao = ref.watch(foldersDaoProvider);
-  return foldersDao.watchActiveFoldersWithCounts();
-});
-
-final totalNotesCountStreamProvider = StreamProvider<int>((ref) {
-  final notesDao = ref.watch(notesDaoProvider);
-  return notesDao.watchActiveNotesCount();
-});
 
 /// Reusable folder selection button and dropdown.
 ///
@@ -82,7 +67,6 @@ class _FolderButtonState extends ConsumerState<FolderButton> {
     final Folder? activeFolder = widget.selectedFolder;
     final colorScheme = Theme.of(context).colorScheme;
 
-    final currentName = activeFolder?.name ?? widget.emptyLabel;
     final currentColor = activeFolder != null
         ? FolderThemeColors.of(context, activeFolder.colorIndex)
         : colorScheme.onSurfaceVariant;
@@ -119,17 +103,11 @@ class _FolderButtonState extends ConsumerState<FolderButton> {
                       : colorScheme.outlineVariant.withValues(alpha: 0.4),
                 ),
                 borderRadius: BorderRadius.circular(10),
-                // color: isOpen
-                //     ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.6)
-                //     : _isHovering
-                //     ? colorScheme.surfaceContainerLowest
-                //     : Colors.transparent,
-
                 color: isOpen
                     ? colorScheme.surfaceContainerLow
                     : _isHovering
                     ? colorScheme.surfaceContainer
-                    : colorScheme.surfaceContainerLow
+                    : colorScheme.surfaceContainerLow,
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -146,7 +124,7 @@ class _FolderButtonState extends ConsumerState<FolderButton> {
                             color: currentColor.withValues(alpha: 0.4),
                             blurRadius: 4,
                             offset: const Offset(0, 1),
-                          )
+                          ),
                         ],
                       ),
                     ),
@@ -154,7 +132,7 @@ class _FolderButtonState extends ConsumerState<FolderButton> {
                   ],
                   Flexible(
                     child: Text(
-                      currentName,
+                      "Folders",
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(

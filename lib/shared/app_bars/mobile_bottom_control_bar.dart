@@ -2,8 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../features/folders/core/providers.dart';
-import '../../features/folders/view/folder_selector.dart';
+import '../../features/folders/providers/folder_providers.dart';
+import '../../features/folders/view/folder_button.dart';
 import '../../features/home/core/db_sorting_filtering.dart';
 import '../../features/home/core/providers.dart';
 import '../../features/home/viewmodel/viewmodel.dart';

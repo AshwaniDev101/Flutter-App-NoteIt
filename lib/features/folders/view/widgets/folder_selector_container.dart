@@ -5,8 +5,11 @@ import '../../../../core/util/logger.dart';
 import '../../../../database/drift/folders/folders_dao.dart';
 import '../../../../database/drift/local_database.dart';
 import '../../../../shared/app_bars/app_search_bar.dart';
+import '../../providers/folder_providers.dart';
 import '../../viewmodel/folder_view_model.dart';
-import '../folder_selector.dart';
+import '../dialogs/folder_editor_dialog.dart';
+import 'folder_context_menu.dart';
+import 'folder_list_item.dart';
 
 enum SearchBarPosition { top, bottom }
 
@@ -19,6 +22,7 @@ class FolderSelectorContainer extends ConsumerStatefulWidget {
   final bool showEmptyNoteCount;
   final SearchBarPosition searchBarPosition;
   final bool allowContextMenus;
+  final bool hideEmptyOptionWhenNoFolders;
   final EdgeInsetsGeometry padding;
 
   const FolderSelectorContainer({
@@ -31,6 +35,7 @@ class FolderSelectorContainer extends ConsumerStatefulWidget {
     this.showEmptyNoteCount = false,
     this.searchBarPosition = SearchBarPosition.bottom,
     this.allowContextMenus = true,
+    this.hideEmptyOptionWhenNoFolders = false,
     this.padding = const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 0.0),
   });
 
@@ -58,148 +63,7 @@ class _FolderSelectorContainerState extends ConsumerState<FolderSelectorContaine
     ref.read(folderViewModelProvider.notifier).clearSearchQuery();
   }
 
-  Widget _buildMenuItem(IconData icon, String label, {Color? color}) {
-    return Row(
-      children: [
-        Icon(icon, size: 18, color: color),
-        const SizedBox(width: 12),
-        Text(label, style: TextStyle(fontSize: 14, color: color, fontWeight: FontWeight.w500)),
-      ],
-    );
-  }
 
-  void _showFolderContextMenu(BuildContext context, Folder folder, Offset? position) async {
-    if (!widget.allowContextMenus) return;
-
-    final Offset tapPosition = position ?? Offset.zero;
-    RelativeRect menuPosition;
-
-    if (tapPosition != Offset.zero) {
-      menuPosition = RelativeRect.fromLTRB(
-        tapPosition.dx, tapPosition.dy, tapPosition.dx + 1, tapPosition.dy + 1,
-      );
-    } else {
-      final RenderBox? box = context.findRenderObject() as RenderBox?;
-      if (box != null && box.attached) {
-        final topLeft = box.localToGlobal(Offset.zero);
-        final size = box.size;
-        menuPosition = RelativeRect.fromLTRB(
-          topLeft.dx + 16,
-          topLeft.dy + size.height / 2,
-          topLeft.dx + size.width,
-          topLeft.dy + size.height,
-        );
-      } else {
-        menuPosition = const RelativeRect.fromLTRB(100, 100, 101, 101);
-      }
-    }
-
-    final isPinned = folder.pinnedAt != null;
-    final errorColor = Theme.of(context).colorScheme.error;
-
-    final selectedAction = await showMenu<String>(
-      context: context,
-      position: menuPosition,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 8,
-      constraints: const BoxConstraints(minWidth: 160),
-      items: [
-        PopupMenuItem(
-          value: 'pin',
-          height: 40,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: _buildMenuItem(
-            isPinned ? Icons.push_pin_rounded : Icons.push_pin_outlined,
-            isPinned ? 'Unpin' : 'Pin',
-          ),
-        ),
-        PopupMenuItem(
-          value: 'update',
-          height: 40,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: _buildMenuItem(Icons.edit_outlined, 'Edit'),
-        ),
-        const PopupMenuDivider(height: 8),
-        PopupMenuItem(
-          value: 'delete',
-          height: 40,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: _buildMenuItem(Icons.delete_outline_rounded, 'Delete', color: errorColor),
-        ),
-      ],
-    );
-
-    if (selectedAction != null && mounted) {
-      _handleContextMenuAction(selectedAction, folder);
-    }
-  }
-
-  Future<void> _handleContextMenuAction(String action, Folder folder) async {
-    final viewModel = ref.read(folderViewModelProvider.notifier);
-
-    switch (action) {
-      case 'pin':
-        await viewModel.togglePinStatus(folder.uuid);
-        break;
-
-      case 'update':
-        final result = await showDialog<Map<String, dynamic>>(
-          context: context,
-          builder: (context) => FolderEditorDialog(
-            initialName: folder.name,
-            initialColorIndex: folder.colorIndex,
-          ),
-        );
-
-        if (result != null && mounted) {
-          await viewModel.updateFolder(
-            uuid: folder.uuid,
-            name: result['name'],
-            colorIndex: result['colorIndex'],
-          );
-
-          if (widget.selectedFolder?.uuid == folder.uuid) {
-            final dao = ref.read(foldersDaoProvider);
-            final updatedFolder = (await dao.select(dao.folders).get()).firstWhere((f) => f.uuid == folder.uuid);
-            widget.onFolderSelected(updatedFolder);
-          }
-        }
-        break;
-
-      case 'delete':
-        final confirm = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: const Text('Delete Folder?'),
-            content: Text('Are you sure you want to delete "${folder.name}"?\nNotes inside will be kept safely.'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.error,
-                  foregroundColor: Theme.of(context).colorScheme.onError,
-                  elevation: 0,
-                ),
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Delete'),
-              ),
-            ],
-          ),
-        );
-
-        if (confirm == true && mounted) {
-          await viewModel.softDeleteFolder(folder.uuid, platform: 'desktop');
-          if (widget.selectedFolder?.uuid == folder.uuid) {
-            widget.onFolderSelected(null);
-          }
-        }
-        break;
-    }
-  }
 
   Future<void> _showCreateFolderDialog(BuildContext context) async {
     final result = await showDialog<Map<String, dynamic>>(
@@ -261,6 +125,54 @@ class _FolderSelectorContainerState extends ConsumerState<FolderSelectorContaine
     );
   }
 
+  Widget _buildEmptyFoldersView(BuildContext context, ColorScheme colorScheme, TextTheme textTheme) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.folder_off_outlined,
+              size: 40,
+              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'No Folders',
+              style: textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'There are no folders, Create folder to use them',
+              style: textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            if (widget.allowContextMenus) ...[
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: () => _showCreateFolderDialog(context),
+                icon: const Icon(Icons.add_rounded, size: 18),
+                label: const Text('Create Folder'),
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  textStyle: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
@@ -305,12 +217,17 @@ class _FolderSelectorContainerState extends ConsumerState<FolderSelectorContaine
               loading: () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
               error: (err, stack) => Center(child: Text('Error: $err')),
               data: (folders) {
+                if (folders.isEmpty && widget.hideEmptyOptionWhenNoFolders) {
+                  return _buildEmptyFoldersView(context, colorScheme, textTheme);
+                }
+
                 final lowerQuery = folderState.searchQuery.toLowerCase().trim();
-                final showEmptyOption = lowerQuery.isEmpty ||
-                    widget.emptyLabel.toLowerCase().contains(lowerQuery) ||
-                    'all notes'.contains(lowerQuery) ||
-                    'no folder'.contains(lowerQuery) ||
-                    'none'.contains(lowerQuery);
+                final showEmptyOption = (folders.isNotEmpty || !widget.hideEmptyOptionWhenNoFolders) &&
+                    (lowerQuery.isEmpty ||
+                        widget.emptyLabel.toLowerCase().contains(lowerQuery) ||
+                        'all notes'.contains(lowerQuery) ||
+                        'no folder'.contains(lowerQuery) ||
+                        'none'.contains(lowerQuery));
 
                 final filteredFolders = folders.where((f) {
                   return f.folder.name.toLowerCase().contains(lowerQuery);
@@ -423,7 +340,14 @@ class _FolderSelectorContainerState extends ConsumerState<FolderSelectorContaine
                         allowPinning: widget.allowContextMenus,
                         onSelect: () => widget.onFolderSelected(folderData),
                         onContextMenu: widget.allowContextMenus ? (details) {
-                          _showFolderContextMenu(context, folderData, details?.globalPosition);
+                          FolderContextMenu.show(
+                            context: context,
+                            ref: ref,
+                            folder: folderData,
+                            position: details?.globalPosition,
+                            selectedFolder: widget.selectedFolder,
+                            onFolderSelected: widget.onFolderSelected,
+                          );
                         } : null,
                       );
                     }),

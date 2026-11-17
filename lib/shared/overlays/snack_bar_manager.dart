@@ -13,6 +13,39 @@ enum SnackBarMessageType {
   warning,        // For warnings/cautionary alerts
 }
 
+extension SnackBarMessageTypeX on SnackBarMessageType {
+  /// Maps custom enum to Toastification's internal types
+  ToastificationType get toastType {
+    switch (this) {
+      case SnackBarMessageType.error:
+        return ToastificationType.error;
+      case SnackBarMessageType.info:
+      case SnackBarMessageType.suggestion:
+        return ToastificationType.info;
+      case SnackBarMessageType.acknowledgment:
+        return ToastificationType.success;
+      case SnackBarMessageType.warning:
+        return ToastificationType.warning;
+    }
+  }
+
+  /// Default icon corresponding to the message type
+  IconData get defaultIcon {
+    switch (this) {
+      case SnackBarMessageType.error:
+        return Icons.error_outline_rounded;
+      case SnackBarMessageType.info:
+        return Icons.info_outline_rounded;
+      case SnackBarMessageType.acknowledgment:
+        return Icons.check_circle_outline_rounded;
+      case SnackBarMessageType.suggestion:
+        return Icons.lightbulb_outline_rounded;
+      case SnackBarMessageType.warning:
+        return Icons.warning_amber_rounded;
+    }
+  }
+}
+
 
 class SnackBarManager {
   static void show({
@@ -39,7 +72,7 @@ class SnackBarManager {
 
     toastification.show(
       context: effectiveContext,
-      type: _getToastType(type),
+      type: type.toastType,
       style: ToastificationStyle.fillColored,
 
       // -- STRICTLY THEME-BASED COLORS APPLIED HERE --
@@ -51,7 +84,7 @@ class SnackBarManager {
       autoCloseDuration: duration,
       showProgressBar: showProgressBar,
 
-      icon: _getIcon(type, customIcon, foregroundColor),
+      icon: Icon(customIcon ?? type.defaultIcon, color: foregroundColor),
 
       callbacks: ToastificationCallbacks(
         onTap: (toastItem) => onTap?.call(),
@@ -100,39 +133,5 @@ class SnackBarManager {
       )
           : null,
     );
-  }
-
-  /// Maps your custom enum to Toastification's internal types
-  static ToastificationType _getToastType(SnackBarMessageType type) {
-    switch (type) {
-      case SnackBarMessageType.error:
-        return ToastificationType.error;
-      case SnackBarMessageType.info:
-        return ToastificationType.info;
-      case SnackBarMessageType.acknowledgment:
-        return ToastificationType.success;
-      case SnackBarMessageType.suggestion:
-        return ToastificationType.info;
-      case SnackBarMessageType.warning:
-        return ToastificationType.warning;
-    }
-  }
-
-  /// Returns the appropriate icon, tinted to match the foreground color perfectly
-  static Widget? _getIcon(SnackBarMessageType type, IconData? customIcon, Color iconColor) {
-    if (customIcon != null) return Icon(customIcon, color: iconColor);
-
-    switch (type) {
-      case SnackBarMessageType.error:
-        return Icon(Icons.error_outline_rounded, color: iconColor);
-      case SnackBarMessageType.info:
-        return Icon(Icons.info_outline_rounded, color: iconColor);
-      case SnackBarMessageType.acknowledgment:
-        return Icon(Icons.check_circle_outline_rounded, color: iconColor);
-      case SnackBarMessageType.suggestion:
-        return Icon(Icons.lightbulb_outline_rounded, color: iconColor);
-      case SnackBarMessageType.warning:
-        return Icon(Icons.warning_amber_rounded, color: iconColor);
-    }
   }
 }

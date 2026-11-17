@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../database/drift/synced_devices/synced_devices_dao.dart';
 import '../../database/firebase/auth/firebase_provider.dart';
 import '../../features/archive/providers/archive_providers.dart';
-import '../../features/folders/view/folder_selector.dart';
+import '../../features/folders/providers/folder_providers.dart';
 import '../../features/keybinding/shortcut_config.dart';
 import '../../features/trash/providers/trash_providers.dart';
 import 'logger.dart';

@@ -7,13 +7,13 @@ import '../../../core/sync/sync_orchestrator.dart';
 import '../../../core/util/logger.dart';
 import '../../../database/drift/folders/folders_dao.dart';
 import '../../../database/drift/local_database.dart';
-import '../../../database/drift/notes/notes_dao.dart';
 import '../../../shared/app_bars/app_search_bar.dart';
 import '../../../shared/overlays/app_scaffold.dart';
 import '../../home/view/desktop/content_panel/core/navigator.dart';
-import '../core/providers.dart';
+import '../providers/folder_providers.dart';
 import '../viewmodel/folder_view_model.dart';
-import 'folder_selector.dart';
+import 'dialogs/folder_editor_dialog.dart';
+import 'widgets/folder_context_menu.dart';
 
 /// Full-page / right-panel folder selector & management page in a Grid format.
 class MoveToFolderPage extends ConsumerStatefulWidget {
@@ -81,17 +81,10 @@ class _MoveToFolderPageState extends ConsumerState<MoveToFolderPage> {
     final List<String> targetUuids = widget.targetNoteUuids ?? ref.read(movingNoteIdsProvider);
 
     if (targetUuids.isNotEmpty) {
-      final notesDao = ref.read(notesDaoProvider);
-      int updatedCount = 0;
-
-      for (final uuid in targetUuids) {
-        final success = await notesDao.updateNoteFolder(uuid, folder.uuid);
-        if (success) updatedCount++;
-      }
-
-      if (updatedCount > 0) {
-        ref.read(syncOrchestratorProvider).triggerSync();
-      }
+      final updatedCount = await ref.read(folderViewModelProvider.notifier).moveNotesToFolder(
+            targetUuids: targetUuids,
+            folderUuid: folder.uuid,
+          );
 
       // Clear pending moving note IDs state
       ref.read(movingNoteIdsProvider.notifier).clear();
@@ -116,125 +109,7 @@ class _MoveToFolderPageState extends ConsumerState<MoveToFolderPage> {
     }
   }
 
-  Widget _buildMenuItem(IconData icon, String label, {Color? color}) {
-    return Row(
-      children: [
-        Icon(icon, size: 18, color: color),
-        const SizedBox(width: 12),
-        Text(
-          label,
-          style: TextStyle(fontSize: 14, color: color, fontWeight: FontWeight.w500),
-        ),
-      ],
-    );
-  }
 
-  void _showFolderContextMenu(BuildContext context, Folder folder, Offset? position) async {
-    final Offset tapPosition = position ?? Offset.zero;
-    final RelativeRect menuPosition = RelativeRect.fromLTRB(
-      tapPosition.dx,
-      tapPosition.dy,
-      tapPosition.dx + 1,
-      tapPosition.dy + 1,
-    );
-
-    final isPinned = folder.pinnedAt != null;
-    final errorColor = Theme.of(context).colorScheme.error;
-
-    final selectedAction = await showMenu<String>(
-      context: context,
-      position: menuPosition,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 8,
-      constraints: const BoxConstraints(minWidth: 160),
-      items: [
-        PopupMenuItem(
-          value: 'pin',
-          height: 40,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: _buildMenuItem(
-            isPinned ? Icons.push_pin_rounded : Icons.push_pin_outlined,
-            isPinned ? 'Unpin' : 'Pin',
-          ),
-        ),
-        PopupMenuItem(
-          value: 'update',
-          height: 40,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: _buildMenuItem(Icons.edit_outlined, 'Edit'),
-        ),
-        const PopupMenuDivider(height: 8),
-        PopupMenuItem(
-          value: 'delete',
-          height: 40,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: _buildMenuItem(Icons.delete_outline_rounded, 'Delete', color: errorColor),
-        ),
-      ],
-    );
-
-    if (selectedAction != null && mounted) {
-      _handleContextMenuAction(selectedAction, folder);
-    }
-  }
-
-  Future<void> _handleContextMenuAction(String action, Folder folder) async {
-    final viewModel = ref.read(folderViewModelProvider.notifier);
-
-    switch (action) {
-      case 'pin':
-        await viewModel.togglePinStatus(folder.uuid);
-        break;
-
-      case 'update':
-        final result = await showDialog<Map<String, dynamic>>(
-          context: context,
-          builder: (context) => FolderEditorDialog(
-            initialName: folder.name,
-            initialColorIndex: folder.colorIndex,
-          ),
-        );
-
-        if (result != null && mounted) {
-          await viewModel.updateFolder(
-            uuid: folder.uuid,
-            name: result['name'],
-            colorIndex: result['colorIndex'],
-          );
-        }
-        break;
-
-      case 'delete':
-        final confirm = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: const Text('Delete Folder?'),
-            content: Text('Are you sure you want to delete "${folder.name}"?\nNotes inside will be kept safely.'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.error,
-                  foregroundColor: Theme.of(context).colorScheme.onError,
-                  elevation: 0,
-                ),
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Delete'),
-              ),
-            ],
-          ),
-        );
-
-        if (confirm == true && mounted) {
-          await viewModel.softDeleteFolder(folder.uuid, platform: 'desktop');
-        }
-        break;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -369,7 +244,12 @@ class _MoveToFolderPageState extends ConsumerState<MoveToFolderPage> {
                         folderWithCount: item,
                         onTap: () => _handleFolderSelected(item.folder),
                         onContextMenu: (details) {
-                          _showFolderContextMenu(context, item.folder, details?.globalPosition);
+                          FolderContextMenu.show(
+                            context: context,
+                            ref: ref,
+                            folder: item.folder,
+                            position: details?.globalPosition,
+                          );
                         },
                       );
                     },
