@@ -74,7 +74,7 @@ class SortMenuButton extends StatelessWidget {
     return AdaptiveMenuButton<HomeMenuAction>(
       icon: icon,
       tooltip: tooltip,
-      sheetTitle: 'Sort & Filter',
+      // sheetTitle: 'Sort & Filter',
       sections: sections,
     );
   }

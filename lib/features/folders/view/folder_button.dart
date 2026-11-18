@@ -47,7 +47,7 @@ class _FolderButtonState extends ConsumerState<FolderButton> {
         return FolderSelectorContainer(
           selectedFolder: localSelectedFolder,
           emptyLabel: widget.emptyLabel,
-          title: 'Folders Filter',
+          title: 'FOLDERS',
           emptyIcon: Icons.format_align_left,
           showEmptyNoteCount: true,
           searchBarPosition: SearchBarPosition.bottom,
@@ -222,7 +222,7 @@ class _FolderButtonState extends ConsumerState<FolderButton> {
               child: FolderSelectorContainer(
                 selectedFolder: widget.selectedFolder,
                 emptyLabel: widget.emptyLabel,
-                title: 'Folders Filter',
+                title: 'Folders',
                 emptyIcon: Icons.format_align_left,
                 showEmptyNoteCount: true,
                 searchBarPosition: SearchBarPosition.bottom,

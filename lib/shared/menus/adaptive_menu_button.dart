@@ -177,7 +177,7 @@ class _AdaptiveMenuButtonState<T> extends State<AdaptiveMenuButton<T>> {
   Widget _buildSectionHeader(BuildContext context, String title) {
     final colorScheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
       child: Text(
         title,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(

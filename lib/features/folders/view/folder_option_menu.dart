@@ -47,7 +47,6 @@ class _FolderOptionMenuState extends ConsumerState<FolderOptionMenu> {
           showEmptyNoteCount: false,
           searchBarPosition: SearchBarPosition.top,
           allowContextMenus: true,
-          hideEmptyOptionWhenNoFolders: true,
           onFolderSelected: (folder) {
             widget.onFolderSelected(folder);
             setModalState(() {
@@ -198,12 +197,11 @@ class _FolderOptionMenuState extends ConsumerState<FolderOptionMenu> {
               child: FolderSelectorContainer(
                 selectedFolder: widget.selectedFolder,
                 emptyLabel: widget.emptyLabel,
-                title: 'Move to Folder',
+                title: 'Change Folder',
                 emptyIcon: Icons.circle_outlined,
                 showEmptyNoteCount: false,
                 searchBarPosition: SearchBarPosition.top,
                 allowContextMenus: true,
-                hideEmptyOptionWhenNoFolders: true,
                 onFolderSelected: (folder) {
                   widget.onFolderSelected(folder);
                   _menuController.close();

@@ -51,7 +51,7 @@ class ViewMenuButton extends StatelessWidget {
     return AdaptiveMenuButton<NoteViewType>(
       icon: icon,
       tooltip: tooltip,
-      sheetTitle: 'View Layout',
+      // sheetTitle: 'View Layout',
       sections: sections,
     );
   }
