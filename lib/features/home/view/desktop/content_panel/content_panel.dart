@@ -25,6 +25,7 @@ import 'package:noteit/features/trash/view/trash_page.dart';
 import 'package:noteit/features/reminder/reminder_settings_page.dart';
 import 'package:noteit/features/themes/view/theme_page.dart';
 
+import '../../../../../core/helpers/inline_action_badges.dart';
 import '../../../../../core/helpers/platform_helper.dart';
 import '../../../../../shared/app_bars/desktop_window_controls.dart';
 import '../../../../workspace/view/widgets/workspace_badge.dart';
@@ -228,40 +229,20 @@ class _HomepagePlaceholder extends StatelessWidget {
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 SelectableText(
-                  'Select a note from the list or press ',
+                  'Select a note from the list or create a new note',
                   style: textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
                 ),
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: colorScheme.shadow.withValues(alpha: 0.05),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    Icons.edit_rounded,
-                    size: 14,
-                    color: colorScheme.onPrimaryContainer,
-                  ),
-                ),
-                SelectableText(
-                  ' to create a new note.',
-                  style: textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
+                // InlineBadge.action(
+                //   icon: Icons.edit_rounded,
+                // ),
+                // SelectableText(
+                //   ' to create a new note.',
+                //   style: textTheme.bodyMedium?.copyWith(
+                //     color: colorScheme.onSurfaceVariant,
+                //   ),
+                // ),
               ],
             )
           ],

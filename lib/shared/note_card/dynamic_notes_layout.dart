@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-
-import 'package:noteit/core/theme/folder_theme_colors.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/util/device_info.dart';
@@ -8,6 +6,7 @@ import 'package:noteit/database/drift/local_database.dart';
 import 'package:noteit/database/drift/notes/notes_dao.dart';
 import 'package:noteit/features/reminder/reminder_page.dart';
 
+import 'package:noteit/core/helpers/inline_action_badges.dart';
 import 'package:noteit/core/helpers/platform_helper.dart';
 import 'package:noteit/core/sync/sync_orchestrator.dart';
 import '../../features/folders/providers/folder_providers.dart';
@@ -356,41 +355,10 @@ class DynamicNotesLayout extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(width: 4),
-                  // The "Folder selector like" Container for the folder
                   Flexible(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                        border: Border.all(
-                          color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: FolderThemeColors.of(context, activeFolder.colorIndex),
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Flexible(
-                            child: Text(
-                              activeFolder.name,
-                              style: textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: colorScheme.onSurface,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
+                    child: InlineBadge.folder(
+                      folder: activeFolder,
+                      context: context,
                     ),
                   ),
                 ],
@@ -406,15 +374,68 @@ class DynamicNotesLayout extends ConsumerWidget {
 
             const SizedBox(height: 12),
 
-            Text(
-              isFolderSelected
-                  ? "Press + to add a note to this folder."
-                  : "Create your first note to get started.",
-              textAlign: TextAlign.center,
-              style: textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+
+            if(isFolderSelected)...[
+              Wrap(
+                alignment: WrapAlignment.center,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  SelectableText(
+                    'Press ',
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  InlineBadge.action(
+                    icon: Icons.edit_rounded,
+                  ),
+                  SelectableText(
+                    ' to add a note to this folder.',
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
               ),
-            ),
+            ] else...[
+
+              // Wrap(
+              //   children: [
+              //
+              //
+              //
+              //     SelectableText(
+              //       'Press ',
+              //       style: textTheme.bodyMedium?.copyWith(
+              //         color: colorScheme.onSurfaceVariant,
+              //       ),
+              //     ),
+              //     InlineBadge.action(
+              //       icon: Icons.edit_rounded,
+              //     ),
+              //   ],
+              // ),
+
+              SelectableText(
+                'Create your first note to get started.',
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+
+            ]
+
+
+
+            // Text(
+            //   isFolderSelected
+            //       ? "Press + to add a note to this folder."
+            //       : "Create your first note to get started.",
+            //   textAlign: TextAlign.center,
+            //   style: textTheme.bodyMedium?.copyWith(
+            //     color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+            //   ),
+            // ),
           ],
         ),
       ),

@@ -30,7 +30,7 @@ class FolderSelectorContainer extends ConsumerStatefulWidget {
     required this.onFolderSelected,
     this.title = 'Folders',
     this.emptyLabel = 'All Notes',
-    this.emptyIcon = Icons.format_align_left,
+    this.emptyIcon = Icons.home,
     this.showEmptyNoteCount = false,
     this.searchBarPosition = SearchBarPosition.bottom,
     this.allowContextMenus = true,
@@ -257,7 +257,7 @@ class _FolderSelectorContainerState
 
                 final lowerQuery = folderState.searchQuery.toLowerCase().trim();
                 final showEmptyOption =
-                    allNoteCount > 0 &&
+                    folders.isNotEmpty &&
                     (lowerQuery.isEmpty ||
                         widget.emptyLabel.toLowerCase().contains(lowerQuery) ||
                         'all notes'.contains(lowerQuery) ||

@@ -66,6 +66,7 @@ class _FolderButtonState extends ConsumerState<FolderButton> {
   Widget _buildTriggerButton(BuildContext context, {required bool isOpen, required VoidCallback onTap}) {
     final Folder? activeFolder = widget.selectedFolder;
     final colorScheme = Theme.of(context).colorScheme;
+    final currentName = activeFolder?.name ?? widget.emptyLabel;
 
     final currentColor = activeFolder != null
         ? FolderThemeColors.of(context, activeFolder.colorIndex)
@@ -132,7 +133,7 @@ class _FolderButtonState extends ConsumerState<FolderButton> {
                   ],
                   Flexible(
                     child: Text(
-                      "Folders",
+                      currentName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(
@@ -223,7 +224,7 @@ class _FolderButtonState extends ConsumerState<FolderButton> {
                 selectedFolder: widget.selectedFolder,
                 emptyLabel: widget.emptyLabel,
                 title: 'Folders',
-                emptyIcon: Icons.format_align_left,
+                // emptyIcon: Icons.format_align_left,
                 showEmptyNoteCount: true,
                 searchBarPosition: SearchBarPosition.bottom,
                 allowContextMenus: widget.showContextMenus,
