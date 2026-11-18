@@ -68,23 +68,10 @@ class _AdaptiveMenuButtonState<T> extends State<AdaptiveMenuButton<T>> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (widget.sheetTitle.isNotEmpty) ...[
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
-                child: Text(
-                  widget.sheetTitle,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-              ),
-              const Divider(indent: 16, endIndent: 16),
-            ],
+            if (widget.sheetTitle.isNotEmpty)
+              AppBottomSheetHeader(title: widget.sheetTitle),
             for (int i = 0; i < widget.sections.length; i++) ...[
-              if (i > 0 && widget.sections[i].title == null)
-                const SizedBox(height: 8),
-              if (widget.sections[i].title != null)
-                _buildSectionHeader(context, widget.sections[i].title!),
+              if (i > 0) const SizedBox(height: 8),
               for (final item in widget.sections[i].items)
                 _buildActionTile(
                   context,
@@ -107,6 +94,7 @@ class _AdaptiveMenuButtonState<T> extends State<AdaptiveMenuButton<T>> {
   @override
   Widget build(BuildContext context) {
     final isMobile = !PlatformHelper.isWideLayout(context);
+    final colorScheme = Theme.of(context).colorScheme;
 
     if (isMobile) {
       return IconButton(
@@ -137,55 +125,50 @@ class _AdaptiveMenuButtonState<T> extends State<AdaptiveMenuButton<T>> {
         );
       },
       menuChildren: [
-        Card(
-          color: Theme.of(context).colorScheme.surfaceContainer,
-          elevation: 2,
-          margin: const EdgeInsets.all(4.0),
-          child: SizedBox(
-            width: widget.desktopWidth,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  for (int i = 0; i < widget.sections.length; i++) ...[
-                    if (i > 0 && widget.sections[i].title != null)
-                      const Divider(indent: 12, endIndent: 12),
-                    if (widget.sections[i].title != null)
-                      _buildSectionHeader(context, widget.sections[i].title!),
-                    for (final item in widget.sections[i].items)
-                      _buildActionTile(
-                        context,
-                        item,
-                        onSelect: () {
-                          if (widget.closeOnSelect) {
-                            _menuController.close();
-                          }
-                        },
-                      ),
+        Padding(
+          padding: const EdgeInsets.only(top: 4.0),
+          child: Material(
+            color: colorScheme.surfaceContainer,
+            elevation: 4,
+            shadowColor: Colors.black.withValues(alpha: 0.25),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16.0),
+              side: BorderSide(
+                color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+                width: 1,
+              ),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: SizedBox(
+              width: widget.desktopWidth,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (widget.sheetTitle.isNotEmpty)
+                      AppBottomSheetHeader(title: widget.sheetTitle),
+                    for (int i = 0; i < widget.sections.length; i++) ...[
+                      if (i > 0) const SizedBox(height: 8),
+                      for (final item in widget.sections[i].items)
+                        _buildActionTile(
+                          context,
+                          item,
+                          onSelect: () {
+                            if (widget.closeOnSelect) {
+                              _menuController.close();
+                            }
+                          },
+                        ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildSectionHeader(BuildContext context, String title) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
-      child: Text(
-        title,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: colorScheme.primary,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.0,
-            ),
-      ),
     );
   }
 

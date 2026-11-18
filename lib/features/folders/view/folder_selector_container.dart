@@ -5,6 +5,7 @@ import '../../../core/util/logger.dart';
 import '../../../database/drift/folders/folders_dao.dart';
 import '../../../database/drift/local_database.dart';
 import '../../../shared/app_bars/app_search_bar.dart';
+import '../../../shared/menus/app_bottom_sheet.dart';
 import '../providers/folder_providers.dart';
 import '../viewmodel/folder_view_model.dart';
 import 'dialogs/folder_editor_dialog.dart';
@@ -45,6 +46,7 @@ class FolderSelectorContainer extends ConsumerStatefulWidget {
 class _FolderSelectorContainerState
     extends ConsumerState<FolderSelectorContainer> {
   late final TextEditingController _searchController;
+  bool _isEmptyOptionHovering = false;
 
   @override
   void initState() {
@@ -205,32 +207,8 @@ class _FolderSelectorContainerState
         mainAxisSize: MainAxisSize.max,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (widget.title.isNotEmpty) ...[
-            Padding(
-              padding: const EdgeInsets.fromLTRB(0, 8, 20, 8),
-              child: Text(
-                widget.title,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: colorScheme.primary,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.0,
-                ),
-              ),
-            ),
-            // Padding(
-            //   padding: const EdgeInsets.only(left: 6.0, right: 2.0, bottom: 8.0),
-            //   child: Text(
-            //     widget.title,
-            //     style: textTheme.labelMedium?.copyWith(
-            //       fontWeight: FontWeight.w700,
-            //       letterSpacing: 1.2,
-            //       // color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
-            //       color: colorScheme.primaryContainer,
-            //     ),
-            //   ),
-            // ),
-            // const SizedBox(height: 4),
-          ],
+          if (widget.title.isNotEmpty)
+            AppBottomSheetHeader(title: widget.title),
 
           if (widget.searchBarPosition == SearchBarPosition.top) ...[
             Padding(
@@ -297,6 +275,8 @@ class _FolderSelectorContainerState
                               alpha: 0.04,
                             ),
                             onTap: () => widget.onFolderSelected(null),
+                            onHover: (hovering) =>
+                                setState(() => _isEmptyOptionHovering = hovering),
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 150),
                               padding: const EdgeInsets.symmetric(
@@ -308,7 +288,10 @@ class _FolderSelectorContainerState
                                     ? colorScheme.primaryContainer.withValues(
                                         alpha: 0.4,
                                       )
-                                    : Colors.transparent,
+                                    : _isEmptyOptionHovering
+                                        ? colorScheme.surfaceContainerHighest
+                                            .withValues(alpha: 0.5)
+                                        : Colors.transparent,
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Row(
@@ -322,8 +305,10 @@ class _FolderSelectorContainerState
                                         size: 18,
                                         color: activeFolder == null
                                             ? colorScheme.primary
-                                            : colorScheme.onSurfaceVariant
-                                                  .withValues(alpha: 0.7),
+                                            : _isEmptyOptionHovering
+                                                ? colorScheme.onSurface
+                                                : colorScheme.onSurfaceVariant
+                                                      .withValues(alpha: 0.7),
                                       ),
                                     ),
                                   ),
@@ -336,7 +321,9 @@ class _FolderSelectorContainerState
                                             : FontWeight.w500,
                                         color: activeFolder == null
                                             ? colorScheme.primary
-                                            : colorScheme.onSurfaceVariant,
+                                            : _isEmptyOptionHovering
+                                                ? colorScheme.onSurface
+                                                : colorScheme.onSurfaceVariant,
                                       ),
                                     ),
                                   ),
@@ -356,9 +343,12 @@ class _FolderSelectorContainerState
                                           color: activeFolder == null
                                               ? colorScheme.primaryContainer
                                                     .withValues(alpha: 0.6)
-                                              : colorScheme
-                                                    .surfaceContainerHighest
-                                                    .withValues(alpha: 0.4),
+                                              : _isEmptyOptionHovering
+                                                  ? colorScheme
+                                                        .surfaceContainerHighest
+                                                  : colorScheme
+                                                        .surfaceContainerHighest
+                                                        .withValues(alpha: 0.4),
                                           borderRadius: BorderRadius.circular(
                                             12,
                                           ),
@@ -369,7 +359,9 @@ class _FolderSelectorContainerState
                                             fontWeight: FontWeight.w700,
                                             color: activeFolder == null
                                                 ? colorScheme.primary
-                                                : colorScheme.onSurfaceVariant,
+                                                : _isEmptyOptionHovering
+                                                    ? colorScheme.onSurface
+                                                    : colorScheme.onSurfaceVariant,
                                           ),
                                           maxLines: 1,
                                           overflow: TextOverflow.clip,

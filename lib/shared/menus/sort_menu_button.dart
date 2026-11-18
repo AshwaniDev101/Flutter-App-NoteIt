@@ -1,80 +1,75 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+import '../../database/drift/notes/notes_dao.dart';
 import 'adaptive_menu_button.dart';
-
-enum HomeMenuAction {
-  sortCreated('by created time', Icons.calendar_month_outlined),
-  sortName('alphabetically', Icons.sort_by_alpha),
-  sortUpdated('by modified time', Icons.history),
-  sortFolder('by folder', Icons.folder_outlined),
-  sortReminder('by reminder time', Icons.notifications_none_outlined),
-  filterAll('All Devices', Icons.devices_other),
-  filterPhone('Phone', Icons.smartphone_outlined),
-  filterWindows('Desktop', Icons.desktop_mac_outlined);
-
-  final String label;
-  final IconData? icon;
-
-  const HomeMenuAction(this.label, this.icon);
-}
 
 class SortMenuButton extends StatelessWidget {
   final IconData icon;
   final String tooltip;
-  final HomeMenuAction currentSortSelection;
-  final HomeMenuAction currentPlatformSelection;
-  final ValueChanged<HomeMenuAction> onSelected;
-  final bool showPlatformFilter;
+  final NoteSortPreference currentSortSelection;
+  final ValueChanged<NoteSortPreference> onSelected;
 
   const SortMenuButton({
     super.key,
     this.icon = CupertinoIcons.sort_down,
     this.tooltip = 'Sort options',
     required this.currentSortSelection,
-    this.currentPlatformSelection = HomeMenuAction.filterAll,
     required this.onSelected,
-    this.showPlatformFilter = false,
   });
 
-  MenuItemSpec<HomeMenuAction> _buildItem(HomeMenuAction action) {
-    return MenuItemSpec<HomeMenuAction>(
-      value: action,
-      label: action.label,
-      icon: action.icon,
-      isSelected: (action == currentSortSelection) || (action == currentPlatformSelection),
-      onTap: () => onSelected(action),
-    );
+  String _getLabel(NoteSortPreference sort) {
+    switch (sort) {
+      case NoteSortPreference.createdAt:
+        return 'by created time';
+      case NoteSortPreference.name:
+        return 'alphabetically';
+      case NoteSortPreference.updatedAt:
+        return 'by modified time';
+      case NoteSortPreference.folder:
+        return 'by folder';
+      case NoteSortPreference.reminderAt:
+        return 'by reminder time';
+    }
+  }
+
+  IconData _getIcon(NoteSortPreference sort) {
+    switch (sort) {
+      case NoteSortPreference.createdAt:
+        return Icons.calendar_month_outlined;
+      case NoteSortPreference.name:
+        return Icons.sort_by_alpha;
+      case NoteSortPreference.updatedAt:
+        return Icons.history;
+      case NoteSortPreference.folder:
+        return Icons.folder_outlined;
+      case NoteSortPreference.reminderAt:
+        return Icons.notifications_none_outlined;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final items = NoteSortPreference.values.map((sort) {
+      return MenuItemSpec<NoteSortPreference>(
+        value: sort,
+        label: _getLabel(sort),
+        icon: _getIcon(sort),
+        isSelected: sort == currentSortSelection,
+        onTap: () => onSelected(sort),
+      );
+    }).toList();
+
     final sections = [
-      MenuSectionSpec<HomeMenuAction>(
-        title: 'SORT BY',
-        items: [
-          _buildItem(HomeMenuAction.sortCreated),
-          _buildItem(HomeMenuAction.sortName),
-          _buildItem(HomeMenuAction.sortUpdated),
-          _buildItem(HomeMenuAction.sortFolder),
-          _buildItem(HomeMenuAction.sortReminder),
-        ],
+      MenuSectionSpec<NoteSortPreference>(
+        items: items,
       ),
-      if (showPlatformFilter)
-        MenuSectionSpec<HomeMenuAction>(
-          title: 'FILTER BY DEVICE',
-          items: [
-            _buildItem(HomeMenuAction.filterAll),
-            _buildItem(HomeMenuAction.filterPhone),
-            _buildItem(HomeMenuAction.filterWindows),
-          ],
-        ),
     ];
 
-    return AdaptiveMenuButton<HomeMenuAction>(
+    return AdaptiveMenuButton<NoteSortPreference>(
       icon: icon,
       tooltip: tooltip,
-      // sheetTitle: 'Sort & Filter',
+      sheetTitle: 'Sort Options',
       sections: sections,
     );
   }

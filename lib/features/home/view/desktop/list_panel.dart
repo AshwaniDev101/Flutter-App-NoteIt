@@ -11,6 +11,7 @@ import 'package:window_manager/window_manager.dart';
 
 import '../../../../database/drift/keybindings/keybindings_dao.dart';
 import '../../../../shared/app_bars/top_select_mode_appbar.dart';
+import '../../../../shared/menus/filter_menu_button.dart';
 import '../../../../shared/menus/sort_menu_button.dart';
 import '../../../../shared/menus/view_menu_button.dart';
 import '../../../drawer/desktop_drawer_button.dart';
@@ -237,35 +238,16 @@ class DesktopListPanel extends ConsumerWidget {
 
                           SortMenuButton(
                             icon: CupertinoIcons.sort_down,
-                            currentSortSelection: _getCurrentSortAction(currentSort),
-                            currentPlatformSelection: _getCurrentPlatformAction(platformFilter),
-                            onSelected: (HomeMenuAction action) {
-                              switch (action) {
-                                case HomeMenuAction.sortCreated:
-                                  ref.read(homeNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.createdAt);
-                                  break;
-                                case HomeMenuAction.sortName:
-                                  ref.read(homeNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.name);
-                                  break;
-                                case HomeMenuAction.sortUpdated:
-                                  ref.read(homeNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.updatedAt);
-                                  break;
-                                case HomeMenuAction.sortFolder:
-                                  ref.read(homeNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.folder);
-                                  break;
-                                case HomeMenuAction.sortReminder:
-                                  ref.read(homeNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.reminderAt);
-                                  break;
-                                case HomeMenuAction.filterAll:
-                                  ref.read(homePlatformFilterProvider.notifier).setFilter(FilterPlatformOptions.all);
-                                  break;
-                                case HomeMenuAction.filterPhone:
-                                  ref.read(homePlatformFilterProvider.notifier).toggleFilter(FilterPlatformOptions.android);
-                                  break;
-                                case HomeMenuAction.filterWindows:
-                                  ref.read(homePlatformFilterProvider.notifier).toggleFilter(FilterPlatformOptions.windows);
-                                  break;
-                              }
+                            currentSortSelection: currentSort,
+                            onSelected: (NoteSortPreference sort) {
+                              ref.read(homeNoteSortPreferenceProvider.notifier).updateSort(sort);
+                            },
+                          ),
+
+                          FilterMenuButton(
+                            currentFilterSelection: platformFilter,
+                            onSelected: (FilterPlatformOptions filter) {
+                              ref.read(homePlatformFilterProvider.notifier).setFilter(filter);
                             },
                           ),
 
@@ -351,32 +333,5 @@ class DesktopListPanel extends ConsumerWidget {
           ),
       ],
     );
-  }
-
-  // Helper method to map your internal NoteSortPreference back to the UI Enum (HomeMenuAction)
-  HomeMenuAction _getCurrentSortAction(NoteSortPreference currentSort) {
-    switch (currentSort) {
-      case NoteSortPreference.createdAt:
-        return HomeMenuAction.sortCreated;
-      case NoteSortPreference.name:
-        return HomeMenuAction.sortName;
-      case NoteSortPreference.updatedAt:
-        return HomeMenuAction.sortUpdated;
-      case NoteSortPreference.folder:
-        return HomeMenuAction.sortFolder;
-      case NoteSortPreference.reminderAt:
-        return HomeMenuAction.sortReminder;
-    }
-  }
-
-  HomeMenuAction _getCurrentPlatformAction(FilterPlatformOptions platformFilter) {
-    switch (platformFilter) {
-      case FilterPlatformOptions.all:
-        return HomeMenuAction.filterAll;
-      case FilterPlatformOptions.android:
-        return HomeMenuAction.filterPhone;
-      case FilterPlatformOptions.windows:
-        return HomeMenuAction.filterWindows;
-    }
   }
 }

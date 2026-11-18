@@ -180,8 +180,8 @@ class _FolderOptionMenuState extends ConsumerState<FolderOptionMenu> {
         Padding(
           padding: const EdgeInsets.only(top: 6.0),
           child: Material(
-            color: colorScheme.surfaceContainerLowest,
-            elevation: 8,
+            color: colorScheme.surfaceContainer,
+            elevation: 4,
             shadowColor: Colors.black.withValues(alpha: 0.25),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16.0),
@@ -197,7 +197,7 @@ class _FolderOptionMenuState extends ConsumerState<FolderOptionMenu> {
               child: FolderSelectorContainer(
                 selectedFolder: widget.selectedFolder,
                 emptyLabel: widget.emptyLabel,
-                title: 'Change Folder',
+                title: 'Move to Folder',
                 emptyIcon: Icons.circle_outlined,
                 showEmptyNoteCount: false,
                 searchBarPosition: SearchBarPosition.top,

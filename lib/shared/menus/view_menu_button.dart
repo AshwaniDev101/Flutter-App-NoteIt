@@ -35,7 +35,6 @@ class ViewMenuButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final sections = [
       MenuSectionSpec<NoteViewType>(
-        title: 'LAYOUT',
         items: NoteViewType.values.map((view) {
           return MenuItemSpec<NoteViewType>(
             value: view,
@@ -51,7 +50,7 @@ class ViewMenuButton extends StatelessWidget {
     return AdaptiveMenuButton<NoteViewType>(
       icon: icon,
       tooltip: tooltip,
-      // sheetTitle: 'View Layout',
+      sheetTitle: 'View Options',
       sections: sections,
     );
   }

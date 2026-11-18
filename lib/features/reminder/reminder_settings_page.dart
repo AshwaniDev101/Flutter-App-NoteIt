@@ -10,6 +10,7 @@ import '../../core/sync/sync_orchestrator.dart';
 import '../../database/drift/notes/notes_dao.dart';
 import '../../database/shared_preference/shared_preference_manager.dart';
 
+import '../../shared/menus/app_bottom_sheet.dart';
 import '../../shared/overlays/app_scaffold.dart';
 import '../../shared/overlays/snack_bar_manager.dart';
 import '../home/core/providers.dart';
@@ -153,52 +154,20 @@ class _ReminderSettingsPageState extends ConsumerState<ReminderSettingsPage> {
 
     if (!mounted) return;
 
-    showModalBottomSheet(
+    AppBottomSheet.show(
       context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (modalCtx, modalSetState) {
-            final theme = Theme.of(modalCtx);
-            final colorScheme = theme.colorScheme;
+      builder: (modalCtx, modalSetState) {
+        final theme = Theme.of(modalCtx);
+        final colorScheme = theme.colorScheme;
 
-            return Container(
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(modalCtx).size.height * 0.75,
-              ),
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.alarm_on_rounded, color: colorScheme.primary),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Active Reminders (${pendingNotes.length})',
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close),
-                        onPressed: () => Navigator.of(modalCtx).pop(),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  if (pendingNotes.isEmpty) ...[
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 32.0),
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const AppBottomSheetHeader(title: 'Active Reminders'),
+            if (pendingNotes.isEmpty) ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 32.0),
                       child: Column(
                         children: [
                           Icon(
@@ -301,10 +270,7 @@ class _ReminderSettingsPageState extends ConsumerState<ReminderSettingsPage> {
                     ),
                   ],
                 ],
-              ),
-            );
-          },
-        );
+              );
       },
     );
   }

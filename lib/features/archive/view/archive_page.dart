@@ -10,6 +10,7 @@ import 'package:noteit/database/drift/notes/notes_dao.dart';
 import '../../../shared/app_bars/app_search_bar.dart';
 import '../../../shared/app_bars/floating_bottom_app_bar.dart';
 import '../../../shared/app_bars/top_select_mode_appbar.dart';
+import '../../../shared/menus/filter_menu_button.dart';
 import '../../../shared/menus/sort_menu_button.dart';
 import '../../../shared/menus/view_menu_button.dart';
 import '../../../shared/note_card/core/note_action.dart';
@@ -157,31 +158,7 @@ class _ArchivePageState extends ConsumerState<ArchivePage> with WidgetsBindingOb
     }
   }
 
-  HomeMenuAction _getCurrentSortAction(NoteSortPreference currentSort) {
-    switch (currentSort) {
-      case NoteSortPreference.createdAt:
-        return HomeMenuAction.sortCreated;
-      case NoteSortPreference.name:
-        return HomeMenuAction.sortName;
-      case NoteSortPreference.updatedAt:
-        return HomeMenuAction.sortUpdated;
-      case NoteSortPreference.folder:
-        return HomeMenuAction.sortFolder;
-      case NoteSortPreference.reminderAt:
-        return HomeMenuAction.sortReminder;
-    }
-  }
 
-  HomeMenuAction _getCurrentPlatformAction(FilterPlatformOptions platformFilter) {
-    switch (platformFilter) {
-      case FilterPlatformOptions.all:
-        return HomeMenuAction.filterAll;
-      case FilterPlatformOptions.android:
-        return HomeMenuAction.filterPhone;
-      case FilterPlatformOptions.windows:
-        return HomeMenuAction.filterWindows;
-    }
-  }
 
   SliverGridDelegate _getGridDelegate(NoteViewType viewType) {
     final isMobile = !PlatformHelper.isWideLayout(context);
@@ -557,7 +534,8 @@ class _ArchivePageState extends ConsumerState<ArchivePage> with WidgetsBindingOb
         children: [
           _folderOptionMenu(),
           const Spacer(),
-          _sortMenuButton(currentSort, platformFilter),
+          _sortMenuButton(currentSort),
+          _filterMenuButton(platformFilter),
           _viewMenuButton(currentView),
           IconButton(
             icon: const Icon(Icons.search),
@@ -579,7 +557,8 @@ class _ArchivePageState extends ConsumerState<ArchivePage> with WidgetsBindingOb
           if (PlatformHelper.isWideLayout(context)) ...[
             _folderOptionMenu(),
             const Spacer(),
-            _sortMenuButton(currentSort, platformFilter),
+            _sortMenuButton(currentSort),
+            _filterMenuButton(platformFilter),
             _viewMenuButton(currentView),
             const SizedBox(width: 8),
           ],
@@ -626,38 +605,21 @@ class _ArchivePageState extends ConsumerState<ArchivePage> with WidgetsBindingOb
     );
   }
 
-  Widget _sortMenuButton(NoteSortPreference currentSort, FilterPlatformOptions platformFilter) {
+  Widget _sortMenuButton(NoteSortPreference currentSort) {
     return SortMenuButton(
       icon: CupertinoIcons.sort_down,
-      currentSortSelection: _getCurrentSortAction(currentSort),
-      currentPlatformSelection: _getCurrentPlatformAction(platformFilter),
-      onSelected: (HomeMenuAction action) {
-        switch (action) {
-          case HomeMenuAction.sortCreated:
-            ref.read(archiveNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.createdAt);
-            break;
-          case HomeMenuAction.sortName:
-            ref.read(archiveNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.name);
-            break;
-          case HomeMenuAction.sortUpdated:
-            ref.read(archiveNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.updatedAt);
-            break;
-          case HomeMenuAction.sortFolder:
-            ref.read(archiveNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.folder);
-            break;
-          case HomeMenuAction.sortReminder:
-            ref.read(archiveNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.reminderAt);
-            break;
-          case HomeMenuAction.filterAll:
-            ref.read(archivePlatformFilterProvider.notifier).setFilter(FilterPlatformOptions.all);
-            break;
-          case HomeMenuAction.filterPhone:
-            ref.read(archivePlatformFilterProvider.notifier).toggleFilter(FilterPlatformOptions.android);
-            break;
-          case HomeMenuAction.filterWindows:
-            ref.read(archivePlatformFilterProvider.notifier).toggleFilter(FilterPlatformOptions.windows);
-            break;
-        }
+      currentSortSelection: currentSort,
+      onSelected: (sort) {
+        ref.read(archiveNoteSortPreferenceProvider.notifier).updateSort(sort);
+      },
+    );
+  }
+
+  Widget _filterMenuButton(FilterPlatformOptions platformFilter) {
+    return FilterMenuButton(
+      currentFilterSelection: platformFilter,
+      onSelected: (filter) {
+        ref.read(archivePlatformFilterProvider.notifier).setFilter(filter);
       },
     );
   }

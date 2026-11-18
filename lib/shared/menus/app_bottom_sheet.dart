@@ -65,6 +65,29 @@ class AppBottomSheet {
   }
 }
 
+/// Standardized single title header for bottom sheets and popup menus across NoteIt.
+class AppBottomSheetHeader extends StatelessWidget {
+  final String title;
+
+  const AppBottomSheetHeader({
+    super.key,
+    required this.title,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20.0, 16.0, 20.0, 8.0),
+      child: Text(
+        title,
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+      ),
+    );
+  }
+}
+
 /// Reusable styled list tile for popup menus and bottom sheets.
 class AppMenuTile extends StatelessWidget {
   final String label;

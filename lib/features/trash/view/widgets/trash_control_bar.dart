@@ -3,12 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/helpers/platform_helper.dart';
-import '../../../../database/drift/notes/notes_dao.dart';
 import '../../../../shared/app_bars/app_search_bar.dart';
+import '../../../../shared/menus/filter_menu_button.dart';
 import '../../../../shared/menus/sort_menu_button.dart';
 import '../../../../shared/menus/view_menu_button.dart';
 import '../../../folders/view/folder_option_menu.dart';
-import '../../../home/core/providers.dart';
 import '../../providers/trash_providers.dart';
 
 class TrashControlBar extends ConsumerStatefulWidget {
@@ -35,25 +34,6 @@ class _TrashControlBarState extends ConsumerState<TrashControlBar> {
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
-  }
-
-  HomeMenuAction _getCurrentSortAction(NoteSortPreference currentSort) {
-    if (currentSort == NoteSortPreference.folder) return HomeMenuAction.sortFolder;
-    if (currentSort == NoteSortPreference.reminderAt) return HomeMenuAction.sortReminder;
-    if (currentSort == NoteSortPreference.name) return HomeMenuAction.sortName;
-    if (currentSort == NoteSortPreference.updatedAt) return HomeMenuAction.sortUpdated;
-    return HomeMenuAction.sortCreated;
-  }
-
-  HomeMenuAction _getCurrentPlatformAction(FilterPlatformOptions platformFilter) {
-    switch (platformFilter) {
-      case FilterPlatformOptions.all:
-        return HomeMenuAction.filterAll;
-      case FilterPlatformOptions.android:
-        return HomeMenuAction.filterPhone;
-      case FilterPlatformOptions.windows:
-        return HomeMenuAction.filterWindows;
-    }
   }
 
   @override
@@ -83,26 +63,15 @@ class _TrashControlBarState extends ConsumerState<TrashControlBar> {
           const Spacer(),
           SortMenuButton(
             icon: CupertinoIcons.sort_down,
-            currentSortSelection: _getCurrentSortAction(currentSort),
-            currentPlatformSelection: _getCurrentPlatformAction(platformFilter),
-            onSelected: (HomeMenuAction action) {
-              if (action == HomeMenuAction.sortCreated) {
-                ref.read(trashNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.createdAt);
-              } else if (action == HomeMenuAction.sortName) {
-                ref.read(trashNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.name);
-              } else if (action == HomeMenuAction.sortUpdated) {
-                ref.read(trashNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.updatedAt);
-              } else if (action == HomeMenuAction.sortFolder) {
-                ref.read(trashNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.folder);
-              } else if (action == HomeMenuAction.sortReminder) {
-                ref.read(trashNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.reminderAt);
-              } else if (action == HomeMenuAction.filterAll) {
-                ref.read(trashPlatformFilterProvider.notifier).setFilter(FilterPlatformOptions.all);
-              } else if (action == HomeMenuAction.filterPhone) {
-                ref.read(trashPlatformFilterProvider.notifier).toggleFilter(FilterPlatformOptions.android);
-              } else if (action == HomeMenuAction.filterWindows) {
-                ref.read(trashPlatformFilterProvider.notifier).toggleFilter(FilterPlatformOptions.windows);
-              }
+            currentSortSelection: currentSort,
+            onSelected: (sort) {
+              ref.read(trashNoteSortPreferenceProvider.notifier).updateSort(sort);
+            },
+          ),
+          FilterMenuButton(
+            currentFilterSelection: platformFilter,
+            onSelected: (filter) {
+              ref.read(trashPlatformFilterProvider.notifier).setFilter(filter);
             },
           ),
           ViewMenuButton(
@@ -140,26 +109,15 @@ class _TrashControlBarState extends ConsumerState<TrashControlBar> {
             const Spacer(),
             SortMenuButton(
               icon: CupertinoIcons.sort_down,
-              currentSortSelection: _getCurrentSortAction(currentSort),
-              currentPlatformSelection: _getCurrentPlatformAction(platformFilter),
-              onSelected: (HomeMenuAction action) {
-                if (action == HomeMenuAction.sortCreated) {
-                  ref.read(trashNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.createdAt);
-                } else if (action == HomeMenuAction.sortName) {
-                  ref.read(trashNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.name);
-                } else if (action == HomeMenuAction.sortUpdated) {
-                  ref.read(trashNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.updatedAt);
-                } else if (action == HomeMenuAction.sortFolder) {
-                  ref.read(trashNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.folder);
-                } else if (action == HomeMenuAction.sortReminder) {
-                  ref.read(trashNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.reminderAt);
-                } else if (action == HomeMenuAction.filterAll) {
-                  ref.read(trashPlatformFilterProvider.notifier).setFilter(FilterPlatformOptions.all);
-                } else if (action == HomeMenuAction.filterPhone) {
-                  ref.read(trashPlatformFilterProvider.notifier).toggleFilter(FilterPlatformOptions.android);
-                } else if (action == HomeMenuAction.filterWindows) {
-                  ref.read(trashPlatformFilterProvider.notifier).toggleFilter(FilterPlatformOptions.windows);
-                }
+              currentSortSelection: currentSort,
+              onSelected: (sort) {
+                ref.read(trashNoteSortPreferenceProvider.notifier).updateSort(sort);
+              },
+            ),
+            FilterMenuButton(
+              currentFilterSelection: platformFilter,
+              onSelected: (filter) {
+                ref.read(trashPlatformFilterProvider.notifier).setFilter(filter);
               },
             ),
             ViewMenuButton(

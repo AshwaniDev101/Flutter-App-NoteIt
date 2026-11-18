@@ -42,7 +42,7 @@ class _FolderListItemState extends ConsumerState<FolderListItem> {
     final bool isPinned = folderData.pinnedAt != null;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 2.0),
+      padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 1.0),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -66,13 +66,15 @@ class _FolderListItemState extends ConsumerState<FolderListItem> {
           onHover: (hovering) => setState(() => _isHovering = hovering),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
-            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
 
-            // Selection Background Color
+            // Selection & Hover Background Color
             decoration: BoxDecoration(
               color: widget.isSelected
                   ? colorScheme.primaryContainer.withValues(alpha: 0.4)
-                  : Colors.transparent,
+                  : _isHovering
+                      ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.5)
+                      : Colors.transparent,
               borderRadius: BorderRadius.circular(10),
             ),
             child: LayoutBuilder(
@@ -83,8 +85,8 @@ class _FolderListItemState extends ConsumerState<FolderListItem> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     SizedBox(
-                      width: 32,
-                      height: 32,
+                      width: 26,
+                      height: 26,
                       child: Center(
                         child: (widget.allowPinning && (isPinned || _isHovering))
                             ? IconButton(
@@ -123,7 +125,9 @@ class _FolderListItemState extends ConsumerState<FolderListItem> {
                           fontWeight: widget.isSelected ? FontWeight.w600 : FontWeight.w500,
                           color: widget.isSelected
                               ? colorScheme.primary
-                              : colorScheme.onSurfaceVariant,
+                              : _isHovering
+                                  ? colorScheme.onSurface
+                                  : colorScheme.onSurfaceVariant,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -137,7 +141,9 @@ class _FolderListItemState extends ConsumerState<FolderListItem> {
                         decoration: BoxDecoration(
                           color: widget.isSelected
                               ? colorScheme.primaryContainer.withValues(alpha: 0.6)
-                              : colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+                              : _isHovering
+                                  ? colorScheme.surfaceContainerHighest
+                                  : colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -146,7 +152,9 @@ class _FolderListItemState extends ConsumerState<FolderListItem> {
                             fontWeight: FontWeight.w700,
                             color: widget.isSelected
                                 ? colorScheme.primary
-                                : colorScheme.onSurfaceVariant,
+                                : _isHovering
+                                    ? colorScheme.onSurface
+                                    : colorScheme.onSurfaceVariant,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.clip,

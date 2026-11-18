@@ -7,10 +7,11 @@ import '../../features/folders/view/folder_button.dart';
 import '../../features/home/core/db_sorting_filtering.dart';
 import '../../features/home/core/providers.dart';
 import '../../features/home/viewmodel/viewmodel.dart';
-import 'app_search_bar.dart';
-import 'floating_bottom_app_bar.dart';
+import '../menus/filter_menu_button.dart';
 import '../menus/sort_menu_button.dart';
 import '../menus/view_menu_button.dart';
+import 'app_search_bar.dart';
+import 'floating_bottom_app_bar.dart';
 
 class MobileBottomControlBar extends ConsumerWidget {
   final HomePageState homeState;
@@ -26,35 +27,11 @@ class MobileBottomControlBar extends ConsumerWidget {
     required this.searchFocusNode,
   });
 
-  HomeMenuAction _getCurrentSortAction(NoteSortPreference currentSort) {
-    switch (currentSort) {
-      case NoteSortPreference.createdAt:
-        return HomeMenuAction.sortCreated;
-      case NoteSortPreference.name:
-        return HomeMenuAction.sortName;
-      case NoteSortPreference.updatedAt:
-        return HomeMenuAction.sortUpdated;
-      case NoteSortPreference.folder:
-        return HomeMenuAction.sortFolder;
-      case NoteSortPreference.reminderAt:
-        return HomeMenuAction.sortReminder;
-    }
-  }
-
-  HomeMenuAction _getCurrentPlatformAction(FilterPlatformOptions platformFilter) {
-    switch (platformFilter) {
-      case FilterPlatformOptions.all:
-        return HomeMenuAction.filterAll;
-      case FilterPlatformOptions.android:
-        return HomeMenuAction.filterPhone;
-      case FilterPlatformOptions.windows:
-        return HomeMenuAction.filterWindows;
-    }
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
+    final currentSort = ref.watch(homeNoteSortPreferenceProvider);
+    final platformFilter = ref.watch(homePlatformFilterProvider);
 
     return FloatingBottomAppBar(
       child: homeState.isSearchMode
@@ -117,35 +94,15 @@ class MobileBottomControlBar extends ConsumerWidget {
                 const SizedBox(width: 8),
                 SortMenuButton(
                   icon: CupertinoIcons.sort_down,
-                  currentSortSelection: _getCurrentSortAction(ref.watch(homeNoteSortPreferenceProvider)),
-                  currentPlatformSelection: _getCurrentPlatformAction(ref.watch(homePlatformFilterProvider)),
-                  onSelected: (HomeMenuAction action) {
-                    switch (action) {
-                      case HomeMenuAction.sortCreated:
-                        ref.read(homeNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.createdAt);
-                        break;
-                      case HomeMenuAction.sortName:
-                        ref.read(homeNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.name);
-                        break;
-                      case HomeMenuAction.sortUpdated:
-                        ref.read(homeNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.updatedAt);
-                        break;
-                      case HomeMenuAction.sortFolder:
-                        ref.read(homeNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.folder);
-                        break;
-                      case HomeMenuAction.sortReminder:
-                        ref.read(homeNoteSortPreferenceProvider.notifier).updateSort(NoteSortPreference.reminderAt);
-                        break;
-                      case HomeMenuAction.filterAll:
-                        ref.read(homePlatformFilterProvider.notifier).setFilter(FilterPlatformOptions.all);
-                        break;
-                      case HomeMenuAction.filterPhone:
-                        ref.read(homePlatformFilterProvider.notifier).toggleFilter(FilterPlatformOptions.android);
-                        break;
-                      case HomeMenuAction.filterWindows:
-                        ref.read(homePlatformFilterProvider.notifier).toggleFilter(FilterPlatformOptions.windows);
-                        break;
-                    }
+                  currentSortSelection: currentSort,
+                  onSelected: (NoteSortPreference sort) {
+                    ref.read(homeNoteSortPreferenceProvider.notifier).updateSort(sort);
+                  },
+                ),
+                FilterMenuButton(
+                  currentFilterSelection: platformFilter,
+                  onSelected: (FilterPlatformOptions filter) {
+                    ref.read(homePlatformFilterProvider.notifier).setFilter(filter);
                   },
                 ),
                 ViewMenuButton(
@@ -156,7 +113,7 @@ class MobileBottomControlBar extends ConsumerWidget {
                   },
                 ),
                 IconButton(
-                  icon: const Icon(Icons.search,),
+                  icon: const Icon(Icons.search),
                   tooltip: 'Search Notes',
                   onPressed: () {
                     viewModel.enterSearchMode();

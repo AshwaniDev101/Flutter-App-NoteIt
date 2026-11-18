@@ -47,7 +47,7 @@ class _FolderButtonState extends ConsumerState<FolderButton> {
         return FolderSelectorContainer(
           selectedFolder: localSelectedFolder,
           emptyLabel: widget.emptyLabel,
-          title: 'FOLDERS',
+          title: 'Folders',
           emptyIcon: Icons.format_align_left,
           showEmptyNoteCount: true,
           searchBarPosition: SearchBarPosition.bottom,
@@ -208,9 +208,9 @@ class _FolderButtonState extends ConsumerState<FolderButton> {
         Padding(
           padding: const EdgeInsets.only(top: 8.0),
           child: Material(
-            color: Theme.of(context).colorScheme.surfaceContainerLowest,
-            elevation: 6,
-            shadowColor: Colors.black.withValues(alpha: 0.3),
+            color: Theme.of(context).colorScheme.surfaceContainer,
+            elevation: 4,
+            shadowColor: Colors.black.withValues(alpha: 0.25),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16.0),
               side: BorderSide(
