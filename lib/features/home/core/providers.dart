@@ -91,6 +91,29 @@ class PlatformFilterNotifier extends Notifier<FilterPlatformOptions> {
   }
 }
 
+/// DEVICE FILTER VISIBILITY PROVIDER
+final showDeviceFilterProvider = NotifierProvider<ShowDeviceFilterNotifier, bool>(() {
+  return ShowDeviceFilterNotifier();
+});
+
+class ShowDeviceFilterNotifier extends Notifier<bool> {
+  @override
+  bool build() {
+    final prefs = ref.watch(sharedPreferenceProvider);
+    return prefs.isShowDeviceFilter;
+  }
+
+  Future<void> setShowDeviceFilter(bool enabled) async {
+    final prefs = ref.read(sharedPreferenceProvider);
+    await prefs.setShowDeviceFilter(enabled);
+    state = enabled;
+  }
+
+  Future<void> toggleShowDeviceFilter() async {
+    await setShowDeviceFilter(!state);
+  }
+}
+
 /// SEARCH FILTER
 final searchQueryProvider = NotifierProvider<SearchQueryNotifier, String>(SearchQueryNotifier.new);
 class SearchQueryNotifier extends Notifier<String> {

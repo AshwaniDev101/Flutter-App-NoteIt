@@ -99,12 +99,13 @@ class MobileBottomControlBar extends ConsumerWidget {
                     ref.read(homeNoteSortPreferenceProvider.notifier).updateSort(sort);
                   },
                 ),
-                FilterMenuButton(
-                  currentFilterSelection: platformFilter,
-                  onSelected: (FilterPlatformOptions filter) {
-                    ref.read(homePlatformFilterProvider.notifier).setFilter(filter);
-                  },
-                ),
+                if (ref.watch(showDeviceFilterProvider))
+                  FilterMenuButton(
+                    currentFilterSelection: platformFilter,
+                    onSelected: (FilterPlatformOptions filter) {
+                      ref.read(homePlatformFilterProvider.notifier).setFilter(filter);
+                    },
+                  ),
                 ViewMenuButton(
                   icon: Icons.grid_view,
                   currentView: ref.watch(homeNoteViewTypeProvider),

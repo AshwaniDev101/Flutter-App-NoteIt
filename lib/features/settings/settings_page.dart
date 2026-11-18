@@ -5,6 +5,7 @@ import 'package:noteit/core/sync/sync_orchestrator.dart';
 import '../keybinding/keybindings_provider.dart';
 import '../lock/lock_manger/lock_manager.dart';
 import '../lock/password_prompt_helper.dart';
+import '../home/core/providers.dart';
 import '../home/view/desktop/content_panel/core/navigator.dart';
 import '../workspace/providers/workspace_providers.dart';
 import 'shared/settings_widgets.dart';
@@ -147,6 +148,20 @@ class SettingsPage extends ConsumerWidget {
                   value: ref.watch(workspaceEnableProvider),
                   onChanged: (bool value) {
                     ref.read(workspaceEnableProvider.notifier).setWorkspaceEnable(value);
+                  },
+                ),
+                Divider(
+                  height: 1,
+                  indent: 48,
+                  color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+                ),
+                SettingsSwitchTile(
+                  icon: Icons.devices_outlined,
+                  title: 'Enable device filter',
+                  subtitle: 'Show device filter button on the control bar',
+                  value: ref.watch(showDeviceFilterProvider),
+                  onChanged: (bool value) {
+                    ref.read(showDeviceFilterProvider.notifier).setShowDeviceFilter(value);
                   },
                 ),
                 Divider(

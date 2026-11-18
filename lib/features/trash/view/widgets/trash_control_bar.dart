@@ -8,6 +8,7 @@ import '../../../../shared/menus/filter_menu_button.dart';
 import '../../../../shared/menus/sort_menu_button.dart';
 import '../../../../shared/menus/view_menu_button.dart';
 import '../../../folders/view/folder_option_menu.dart';
+import '../../../home/core/providers.dart';
 import '../../providers/trash_providers.dart';
 
 class TrashControlBar extends ConsumerStatefulWidget {
@@ -68,12 +69,13 @@ class _TrashControlBarState extends ConsumerState<TrashControlBar> {
               ref.read(trashNoteSortPreferenceProvider.notifier).updateSort(sort);
             },
           ),
-          FilterMenuButton(
-            currentFilterSelection: platformFilter,
-            onSelected: (filter) {
-              ref.read(trashPlatformFilterProvider.notifier).setFilter(filter);
-            },
-          ),
+          if (ref.watch(showDeviceFilterProvider))
+            FilterMenuButton(
+              currentFilterSelection: platformFilter,
+              onSelected: (filter) {
+                ref.read(trashPlatformFilterProvider.notifier).setFilter(filter);
+              },
+            ),
           ViewMenuButton(
             icon: Icons.grid_view,
             currentView: currentView,

@@ -57,6 +57,11 @@ class SharedPreferenceManager {
   /// - `false`: Workspace feature is disabled (default).
   static const String _keyEnableWorkspace = 'enable_workspace';
 
+  /// Boolean:
+  /// - `true`: Device filter button is shown in UI.
+  /// - `false`: Device filter button is hidden in UI (default).
+  static const String _keyShowDeviceFilter = 'show_device_filter';
+
   // --- Sync & P2P Keys ---
 
   /// Key for storing the unified synchronization mode.
@@ -679,6 +684,12 @@ class SharedPreferenceManager {
 
   /// Alias for [setEnableWorkspace].
   Future<bool> setWorkspaceEnable(bool value) async => await setEnableWorkspace(value);
+
+  /// Whether device filter button is shown in UI (defaults to `false`).
+  bool get isShowDeviceFilter => _prefs.getBool(_keyShowDeviceFilter) ?? false;
+
+  /// Sets device filter button visibility preference.
+  Future<bool> setShowDeviceFilter(bool value) async => await _prefs.setBool(_keyShowDeviceFilter, value);
 
   // =========================================================================
   // 10. GENERAL / LIFECYCLE METHODS

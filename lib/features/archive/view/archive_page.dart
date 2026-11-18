@@ -535,7 +535,7 @@ class _ArchivePageState extends ConsumerState<ArchivePage> with WidgetsBindingOb
           _folderOptionMenu(),
           const Spacer(),
           _sortMenuButton(currentSort),
-          _filterMenuButton(platformFilter),
+          if (ref.watch(showDeviceFilterProvider)) _filterMenuButton(platformFilter),
           _viewMenuButton(currentView),
           IconButton(
             icon: const Icon(Icons.search),
@@ -558,7 +558,7 @@ class _ArchivePageState extends ConsumerState<ArchivePage> with WidgetsBindingOb
             _folderOptionMenu(),
             const Spacer(),
             _sortMenuButton(currentSort),
-            _filterMenuButton(platformFilter),
+            if (ref.watch(showDeviceFilterProvider)) _filterMenuButton(platformFilter),
             _viewMenuButton(currentView),
             const SizedBox(width: 8),
           ],
