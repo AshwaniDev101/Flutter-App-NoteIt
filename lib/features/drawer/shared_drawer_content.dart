@@ -454,7 +454,7 @@ class _DrawerAuthHeaderWidgetState extends ConsumerState<_DrawerAuthHeaderWidget
                                 Icon(SyncEngine.cloud.icon,size: 16,color: colorScheme.onSurfaceVariant,),
                                 SizedBox(width: 8,),
                                 Text(
-                                  SyncEngine.cloud.label,
+                                  "${SyncEngine.cloud.label} sync",
                                   style: theme.textTheme.labelSmall?.copyWith(
                                     color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
                                     fontSize: 11,

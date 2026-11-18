@@ -7,7 +7,7 @@ import '../../../core/helpers/platform_helper.dart';
 import '../../../database/drift/local_database.dart';
 import '../../../shared/menus/app_bottom_sheet.dart';
 import '../providers/folder_providers.dart';
-import 'widgets/folder_selector_container.dart';
+import 'folder_selector_container.dart';
 
 /// Reusable folder selection button and dropdown.
 ///
@@ -88,67 +88,69 @@ class _FolderButtonState extends ConsumerState<FolderButton> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onHover: (val) => setState(() => _isHovering = val),
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(10),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: isOpen || _isHovering
-                      ? colorScheme.outlineVariant
-                      : colorScheme.outlineVariant.withValues(alpha: 0.4),
+        Flexible(
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onHover: (val) => setState(() => _isHovering = val),
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(10),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: isOpen || _isHovering
+                        ? colorScheme.outlineVariant
+                        : colorScheme.outlineVariant.withValues(alpha: 0.4),
+                  ),
+                  borderRadius: BorderRadius.circular(10),
+                  color: isOpen
+                      ? colorScheme.surfaceContainerLow
+                      : _isHovering
+                      ? colorScheme.surfaceContainer
+                      : colorScheme.surfaceContainerLow,
                 ),
-                borderRadius: BorderRadius.circular(10),
-                color: isOpen
-                    ? colorScheme.surfaceContainerLow
-                    : _isHovering
-                    ? colorScheme.surfaceContainer
-                    : colorScheme.surfaceContainerLow,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (activeFolder != null) ...[
-                    Container(
-                      width: 10,
-                      height: 10,
-                      decoration: BoxDecoration(
-                        color: currentColor,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: currentColor.withValues(alpha: 0.4),
-                            blurRadius: 4,
-                            offset: const Offset(0, 1),
-                          ),
-                        ],
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (activeFolder != null) ...[
+                      Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: currentColor,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: currentColor.withValues(alpha: 0.4),
+                              blurRadius: 4,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                    ],
+                    Flexible(
+                      child: Text(
+                        currentName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: isOpen ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 6),
+                    Icon(
+                      isOpen ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+                      size: 20,
+                      color: isOpen ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
+                    ),
                   ],
-                  Flexible(
-                    child: Text(
-                      currentName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: isOpen ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Icon(
-                    isOpen ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
-                    size: 20,
-                    color: isOpen ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
-                  ),
-                ],
+                ),
               ),
             ),
           ),

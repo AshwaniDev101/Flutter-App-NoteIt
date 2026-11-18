@@ -84,6 +84,7 @@ class _FolderListItemState extends ConsumerState<FolderListItem> {
                   children: [
                     SizedBox(
                       width: 32,
+                      height: 32,
                       child: Center(
                         child: (widget.allowPinning && (isPinned || _isHovering))
                             ? IconButton(
@@ -97,6 +98,10 @@ class _FolderListItemState extends ConsumerState<FolderListItem> {
                           ),
                           color: isPinned ? folderAccentColor : folderAccentColor,
                           padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          style: IconButton.styleFrom(
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
                           visualDensity: VisualDensity.compact,
                           splashRadius: 16,
                           tooltip: isPinned ? 'Unpin' : 'Pin Folder',

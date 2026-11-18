@@ -95,21 +95,26 @@ class MobileBottomControlBar extends ConsumerWidget {
           : Row(
               key: const ValueKey('standard_control_bar'),
               children: [
-                SizedBox(width: 16,),
-                FolderButton(
-                  selectedFolder: ref.watch(activeFolderProvider),
-                  emptyLabel: 'All Notes',
-                  showContextMenus: true,
-                  isShowTotalNoteCount: true,
-                  onFolderSelected: (folder) {
-                    if (folder == null) {
-                      ref.read(activeFolderProvider.notifier).clear();
-                    } else {
-                      ref.read(activeFolderProvider.notifier).setFolder(folder);
-                    }
-                  },
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: FolderButton(
+                      selectedFolder: ref.watch(activeFolderProvider),
+                      emptyLabel: 'All Notes',
+                      showContextMenus: true,
+                      isShowTotalNoteCount: true,
+                      onFolderSelected: (folder) {
+                        if (folder == null) {
+                          ref.read(activeFolderProvider.notifier).clear();
+                        } else {
+                          ref.read(activeFolderProvider.notifier).setFolder(folder);
+                        }
+                      },
+                    ),
+                  ),
                 ),
-                const Spacer(),
+                const SizedBox(width: 8),
                 SortMenuButton(
                   icon: CupertinoIcons.sort_down,
                   currentSortSelection: _getCurrentSortAction(ref.watch(homeNoteSortPreferenceProvider)),

@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/helpers/platform_helper.dart';
 import 'package:noteit/core/theme/folder_theme_colors.dart';
 import 'package:noteit/database/drift/local_database.dart';
-import 'widgets/folder_selector_container.dart';
+import 'folder_selector_container.dart';
 import 'package:noteit/shared/menus/app_bottom_sheet.dart';
 
 /// A dropdown selector widget for choosing a folder for a note.

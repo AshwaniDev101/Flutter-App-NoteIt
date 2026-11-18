@@ -198,7 +198,7 @@ class NoteEditorOptionMenu extends StatelessWidget {
       child: SizedBox(
         width: width,
         child: Wrap(
-          alignment: WrapAlignment.center,
+          alignment: WrapAlignment.start,
           spacing: 8.0,
           runSpacing: 8.0,
           children: options.map((option) {

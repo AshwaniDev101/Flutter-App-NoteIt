@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/util/logger.dart';
-import '../../../../database/drift/folders/folders_dao.dart';
-import '../../../../database/drift/local_database.dart';
-import '../../../../shared/app_bars/app_search_bar.dart';
-import '../../providers/folder_providers.dart';
-import '../../viewmodel/folder_view_model.dart';
-import '../dialogs/folder_editor_dialog.dart';
-import 'folder_context_menu.dart';
-import 'folder_list_item.dart';
+import '../../../core/util/logger.dart';
+import '../../../database/drift/folders/folders_dao.dart';
+import '../../../database/drift/local_database.dart';
+import '../../../shared/app_bars/app_search_bar.dart';
+import '../providers/folder_providers.dart';
+import '../viewmodel/folder_view_model.dart';
+import 'dialogs/folder_editor_dialog.dart';
+import 'widgets/folder_context_menu.dart';
+import 'widgets/folder_list_item.dart';
 
 enum SearchBarPosition { top, bottom }
 
@@ -315,6 +315,7 @@ class _FolderSelectorContainerState
                                 children: [
                                   SizedBox(
                                     width: 32,
+                                    height: 32,
                                     child: Center(
                                       child: Icon(
                                         widget.emptyIcon,
