@@ -91,17 +91,22 @@ class SettingsPageHeader extends ConsumerWidget {
       children: [
         Row(
           children: [
-            IconButton(
-              icon: const Icon(Icons.arrow_back),
-              tooltip: 'Back to Settings',
-              onPressed: onBack ??
-                  () {
-                    ref.read(drawerNavigationProvider).navigate(
-                          context,
-                          RightPanelPageOptions.settings,
-                        );
-                  },
-            ),
+
+            // if(!PlatformHelper.isWideLayout(context))...[
+            //   IconButton(
+            //     icon: const Icon(Icons.arrow_back),
+            //     tooltip: 'Back to Settings',
+            //     onPressed: onBack ??
+            //             () {
+            //           ref.read(drawerNavigationProvider).navigate(
+            //             context,
+            //             RightPanelPageOptions.settings,
+            //           );
+            //         },
+            //   ),
+            //
+            //
+            // ],
             const SizedBox(width: 8),
             Expanded(
               child: Column(

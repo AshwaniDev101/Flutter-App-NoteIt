@@ -5,6 +5,7 @@ import '../../../core/helpers/platform_helper.dart';
 import '../../../database/drift/keybindings/keybindings_dao.dart';
 import '../../../shared/overlays/snack_bar_manager.dart';
 import '../../home/view/desktop/content_panel/core/navigator.dart';
+import '../../keybinding/keybindings_provider.dart';
 import '../../keybinding/shortcut_config.dart';
 import '../shared/settings_widgets.dart';
 import 'widgets/keybinding_recorder_dialog.dart';
@@ -80,6 +81,9 @@ class _KeybindingSettingsPageState extends ConsumerState<KeybindingSettingsPage>
     final platform = PlatformHelper.name.toLowerCase();
 
     final shortcutsAsync = ref.watch(keybindingsProvider);
+    final shortcutPrefs = ref.watch(shortcutPreferencesProvider);
+    final bool showShortcuts =
+        shortcutPrefs.showDynamicKeyHints || shortcutPrefs.appendShortcutToTooltips;
 
     return SettingsPageLayout(
       option: RightPanelPageOptions.keybindingSettings,
@@ -98,6 +102,22 @@ class _KeybindingSettingsPageState extends ConsumerState<KeybindingSettingsPage>
               ),
             ],
           ),
+
+          // Show Keyboard Shortcuts Preference Switch
+          SettingsCard(
+            child: SettingsSwitchTile(
+              icon: Icons.keyboard_alt_outlined,
+              title: 'Show keyboard shortcuts',
+              subtitle: 'Display keyboard hints and tooltips in the UI',
+              value: showShortcuts,
+              onChanged: (bool value) {
+                ref.read(shortcutPreferencesProvider.notifier).toggleHints(value);
+                ref.read(shortcutPreferencesProvider.notifier).toggleTooltips(value);
+              },
+            ),
+          ),
+
+          const SizedBox(height: 16),
 
           // Search Filter Bar
           TextField(

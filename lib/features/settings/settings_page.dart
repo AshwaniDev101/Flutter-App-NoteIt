@@ -90,31 +90,17 @@ class SettingsPage extends ConsumerWidget {
 
           const SizedBox(height: 24),
 
-          // ==================== GENERAL & SECURITY SECTION ====================
-          const SettingsSectionHeader(title: 'General & Security'),
+          // ==================== KEYBOARD & SHORTCUTS SECTION ====================
+          const SettingsSectionHeader(title: 'Keyboard & Shortcuts'),
           SettingsCard(
             child: Column(
               children: [
                 SettingsTile(
-                  icon: Icons.notifications_active_outlined,
-                  title: 'Reminders & Alarms',
+                  icon: Icons.keyboard_rounded,
+                  title: 'Keyboard Shortcuts',
+                  subtitle: 'Customize keyboard shortcuts and keybinding chord rules',
                   onTap: () {
-                    nav.navigate(context, RightPanelPageOptions.reminderSettings);
-                  },
-                ),
-                Divider(
-                  height: 1,
-                  indent: 48,
-                  color: colorScheme.outlineVariant.withValues(alpha: 0.3),
-                ),
-                SettingsTile(
-                  icon: Icons.lock_outline,
-                  title: 'Master Password',
-                  subtitle: lockState.hasMasterPassword
-                      ? 'Update or remove master password'
-                      : 'Set up master password',
-                  onTap: () {
-                    PasswordPromptHelper.showMasterPasswordManagement(context, ref);
+                    nav.navigate(context, RightPanelPageOptions.keybindingSettings);
                   },
                 ),
                 Divider(
@@ -123,11 +109,13 @@ class SettingsPage extends ConsumerWidget {
                   color: colorScheme.outlineVariant.withValues(alpha: 0.3),
                 ),
                 SettingsSwitchTile(
-                  icon: Icons.lock_open_rounded,
-                  title: 'Keep notes unlocked during session',
-                  value: lockState.keepUnlockedDuringSession,
+                  icon: Icons.keyboard_alt_outlined,
+                  title: 'Show keyboard shortcuts',
+                  subtitle: 'Display keyboard hints and tooltips in the UI',
+                  value: showShortcuts,
                   onChanged: (bool value) {
-                    ref.read(lockManagerProvider.notifier).setKeepUnlockedPreference(value);
+                    ref.read(shortcutPreferencesProvider.notifier).toggleHints(value);
+                    ref.read(shortcutPreferencesProvider.notifier).toggleTooltips(value);
                   },
                 ),
               ],
@@ -136,11 +124,37 @@ class SettingsPage extends ConsumerWidget {
 
           const SizedBox(height: 24),
 
-          // ==================== INTERFACE & KEYBOARD SECTION ====================
-          const SettingsSectionHeader(title: 'Interface & Keyboard'),
+          // ==================== EDITOR & INTERFACE SECTION ====================
+          const SettingsSectionHeader(title: 'Editor & Interface'),
           SettingsCard(
             child: Column(
               children: [
+                SettingsTile(
+                  icon: Icons.edit_note_rounded,
+                  title: 'Note Editor Preferences',
+                  subtitle: 'Font size, line spacing, and cursor position',
+                  onTap: () {
+                    nav.navigate(context, RightPanelPageOptions.noteEditorSettings);
+                  },
+                ),
+                Divider(
+                  height: 1,
+                  indent: 48,
+                  color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+                ),
+                SettingsTile(
+                  icon: Icons.tune_outlined,
+                  title: 'Default Views & Layout',
+                  subtitle: 'Default layout, view mode, and sorting options',
+                  onTap: () {
+                    nav.navigate(context, RightPanelPageOptions.defaultSettings);
+                  },
+                ),
+                Divider(
+                  height: 1,
+                  indent: 48,
+                  color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+                ),
                 SettingsSwitchTile(
                   icon: Icons.workspaces_outlined,
                   title: 'Enable workspace',
@@ -164,30 +178,23 @@ class SettingsPage extends ConsumerWidget {
                     ref.read(showDeviceFilterProvider.notifier).setShowDeviceFilter(value);
                   },
                 ),
-                Divider(
-                  height: 1,
-                  indent: 48,
-                  color: colorScheme.outlineVariant.withValues(alpha: 0.3),
-                ),
-                SettingsSwitchTile(
-                  icon: Icons.keyboard_alt_outlined,
-                  title: 'Show keyboard shortcuts',
-                  value: showShortcuts,
-                  onChanged: (bool value) {
-                    ref.read(shortcutPreferencesProvider.notifier).toggleHints(value);
-                    ref.read(shortcutPreferencesProvider.notifier).toggleTooltips(value);
-                  },
-                ),
-                Divider(
-                  height: 1,
-                  indent: 48,
-                  color: colorScheme.outlineVariant.withValues(alpha: 0.3),
-                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // ==================== GENERAL SECTION ====================
+          const SettingsSectionHeader(title: 'General'),
+          SettingsCard(
+            child: Column(
+              children: [
                 SettingsTile(
-                  icon: Icons.tune_outlined,
-                  title: 'Default Views & Layout',
+                  icon: Icons.notifications_active_outlined,
+                  title: 'Reminders & Alarms',
+                  subtitle: 'Manage reminder notifications and sound alerts',
                   onTap: () {
-                    nav.navigate(context, RightPanelPageOptions.defaultSettings);
+                    nav.navigate(context, RightPanelPageOptions.reminderSettings);
                   },
                 ),
                 Divider(
@@ -198,21 +205,30 @@ class SettingsPage extends ConsumerWidget {
                 SettingsTile(
                   icon: Icons.access_time_rounded,
                   title: 'Time & Date',
+                  subtitle: 'Configure date format and time display settings',
                   onTap: () {
                     nav.navigate(context, RightPanelPageOptions.timeSettings);
                   },
                 ),
-                Divider(
-                  height: 1,
-                  indent: 48,
-                  color: colorScheme.outlineVariant.withValues(alpha: 0.3),
-                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // ==================== SECURITY SECTION ====================
+          const SettingsSectionHeader(title: 'Security'),
+          SettingsCard(
+            child: Column(
+              children: [
                 SettingsTile(
-                  icon: Icons.edit_note_rounded,
-                  title: 'Note Editor Preferences',
-                  subtitle: 'Font size, line spacing, and cursor position',
+                  icon: Icons.lock_outline,
+                  title: 'Master Password',
+                  subtitle: lockState.hasMasterPassword
+                      ? 'Update or remove master password'
+                      : 'Set up master password',
                   onTap: () {
-                    nav.navigate(context, RightPanelPageOptions.noteEditorSettings);
+                    PasswordPromptHelper.showMasterPasswordManagement(context, ref);
                   },
                 ),
                 Divider(
@@ -220,12 +236,13 @@ class SettingsPage extends ConsumerWidget {
                   indent: 48,
                   color: colorScheme.outlineVariant.withValues(alpha: 0.3),
                 ),
-                SettingsTile(
-                  icon: Icons.keyboard_rounded,
-                  title: 'Keyboard Shortcuts',
-                  subtitle: 'Customize keyboard shortcuts and keybinding chord rules',
-                  onTap: () {
-                    nav.navigate(context, RightPanelPageOptions.keybindingSettings);
+                SettingsSwitchTile(
+                  icon: Icons.lock_open_rounded,
+                  title: 'Keep notes unlocked during session',
+                  subtitle: 'Avoid password prompt for locked notes within active session',
+                  value: lockState.keepUnlockedDuringSession,
+                  onChanged: (bool value) {
+                    ref.read(lockManagerProvider.notifier).setKeepUnlockedPreference(value);
                   },
                 ),
               ],
@@ -242,6 +259,7 @@ class SettingsPage extends ConsumerWidget {
                 SettingsTile(
                   icon: Icons.download_outlined,
                   title: 'Export Notes',
+                  subtitle: 'Backup notes and export data to file',
                   onTap: () => nav.navigate(context, RightPanelPageOptions.export),
                 ),
                 Divider(
@@ -252,6 +270,7 @@ class SettingsPage extends ConsumerWidget {
                 SettingsTile(
                   icon: Icons.upload_outlined,
                   title: 'Import Notes',
+                  subtitle: 'Restore notes or import from backup files',
                   onTap: () => nav.navigate(context, RightPanelPageOptions.import),
                 ),
               ],
