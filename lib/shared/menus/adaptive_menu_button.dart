@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/helpers/platform_helper.dart';
 import 'app_bottom_sheet.dart';
+import '../../core/config/menu_anchor_constants.dart';
 
 /// Specification for an individual menu item in [AdaptiveMenuButton].
 class MenuItemSpec<T> {
@@ -49,7 +50,7 @@ class AdaptiveMenuButton<T> extends StatefulWidget {
     required this.sections,
     this.sheetTitle = '',
     this.tooltip = '',
-    this.desktopWidth = 250.0,
+    this.desktopWidth = AppMenuWidths.standard,
     this.closeOnSelect = true,
   });
 

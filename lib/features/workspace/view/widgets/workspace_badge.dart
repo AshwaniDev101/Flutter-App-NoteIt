@@ -6,6 +6,7 @@ import '../../../../shared/menus/app_bottom_sheet.dart';
 import '../../providers/active_workspace_provider.dart';
 import '../../providers/workspace_providers.dart';
 import '../workspace_menu_content.dart';
+import '../../../../core/config/menu_anchor_constants.dart';
 import 'workspace_avatar_badge.dart';
 
 class WorkspaceBadge extends ConsumerStatefulWidget {
@@ -82,7 +83,7 @@ class _WorkspaceBadgeState extends ConsumerState<WorkspaceBadge> {
             borderRadius: BorderRadius.circular(16),
           ),
           child: SizedBox(
-            width: 320,
+            width: AppMenuWidths.wide,
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: WorkspaceMenuContent(

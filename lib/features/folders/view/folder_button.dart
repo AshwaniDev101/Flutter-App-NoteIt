@@ -6,6 +6,7 @@ import 'package:noteit/core/theme/folder_theme_colors.dart';
 import '../../../core/helpers/platform_helper.dart';
 import '../../../database/drift/local_database.dart';
 import '../../../shared/menus/app_bottom_sheet.dart';
+import '../../../core/config/menu_anchor_constants.dart';
 import '../providers/folder_providers.dart';
 import 'folder_selector_container.dart';
 
@@ -218,7 +219,7 @@ class _FolderButtonState extends ConsumerState<FolderButton> {
             ),
             clipBehavior: Clip.antiAlias,
             child: SizedBox(
-              width: 280,
+              width: AppMenuWidths.standard,
               height: 480,
               child: FolderSelectorContainer(
                 selectedFolder: widget.selectedFolder,

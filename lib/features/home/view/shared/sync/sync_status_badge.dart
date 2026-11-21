@@ -16,6 +16,7 @@ import 'package:noteit/shared/overlays/snack_bar_manager.dart';
 import 'package:noteit/shared/widgets/spinning_icon.dart';
 import '../../../../../shared/widgets/flashing_icon.dart';
 import 'sync_menu_content.dart';
+import '../../../../../core/config/menu_anchor_constants.dart';
 
 /// Enumeration of all visual display states for the sync badge.
 enum SyncDisplayState {
@@ -471,7 +472,7 @@ class _SyncStatusBadgeState extends ConsumerState<SyncStatusBadge> {
             borderRadius: BorderRadius.circular(16),
           ),
           child: SizedBox(
-            width: 340,
+            width: AppMenuWidths.wide,
             child: SyncMenuContent(
               onCloseMenu: () {
                 if (_menuController.isOpen) _menuController.close();

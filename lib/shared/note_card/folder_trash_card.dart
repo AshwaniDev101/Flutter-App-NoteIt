@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:noteit/core/theme/folder_theme_colors.dart';
+import 'package:noteit/core/config/menu_anchor_constants.dart';
 import '../../database/drift/local_database.dart';
 import 'core/note_action.dart';
 
@@ -37,20 +38,29 @@ class _FolderTrashCardState extends State<FolderTrashCard> {
       controller: _menuController,
       consumeOutsideTap: true,
       menuChildren: [
-        MenuItemButton(
-          leadingIcon: const Icon(Icons.restore),
-          onPressed: () => widget.onContextMenuAction?.call(NoteAction.restore),
-          child: const Text('Restore'),
+        ConstrainedBox(
+          constraints: const BoxConstraints(minWidth: AppMenuWidths.standard),
+          child: MenuItemButton(
+            leadingIcon: const Icon(Icons.restore),
+            onPressed: () => widget.onContextMenuAction?.call(NoteAction.restore),
+            child: const Text('Restore'),
+          ),
         ),
-        MenuItemButton(
-          leadingIcon: Icon(Icons.delete_forever, color: colorScheme.error),
-          onPressed: () => widget.onContextMenuAction?.call(NoteAction.deleteForever),
-          child: Text('Delete Forever', style: TextStyle(color: colorScheme.error)),
+        ConstrainedBox(
+          constraints: const BoxConstraints(minWidth: AppMenuWidths.standard),
+          child: MenuItemButton(
+            leadingIcon: Icon(Icons.delete_forever, color: colorScheme.error),
+            onPressed: () => widget.onContextMenuAction?.call(NoteAction.deleteForever),
+            child: Text('Delete Forever', style: TextStyle(color: colorScheme.error)),
+          ),
         ),
-        MenuItemButton(
-          leadingIcon: const Icon(Icons.check_circle_outline),
-          onPressed: () => widget.onContextMenuAction?.call(NoteAction.select),
-          child: const Text('Select'),
+        ConstrainedBox(
+          constraints: const BoxConstraints(minWidth: AppMenuWidths.standard),
+          child: MenuItemButton(
+            leadingIcon: const Icon(Icons.check_circle_outline),
+            onPressed: () => widget.onContextMenuAction?.call(NoteAction.select),
+            child: const Text('Select'),
+          ),
         ),
       ],
       child: GestureDetector(

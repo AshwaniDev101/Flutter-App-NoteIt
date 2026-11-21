@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/helpers/platform_helper.dart';
 import '../../../database/drift/keybindings/keybindings_dao.dart';
 import '../../../shared/menus/app_bottom_sheet.dart';
+import '../../../core/config/menu_anchor_constants.dart';
 import '../../../shared/note_card/core/note_action.dart';
 import '../../keybinding/shortcut_config.dart';
 import '../../keybinding/smart_action_widget.dart';
@@ -176,7 +177,7 @@ class NoteEditorOptionMenu extends StatelessWidget {
     this.isChecklist = false,
     this.hasReminder = false,
     this.options = NoteEditorOptionButton.defaultOptions,
-    this.width = 196,
+    this.width = AppMenuWidths.editor,
     this.showCard = true,
   });
 

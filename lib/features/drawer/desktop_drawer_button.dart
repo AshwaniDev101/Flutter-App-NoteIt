@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
+import 'package:noteit/core/config/menu_anchor_constants.dart';
 import 'shared_drawer_content.dart';
 
 class DrawerMenuButton extends ConsumerStatefulWidget {
@@ -71,7 +72,7 @@ class _DrawerMenuButtonState extends ConsumerState<DrawerMenuButton> {
           margin: const EdgeInsets.all(4.0),
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              maxWidth: 280, // Matches the mobile drawer width
+              maxWidth: AppMenuWidths.standard, // Matches the mobile drawer width
               maxHeight: MediaQuery.sizeOf(context).height * 0.85,
             ),
             child: SharedDrawerContent(

@@ -14,6 +14,7 @@ import 'package:noteit/shared/menus/view_menu_button.dart';
 import 'package:noteit/shared/note_card/overlays/lock_overlay.dart';
 import 'package:noteit/shared/note_card/overlays/reminder_overlay.dart';
 
+import 'package:noteit/core/config/menu_anchor_constants.dart';
 import '../text/highlighted_text.dart';
 import 'core/note_action.dart';
 
@@ -135,15 +136,18 @@ class _NoteCardState extends ConsumerState<NoteCard> {
 
       final color = effectiveOption.isDestructive ? errorColor : null;
 
-      return MenuItemButton(
-        leadingIcon: Icon(
-          iconData,
-          color: color,
-        ),
-        onPressed: () => widget.onContextMenuAction?.call(effectiveOption),
-        child: Text(
-          label,
-          style: TextStyle(color: color),
+      return ConstrainedBox(
+        constraints: const BoxConstraints(minWidth: AppMenuWidths.compact),
+        child: MenuItemButton(
+          leadingIcon: Icon(
+            iconData,
+            color: color,
+          ),
+          onPressed: () => widget.onContextMenuAction?.call(effectiveOption),
+          child: Text(
+            label,
+            style: TextStyle(color: color),
+          ),
         ),
       );
     }).toList();

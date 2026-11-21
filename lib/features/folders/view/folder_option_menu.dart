@@ -6,6 +6,7 @@ import 'package:noteit/core/theme/folder_theme_colors.dart';
 import 'package:noteit/database/drift/local_database.dart';
 import 'folder_selector_container.dart';
 import 'package:noteit/shared/menus/app_bottom_sheet.dart';
+import 'package:noteit/core/config/menu_anchor_constants.dart';
 
 /// A dropdown selector widget for choosing a folder for a note.
 ///
@@ -192,7 +193,7 @@ class _FolderOptionMenuState extends ConsumerState<FolderOptionMenu> {
             ),
             clipBehavior: Clip.antiAlias,
             child: SizedBox(
-              width: 280,
+              width: AppMenuWidths.standard,
               height: 360,
               child: FolderSelectorContainer(
                 selectedFolder: widget.selectedFolder,
