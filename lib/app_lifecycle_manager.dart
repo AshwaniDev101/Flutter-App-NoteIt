@@ -4,7 +4,6 @@ import 'package:noteit/core/sync/sync_engine.dart';
 import 'package:noteit/core/util/device_info.dart';
 import 'package:noteit/core/util/logger.dart';
 import 'package:noteit/database/drift/synced_devices/synced_devices_dao.dart';
-import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
 import 'package:noteit/features/local_sync/data/network/local_sync_service.dart';
 import 'package:noteit/features/local_sync/data/network/mdns_broadcast.dart';
 import 'package:noteit/features/local_sync/data/network/mdns_searcher.dart';
@@ -13,11 +12,11 @@ import 'package:noteit/features/local_sync/data/providers/sync_server_provider.d
 import 'package:noteit/features/local_sync/data/providers/sync_session_provider.dart';
 import 'package:noteit/features/reminder/reminder_manager.dart';
 
-final startupInitializerProvider = NotifierProvider<StartupInitializer, void>(() {
-  return StartupInitializer();
+final appLifecycleManagerProvider = NotifierProvider<AppLifecycleManager, void>(() {
+  return AppLifecycleManager();
 });
 
-class StartupInitializer extends Notifier<void> {
+class AppLifecycleManager extends Notifier<void> {
   late final AppLifecycleListener _lifecycleListener;
   bool _isEvaluating = false;
 
@@ -35,20 +34,20 @@ class StartupInitializer extends Notifier<void> {
 
   void _evaluateSyncState() async {
     if (_isEvaluating) {
-      AppLogger.d('StartupInitializer: Sync state evaluation already in progress. Skipping duplicate.');
+      AppLogger.d('AppLifecycleManager: Sync state evaluation already in progress. Skipping duplicate.');
       return;
     }
     _isEvaluating = true;
 
     try {
-      AppLogger.d('StartupInitializer: Evaluating Sync State & Rearming Reminders...');
+      AppLogger.d('AppLifecycleManager: Evaluating Sync State & Rearming Reminders...');
 
       ReminderManager().rearmPendingReminders();
 
       final mode = ref.read(syncModeProvider);
 
       if (!mode.isLocal) {
-        AppLogger.d('StartupInitializer: SyncMode is $mode (not local). Skipping local sync startup.');
+        AppLogger.d('AppLifecycleManager: SyncMode is $mode (not local). Skipping local sync startup.');
         return;
       }
 
@@ -56,25 +55,25 @@ class StartupInitializer extends Notifier<void> {
         case SyncMode.localUndefined:
         case SyncMode.offline:
         case SyncMode.cloud:
-          AppLogger.d('StartupInitializer: SyncMode is $mode. No auto local initialization required.');
+          AppLogger.d('AppLifecycleManager: SyncMode is $mode. No auto local initialization required.');
           break;
         case SyncMode.localHost: // Last time this user was host
-          AppLogger.d('StartupInitializer: Sync Role: Host');
+          AppLogger.d('AppLifecycleManager: Sync Role: Host');
           final hasPaired = await ref.read(syncedDevicesDaoProvider).hasPairedDevices();
           if (!hasPaired) {
-            AppLogger.d('StartupInitializer: AutoSync [HOST]: No paired devices in DB. Resetting mode to offline.');
+            AppLogger.d('AppLifecycleManager: AutoSync [HOST]: No paired devices in DB. Resetting mode to offline.');
             await ref.read(syncModeProvider.notifier).setMode(SyncMode.offline);
             return;
           }
-          AppLogger.d('StartupInitializer: AutoSync [HOST]: Starting background engine...');
+          AppLogger.d('AppLifecycleManager: AutoSync [HOST]: Starting background engine...');
           try {
             await ref.read(serverHostingProvider.future);
           } catch (e) {
-            AppLogger.d('StartupInitializer: AutoSync [HOST]: Failed to start engine - $e');
+            AppLogger.d('AppLifecycleManager: AutoSync [HOST]: Failed to start engine - $e');
           }
           break;
         case SyncMode.localClient:
-          AppLogger.d('StartupInitializer: AutoSync [CLIENT]: Initializing connection protocol...');
+          AppLogger.d('AppLifecycleManager: AutoSync [CLIENT]: Initializing connection protocol...');
           await ref.read(syncClientProvider.notifier).autoConnectToPairedHost();
           break;
       }
@@ -84,7 +83,7 @@ class StartupInitializer extends Notifier<void> {
   }
 
   void onAppPaused() {
-    AppLogger.d('StartupInitializer: App went to the background');
+    AppLogger.d('AppLifecycleManager: App went to the background');
 
     final mode = ref.read(syncModeProvider);
     if (!mode.isLocal) {
@@ -102,7 +101,7 @@ class StartupInitializer extends Notifier<void> {
   }
 
   void onAppResumed() {
-    AppLogger.d('StartupInitializer: App came back to the foreground');
+    AppLogger.d('AppLifecycleManager: App came back to the foreground');
 
     ReminderManager().rearmPendingReminders();
 
@@ -117,7 +116,7 @@ class StartupInitializer extends Notifier<void> {
       // By invalidating the IP provider, Riverpod fetches the fresh IP.
       // This automatically causes `serverHostingProvider` to rebuild and run your
       // safe IP-checking logic inside `startHosting`!
-      AppLogger.d('StartupInitializer: AutoSync [HOST]: Re-checking Wi-Fi IP...');
+      AppLogger.d('AppLifecycleManager: AutoSync [HOST]: Re-checking Wi-Fi IP...');
 
       ref.invalidate(localIPProvide); // Forces the IP to refresh
 
@@ -130,11 +129,11 @@ class StartupInitializer extends Notifier<void> {
 
       localSync.probeConnection(timeout: const Duration(seconds: 2)).then((isAlive) {
         if (!isAlive) {
-          AppLogger.w('StartupInitializer: AutoSync [CLIENT]: Ghost connection or dropped socket detected on resume. Reconnecting...');
+          AppLogger.w('AppLifecycleManager: AutoSync [CLIENT]: Ghost connection or dropped socket detected on resume. Reconnecting...');
           ref.read(syncClientProvider.notifier).disconnect();
           _evaluateSyncState();
         } else {
-          AppLogger.d('StartupInitializer: AutoSync [CLIENT]: WebSocket connection verified active via ping probe!');
+          AppLogger.d('AppLifecycleManager: AutoSync [CLIENT]: WebSocket connection verified active via ping probe!');
         }
       });
     }

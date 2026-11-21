@@ -318,6 +318,10 @@ class FoldersDao extends DatabaseAccessor<LocalDatabase> with _$FoldersDaoMixin 
     return await select(folders).get();
   }
 
+  Future<Folder?> getFolderById(String uuid) async {
+    return await (select(folders)..where((t) => t.uuid.equals(uuid))).getSingleOrNull();
+  }
+
   Future<void> importFolders(List<Folder> importedFolders) async {
     if (importedFolders.isEmpty) return;
     await batch((batch) {

@@ -134,20 +134,38 @@ final activeNoteProvider = NotifierProvider<ActiveNoteNotifier, NoteWithFolder?>
   return ActiveNoteNotifier();
 });
 class ActiveNoteNotifier extends Notifier<NoteWithFolder?> {
+  final NoteWithFolder? initialState;
+  
+  ActiveNoteNotifier({this.initialState});
+
   @override
   NoteWithFolder? build() {
-    // Initial state: no note is selected
-    return null;
+    // Reactive Validation: Clear active note if it is soft-deleted or archived in background
+    ref.listen(notesDaoProvider.select((dao) => dao.watchActiveNotesCount()), (previous, next) async {
+      final currentNote = state;
+      if (currentNote == null) return;
+      
+      final db = ref.read(notesDaoProvider);
+      final updatedNote = await db.getNoteById(currentNote.note.uuid);
+      
+      if (updatedNote == null || updatedNote.note.deletedAt != null || updatedNote.note.archivedAt != null) {
+        clear();
+      }
+    });
+
+    return initialState;
   }
 
   // Action to select a note
   void setNote(NoteWithFolder noteWithFolder) {
     state = noteWithFolder;
+    SharedPreferenceManager.instance.setLastActiveNoteId(noteWithFolder.note.uuid);
   }
 
   // Action to close/clear the editor
   void clear() {
     state = null;
+    SharedPreferenceManager.instance.setLastActiveNoteId(null);
   }
 }
 

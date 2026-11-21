@@ -112,6 +112,14 @@ class SharedPreferenceManager {
 
   // --- Note View & Sort Keys ---
 
+  /// Key for the last active folder ID to restore on app startup.
+  /// Value: String (UUID).
+  static const String _keyLastActiveFolderId = 'last_active_folder_id';
+
+  /// Key for the last active note ID to restore on app startup.
+  /// Value: String (UUID).
+  static const String _keyLastActiveNoteId = 'last_active_note_id';
+
   /// Key for legacy main view type.
   /// Value: int.
   static const String _keyViewType = 'view_type';
@@ -392,6 +400,28 @@ class SharedPreferenceManager {
   // =========================================================================
   // 4. NOTE VIEW & SORT METHODS
   // =========================================================================
+
+  /// Retrieves the UUID of the last active folder.
+  String? get lastActiveFolderId => _prefs.getString(_keyLastActiveFolderId);
+
+  /// Saves or clears the last active folder.
+  Future<bool> setLastActiveFolderId(String? uuid) async {
+    if (uuid == null) {
+      return await _prefs.remove(_keyLastActiveFolderId);
+    }
+    return await _prefs.setString(_keyLastActiveFolderId, uuid);
+  }
+
+  /// Retrieves the UUID of the last active note.
+  String? get lastActiveNoteId => _prefs.getString(_keyLastActiveNoteId);
+
+  /// Saves or clears the last active note.
+  Future<bool> setLastActiveNoteId(String? uuid) async {
+    if (uuid == null) {
+      return await _prefs.remove(_keyLastActiveNoteId);
+    }
+    return await _prefs.setString(_keyLastActiveNoteId, uuid);
+  }
 
   /// Legacy view type integer.
   int get viewType => _prefs.getInt(_keyViewType) ?? 0;
