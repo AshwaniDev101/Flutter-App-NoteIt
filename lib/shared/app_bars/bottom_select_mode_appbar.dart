@@ -154,21 +154,21 @@ class BottomSelectModeAppBar extends ConsumerWidget {
       onTap: onPressed,
       borderRadius: BorderRadius.circular(8.0),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
+        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               icon,
-              size: 28.0,
+              size: 22.0,
               color: color,
             ),
-            const SizedBox(height: 2.0),
+            const SizedBox(height: 1.0),
             Text(
               label,
               style: TextStyle(
-                fontSize: 14.0,
+                fontSize: 11.0,
                 fontWeight: FontWeight.w500,
                 color: color,
               ),

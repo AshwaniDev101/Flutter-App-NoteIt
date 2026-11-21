@@ -78,7 +78,6 @@ class MobileBottomControlBar extends ConsumerWidget {
                     alignment: Alignment.centerLeft,
                     child: FolderButton(
                       selectedFolder: ref.watch(activeFolderProvider),
-                      emptyLabel: 'All Notes',
                       showContextMenus: true,
                       isShowTotalNoteCount: true,
                       onFolderSelected: (folder) {

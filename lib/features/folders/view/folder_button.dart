@@ -17,7 +17,6 @@ class FolderButton extends ConsumerStatefulWidget {
   final Folder? selectedFolder;
   final ValueChanged<Folder?> onFolderSelected;
   final bool showContextMenus;
-  final String emptyLabel;
   final bool isShowTotalNoteCount;
 
   const FolderButton({
@@ -25,7 +24,6 @@ class FolderButton extends ConsumerStatefulWidget {
     required this.selectedFolder,
     required this.onFolderSelected,
     this.showContextMenus = true,
-    this.emptyLabel = 'All Notes',
     this.isShowTotalNoteCount = false,
   });
 
@@ -46,7 +44,7 @@ class _FolderButtonState extends ConsumerState<FolderButton> {
       builder: (context, setModalState) {
         return FolderSelectorContainer(
           selectedFolder: localSelectedFolder,
-          emptyLabel: widget.emptyLabel,
+          emptyLabel: 'All Notes',
           title: 'Folders',
           emptyIcon: Icons.format_align_left,
           showEmptyNoteCount: true,
@@ -66,7 +64,7 @@ class _FolderButtonState extends ConsumerState<FolderButton> {
   Widget _buildTriggerButton(BuildContext context, {required bool isOpen, required VoidCallback onTap}) {
     final Folder? activeFolder = widget.selectedFolder;
     final colorScheme = Theme.of(context).colorScheme;
-    final currentName = activeFolder?.name ?? widget.emptyLabel;
+    final currentName = activeFolder?.name ?? 'Folders';
 
     final currentColor = activeFolder != null
         ? FolderThemeColors.of(context, activeFolder.colorIndex)
@@ -224,7 +222,7 @@ class _FolderButtonState extends ConsumerState<FolderButton> {
               height: 480,
               child: FolderSelectorContainer(
                 selectedFolder: widget.selectedFolder,
-                emptyLabel: widget.emptyLabel,
+                emptyLabel: 'All Notes',
                 title: 'Folders',
                 // emptyIcon: Icons.format_align_left,
                 showEmptyNoteCount: true,
