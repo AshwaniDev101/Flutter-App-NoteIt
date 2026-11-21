@@ -10,7 +10,4 @@ class AppMenuWidths {
 
   /// Wide menu width for content-heavy panels (e.g. Workspace and Sync status menus).
   static const double wide = 340.0;
-
-  /// Specialized menu width for note editor options.
-  static const double editor = 196.0;
 }

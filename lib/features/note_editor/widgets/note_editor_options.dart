@@ -57,7 +57,6 @@ class NoteEditorOptionButton extends StatelessWidget {
                   isChecklist: isChecklist,
                   hasReminder: hasReminder,
                   options: options,
-                  width: double.infinity,
                   showCard: false,
                   onPressed: (option) {
                     Navigator.pop(context);
@@ -166,8 +165,12 @@ class NoteEditorOptionMenu extends StatelessWidget {
   final bool isChecklist;
   final bool hasReminder;
   final List<NoteAction> options;
-  final double width;
   final bool showCard;
+
+  static const double _itemWidth = 60.0;
+  static const double _itemHeight = 60.0;
+  static const double _spacing = 8.0;
+  static const int _columnCount = 3;
 
   const NoteEditorOptionMenu({
     super.key,
@@ -177,22 +180,22 @@ class NoteEditorOptionMenu extends StatelessWidget {
     this.isChecklist = false,
     this.hasReminder = false,
     this.options = NoteEditorOptionButton.defaultOptions,
-    this.width = AppMenuWidths.editor,
     this.showCard = true,
   });
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final double calculatedWidth = (_itemWidth * _columnCount) + (_spacing * (_columnCount - 1));
 
     final content = Padding(
       padding: const EdgeInsets.all(8.0),
       child: SizedBox(
-        width: width,
+        width: calculatedWidth,
         child: Wrap(
           alignment: WrapAlignment.start,
-          spacing: 8.0,
-          runSpacing: 8.0,
+          spacing: _spacing,
+          runSpacing: _spacing,
           children: options.map((option) {
             final appearance = option.getAppearance(
               isLocked: isLocked,
@@ -209,7 +212,6 @@ class NoteEditorOptionMenu extends StatelessWidget {
               context: context,
               icon: Icon(appearance.icon, color: iconColor),
               name: appearance.label,
-              tooltip: appearance.tooltip,
               onPressed: () {
                 MenuController.maybeOf(context)?.close();
                 onPressed(option);
@@ -248,34 +250,30 @@ class NoteEditorOptionMenu extends StatelessWidget {
   Widget _editorOption({
     required Icon icon,
     required String name,
-    required String tooltip,
     required VoidCallback onPressed,
     required BuildContext context,
   }) {
-    return Tooltip(
-      message: tooltip,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onPressed,
-          borderRadius: BorderRadius.circular(8.0),
-          child: SizedBox(
-            height: 60,
-            width: 60,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                icon,
-                const SizedBox(height: 4),
-                Text(
-                  name,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodySmall,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(8.0),
+        child: SizedBox(
+          height: _itemHeight,
+          width: _itemWidth,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              icon,
+              const SizedBox(height: 4),
+              Text(
+                name,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodySmall,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
         ),
       ),
