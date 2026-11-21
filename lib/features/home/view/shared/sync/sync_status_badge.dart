@@ -300,6 +300,18 @@ class _SyncStatusBadgeState extends ConsumerState<SyncStatusBadge> {
     );
   }
 
+  void _openSyncMenu(BuildContext context) {
+    if (!PlatformHelper.isWideLayout(context)) {
+      _showMobileBottomSheet(context);
+    } else {
+      if (_menuController.isOpen) {
+        _menuController.close();
+      } else {
+        _menuController.open();
+      }
+    }
+  }
+
   void _handleTap(
     BuildContext context,
     WidgetRef ref,
@@ -310,15 +322,7 @@ class _SyncStatusBadgeState extends ConsumerState<SyncStatusBadge> {
 
     // 1. Offline Mode -> Open Sync Engine Selector Menu
     if (displayState == SyncDisplayState.offline) {
-      if (!PlatformHelper.isWideLayout(context)) {
-        _showMobileBottomSheet(context);
-      } else {
-        if (_menuController.isOpen) {
-          _menuController.close();
-        } else {
-          _menuController.open();
-        }
-      }
+      _openSyncMenu(context);
       return;
     }
 
@@ -412,6 +416,7 @@ class _SyncStatusBadgeState extends ConsumerState<SyncStatusBadge> {
               onTap: displayState.isActionable
                   ? () => _handleTap(context, ref, displayState)
                   : null,
+              onSecondaryTap: () => _openSyncMenu(context),
               child: Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 10.0,
