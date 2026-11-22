@@ -9,7 +9,8 @@ enum NoteAction {
   pin('Pin', Icons.push_pin_outlined),
   unpin('Unpin', CupertinoIcons.pin_slash),
   lock('Lock', Icons.lock_outline),
-  unlock('Unlock', Icons.lock_open_outlined),
+  unlock('Remove lock', CupertinoIcons.lock_slash),
+  lockSession('Lock', Icons.lock_outline),
   reminder('Remind me', Icons.notifications_none_outlined),
   moveTo('Move to...', Icons.drive_file_move_outlined),
   duplicate('Duplicate', Icons.copy_outlined),
@@ -49,10 +50,24 @@ extension NoteActionUI on NoteAction {
     switch (this) {
       case NoteAction.lock:
         return (
-          label: isLocked ? 'Unlock' : 'Lock',
-          icon: isLocked ? Icons.lock_open_outlined : Icons.lock_outline,
-          tooltip: isLocked ? 'Remove Lock' : 'Lock Note',
+          label: isLocked ? 'Remove lock' : 'Lock',
+          icon: isLocked ? CupertinoIcons.lock_slash : Icons.lock_outline,
+          tooltip: isLocked ? 'Remove lock' : 'Lock Note',
           isActive: isLocked,
+        );
+      case NoteAction.unlock:
+        return (
+          label: 'Remove lock',
+          icon: CupertinoIcons.lock_slash,
+          tooltip: 'Remove lock',
+          isActive: true,
+        );
+      case NoteAction.lockSession:
+        return (
+          label: 'Lock',
+          icon: Icons.lock_outline,
+          tooltip: 'Lock Note Session',
+          isActive: true,
         );
       case NoteAction.pin:
         return (

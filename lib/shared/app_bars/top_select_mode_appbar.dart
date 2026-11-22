@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/helpers/platform_helper.dart';
-import '../../features/lock/lock_manger/lock_manager.dart';
 import '../../features/lock/password_prompt_helper.dart';
 import '../../features/home/core/providers.dart';
 
@@ -68,13 +67,27 @@ class TopSelectModeAppBar extends ConsumerWidget implements PreferredSizeWidget 
         await actionsController.unarchiveNotes(targetUuids);
         break;
       case NoteAction.lock:
-        final lockNotifier = ref.read(lockManagerProvider.notifier);
-        if (!lockNotifier.hasMasterPassword) {
-          await PasswordPromptHelper.showMasterPasswordManagement(context, ref);
-        }
-        if (ref.read(lockManagerProvider.notifier).hasMasterPassword) {
+        final authenticated = await PasswordPromptHelper.promptAndVerifyMasterPassword(
+          context,
+          ref,
+          forcePasswordPrompt: false,
+        );
+        if (authenticated) {
           await actionsController.lockNotes(targetUuids);
         }
+        break;
+      case NoteAction.unlock:
+        final authenticated = await PasswordPromptHelper.promptAndVerifyMasterPassword(
+          context,
+          ref,
+          forcePasswordPrompt: true,
+        );
+        if (authenticated) {
+          await actionsController.unlockNotes(targetUuids);
+        }
+        break;
+      case NoteAction.lockSession:
+        actionsController.lockSessionNotes(targetUuids);
         break;
       case NoteAction.duplicate:
         await actionsController.duplicateNotes(targetUuids, platform);

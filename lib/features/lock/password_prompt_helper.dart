@@ -191,4 +191,79 @@ class PasswordPromptHelper {
       }
     }
   }
+
+  /// Prompts for master password.
+  /// If [forcePasswordPrompt] is true (e.g. for unlocking), password prompt is ALWAYS shown even if masterKeyBytes is in memory.
+  /// If [forcePasswordPrompt] is false (e.g. for locking), password prompt is bypassed if master password exists, allowing 1-tap locking.
+  static Future<bool> promptAndVerifyMasterPassword(
+    BuildContext context,
+    WidgetRef ref, {
+    bool forcePasswordPrompt = false,
+  }) async {
+    final lockState = ref.read(lockManagerProvider);
+    final lockManager = ref.read(lockManagerProvider.notifier);
+
+    // If no master password is set, require user to set up a password first
+    if (!lockManager.hasMasterPassword) {
+      final String? newPassword = await showGeneralDialog<String>(
+        context: context,
+        barrierDismissible: true,
+        barrierLabel: 'Dismiss Password Dialog',
+        barrierColor: Colors.black45,
+        transitionDuration: const Duration(milliseconds: 200),
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            const SetupPasswordPage(),
+        transitionBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+      );
+
+      if (newPassword != null && newPassword.isNotEmpty && context.mounted) {
+        await lockManager.setupMasterPassword(newPassword);
+        SnackBarManager.show(
+          msg: 'Master Password Created!',
+          type: SnackBarMessageType.acknowledgment,
+        );
+        return ref.read(lockManagerProvider).hasMasterPassword;
+      }
+      return false;
+    }
+
+    // If locking (!forcePasswordPrompt), master password exists, so proceed without password dialog
+    if (!forcePasswordPrompt) {
+      return true;
+    }
+
+    // If active in memory and forcing verification is not strictly needed for session unlock
+    if (lockState.masterKeyBytes != null) {
+      return true;
+    }
+
+    // Master password is set, prompt for verification (for unlocking)
+    final String? enteredPassword = await showGeneralDialog<String>(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'Dismiss Password Dialog',
+      barrierColor: Colors.black45,
+      transitionDuration: const Duration(milliseconds: 200),
+      pageBuilder: (context, animation, secondaryAnimation) =>
+          const MasterPasswordPage(),
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        return FadeTransition(opacity: animation, child: child);
+      },
+    );
+
+    if (enteredPassword != null && enteredPassword.isNotEmpty && context.mounted) {
+      final success = await lockManager.verifyPassword(enteredPassword);
+      if (!success && context.mounted) {
+        SnackBarManager.show(
+          msg: 'Incorrect Password',
+          type: SnackBarMessageType.error,
+        );
+      }
+      return success;
+    }
+
+    return false;
+  }
 }

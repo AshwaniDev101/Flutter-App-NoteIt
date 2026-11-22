@@ -275,25 +275,47 @@ class LockNotifier extends Notifier<LockState> with WidgetsBindingObserver {
   }) async {
     AppLogger.d('LockNotifier: togglePersistentLock called for note $uuid (shouldLock: $shouldLock, hasKeyInMemory: ${state.masterKeyBytes != null})');
 
-    // Verify password if masterKeyBytes is null OR if an explicit non-empty password string was provided
-    if ((state.masterKeyBytes == null || password.isNotEmpty) && !ignorePassword) {
-      if (password.isNotEmpty) {
-        AppLogger.d('LockNotifier: Verifying explicit password string for lock toggle $uuid...');
-        final valid = await verifyPassword(password);
-        if (!valid) {
-          AppLogger.w('LockNotifier: Incorrect password during note lock toggle for $uuid');
-          state = state.copyWith(error: 'Incorrect Password');
+    List<int>? keyToUse = state.masterKeyBytes != null ? List<int>.from(state.masterKeyBytes!) : null;
+    bool isTempKey = false;
+
+    if (shouldLock) {
+      // Locking note: retrieve key from memory or hardware secure storage. No password required if master key exists!
+      if (keyToUse == null) {
+        final hardwareKey = await SecureStorageManager.instance.getHardwareMasterKey();
+        if (hardwareKey != null) {
+          keyToUse = hardwareKey;
+          isTempKey = true;
+        }
+      }
+      if (keyToUse == null) {
+        AppLogger.w('LockNotifier: Cannot lock note $uuid - master key not found in storage or memory.');
+        state = state.copyWith(error: 'Master password required');
+        return false;
+      }
+    } else {
+      // Unlocking note: requires explicit password or active master key in memory
+      if ((keyToUse == null || password.isNotEmpty) && !ignorePassword) {
+        if (password.isNotEmpty) {
+          AppLogger.d('LockNotifier: Verifying explicit password string for unlocking note $uuid...');
+          final valid = await verifyPassword(password);
+          if (!valid) {
+            AppLogger.w('LockNotifier: Incorrect password during note unlock for $uuid');
+            state = state.copyWith(error: 'Incorrect Password');
+            return false;
+          }
+          if (state.masterKeyBytes != null) {
+            keyToUse = List<int>.from(state.masterKeyBytes!);
+          }
+        } else if (keyToUse == null) {
+          AppLogger.w('LockNotifier: Cannot unlock note $uuid - master key is null and password is empty');
+          state = state.copyWith(error: 'Password required');
           return false;
         }
-      } else if (state.masterKeyBytes == null) {
-        AppLogger.w('LockNotifier: Cannot toggle lock state for $uuid because master key is null and password is empty');
-        state = state.copyWith(error: 'Password required');
-        return false;
       }
     }
 
-    if (state.masterKeyBytes == null) {
-      AppLogger.w('LockNotifier: Lock toggle aborted for $uuid - masterKeyBytes is null');
+    if (keyToUse == null) {
+      AppLogger.w('LockNotifier: Lock toggle aborted for $uuid - keyToUse is null');
       state = state.copyWith(error: 'Session locked');
       return false;
     }
@@ -302,7 +324,7 @@ class LockNotifier extends Notifier<LockState> with WidgetsBindingObserver {
       final success = await ref.read(notesDaoProvider).lockNote(
             uuid,
             isLocked: shouldLock,
-            masterKeyBytes: state.masterKeyBytes,
+            masterKeyBytes: keyToUse,
           );
 
       if (!success) {
@@ -324,6 +346,12 @@ class LockNotifier extends Notifier<LockState> with WidgetsBindingObserver {
       AppLogger.e('LockNotifier: Failed to toggle note lock', error: e, stack: st);
       state = state.copyWith(error: e.toString());
       return false;
+    } finally {
+      if (isTempKey) {
+        for (int i = 0; i < keyToUse.length; i++) {
+          keyToUse[i] = 0;
+        }
+      }
     }
   }
 }

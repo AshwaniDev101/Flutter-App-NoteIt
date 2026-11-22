@@ -478,6 +478,11 @@ class _ArchivePageState extends ConsumerState<ArchivePage> with WidgetsBindingOb
                             _deleteNotes(targetUuids);
                             break;
 
+                          case NoteAction.lockSession:
+                            final targetUuids = isSelected ? noteIds.toList() : [noteWithFolder.note.uuid];
+                            ref.read(noteActionsControllerProvider).lockSessionNotes(targetUuids);
+                            break;
+
                           default:
                             break;
                         }

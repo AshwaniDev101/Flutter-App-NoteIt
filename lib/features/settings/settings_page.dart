@@ -238,7 +238,7 @@ class SettingsPage extends ConsumerWidget {
                 ),
                 SettingsSwitchTile(
                   icon: Icons.lock_open_rounded,
-                  title: 'Keep notes unlocked during session',
+                  title: 'Keep notes unlocked',
                   subtitle: 'Avoid password prompt for locked notes within active session',
                   value: lockState.keepUnlockedDuringSession,
                   onChanged: (bool value) {

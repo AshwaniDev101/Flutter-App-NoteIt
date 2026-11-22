@@ -91,7 +91,7 @@ class FolderViewModel extends Notifier<FolderState> {
     }
   }
 
-  Future<int> moveNotesToFolder({required List<String> targetUuids, required String folderUuid}) async {
+  Future<int> moveNotesToFolder({required List<String> targetUuids, required String? folderUuid}) async {
     try {
       final notesDao = ref.read(notesDaoProvider);
       int updatedCount = 0;

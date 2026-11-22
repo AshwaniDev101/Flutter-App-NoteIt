@@ -17,7 +17,6 @@ import 'note_card.dart';
 import '../../../features/home/core/providers.dart';
 import '../../../features/home/viewmodel/viewmodel.dart';
 import '../../../features/home/view/desktop/content_panel/core/navigator.dart';
-import '../../../features/lock/lock_manger/lock_manager.dart';
 import '../../../features/lock/password_prompt_helper.dart';
 
 class DynamicNotesLayout extends ConsumerWidget {
@@ -246,14 +245,26 @@ class DynamicNotesLayout extends ConsumerWidget {
         await actionsController.archiveNotes(targetUuids);
         break;
       case NoteAction.lock:
-        final lockNotifier = ref.read(lockManagerProvider.notifier);
-
-        if (!lockNotifier.hasMasterPassword) {
-          if (!context.mounted) return;
-          await PasswordPromptHelper.showMasterPasswordManagement(context, ref);
-        }
-        if (ref.read(lockManagerProvider.notifier).hasMasterPassword) {
+        final authenticated = await PasswordPromptHelper.promptAndVerifyMasterPassword(
+          context,
+          ref,
+          forcePasswordPrompt: false,
+        );
+        if (authenticated) {
           await actionsController.lockNotes(targetUuids);
+        }
+        break;
+      case NoteAction.lockSession:
+        actionsController.lockSessionNotes(targetUuids);
+        break;
+      case NoteAction.unlock:
+        final authenticated = await PasswordPromptHelper.promptAndVerifyMasterPassword(
+          context,
+          ref,
+          forcePasswordPrompt: true,
+        );
+        if (authenticated) {
+          await actionsController.unlockNotes(targetUuids);
         }
         break;
       case NoteAction.duplicate:

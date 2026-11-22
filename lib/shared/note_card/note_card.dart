@@ -104,43 +104,75 @@ class _NoteCardState extends ConsumerState<NoteCard> {
   void _showContextMenu(BuildContext context, Offset globalPosition) async {
     final errorColor = Theme.of(context).colorScheme.error;
 
-    final items = widget.contextMenuOptions
-        .where((option) => !(option == NoteAction.select && widget.isSelected))
-        .map((option) {
-      var effectiveOption = option;
-      if (option == NoteAction.pin && _isPinned) {
-        effectiveOption = NoteAction.unpin;
-      } else if (option == NoteAction.unpin && !_isPinned) {
-        effectiveOption = NoteAction.pin;
-      }
+    final lockState = ref.read(lockManagerProvider);
+    final isSessionUnlocked = lockState.sessionUnlockedNoteIds.contains(_note.uuid);
+    final shouldShowLockSession = lockState.keepUnlockedDuringSession && _isLocked && isSessionUnlocked;
 
-      String label = effectiveOption.label;
-      IconData iconData = effectiveOption.icon;
+    final List<PopupMenuEntry<NoteAction>> items = [];
 
-      if (option == NoteAction.reminder) {
-        final hasReminder = _note.reminderAt != null;
-        label = hasReminder ? 'Remove Reminder' : 'Remind me';
-        iconData = hasReminder ? Icons.notifications_off_outlined : Icons.notifications_none_outlined;
-      }
-
-      final color = effectiveOption.isDestructive ? errorColor : null;
-
-      return PopupMenuItem<NoteAction>(
-        value: effectiveOption,
-        height: 38,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Row(
-          children: [
-            Icon(iconData, size: 18, color: color),
-            const SizedBox(width: 12),
-            Text(
-              label,
-              style: TextStyle(fontSize: 14, color: color, fontWeight: FontWeight.w500),
-            ),
-          ],
+    if (shouldShowLockSession) {
+      items.add(
+        const PopupMenuItem<NoteAction>(
+          value: NoteAction.lockSession,
+          height: 38,
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              Icon(Icons.lock_outline, size: 18),
+              SizedBox(width: 12),
+              Text(
+                'Lock',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
         ),
       );
-    }).toList();
+    }
+
+    items.addAll(
+      widget.contextMenuOptions
+          .where((option) => !(option == NoteAction.select && widget.isSelected))
+          .map((option) {
+        var effectiveOption = option;
+        if (option == NoteAction.pin && _isPinned) {
+          effectiveOption = NoteAction.unpin;
+        } else if (option == NoteAction.unpin && !_isPinned) {
+          effectiveOption = NoteAction.pin;
+        } else if (option == NoteAction.lock && _isLocked) {
+          effectiveOption = NoteAction.unlock;
+        } else if (option == NoteAction.unlock && !_isLocked) {
+          effectiveOption = NoteAction.lock;
+        }
+
+        String label = effectiveOption.label;
+        IconData iconData = effectiveOption.icon;
+
+        if (option == NoteAction.reminder) {
+          final hasReminder = _note.reminderAt != null;
+          label = hasReminder ? 'Remove Reminder' : 'Remind me';
+          iconData = hasReminder ? Icons.notifications_off_outlined : Icons.notifications_none_outlined;
+        }
+
+        final color = effectiveOption.isDestructive ? errorColor : null;
+
+        return PopupMenuItem<NoteAction>(
+          value: effectiveOption,
+          height: 38,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              Icon(iconData, size: 18, color: color),
+              const SizedBox(width: 12),
+              Text(
+                label,
+                style: TextStyle(fontSize: 14, color: color, fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+        );
+      }),
+    );
 
     final selectedOption = await ContextMenuHelper.show<NoteAction>(
       context: context,

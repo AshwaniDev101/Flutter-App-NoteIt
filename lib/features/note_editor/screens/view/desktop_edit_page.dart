@@ -22,6 +22,7 @@ import '../../../folders/view/folder_option_menu.dart';
 import '../../../home/core/providers.dart';
 import '../../../home/view/desktop/content_panel/core/navigator.dart';
 import '../../../lock/lock_manger/lock_manager.dart';
+import '../../../lock/password_prompt_helper.dart';
 import '../../../lock/view/setup_password_page.dart';
 import '../../../reminder/reminder_manager.dart';
 import '../../../../database/drift/keybindings/keybindings_dao.dart';
@@ -161,8 +162,8 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
       lockState.masterKeyBytes,
     );
     if (mounted && decrypted.isNotEmpty) {
-      _highlightedContentController.text = decrypted;
       _lastSavedContent = decrypted;
+      _highlightedContentController.text = decrypted;
       if (_currentNoteWithFolder!.note.contentVersion == ContentVersion.checklist.value) {
         setState(() {
           _currentChecklist = _convertTextToChecklist(decrypted.trim());
@@ -336,8 +337,12 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
         }
       }
     } else {
+      final bool isContentChanged = _isLocked
+          ? content != _lastSavedContent.trim()
+          : content != _currentNoteWithFolder!.note.content;
+
       if (title != _currentNoteWithFolder!.note.title ||
-          content != _currentNoteWithFolder!.note.content ||
+          isContentChanged ||
           _currentNoteWithFolder!.note.contentVersion != _contentVersion.value) {
         await _viewModel.updateNote(_currentNoteWithFolder!.note.uuid, title, content, _contentVersion);
         try {
@@ -365,37 +370,50 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
 
   Future<void> _handleLockToggle() async {
     final lockManager = ref.read(lockManagerProvider.notifier);
+    final targetLockState = !_isLocked;
     bool shouldProceed = false;
 
-    if (!lockManager.hasMasterPassword) {
-      final enteredPassword = await showGeneralDialog<String>(
-        context: context,
-        barrierDismissible: true,
-        barrierLabel: 'Dismiss',
-        barrierColor: Colors.black45,
-        pageBuilder: (context, anim1, anim2) => const SetupPasswordPage(),
-      );
+    if (targetLockState) {
+      // Locking note
+      await _executeSave(isManualSave: false);
+      if (!mounted) return;
+      if (!lockManager.hasMasterPassword) {
+        final enteredPassword = await showGeneralDialog<String>(
+          context: context,
+          barrierDismissible: true,
+          barrierLabel: 'Dismiss',
+          barrierColor: Colors.black45,
+          pageBuilder: (context, anim1, anim2) => const SetupPasswordPage(),
+        );
 
-      if (enteredPassword != null && enteredPassword.isNotEmpty) {
-        await lockManager.setupMasterPassword(enteredPassword);
-        if (context.mounted) SnackBarManager.show(msg: 'Master Password Created!');
+        if (enteredPassword != null && enteredPassword.isNotEmpty) {
+          await lockManager.setupMasterPassword(enteredPassword);
+          if (context.mounted) SnackBarManager.show(msg: 'Master Password Created!');
+          shouldProceed = true;
+        }
+      } else {
         shouldProceed = true;
       }
     } else {
-      shouldProceed = true;
+      // Unlocking note
+      shouldProceed = await PasswordPromptHelper.promptAndVerifyMasterPassword(
+        context,
+        ref,
+        forcePasswordPrompt: true,
+      );
     }
 
     if (shouldProceed && _currentNoteWithFolder != null) {
       final success = await lockManager.togglePersistentLock(
         _currentNoteWithFolder!.note.uuid,
         '',
-        shouldLock: !_isLocked,
+        shouldLock: targetLockState,
         ignorePassword: true,
       );
 
       if (success) {
         if (mounted) {
-          setState(() => _isLocked = !_isLocked);
+          setState(() => _isLocked = targetLockState);
         }
         if (_isLocked) {
           _handleCloseNote();
@@ -531,6 +549,10 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
                         break;
                       case NoteAction.lock:
                         _handleLockToggle();
+                        break;
+                      case NoteAction.lockSession:
+                        ref.read(lockManagerProvider.notifier).lockSessionNote(targetUuid);
+                        _handleCloseNote();
                         break;
                       case NoteAction.archive:
                         await actionsController.archiveNotes([targetUuid]);

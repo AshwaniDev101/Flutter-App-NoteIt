@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/helpers/platform_helper.dart';
-import '../../features/lock/lock_manger/lock_manager.dart';
 import '../../features/lock/password_prompt_helper.dart';
 import '../../features/folders/providers/folder_providers.dart';
 import '../../features/home/view/desktop/content_panel/core/navigator.dart';
@@ -61,13 +60,27 @@ class BottomSelectModeAppBar extends ConsumerWidget {
         await actionsController.unarchiveNotes(selectedNoteIds);
         break;
       case NoteAction.lock:
-        final lockNotifier = ref.read(lockManagerProvider.notifier);
-        if (!lockNotifier.hasMasterPassword) {
-          await PasswordPromptHelper.showMasterPasswordManagement(context, ref);
-        }
-        if (ref.read(lockManagerProvider.notifier).hasMasterPassword) {
+        final authenticated = await PasswordPromptHelper.promptAndVerifyMasterPassword(
+          context,
+          ref,
+          forcePasswordPrompt: false,
+        );
+        if (authenticated) {
           await actionsController.lockNotes(selectedNoteIds);
         }
+        break;
+      case NoteAction.unlock:
+        final authenticated = await PasswordPromptHelper.promptAndVerifyMasterPassword(
+          context,
+          ref,
+          forcePasswordPrompt: true,
+        );
+        if (authenticated) {
+          await actionsController.unlockNotes(selectedNoteIds);
+        }
+        break;
+      case NoteAction.lockSession:
+        actionsController.lockSessionNotes(selectedNoteIds);
         break;
       case NoteAction.duplicate:
         await actionsController.duplicateNotes(selectedNoteIds, platform);

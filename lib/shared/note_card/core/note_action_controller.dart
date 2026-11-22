@@ -111,6 +111,29 @@ class NoteActionsController {
     _clearActiveNoteIfAffected(uuids);
   }
 
+  /// Unlocks a list of notes.
+  Future<void> unlockNotes(List<String> uuids, {String password = ''}) async {
+    for (final uuid in uuids) {
+      await ref.read(lockManagerProvider.notifier).togglePersistentLock(
+            uuid,
+            password,
+            shouldLock: false,
+          );
+    }
+    AppLogger.d('NoteActionsController: Unlocked notes ($uuids)');
+    ref.read(syncOrchestratorProvider).triggerSync();
+    await _updateActiveNoteIfAffected(uuids);
+  }
+
+  /// Locks active session for a list of notes.
+  void lockSessionNotes(List<String> uuids) {
+    for (final uuid in uuids) {
+      ref.read(lockManagerProvider.notifier).lockSessionNote(uuid);
+    }
+    AppLogger.d('NoteActionsController: Session locked notes ($uuids)');
+    _clearActiveNoteIfAffected(uuids);
+  }
+
   /// Duplicates a list of notes.
   Future<void> duplicateNotes(List<String> uuids, String platform) async {
     final notesToDuplicate = await db.notesDao.getNotesByUuids(uuids);

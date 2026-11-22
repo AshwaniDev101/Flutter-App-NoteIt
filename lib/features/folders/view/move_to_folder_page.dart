@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:noteit/core/theme/folder_theme_colors.dart';
-import 'package:noteit/shared/widgets/folder_icon.dart';
 
 import '../../../core/sync/sync_orchestrator.dart';
 import '../../../core/util/logger.dart';
@@ -73,7 +72,7 @@ class _MoveToFolderPageState extends ConsumerState<MoveToFolderPage> {
     }
   }
 
-  Future<void> _handleFolderSelected(Folder folder) async {
+  Future<void> _handleFolderSelected(Folder? folder) async {
     if (widget.onFolderSelected != null) {
       widget.onFolderSelected!(folder);
       return;
@@ -84,18 +83,27 @@ class _MoveToFolderPageState extends ConsumerState<MoveToFolderPage> {
     if (targetUuids.isNotEmpty) {
       final updatedCount = await ref.read(folderViewModelProvider.notifier).moveNotesToFolder(
             targetUuids: targetUuids,
-            folderUuid: folder.uuid,
+            folderUuid: folder?.uuid,
           );
 
       // Clear pending moving note IDs state
       ref.read(movingNoteIdsProvider.notifier).clear();
 
       if (mounted) {
-        final String message = updatedCount > 0
-            ? (updatedCount == 1
-                ? 'Moved 1 note to "${folder.name}"'
-                : 'Moved $updatedCount notes to "${folder.name}"')
-            : 'Note(s) already in "${folder.name}"';
+        final String message;
+        if (folder != null) {
+          message = updatedCount > 0
+              ? (updatedCount == 1
+                  ? 'Moved 1 note to "${folder.name}"'
+                  : 'Moved $updatedCount notes to "${folder.name}"')
+              : 'Note(s) already in "${folder.name}"';
+        } else {
+          message = updatedCount > 0
+              ? (updatedCount == 1
+                  ? 'Removed 1 note from folder'
+                  : 'Removed $updatedCount notes from folder')
+              : 'Note(s) not in any folder';
+        }
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -109,8 +117,6 @@ class _MoveToFolderPageState extends ConsumerState<MoveToFolderPage> {
       }
     }
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -146,10 +152,10 @@ class _MoveToFolderPageState extends ConsumerState<MoveToFolderPage> {
                   child: IconButton(
                     padding: EdgeInsets.zero,
                     onPressed: _showCreateFolderDialog,
-                    icon: const Icon(Icons.add_rounded, size: 24),
+                    icon: Icon(Icons.add_rounded, size: 24, color: colorScheme.onSurface,),
                     tooltip: 'New Folder',
                     style: IconButton.styleFrom(
-                      backgroundColor: colorScheme.surfaceContainerHighest,
+                      backgroundColor: colorScheme.primaryContainer,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -161,26 +167,22 @@ class _MoveToFolderPageState extends ConsumerState<MoveToFolderPage> {
 
             if (effectiveTargetIds.isNotEmpty) ...[
               const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer.withValues(alpha: 0.6),
-                  borderRadius: BorderRadius.circular(10),
-                ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.drive_file_move_outlined,
-                      size: 18,
-                      color: colorScheme.onPrimaryContainer,
-                    ),
-                    const SizedBox(width: 10),
+                    // Icon(
+                    //   Icons.drive_file_move_outlined,
+                    //   size: 24,
+                    //   color: colorScheme.onSurface,
+                    // ),
+                    // const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Select a folder to move ${effectiveTargetIds.length} ${effectiveTargetIds.length == 1 ? 'note' : 'notes'}',
-                        style: textTheme.labelLarge?.copyWith(
-                          color: colorScheme.onPrimaryContainer,
-                          fontWeight: FontWeight.w600,
+                        'Select a folder to move (${effectiveTargetIds.length}${effectiveTargetIds.length == 1 ? ') note' : ') notes'}',
+                        style: textTheme.bodyLarge?.copyWith(
+                          color: colorScheme.onSurface,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),
@@ -197,12 +199,20 @@ class _MoveToFolderPageState extends ConsumerState<MoveToFolderPage> {
                 loading: () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
                 error: (err, stack) => Center(child: Text('Error: $err')),
                 data: (folders) {
-                  final lowerQuery = _folderSearchQuery.toLowerCase();
+                  final lowerQuery = _folderSearchQuery.toLowerCase().trim();
+                  final showNoneOption = lowerQuery.isEmpty ||
+                      'none'.contains(lowerQuery) ||
+                      'no folder'.contains(lowerQuery) ||
+                      'remove'.contains(lowerQuery) ||
+                      'clear'.contains(lowerQuery);
+
                   final filteredFolders = folders.where((f) {
                     return f.folder.name.toLowerCase().contains(lowerQuery);
                   }).toList();
 
-                  if (filteredFolders.isEmpty) {
+                  final itemCount = filteredFolders.length + (showNoneOption ? 1 : 0);
+
+                  if (itemCount == 0) {
                     return Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -238,9 +248,16 @@ class _MoveToFolderPageState extends ConsumerState<MoveToFolderPage> {
                       crossAxisSpacing: 10,
                       mainAxisSpacing: 10,
                     ),
-                    itemCount: filteredFolders.length,
+                    itemCount: itemCount,
                     itemBuilder: (context, index) {
-                      final item = filteredFolders[index];
+                      if (showNoneOption && index == 0) {
+                        return _NoneGridCard(
+                          onTap: () => _handleFolderSelected(null),
+                        );
+                      }
+
+                      final folderIndex = showNoneOption ? index - 1 : index;
+                      final item = filteredFolders[folderIndex];
                       return _FolderGridCard(
                         folderWithCount: item,
                         onTap: () => _handleFolderSelected(item.folder),
@@ -259,6 +276,62 @@ class _MoveToFolderPageState extends ConsumerState<MoveToFolderPage> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NoneGridCard extends StatefulWidget {
+  final VoidCallback onTap;
+
+  const _NoneGridCard({required this.onTap});
+
+  @override
+  State<_NoneGridCard> createState() => _NoneGridCardState();
+}
+
+class _NoneGridCardState extends State<_NoneGridCard> {
+  bool _isHovering = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: widget.onTap,
+        onHover: (hovering) => setState(() => _isHovering = hovering),
+        borderRadius: BorderRadius.circular(14),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: _isHovering
+                ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.8)
+                : colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: _isHovering
+                  ? colorScheme.primary.withValues(alpha: 0.6)
+                  : colorScheme.outlineVariant.withValues(alpha: 0.3),
+              width: 1,
+            ),
+          ),
+          child: Center(
+            child: Text(
+              'None',
+              textAlign: TextAlign.center,
+              style: textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: _isHovering
+                    ? colorScheme.primary
+                    : colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
         ),
       ),
     );
