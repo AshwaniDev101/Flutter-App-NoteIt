@@ -11,6 +11,7 @@ import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.d
 import 'package:noteit/features/local_sync/data/network/local_sync_service.dart';
 import 'package:noteit/features/local_sync/data/network/mdns_searcher.dart';
 import 'package:noteit/features/local_sync/data/providers/sync_server_provider.dart';
+import 'package:noteit/database/drift/synced_devices/synced_devices_dao.dart';
 import 'package:noteit/shared/menus/app_bottom_sheet.dart';
 import 'package:noteit/shared/overlays/snack_bar_manager.dart';
 import 'package:noteit/shared/widgets/spinning_icon.dart';
@@ -148,6 +149,7 @@ SyncDisplayInfo calculateSyncDisplayInfo({
   required bool isSyncing,
   required bool isSearching,
   required bool isCloudReachable,
+  bool hasPairedDevices = true,
 }) {
   // 1. Offline Mode
   if (syncMode.isOffline) {
@@ -231,6 +233,12 @@ SyncDisplayInfo calculateSyncDisplayInfo({
           tooltip: SyncDisplayState.searching.tooltip,
         );
       }
+      if (!hasPairedDevices) {
+        return SyncDisplayInfo(
+          state: SyncDisplayState.offline,
+          tooltip: SyncDisplayState.offline.tooltip,
+        );
+      }
       return SyncDisplayInfo(
         state: SyncDisplayState.disconnected,
         tooltip: SyncDisplayState.disconnected.tooltip,
@@ -261,6 +269,8 @@ final syncDisplayInfoProvider = Provider<SyncDisplayInfo>((ref) {
   final isSyncing = ref.watch(isSyncingProvider);
   final isSearching = ref.watch(mdnsSearcherProvider.select((s) => s.status == ScanStatus.scanning));
   final isCloudReachable = ref.watch(networkReachabilityProvider);
+  final pairedDevices = ref.watch(syncedDevicesStreamProvider).value;
+  final hasPairedDevices = pairedDevices?.isNotEmpty ?? true;
 
   final info = calculateSyncDisplayInfo(
     syncMode: syncMode,
@@ -270,6 +280,7 @@ final syncDisplayInfoProvider = Provider<SyncDisplayInfo>((ref) {
     isSyncing: isSyncing,
     isSearching: isSearching,
     isCloudReachable: isCloudReachable,
+    hasPairedDevices: hasPairedDevices,
   );
 
   AppLogger.d(

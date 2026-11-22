@@ -122,6 +122,11 @@ class ReminderManager {
     }
   }
 
+  /// Attach the main root provider container for reading providers.
+  void attachProviderContainer(ProviderContainer container) {
+    _container = container;
+  }
+
   /// 1. Initialization for flutter_local_notifications 22.3.3
   Future<void> init([ProviderContainer? container]) async {
     if (container != null) {

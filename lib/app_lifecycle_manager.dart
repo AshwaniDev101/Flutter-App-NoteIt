@@ -74,7 +74,14 @@ class AppLifecycleManager extends Notifier<void> {
           break;
         case SyncMode.localClient:
           AppLogger.d('AppLifecycleManager: AutoSync [CLIENT]: Initializing connection protocol...');
-          await ref.read(syncClientProvider.notifier).autoConnectToPairedHost();
+          final connected = await ref.read(syncClientProvider.notifier).autoConnectToPairedHost();
+          if (!connected) {
+            final hasPaired = await ref.read(syncedDevicesDaoProvider).hasPairedDevices();
+            if (!hasPaired) {
+              AppLogger.d('AppLifecycleManager: AutoSync [CLIENT]: No paired host found in DB. Resetting mode to offline.');
+              await ref.read(syncModeProvider.notifier).setMode(SyncMode.offline);
+            }
+          }
           break;
       }
     } finally {
@@ -124,7 +131,13 @@ class AppLifecycleManager extends Notifier<void> {
       _evaluateSyncState();
     } else if (mode.isClient) {
       // CLIENT LOGIC
-      // Perform active ping probe to check if OS/radio killed TCP socket in background
+      // Perform active ping probe only if we have an established connection
+      final localSyncState = ref.read(localSyncServiceProvider);
+      if (localSyncState != SyncConnectionState.connected) {
+        _evaluateSyncState();
+        return;
+      }
+
       final localSync = ref.read(localSyncServiceProvider.notifier);
 
       localSync.probeConnection(timeout: const Duration(seconds: 2)).then((isAlive) {

@@ -8,6 +8,7 @@ import 'package:toastification/toastification.dart';
 
 import 'core/theme/app_theme.dart';
 
+import 'package:noteit/features/reminder/reminder_manager.dart';
 import 'package:noteit/features/tray/window_tray.dart';
 import 'package:noteit/core/helpers/platform_helper.dart';
 
@@ -23,6 +24,8 @@ Future<void> main(List<String> args) async {
 
   final overrides = await AppBootstrapper.init();
   final container = ProviderContainer(overrides: overrides);
+
+  ReminderManager().attachProviderContainer(container);
 
   if (PlatformHelper.isNativeDesktop) {
     DesktopTrayHandler.instance.attachProviderContainer(container);

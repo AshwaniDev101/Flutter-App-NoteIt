@@ -14,6 +14,7 @@ import 'package:noteit/features/local_sync/data/providers/sync_client_provider.d
 import 'package:noteit/features/local_sync/view/mdns/searcher/pin_dialog/host_connection_controller.dart';
 import 'package:noteit/features/local_sync/view/widgets/alternative_sync_cards.dart';
 import 'package:noteit/features/local_sync/view/widgets/sync_history_button.dart';
+import 'package:noteit/database/drift/synced_devices/synced_devices_dao.dart';
 import 'package:noteit/shared/overlays/app_scaffold.dart';
 import 'package:noteit/shared/overlays/snack_bar_manager.dart';
 
@@ -29,13 +30,18 @@ class HostSearcher extends ConsumerStatefulWidget {
 class _SearchNearByState extends ConsumerState<HostSearcher> {
   late final MdnsSearcherNotifier _mdnsNotifier;
   late final HostConnectionController _hostConnectionController;
+  late final SyncedDevicesDao _syncedDevicesDao;
+  late final SyncModeNotifier _syncModeNotifier;
   final ScrollController _scrollController = ScrollController(); // Explicit controller for scrollbar
+  bool _isPublicWifiBannerDismissed = false;
 
   @override
   void initState() {
     super.initState();
     _mdnsNotifier = ref.read(mdnsSearcherProvider.notifier);
     _hostConnectionController = ref.read(hostConnectionControllerProvider.notifier);
+    _syncedDevicesDao = ref.read(syncedDevicesDaoProvider);
+    _syncModeNotifier = ref.read(syncModeProvider.notifier);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _mdnsNotifier.startRadar(duration: const Duration(seconds: 3));
@@ -47,6 +53,13 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
     _scrollController.dispose();
     _mdnsNotifier.stopScan();
     _hostConnectionController.reset();
+
+    _syncedDevicesDao.hasPairedDevices().then((hasPaired) {
+      if (!hasPaired) {
+        _syncModeNotifier.setMode(SyncMode.offline);
+      }
+    });
+
     super.dispose();
   }
 
@@ -224,6 +237,55 @@ class _SearchNearByState extends ConsumerState<HostSearcher> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
+                          // --- PUBLIC WI-FI SECURITY BANNER ---
+                          if (!_isPublicWifiBannerDismissed) ...[
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: colorScheme.errorContainer.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: colorScheme.error.withValues(alpha: 0.3),
+                                ),
+                              ),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Icon(
+                                    Icons.shield_outlined,
+                                    size: 20,
+                                    color: colorScheme.error,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      "Public Wi-Fi Notice: Local sync transfers encrypted notes over your local network. Avoid syncing on untrusted Wi-Fi networks, especially when using simple master passwords.",
+                                      style: textTheme.bodySmall?.copyWith(
+                                        color: colorScheme.onSurface,
+                                        fontSize: 11.5,
+                                        height: 1.35,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  InkWell(
+                                    onTap: () => setState(() => _isPublicWifiBannerDismissed = true),
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(2.0),
+                                      child: Icon(
+                                        Icons.close_rounded,
+                                        size: 16,
+                                        color: colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+
                           // --- HERO HEADER ---
                           if (!isConnectedToHost) ...[
                             Icon(

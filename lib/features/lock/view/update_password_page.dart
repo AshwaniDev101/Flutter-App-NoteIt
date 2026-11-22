@@ -21,6 +21,7 @@ class _UpdatePasswordPageState extends ConsumerState<UpdatePasswordPage> {
 
   String? _errorMessage;
   int _strengthScore = 0;
+  bool _acknowledgedWeakRisk = false;
 
   bool _obscureCurrent = true;
   bool _obscureNew = true;
@@ -30,27 +31,56 @@ class _UpdatePasswordPageState extends ConsumerState<UpdatePasswordPage> {
   void initState() {
     super.initState();
     _newPassController.addListener(_onPasswordChanged);
+    _currentPassController.addListener(_onFieldChanged);
+    _confirmPassController.addListener(_onFieldChanged);
   }
 
   void _onPasswordChanged() {
     final pass = _newPassController.text;
     if (pass.isEmpty) {
-      setState(() => _strengthScore = 0);
+      setState(() {
+        _strengthScore = 0;
+        _acknowledgedWeakRisk = false;
+        _errorMessage = null;
+      });
       return;
     }
     final result = _zxcvbn.evaluate(pass);
     setState(() {
       _strengthScore = result.score?.toInt() ?? 0;
+      _acknowledgedWeakRisk = false;
+      _errorMessage = null;
+    });
+  }
+
+  void _onFieldChanged() {
+    setState(() {
+      _errorMessage = null;
     });
   }
 
   @override
   void dispose() {
     _newPassController.removeListener(_onPasswordChanged);
+    _currentPassController.removeListener(_onFieldChanged);
+    _confirmPassController.removeListener(_onFieldChanged);
     _currentPassController.dispose();
     _newPassController.dispose();
     _confirmPassController.dispose();
     super.dispose();
+  }
+
+  bool get _canUpdate {
+    final currentPass = _currentPassController.text;
+    final newPass = _newPassController.text;
+    final confirmPass = _confirmPassController.text;
+
+    if (currentPass.isEmpty) return false;
+    if (newPass.length < 4) return false;
+    if (newPass != confirmPass) return false;
+    if (newPass == currentPass) return false;
+    if (_strengthScore < 3 && !_acknowledgedWeakRisk) return false;
+    return true;
   }
 
   Future<void> _updatePassword() async {
@@ -75,13 +105,13 @@ class _UpdatePasswordPageState extends ConsumerState<UpdatePasswordPage> {
       return;
     }
 
-    if (newPass.length < 8) {
-      setState(() => _errorMessage = 'New password must be at least 8 characters');
+    if (newPass.length < 4) {
+      setState(() => _errorMessage = 'New password must be at least 4 characters');
       return;
     }
 
-    if (_strengthScore < 3) {
-      setState(() => _errorMessage = 'New password is too weak. Add symbols, numbers or spaces');
+    if (_strengthScore < 3 && !_acknowledgedWeakRisk) {
+      setState(() => _errorMessage = 'Please confirm you understand the risk');
       return;
     }
 
@@ -304,6 +334,60 @@ class _UpdatePasswordPageState extends ConsumerState<UpdatePasswordPage> {
               const SizedBox(height: 12),
             ],
 
+            // Weak Password Risk Confirmation Banner
+            if (_newPassController.text.length >= 4 && _strengthScore < 3) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.info_outline_rounded, size: 18, color: Colors.amber),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            "Simple password detected. Weak passwords offer lower protection against offline brute-force attacks.",
+                            style: textTheme.bodySmall?.copyWith(fontSize: 11),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    InkWell(
+                      onTap: () => setState(() => _acknowledgedWeakRisk = !_acknowledgedWeakRisk),
+                      borderRadius: BorderRadius.circular(6),
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: Checkbox(
+                              value: _acknowledgedWeakRisk,
+                              onChanged: (val) => setState(() => _acknowledgedWeakRisk = val ?? false),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              "I understand the risk of a simple password",
+                              style: textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600, fontSize: 11),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+
             // Confirm Password Field
             TextField(
               controller: _confirmPassController,
@@ -330,7 +414,7 @@ class _UpdatePasswordPageState extends ConsumerState<UpdatePasswordPage> {
                   },
                 ),
               ),
-              onSubmitted: (_) => _updatePassword(),
+              onSubmitted: (_) => _canUpdate ? _updatePassword() : null,
             ),
             const SizedBox(height: 24),
 
@@ -339,7 +423,7 @@ class _UpdatePasswordPageState extends ConsumerState<UpdatePasswordPage> {
               width: double.infinity,
               height: 48,
               child: FilledButton(
-                onPressed: _updatePassword,
+                onPressed: _canUpdate ? _updatePassword : null,
                 child: const Text('Update Password'),
               ),
             ),
