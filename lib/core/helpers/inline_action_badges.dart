@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:noteit/core/theme/folder_theme_colors.dart';
 import 'package:noteit/database/drift/local_database.dart';
+import 'package:noteit/shared/widgets/folder_icon.dart';
 
 /// Single entry-point for reusable inline visual badges (e.g. mini FABs or folder chips inside hint text).
 abstract class InlineBadge {
@@ -108,14 +109,7 @@ class _InlineFolderBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              color: folderColor,
-              shape: BoxShape.circle,
-            ),
-          ),
+          FolderIcon(color: folderColor),
           const SizedBox(width: 8),
           Flexible(
             child: Text(

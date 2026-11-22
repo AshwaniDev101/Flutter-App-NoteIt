@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
-import 'package:noteit/core/theme/folder_theme_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:noteit/core/helpers/time_helper.dart';
@@ -13,6 +12,7 @@ import 'package:noteit/features/lock/lock_manger/lock_manager.dart';
 import 'package:noteit/shared/menus/view_menu_button.dart';
 import 'package:noteit/shared/note_card/overlays/lock_overlay.dart';
 import 'package:noteit/shared/note_card/overlays/reminder_overlay.dart';
+import 'package:noteit/shared/widgets/folder_icon.dart';
 
 import 'package:noteit/core/config/menu_anchor_constants.dart';
 import '../text/highlighted_text.dart';
@@ -70,11 +70,6 @@ class _NoteCardState extends ConsumerState<NoteCard> {
   Folder? get _folder => widget.noteWithFolder.folder;
   bool get _isPinned => _note.pinnedAt != null;
   bool get _isLocked => _note.lockedAt != null;
-
-  Color? _getFolderAccentColor(BuildContext context) {
-    if (_folder == null) return null;
-    return FolderThemeColors.of(context, _folder!.colorIndex);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -477,7 +472,6 @@ class _NoteCardState extends ConsumerState<NoteCard> {
 
   Widget _getFolderLabel(BuildContext context, {TextStyle? textStyle}) {
     final theme = Theme.of(context);
-    final accent = _getFolderAccentColor(context);
     final effectiveStyle = textStyle ??
         theme.textTheme.labelSmall?.copyWith(
           color: theme.colorScheme.onSurfaceVariant,
@@ -487,14 +481,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Container(
-          width: 8.0,
-          height: 8.0,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: accent ?? theme.colorScheme.outline,
-          ),
-        ),
+        FolderIcon.forFolder(context, _folder),
         const SizedBox(width: 6.0),
         Flexible(
           child: Text(

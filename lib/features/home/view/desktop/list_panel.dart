@@ -22,6 +22,7 @@ import '../../../keybinding/smart_action_widget.dart';
 import '../../core/db_sorting_filtering.dart';
 import '../../core/providers.dart';
 import '../../viewmodel/viewmodel.dart';
+import 'content_panel/core/navigator.dart';
 import '../../../../shared/app_bars/app_search_bar.dart';
 import '../../../../shared/note_card/dynamic_notes_layout.dart';
 
@@ -66,12 +67,20 @@ class DesktopListPanel extends ConsumerWidget {
     final rightPanelSelection = ref.watch(rightPanelSelectionProvider);
     final isRightPanelSelecting = rightPanelSelection.isSelecting;
 
+    final isMoveToFolderActive = ref.watch(
+      desktopRightPanelViewProvider.select(
+        (stack) => stack.isNotEmpty && stack.last == RightPanelPageOptions.moveToFolder,
+      ),
+    );
+
+    final shouldBlurListPanel = isRightPanelSelecting || isMoveToFolderActive;
+
     return Stack(
       children: [
         AbsorbPointer(
-          absorbing: isRightPanelSelecting,
+          absorbing: shouldBlurListPanel,
           child: ExcludeFocus(
-            excluding: isRightPanelSelecting,
+            excluding: shouldBlurListPanel,
             child: Scaffold(
               // for closing the drawer on right panel click
               key: scaffoldKey,
@@ -304,21 +313,27 @@ class DesktopListPanel extends ConsumerWidget {
             ),
           ),
         ),
-        if (isRightPanelSelecting)
+        if (shouldBlurListPanel)
           Positioned.fill(
             child: MouseRegion(
               cursor: SystemMouseCursors.click,
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: () {
-                  final callback = rightPanelSelection.onClearSelection;
-                  ref.read(rightPanelSelectionProvider.notifier).exitSelection();
-                  try {
-                    callback?.call();
-                  } catch (_) {}
+                  if (isRightPanelSelecting) {
+                    final callback = rightPanelSelection.onClearSelection;
+                    ref.read(rightPanelSelectionProvider.notifier).exitSelection();
+                    try {
+                      callback?.call();
+                    } catch (_) {}
+                  } else if (isMoveToFolderActive) {
+                    ref.read(drawerNavigationProvider).pop(context);
+                  }
                 },
                 child: Tooltip(
-                  message: 'Click to exit selection mode',
+                  message: isMoveToFolderActive
+                      ? 'Click to close folder selector'
+                      : 'Click to exit selection mode',
                   child: ClipRect(
                     child: BackdropFilter(
                       filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),

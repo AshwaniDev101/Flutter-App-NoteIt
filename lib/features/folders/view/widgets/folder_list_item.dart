@@ -2,6 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import 'package:noteit/core/theme/folder_theme_colors.dart';
+import 'package:noteit/shared/widgets/folder_icon.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/sync/sync_orchestrator.dart';
@@ -108,14 +109,7 @@ class _FolderListItemState extends ConsumerState<FolderListItem> {
                           splashRadius: 16,
                           tooltip: isPinned ? 'Unpin' : 'Pin Folder',
                         )
-                            : Container(
-                          width: 10,
-                          height: 10,
-                          decoration: BoxDecoration(
-                            color: folderAccentColor,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
+                            : FolderIcon.forFolder(context, folderData),
                       ),
                     ),
                     Expanded(

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:noteit/core/theme/folder_theme_colors.dart';
+import 'package:noteit/shared/widgets/folder_icon.dart';
 
 import '../../../core/helpers/platform_helper.dart';
 import '../../../database/drift/local_database.dart';
@@ -67,10 +67,6 @@ class _FolderButtonState extends ConsumerState<FolderButton> {
     final colorScheme = Theme.of(context).colorScheme;
     final currentName = activeFolder?.name ?? 'Folders';
 
-    final currentColor = activeFolder != null
-        ? FolderThemeColors.of(context, activeFolder.colorIndex)
-        : colorScheme.onSurfaceVariant;
-
     final totalNotesCountAsync = ref.watch(totalNotesCountStreamProvider);
     final allNoteCount = totalNotesCountAsync.value ?? 0;
 
@@ -114,22 +110,8 @@ class _FolderButtonState extends ConsumerState<FolderButton> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (activeFolder != null) ...[
-                      Container(
-                        width: 10,
-                        height: 10,
-                        decoration: BoxDecoration(
-                          color: currentColor,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: currentColor.withValues(alpha: 0.4),
-                              blurRadius: 4,
-                              offset: const Offset(0, 1),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 10),
+                      FolderIcon.forFolder(context, activeFolder),
+                      const SizedBox(width: 8),
                     ],
                     Flexible(
                       child: Text(

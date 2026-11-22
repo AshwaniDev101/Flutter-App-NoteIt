@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:noteit/core/theme/folder_theme_colors.dart';
+import 'package:noteit/shared/widgets/folder_icon.dart';
 
 import '../../../core/sync/sync_orchestrator.dart';
 import '../../../core/util/logger.dart';
@@ -322,21 +323,7 @@ class _FolderGridCardState extends ConsumerState<_FolderGridCard> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: folderAccentColor,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: folderAccentColor.withValues(alpha: 0.4),
-                          blurRadius: 3,
-                          offset: const Offset(0, 1),
-                        ),
-                      ],
-                    ),
-                  ),
+                  // FolderIcon.forFolder(context, folder),
                   if (isPinned || _isHovering)
                     GestureDetector(
                       onTap: () {

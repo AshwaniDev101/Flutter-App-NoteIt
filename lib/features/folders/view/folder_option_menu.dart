@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:noteit/core/helpers/platform_helper.dart';
-import 'package:noteit/core/theme/folder_theme_colors.dart';
 import 'package:noteit/database/drift/local_database.dart';
+import 'package:noteit/shared/widgets/folder_icon.dart';
 import 'folder_selector_container.dart';
 import 'package:noteit/shared/menus/app_bottom_sheet.dart';
 import 'package:noteit/core/config/menu_anchor_constants.dart';
@@ -65,9 +65,6 @@ class _FolderOptionMenuState extends ConsumerState<FolderOptionMenu> {
     final textTheme = Theme.of(context).textTheme;
 
     final currentName = activeFolder?.name ?? widget.emptyLabel;
-    final currentColor = activeFolder != null
-        ? FolderThemeColors.of(context, activeFolder.colorIndex)
-        : colorScheme.onSurfaceVariant;
 
     return Material(
       color: Colors.transparent,
@@ -96,21 +93,7 @@ class _FolderOptionMenuState extends ConsumerState<FolderOptionMenu> {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (activeFolder != null) ...[
-                Container(
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    color: currentColor,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: currentColor.withValues(alpha: 0.4),
-                        blurRadius: 4,
-                        offset: const Offset(0, 1),
-                      ),
-                    ],
-                  ),
-                ),
+                FolderIcon.forFolder(context, activeFolder),
                 const SizedBox(width: 8),
               ] else ...[
                 Icon(
