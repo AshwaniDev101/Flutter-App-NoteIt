@@ -53,6 +53,7 @@ class _SmartContextMenuRoute<T> extends PopupRoute<T> {
   final ShapeBorder? shape;
   final double? elevation;
   final BoxConstraints? constraints;
+  final Color? color;
 
   _SmartContextMenuRoute({
     required this.globalTapPosition,
@@ -60,6 +61,7 @@ class _SmartContextMenuRoute<T> extends PopupRoute<T> {
     this.shape,
     this.elevation,
     this.constraints,
+    this.color,
   });
 
   @override
@@ -76,6 +78,16 @@ class _SmartContextMenuRoute<T> extends PopupRoute<T> {
 
   @override
   Widget buildPage(BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation) {
+    final theme = Theme.of(context);
+    final popupMenuTheme = PopupMenuTheme.of(context);
+
+    final backgroundColor = color ??
+        popupMenuTheme.color ??
+        theme.colorScheme.surfaceContainerLowest;
+
+    final menuElevation = elevation ?? popupMenuTheme.elevation ?? 8.0;
+    final menuShape = shape ?? popupMenuTheme.shape ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(12));
+
     return CustomSingleChildLayout(
       delegate: SmartContextMenuLayoutDelegate(
         globalTapPosition: globalTapPosition,
@@ -86,9 +98,9 @@ class _SmartContextMenuRoute<T> extends PopupRoute<T> {
           scale: CurvedAnimation(parent: animation, curve: Curves.easeOut),
           alignment: Alignment.center,
           child: Material(
-            type: MaterialType.card,
-            elevation: elevation ?? 8.0,
-            shape: shape ?? RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            color: backgroundColor,
+            elevation: menuElevation,
+            shape: menuShape,
             clipBehavior: Clip.antiAlias,
             child: ConstrainedBox(
               constraints: constraints ?? const BoxConstraints(minWidth: AppMenuWidths.compact),
@@ -124,6 +136,7 @@ abstract class ContextMenuHelper {
     ShapeBorder? shape,
     double? elevation,
     BoxConstraints? constraints,
+    Color? color,
   }) {
     return Navigator.of(context).push<T>(
       _SmartContextMenuRoute<T>(
@@ -132,6 +145,7 @@ abstract class ContextMenuHelper {
         shape: shape,
         elevation: elevation,
         constraints: constraints,
+        color: color,
       ),
     );
   }

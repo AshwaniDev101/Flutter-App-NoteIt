@@ -189,7 +189,7 @@ class _FolderButtonState extends ConsumerState<FolderButton> {
         Padding(
           padding: const EdgeInsets.only(top: 8.0),
           child: Material(
-            color: Theme.of(context).colorScheme.surfaceContainer,
+            color: Theme.of(context).colorScheme.surfaceContainerLowest,
             elevation: 4,
             shadowColor: Colors.black.withValues(alpha: 0.25),
             shape: RoundedRectangleBorder(

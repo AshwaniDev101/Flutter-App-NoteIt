@@ -164,7 +164,7 @@ class _FolderOptionMenuState extends ConsumerState<FolderOptionMenu> {
         Padding(
           padding: const EdgeInsets.only(top: 6.0),
           child: Material(
-            color: colorScheme.surfaceContainer,
+            color: colorScheme.surfaceContainerLowest,
             elevation: 4,
             shadowColor: Colors.black.withValues(alpha: 0.25),
             shape: RoundedRectangleBorder(
