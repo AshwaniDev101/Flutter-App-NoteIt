@@ -15,6 +15,7 @@ import 'package:noteit/shared/note_card/overlays/reminder_overlay.dart';
 import 'package:noteit/shared/widgets/folder_icon.dart';
 
 import 'package:noteit/core/config/menu_anchor_constants.dart';
+import '../menus/context_menu_helper.dart';
 import '../text/highlighted_text.dart';
 import 'core/note_action.dart';
 
@@ -64,7 +65,6 @@ class NoteCard extends ConsumerStatefulWidget {
 
 class _NoteCardState extends ConsumerState<NoteCard> {
   bool _isFocused = false;
-  final MenuController _menuController = MenuController();
 
   Note get _note => widget.noteWithFolder.note;
   Folder? get _folder => widget.noteWithFolder.folder;
@@ -75,42 +75,36 @@ class _NoteCardState extends ConsumerState<NoteCard> {
   Widget build(BuildContext context) {
     final NoteViewType viewType = widget.viewType ?? ref.watch(homeNoteViewTypeProvider);
 
-    return MenuAnchor(
-      controller: _menuController,
-      consumeOutsideTap: true,
-      menuChildren: _buildMenuItems(context),
-      child: GestureDetector(
-        onSecondaryTapDown: (details) {
-          _menuController.open(position: details.localPosition);
+    return GestureDetector(
+      onSecondaryTapDown: (details) {
+        _showContextMenu(context, details.globalPosition);
+      },
+      child: FocusableActionDetector(
+        onShowFocusHighlight: (hasFocus) {
+          if (_isFocused != hasFocus) {
+            setState(() => _isFocused = hasFocus);
+          }
         },
-        child: FocusableActionDetector(
-          onShowFocusHighlight: (hasFocus) {
-            if (_isFocused != hasFocus) {
-              setState(() => _isFocused = hasFocus);
-            }
-          },
-          actions: {
-            ActivateIntent: CallbackAction<ActivateIntent>(
-              onInvoke: (_) {
-                widget.onTap?.call();
-                return null;
-              },
-            ),
-          },
-          child: MouseRegion(
-            cursor: SystemMouseCursors.click,
-            child: _buildLayoutRouter(context, viewType),
+        actions: {
+          ActivateIntent: CallbackAction<ActivateIntent>(
+            onInvoke: (_) {
+              widget.onTap?.call();
+              return null;
+            },
           ),
+        },
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: _buildLayoutRouter(context, viewType),
         ),
       ),
     );
   }
 
-  List<Widget> _buildMenuItems(BuildContext context) {
-    final theme = Theme.of(context);
-    final errorColor = theme.colorScheme.error;
+  void _showContextMenu(BuildContext context, Offset globalPosition) async {
+    final errorColor = Theme.of(context).colorScheme.error;
 
-    return widget.contextMenuOptions
+    final items = widget.contextMenuOptions
         .where((option) => !(option == NoteAction.select && widget.isSelected))
         .map((option) {
       var effectiveOption = option;
@@ -131,21 +125,35 @@ class _NoteCardState extends ConsumerState<NoteCard> {
 
       final color = effectiveOption.isDestructive ? errorColor : null;
 
-      return ConstrainedBox(
-        constraints: const BoxConstraints(minWidth: AppMenuWidths.compact),
-        child: MenuItemButton(
-          leadingIcon: Icon(
-            iconData,
-            color: color,
-          ),
-          onPressed: () => widget.onContextMenuAction?.call(effectiveOption),
-          child: Text(
-            label,
-            style: TextStyle(color: color),
-          ),
+      return PopupMenuItem<NoteAction>(
+        value: effectiveOption,
+        height: 38,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(
+          children: [
+            Icon(iconData, size: 18, color: color),
+            const SizedBox(width: 12),
+            Text(
+              label,
+              style: TextStyle(fontSize: 14, color: color, fontWeight: FontWeight.w500),
+            ),
+          ],
         ),
       );
     }).toList();
+
+    final selectedOption = await ContextMenuHelper.show<NoteAction>(
+      context: context,
+      globalTapPosition: globalPosition,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 8,
+      constraints: const BoxConstraints(minWidth: AppMenuWidths.compact),
+      items: items,
+    );
+
+    if (selectedOption != null) {
+      widget.onContextMenuAction?.call(selectedOption);
+    }
   }
 
   Widget _buildLayoutRouter(BuildContext context, NoteViewType viewType) {

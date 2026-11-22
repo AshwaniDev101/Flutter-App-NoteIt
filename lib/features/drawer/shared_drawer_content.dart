@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/database/firebase/auth/firebase_provider.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
 
+import '../../shared/menus/context_menu_helper.dart';
 import '../../core/config/app_env.dart';
 import '../../core/sync/sync_engine.dart';
 import '../../shared/note_card/core/note_action_controller.dart';
@@ -37,15 +38,9 @@ class _SharedDrawerContentState extends ConsumerState<SharedDrawerContent> {
   }
 
   void _showTrashContextMenu(BuildContext context, TapUpDetails details) async {
-    final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
-    final position = RelativeRect.fromRect(
-      Rect.fromLTWH(details.globalPosition.dx, details.globalPosition.dy, 0, 0),
-      Offset.zero & overlay.size,
-    );
-
-    final selected = await showMenu<String>(
+    final selected = await ContextMenuHelper.show<String>(
       context: context,
-      position: position,
+      globalTapPosition: details.globalPosition,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 8,
       items: [

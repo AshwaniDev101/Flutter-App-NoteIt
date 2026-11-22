@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../shared/menus/context_menu_helper.dart';
 import '../../../../database/drift/folders/folders_dao.dart';
 import '../../../../database/drift/local_database.dart';
 import '../../viewmodel/folder_view_model.dart';
@@ -28,38 +29,25 @@ class FolderContextMenu {
     Folder? selectedFolder,
     ValueChanged<Folder?>? onFolderSelected,
   }) async {
-    final Offset tapPosition = position ?? Offset.zero;
-    RelativeRect menuPosition;
+    Offset tapPosition = position ?? Offset.zero;
 
-    if (tapPosition != Offset.zero) {
-      menuPosition = RelativeRect.fromLTRB(
-        tapPosition.dx,
-        tapPosition.dy,
-        tapPosition.dx + 1,
-        tapPosition.dy + 1,
-      );
-    } else {
+    if (tapPosition == Offset.zero) {
       final RenderBox? box = context.findRenderObject() as RenderBox?;
       if (box != null && box.attached) {
         final topLeft = box.localToGlobal(Offset.zero);
         final size = box.size;
-        menuPosition = RelativeRect.fromLTRB(
-          topLeft.dx + 16,
-          topLeft.dy + size.height / 2,
-          topLeft.dx + size.width,
-          topLeft.dy + size.height,
-        );
+        tapPosition = Offset(topLeft.dx + 16, topLeft.dy + size.height / 2);
       } else {
-        menuPosition = const RelativeRect.fromLTRB(100, 100, 101, 101);
+        tapPosition = const Offset(100, 100);
       }
     }
 
     final isPinned = folder.pinnedAt != null;
     final errorColor = Theme.of(context).colorScheme.error;
 
-    final selectedAction = await showMenu<String>(
+    final selectedAction = await ContextMenuHelper.show<String>(
       context: context,
-      position: menuPosition,
+      globalTapPosition: tapPosition,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 8,
       constraints: const BoxConstraints(minWidth: 160),

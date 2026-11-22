@@ -2,6 +2,7 @@ import 'package:flutter/material.dart' hide RepeatMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/sync/sync_orchestrator.dart';
 import 'package:noteit/database/drift/notes/notes_dao.dart';
+import '../../shared/menus/context_menu_helper.dart';
 import '../../core/helpers/time_helper.dart';
 import '../../shared/overlays/snack_bar_manager.dart';
 import 'providers/reminder_provider.dart';
@@ -89,18 +90,9 @@ class _ReminderPageState extends ConsumerState<ReminderPage> {
     TapDownDetails details,
     ReminderFormNotifier notifier,
   ) async {
-    final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
-    final RelativeRect position = RelativeRect.fromRect(
-      Rect.fromPoints(
-        details.globalPosition,
-        details.globalPosition,
-      ),
-      Offset.zero & overlay.size,
-    );
-
-    final selected = await showMenu<ReminderRepeatMode>(
+    final selected = await ContextMenuHelper.show<ReminderRepeatMode>(
       context: context,
-      position: position,
+      globalTapPosition: details.globalPosition,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       items: const [
         PopupMenuItem(

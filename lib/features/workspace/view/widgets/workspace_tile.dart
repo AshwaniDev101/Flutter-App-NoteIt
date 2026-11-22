@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../shared/menus/context_menu_helper.dart';
 import '../../../../shared/overlays/snack_bar_manager.dart';
 import '../../models/workspace_model.dart';
 import '../../providers/active_workspace_provider.dart';
@@ -97,15 +98,9 @@ class WorkspaceTile extends ConsumerWidget {
     TapDownDetails details,
     Workspace workspace,
   ) async {
-    final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
-    final position = RelativeRect.fromRect(
-      Rect.fromLTWH(details.globalPosition.dx, details.globalPosition.dy, 0, 0),
-      Offset.zero & overlay.size,
-    );
-
-    final selectedValue = await showMenu<String>(
+    final selectedValue = await ContextMenuHelper.show<String>(
       context: context,
-      position: position,
+      globalTapPosition: details.globalPosition,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       items: [
         const PopupMenuItem<String>(
