@@ -126,6 +126,7 @@ class _ArchivePageState extends ConsumerState<ArchivePage> with WidgetsBindingOb
       noteIds.removeAll(uuids);
       if (noteIds.isEmpty) {
         isSelectMode = false;
+        _selectionNotifier.exitSelection();
       }
     });
 
@@ -147,6 +148,7 @@ class _ArchivePageState extends ConsumerState<ArchivePage> with WidgetsBindingOb
       noteIds.removeAll(uuids);
       if (noteIds.isEmpty) {
         isSelectMode = false;
+        _selectionNotifier.exitSelection();
       }
     });
 
