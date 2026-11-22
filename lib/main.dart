@@ -8,6 +8,9 @@ import 'package:toastification/toastification.dart';
 
 import 'core/theme/app_theme.dart';
 
+import 'package:noteit/features/tray/window_tray.dart';
+import 'package:noteit/core/helpers/platform_helper.dart';
+
 // Window Release : flutter build windows
 // Android Release : flutter run --release
 // Built location: build\windows\x64\runner\Release\noteit.exe
@@ -20,6 +23,10 @@ Future<void> main(List<String> args) async {
 
   final overrides = await AppBootstrapper.init();
   final container = ProviderContainer(overrides: overrides);
+
+  if (PlatformHelper.isNativeDesktop) {
+    DesktopTrayHandler.instance.attachProviderContainer(container);
+  }
 
   runApp(UncontrolledProviderScope(
     container: container,

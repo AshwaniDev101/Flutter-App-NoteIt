@@ -9,9 +9,11 @@ import 'package:firebase_core/firebase_core.dart';
 
 import 'package:noteit/core/config/app_env.dart';
 import 'package:noteit/core/helpers/platform_helper.dart';
+import 'package:noteit/database/shared_preference/app_preferences_utility.dart';
 import 'package:noteit/database/drift/folders/folders_dao.dart';
 import 'package:noteit/database/drift/notes/notes_dao.dart';
 import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:noteit/features/folders/providers/folder_providers.dart';
 import 'package:noteit/features/home/core/providers.dart';
 import 'package:noteit/features/reminder/reminder_manager.dart';
@@ -22,11 +24,14 @@ import 'package:noteit/firebase_options.dart';
 class AppBootstrapper {
   static Future<List<Override>> init() async {
     // Core Services
-    await SharedPreferenceManager.init();
+    final prefs = await SharedPreferences.getInstance();
+    SharedPreferenceManager.init(prefs);
     await WorkspaceRepository.init();
     
     // Create a temporary container just for reading DBs during initialization
-    final tempContainer = ProviderContainer();
+    final tempContainer = ProviderContainer(overrides: [
+      sharedPreferencesProvider.overrideWithValue(prefs),
+    ]);
     await ReminderManager().init(tempContainer);
 
     // Desktop Window Config
@@ -45,6 +50,7 @@ class AppBootstrapper {
     tempContainer.dispose();
 
     return [
+      sharedPreferencesProvider.overrideWithValue(prefs),
       if (folderOverride != null) folderOverride,
       if (noteOverride != null) noteOverride,
     ];

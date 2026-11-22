@@ -6,19 +6,23 @@ import 'package:window_manager/window_manager.dart';
 
 import '../../core/helpers/platform_helper.dart';
 import '../../database/shared_preference/shared_preference_manager.dart';
+import '../../database/shared_preference/reminder_preferences.dart';
 import '../reminder/reminder_manager.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Manages desktop system tray icon, context menu, and minimize-to-tray window behavior.
 class DesktopTrayHandler extends WindowListener with TrayListener {
   static final DesktopTrayHandler instance = DesktopTrayHandler._();
   DesktopTrayHandler._();
 
+  ProviderContainer? _container;
+  ProviderSubscription<bool>? _soundSubscription;
+
   bool _isInitialized = false;
   Future<void>? _initFuture;
   Timer? _resizeDebounce;
 
   VoidCallback? _ringingListener;
-  VoidCallback? _soundListener;
 
   Future<void> init() async {
     if (_isInitialized) return;
@@ -45,16 +49,27 @@ class DesktopTrayHandler extends WindowListener with TrayListener {
 
       // Rebuild tray menu when alarm sound state or sound preference changes
       _ringingListener = () => updateTrayMenu();
-      _soundListener = () => updateTrayMenu();
 
       ReminderManager().isRinging.addListener(_ringingListener!);
-      SharedPreferenceManager.instance.reminderSoundListenable.addListener(_soundListener!);
 
       await updateTrayMenu();
       _isInitialized = true;
     } catch (e) {
       debugPrint('Tray manager initialization error: $e');
     }
+  }
+
+  /// Attach the provider container to listen to Riverpod states.
+  void attachProviderContainer(ProviderContainer container) {
+    _container = container;
+    _soundSubscription?.close();
+    _soundSubscription = _container?.listen(
+      reminderSoundProvider,
+      (previous, next) {
+        updateTrayMenu();
+      },
+      fireImmediately: false,
+    );
   }
 
   /// Cleans up listeners, debounce timers, and tray resources.
@@ -66,10 +81,10 @@ class DesktopTrayHandler extends WindowListener with TrayListener {
       ReminderManager().isRinging.removeListener(_ringingListener!);
       _ringingListener = null;
     }
-    if (_soundListener != null) {
-      SharedPreferenceManager.instance.reminderSoundListenable.removeListener(_soundListener!);
-      _soundListener = null;
-    }
+    
+    _soundSubscription?.close();
+    _soundSubscription = null;
+    _container = null;
 
     windowManager.removeListener(this);
     trayManager.removeListener(this);
@@ -189,9 +204,14 @@ class DesktopTrayHandler extends WindowListener with TrayListener {
     } else if (menuItem.key == 'snooze_reminder') {
       ReminderManager().stopAlarmSound();
     } else if (menuItem.key == 'toggle_alarm_sound') {
-      final prefs = SharedPreferenceManager.instance;
-      final currentSoundEnabled = prefs.reminderSoundEnabled;
-      await prefs.setReminderSoundEnabled(!currentSoundEnabled);
+      if (_container != null) {
+        final currentSoundEnabled = _container!.read(reminderSoundProvider);
+        await _container!.read(reminderSoundProvider.notifier).setEnabled(!currentSoundEnabled);
+      } else {
+        final prefs = SharedPreferenceManager.instance;
+        final currentSoundEnabled = prefs.reminderSoundEnabled;
+        await prefs.setReminderSoundEnabled(!currentSoundEnabled);
+      }
       await updateTrayMenu();
     } else if (menuItem.key == 'exit_app') {
       await destroyTrayAndExit();

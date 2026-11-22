@@ -69,6 +69,18 @@ enum SyncMode {
   bool get isSyncing => this != SyncMode.offline;
 }
 
+/// Enum representing the synchronization role of the device in a P2P / sync setup.
+enum SyncRole {
+  /// Role is not defined yet (0).
+  undefine,
+
+  /// Device operates as a Host server node (1).
+  host,
+
+  /// Device operates as a Client connecting node (2).
+  client,
+}
+
 /// Unified Provider for accessing and modifying the active app-wide [SyncMode].
 final syncModeProvider = NotifierProvider<SyncModeNotifier, SyncMode>(() {
   return SyncModeNotifier();

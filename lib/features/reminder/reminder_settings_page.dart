@@ -9,6 +9,7 @@ import '../../core/helpers/platform_helper.dart';
 import '../../core/sync/sync_orchestrator.dart';
 import '../../database/drift/notes/notes_dao.dart';
 import '../../database/shared_preference/shared_preference_manager.dart';
+import '../../database/shared_preference/reminder_preferences.dart';
 
 import '../../shared/menus/app_bottom_sheet.dart';
 import '../../shared/overlays/app_scaffold.dart';
@@ -438,9 +439,9 @@ class _ReminderSettingsPageState extends ConsumerState<ReminderSettingsPage> {
                     ),
                     child: Column(
                       children: [
-                        ValueListenableBuilder<bool>(
-                          valueListenable: _prefs.reminderSoundListenable,
-                          builder: (context, soundEnabled, _) {
+                        Consumer(
+                          builder: (context, ref, _) {
+                            final soundEnabled = ref.watch(reminderSoundProvider);
                             return SettingsSwitchTile(
                               title: 'Enable Alarm Sound',
                               subtitle:
@@ -448,7 +449,7 @@ class _ReminderSettingsPageState extends ConsumerState<ReminderSettingsPage> {
                               value: soundEnabled,
                               icon: Icons.volume_up_outlined,
                               onChanged: (val) async {
-                                await _prefs.setReminderSoundEnabled(val);
+                                await ref.read(reminderSoundProvider.notifier).setEnabled(val);
                               },
                             );
                           },
