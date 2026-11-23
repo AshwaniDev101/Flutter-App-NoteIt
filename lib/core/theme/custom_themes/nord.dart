@@ -124,6 +124,7 @@ ThemeData get _nordThemeData {
       NetworkSignalColors.nord(),
       WorkspaceThemeColors.nord(),
       SnackBarThemeColor.nord(),
+      SearchHighlightColors.nord(),
     ],
   );
 }

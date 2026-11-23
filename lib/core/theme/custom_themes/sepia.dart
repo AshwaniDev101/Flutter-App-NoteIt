@@ -124,6 +124,7 @@ ThemeData get _sepiaThemeData {
       NetworkSignalColors.sepia(),
       WorkspaceThemeColors.sepia(),
       SnackBarThemeColor.sepia(),
+      SearchHighlightColors.sepia(),
     ],
   );
 }

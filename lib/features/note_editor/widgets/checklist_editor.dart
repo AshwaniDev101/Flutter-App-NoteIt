@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:noteit/core/theme/search_highlight_colors.dart';
 
 class CheckListItemModel {
   final String id;
@@ -49,10 +50,14 @@ class ChecklistTextController extends TextEditingController {
       return super.buildTextSpan(context: context, style: style, withComposing: withComposing);
     }
 
-    final colorScheme = Theme.of(context).colorScheme;
+    final colors = SearchHighlightColors.of(context);
     final highlightStyle = TextStyle(
-      backgroundColor: colorScheme.secondaryContainer,
-      color: colorScheme.onSecondaryContainer,
+      fontWeight: FontWeight.bold,
+      backgroundColor: colors.passiveBackground,
+      color: colors.passiveForeground,
+      decoration: TextDecoration.underline,
+      decorationColor: colors.passiveUnderline,
+      decorationThickness: 1.5,
     );
 
     List<TextSpan> spans = [];
@@ -231,10 +236,14 @@ class _CheckListWidgetState extends State<CheckListWidget> {
       return Text(text, style: style);
     }
 
-    final colorScheme = Theme.of(context).colorScheme;
+    final colors = SearchHighlightColors.of(context);
     final highlightStyle = TextStyle(
-      backgroundColor: colorScheme.secondaryContainer,
-      color: colorScheme.onSecondaryContainer,
+      fontWeight: FontWeight.bold,
+      backgroundColor: colors.passiveBackground,
+      color: colors.passiveForeground,
+      decoration: TextDecoration.underline,
+      decorationColor: colors.passiveUnderline,
+      decorationThickness: 1.5,
     );
 
     List<TextSpan> spans = [];

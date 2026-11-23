@@ -124,6 +124,7 @@ ThemeData get _amoledThemeData {
       NetworkSignalColors.amoled(),
       WorkspaceThemeColors.amoled(),
       SnackBarThemeColor.amoled(),
+      SearchHighlightColors.amoled(),
     ],
   );
 }

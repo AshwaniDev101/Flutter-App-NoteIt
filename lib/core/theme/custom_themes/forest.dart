@@ -124,6 +124,7 @@ ThemeData get _forestThemeData {
       NetworkSignalColors.forest(),
       WorkspaceThemeColors.forest(),
       SnackBarThemeColor.forest(),
+      SearchHighlightColors.forest(),
     ],
   );
 }

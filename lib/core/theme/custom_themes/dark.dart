@@ -172,6 +172,7 @@ ThemeData get _darkThemeData {
       NetworkSignalColors.dark(),
       WorkspaceThemeColors.dark(),
       SnackBarThemeColor.dark(),
+      SearchHighlightColors.dark(),
     ],
   );
 }

@@ -124,6 +124,7 @@ ThemeData get _lightThemeData {
       NetworkSignalColors.light(),
       WorkspaceThemeColors.light(),
       SnackBarThemeColor.light(),
+      SearchHighlightColors.light(),
     ],
   );
 }

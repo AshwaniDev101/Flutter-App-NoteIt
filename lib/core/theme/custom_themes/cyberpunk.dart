@@ -124,6 +124,7 @@ ThemeData get _cyberpunkThemeData {
       NetworkSignalColors.cyberpunk(),
       WorkspaceThemeColors.cyberpunk(),
       SnackBarThemeColor.cyberpunk(),
+      SearchHighlightColors.cyberpunk(),
     ],
   );
 }

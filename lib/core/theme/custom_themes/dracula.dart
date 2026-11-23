@@ -124,6 +124,7 @@ ThemeData get _draculaThemeData {
       NetworkSignalColors.dracula(),
       WorkspaceThemeColors.dracula(),
       SnackBarThemeColor.dracula(),
+      SearchHighlightColors.dracula(),
     ],
   );
 }

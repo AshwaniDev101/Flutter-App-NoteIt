@@ -124,6 +124,7 @@ ThemeData get _oceanThemeData {
       NetworkSignalColors.ocean(),
       WorkspaceThemeColors.ocean(),
       SnackBarThemeColor.ocean(),
+      SearchHighlightColors.ocean(),
     ],
   );
 }

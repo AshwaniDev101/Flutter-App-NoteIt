@@ -7,6 +7,7 @@ import 'package:noteit/database/shared_preference/shared_preference_manager.dart
 import 'app_typography.dart';
 import 'folder_theme_colors.dart';
 import 'network_signal_colors.dart';
+import 'search_highlight_colors.dart';
 import 'snack_bar_theme_color.dart';
 import 'sync_status_colors.dart';
 import 'workspace_theme_colors.dart';

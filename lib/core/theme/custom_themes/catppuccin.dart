@@ -124,6 +124,7 @@ ThemeData get _catppuccinThemeData {
       NetworkSignalColors.catppuccin(),
       WorkspaceThemeColors.catppuccin(),
       SnackBarThemeColor.catppuccin(),
+      SearchHighlightColors.catppuccin(),
     ],
   );
 }

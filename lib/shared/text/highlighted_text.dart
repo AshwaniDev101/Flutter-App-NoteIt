@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:noteit/core/theme/search_highlight_colors.dart';
 
 class HighlightedText extends StatelessWidget {
   final String text;
@@ -20,14 +21,16 @@ class HighlightedText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
-
     final defaultStyle = normalStyle ?? Theme.of(context).textTheme.bodyMedium ?? const TextStyle();
 
+    final colors = SearchHighlightColors.of(context);
     final defaultHighlight = highlightStyle ?? defaultStyle.copyWith(
       fontWeight: FontWeight.bold,
-      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-      color: Theme.of(context).colorScheme.onPrimaryContainer,
+      backgroundColor: colors.passiveBackground,
+      color: colors.passiveForeground,
+      decoration: TextDecoration.underline,
+      decorationColor: colors.passiveUnderline,
+      decorationThickness: 1.5,
     );
 
     if (query.isEmpty) {

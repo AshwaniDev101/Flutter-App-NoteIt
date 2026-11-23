@@ -27,6 +27,8 @@ class _FindReplaceWidgetState extends State<FindReplaceWidget> {
   late final FocusNode _findFocusNode;
 
   bool _isReplace = false;
+  List<int> _matchIndices = [];
+  int _currentMatchIndex = -1;
 
   @override
   void initState() {
@@ -35,10 +37,8 @@ class _FindReplaceWidgetState extends State<FindReplaceWidget> {
     _replaceController = TextEditingController();
     _findFocusNode = FocusNode();
 
-    // Wire the find text directly to the highlighter
-    _findController.addListener(() {
-      widget.contentController.searchQuery = _findController.text;
-    });
+    // Wire the find text directly to the highlighter and match counter
+    _findController.addListener(_onFindTextChanged);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -49,97 +49,141 @@ class _FindReplaceWidgetState extends State<FindReplaceWidget> {
 
   @override
   void dispose() {
-    // widget.contentController.searchQuery = '';
+    _findController.removeListener(_onFindTextChanged);
     _findController.dispose();
     _replaceController.dispose();
     _findFocusNode.dispose();
     super.dispose();
   }
 
+  void _onFindTextChanged() {
+    widget.contentController.searchQuery = _findController.text;
+    _updateMatches(autoSelectFirst: true);
+  }
+
+  void _updateMatches({bool autoSelectFirst = false}) {
+    final query = _findController.text;
+    if (query.isEmpty) {
+      if (mounted) {
+        setState(() {
+          _matchIndices = [];
+          _currentMatchIndex = -1;
+        });
+      }
+      widget.contentController.setActiveMatch(-1);
+      return;
+    }
+
+    final content = widget.contentController.text;
+    final queryLower = query.toLowerCase();
+    final contentLower = content.toLowerCase();
+
+    List<int> matches = [];
+    int start = 0;
+    while (start < content.length) {
+      int idx = contentLower.indexOf(queryLower, start);
+      if (idx == -1) break;
+      matches.add(idx);
+      start = idx + query.length;
+      if (query.isEmpty) break;
+    }
+
+    int nextIndex = -1;
+    if (matches.isNotEmpty) {
+      if (autoSelectFirst) {
+        nextIndex = 0;
+      } else if (_currentMatchIndex >= 0 && _currentMatchIndex < matches.length) {
+        nextIndex = _currentMatchIndex;
+      } else {
+        nextIndex = 0;
+      }
+    }
+
+    if (mounted) {
+      setState(() {
+        _matchIndices = matches;
+        _currentMatchIndex = nextIndex;
+      });
+    }
+
+    if (nextIndex >= 0 && nextIndex < matches.length) {
+      final activeOffset = matches[nextIndex];
+      widget.contentController.setActiveMatch(activeOffset);
+      if (autoSelectFirst) {
+        widget.contentController.selection = TextSelection(
+          baseOffset: activeOffset,
+          extentOffset: activeOffset + query.length,
+        );
+      }
+    } else {
+      widget.contentController.setActiveMatch(-1);
+    }
+  }
+
   void _findNext() {
     final query = _findController.text;
     if (query.isEmpty) return;
 
-    final content = widget.contentController.text;
-    if (content.isEmpty) return;
+    _updateMatches(autoSelectFirst: false);
 
-    // Use lowercase for case-insensitive search to match your HighlightingTextEditingController
-    final queryLower = query.toLowerCase();
-    final contentLower = content.toLowerCase();
-
-    // Get the current cursor position (end of current selection)
-    int startIndex = 0;
-    if (widget.contentController.selection.isValid) {
-      startIndex = widget.contentController.selection.extentOffset;
-      // Safety check in case the selection is invalid (-1)
-      if (startIndex < 0) startIndex = 0;
-    }
-
-    // 1. Search for the next occurrence AFTER the current cursor position
-    int matchIndex = contentLower.indexOf(queryLower, startIndex);
-
-    // 2. If not found, wrap around to the top of the document and search again
-    if (matchIndex == -1 && startIndex > 0) {
-      matchIndex = contentLower.indexOf(queryLower, 0);
-    }
-
-    // 3. If a match is found, select it
-    if (matchIndex != -1) {
-      // Update the selection to highlight the exact matched text
-      widget.contentController.selection = TextSelection(
-        baseOffset: matchIndex,
-        extentOffset: matchIndex + query.length,
-      );
-
-      // Request focus to ensure the TextField scrolls to the highlighted selection
-      widget.contentFocusNode.requestFocus();
-    } else {
-      // Notify the user if no matches were found anywhere
+    if (_matchIndices.isEmpty) {
       SnackBarManager.show(
         msg: 'No matches found',
         type: SnackBarMessageType.acknowledgment,
       );
+      return;
     }
+
+    int nextMatchIdx = _currentMatchIndex + 1;
+    if (nextMatchIdx >= _matchIndices.length) {
+      nextMatchIdx = 0; // Wrap around to first match
+    }
+
+    final matchIndex = _matchIndices[nextMatchIdx];
+
+    setState(() {
+      _currentMatchIndex = nextMatchIdx;
+    });
+
+    widget.contentController.selection = TextSelection(
+      baseOffset: matchIndex,
+      extentOffset: matchIndex + query.length,
+    );
+    widget.contentController.setActiveMatch(matchIndex);
+    widget.contentFocusNode.requestFocus();
   }
 
   void _findPrevious() {
     final query = _findController.text;
     if (query.isEmpty) return;
 
-    final content = widget.contentController.text;
-    if (content.isEmpty) return;
+    _updateMatches(autoSelectFirst: false);
 
-    final queryLower = query.toLowerCase();
-    final contentLower = content.toLowerCase();
-
-    // Get the start of the current selection so we search backwards from there
-    int startIndex = content.length;
-    if (widget.contentController.selection.isValid) {
-      startIndex = widget.contentController.selection.baseOffset;
-      if (startIndex < 0) startIndex = content.length;
-    }
-
-    // `lastIndexOf` searches backwards from the given index
-    // We subtract 1 from startIndex so we don't just find the currently selected word again
-    int matchIndex = contentLower.lastIndexOf(queryLower, startIndex - 1);
-
-    // If not found, wrap around to the very bottom of the document
-    if (matchIndex == -1) {
-      matchIndex = contentLower.lastIndexOf(queryLower, content.length);
-    }
-
-    if (matchIndex != -1) {
-      widget.contentController.selection = TextSelection(
-        baseOffset: matchIndex,
-        extentOffset: matchIndex + query.length,
-      );
-      widget.contentFocusNode.requestFocus();
-    } else {
+    if (_matchIndices.isEmpty) {
       SnackBarManager.show(
         msg: 'No matches found',
         type: SnackBarMessageType.acknowledgment,
       );
+      return;
     }
+
+    int prevMatchIdx = _currentMatchIndex - 1;
+    if (prevMatchIdx < 0) {
+      prevMatchIdx = _matchIndices.length - 1; // Wrap around to last match
+    }
+
+    final matchIndex = _matchIndices[prevMatchIdx];
+
+    setState(() {
+      _currentMatchIndex = prevMatchIdx;
+    });
+
+    widget.contentController.selection = TextSelection(
+      baseOffset: matchIndex,
+      extentOffset: matchIndex + query.length,
+    );
+    widget.contentController.setActiveMatch(matchIndex);
+    widget.contentFocusNode.requestFocus();
   }
 
   void _replace() {
@@ -150,29 +194,23 @@ class _FindReplaceWidgetState extends State<FindReplaceWidget> {
     final content = widget.contentController.text;
     final selection = widget.contentController.selection;
 
-    // 1. Check if there is an active selection in the text field
     if (selection.isValid && !selection.isCollapsed) {
       final selectedText = content.substring(selection.baseOffset, selection.extentOffset);
 
-      // 2. Case-insensitive check to see if the highlighted text is our search query
       if (selectedText.toLowerCase() == query.toLowerCase()) {
-        // 3. Replace just that specific highlighted range
         final newContent = content.replaceRange(selection.baseOffset, selection.extentOffset, replaceText);
 
-        // 4. Update the controller with the new text and put the cursor right after the replaced text
         widget.contentController.value = TextEditingValue(
           text: newContent,
           selection: TextSelection.collapsed(offset: selection.baseOffset + replaceText.length),
         );
 
-        // 5. Automatically jump to highlight the next occurrence
+        _updateMatches(autoSelectFirst: false);
         _findNext();
         return;
       }
     }
 
-    // If nothing was selected or the selection didn't match the query,
-    // we assume the user just wants to find the first occurrence to prepare for replacing.
     _findNext();
   }
 
@@ -183,19 +221,16 @@ class _FindReplaceWidgetState extends State<FindReplaceWidget> {
 
     final content = widget.contentController.text;
 
-    // We use a RegExp here to ensure the "Replace All" is case-insensitive,
-    // which matches the behavior of your custom highlighting and _findNext.
-    // RegExp.escape prevents crashes if the user searches for characters like * or [
     final regex = RegExp(RegExp.escape(query), caseSensitive: false);
-
     final newContent = content.replaceAll(regex, replaceText);
 
     if (content != newContent) {
       widget.contentController.value = TextEditingValue(
         text: newContent,
-        // Reset the cursor to the beginning after a mass replacement
         selection: const TextSelection.collapsed(offset: 0),
       );
+
+      _updateMatches(autoSelectFirst: true);
 
       SnackBarManager.show(
         msg: 'All occurrences replaced',
@@ -209,6 +244,32 @@ class _FindReplaceWidgetState extends State<FindReplaceWidget> {
     }
   }
 
+  Widget _buildMatchCounter(ColorScheme colorScheme) {
+    final query = _findController.text;
+    if (query.isEmpty) return const SizedBox.shrink();
+
+    final text = _matchIndices.isNotEmpty
+        ? '${_currentMatchIndex + 1}/${_matchIndices.length}'
+        : '0/0';
+
+    return Padding(
+      padding: const EdgeInsets.only(right: 8.0),
+      child: Center(
+        widthFactor: 1.0,
+        child: Text(
+          text,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: _matchIndices.isNotEmpty
+                ? colorScheme.primary
+                : colorScheme.error,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -217,10 +278,8 @@ class _FindReplaceWidgetState extends State<FindReplaceWidget> {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: widget.padding, vertical: 8.0),
       child: Align(
-        // Aligns the search bar to the right side of the editor
         alignment: Alignment.topRight,
         child: ConstrainedBox(
-          // Prevents the bar from stretching endlessly on wide monitors
           constraints: const BoxConstraints(maxWidth: 420),
           child: Container(
             padding: const EdgeInsets.all(8.0),
@@ -250,7 +309,7 @@ class _FindReplaceWidgetState extends State<FindReplaceWidget> {
                         color: colorScheme.onSurfaceVariant,
                       ),
                       splashRadius: 20,
-                      constraints: const BoxConstraints(), // Removes default huge padding
+                      constraints: const BoxConstraints(),
                       padding: const EdgeInsets.all(8),
                       tooltip: 'Toggle Replace',
                       onPressed: () {
@@ -273,7 +332,7 @@ class _FindReplaceWidgetState extends State<FindReplaceWidget> {
                           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                           filled: true,
                           fillColor: Theme.of(context).colorScheme.surfaceContainerLowest,
-
+                          suffixIcon: _buildMatchCounter(colorScheme),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(6),
                             borderSide: BorderSide(color: colorScheme.outlineVariant),
@@ -319,9 +378,8 @@ class _FindReplaceWidgetState extends State<FindReplaceWidget> {
                       padding: const EdgeInsets.all(8),
                       tooltip: 'Close',
                       onPressed: () {
-                        // lear highlights safely during the button press
                         widget.contentController.searchQuery = '';
-                        //  Tell the parent to remove the widget
+                        widget.contentController.setActiveMatch(-1);
                         widget.onClose();
                       },
                     ),
@@ -333,7 +391,6 @@ class _FindReplaceWidgetState extends State<FindReplaceWidget> {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      // Perfectly aligns the Replace text field under the Find text field
                       const SizedBox(width: 44),
 
                       // Replace Input
