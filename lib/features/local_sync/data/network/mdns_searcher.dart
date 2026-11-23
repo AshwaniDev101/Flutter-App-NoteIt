@@ -358,14 +358,19 @@ class MdnsSearcherNotifier extends Notifier<MdnsState> {
     }
   }
 
-  void stopScan() {
+  Future<void> stopScan() async {
     _scanTimer?.cancel();
     _scanTimer = null;
     _heartbeatTimer?.cancel();
     _heartbeatTimer = null;
     if (_discovery != null) {
-      stopDiscovery(_discovery!);
+      final discoveryToStop = _discovery!;
       _discovery = null;
+      try {
+        await stopDiscovery(discoveryToStop);
+      } catch (e) {
+        AppLogger.e('MdnsSearcherNotifier: Error stopping discovery', error: e);
+      }
     }
     if (state.status != ScanStatus.idle || state.devices.isNotEmpty) {
       Future.microtask(() {

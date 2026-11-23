@@ -29,6 +29,7 @@ class SyncServerNotifier extends Notifier<HttpServer?> {
   String? _connectingClientPlatform;
 
   bool get isBusy => _isBusy;
+  String? get currentPin => _currentPin;
 
   @override
   HttpServer? build() {
@@ -111,11 +112,17 @@ class SyncServerNotifier extends Notifier<HttpServer?> {
       AppLogger.w('SyncServerNotifier: Default port ${AppConfig.defaultSyncPort} in use ($e). Falling back to dynamic port...');
       server = await shelf_io.serve(authHandler, ip, 0);
     }
+
+    final currentMode = ref.read(syncModeProvider);
+    if (!currentMode.isHost) {
+      AppLogger.d('SyncServerNotifier: Hosting was cancelled during startup. Closing server...');
+      await server.close(force: true);
+      return 0;
+    }
+
     AppLogger.d('SyncServerNotifier: Sync server hosting at ws://${server.address.host}:${server.port}');
 
     state = server;
-
-    await ref.read(syncModeProvider.notifier).setMode(SyncMode.localHost);
     return state!.port;
   }
 

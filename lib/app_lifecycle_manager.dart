@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/core/helpers/platform_helper.dart';
 import 'package:noteit/core/sync/sync_engine.dart';
 import 'package:noteit/core/util/device_info.dart';
 import 'package:noteit/core/util/logger.dart';
@@ -7,6 +8,7 @@ import 'package:noteit/database/drift/synced_devices/synced_devices_dao.dart';
 import 'package:noteit/features/local_sync/data/network/local_sync_service.dart';
 import 'package:noteit/features/local_sync/data/network/mdns_broadcast.dart';
 import 'package:noteit/features/local_sync/data/network/mdns_searcher.dart';
+import 'package:noteit/features/local_sync/data/providers/local_sync_session_manager.dart';
 import 'package:noteit/features/local_sync/data/providers/sync_client_provider.dart';
 import 'package:noteit/features/local_sync/data/providers/sync_server_provider.dart';
 import 'package:noteit/features/local_sync/data/providers/sync_session_provider.dart';
@@ -61,11 +63,9 @@ class AppLifecycleManager extends Notifier<void> {
           AppLogger.d('AppLifecycleManager: Sync Role: Host');
           final hasPaired = await ref.read(syncedDevicesDaoProvider).hasPairedDevices();
           if (!hasPaired) {
-            AppLogger.d('AppLifecycleManager: AutoSync [HOST]: No paired devices in DB. Resetting mode to offline.');
-            await ref.read(syncModeProvider.notifier).setMode(SyncMode.offline);
-            return;
+            AppLogger.d('AppLifecycleManager: AutoSync [HOST]: No paired devices in DB yet.');
           }
-          AppLogger.d('AppLifecycleManager: AutoSync [HOST]: Starting background engine...');
+          AppLogger.d('AppLifecycleManager: AutoSync [HOST]: Starting/verifying background engine...');
           try {
             await ref.read(serverHostingProvider.future);
           } catch (e) {
@@ -76,11 +76,7 @@ class AppLifecycleManager extends Notifier<void> {
           AppLogger.d('AppLifecycleManager: AutoSync [CLIENT]: Initializing connection protocol...');
           final connected = await ref.read(syncClientProvider.notifier).autoConnectToPairedHost();
           if (!connected) {
-            final hasPaired = await ref.read(syncedDevicesDaoProvider).hasPairedDevices();
-            if (!hasPaired) {
-              AppLogger.d('AppLifecycleManager: AutoSync [CLIENT]: No paired host found in DB. Resetting mode to offline.');
-              await ref.read(syncModeProvider.notifier).setMode(SyncMode.offline);
-            }
+            AppLogger.d('AppLifecycleManager: AutoSync [CLIENT]: Could not auto-connect to paired host.');
           }
           break;
       }
@@ -98,10 +94,15 @@ class AppLifecycleManager extends Notifier<void> {
     }
 
     if (mode.isHost) {
-      // Stop the server and unregister mDNS immediately
-      // before the OS suspends us and freezes the network state.
-      ref.read(syncServerProvider.notifier).stopHosting();
-      ref.read(mdnsBroadcastProvider.notifier).stopBroadcasting();
+      // On desktop, do not stop hosting on window blur/pause.
+      // On mobile, only stop if there is no active connected session.
+      if (!PlatformHelper.isNativeDesktop) {
+        final session = ref.read(localSyncSessionProvider);
+        if (!session.isConnected) {
+          ref.read(syncServerProvider.notifier).stopHosting();
+          ref.read(mdnsBroadcastProvider.notifier).stopBroadcasting();
+        }
+      }
     } else {
       ref.read(mdnsSearcherProvider.notifier).stopScan();
     }

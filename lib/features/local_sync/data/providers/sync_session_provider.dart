@@ -13,18 +13,26 @@ final syncSessionProvider = FutureProvider.autoDispose<({String ip, String qrUrl
     ) async {
   final hostData = await ref.watch(serverHostingProvider.future);
 
-  final String generatedPin = Random().nextInt(10000).toString().padLeft(4, '0');
-
   final serverNotifier = ref.read(syncServerProvider.notifier);
 
-  Future.microtask(() {
-    serverNotifier.updatePin(generatedPin);
-  });
+  final existingPin = serverNotifier.currentPin;
+  final String generatedPin = existingPin ?? Random().nextInt(10000).toString().padLeft(4, '0');
+
+  bool isDisposed = false;
 
   ref.onDispose(() {
+    isDisposed = true;
     AppLogger.d('SyncSessionProvider: QR Screen closed. Erasing PIN to lock down server.');
     serverNotifier.updatePin(null);
   });
+
+  if (existingPin == null) {
+    Future.microtask(() {
+      if (!isDisposed) {
+        serverNotifier.updatePin(generatedPin);
+      }
+    });
+  }
 
   final info = await ref.read(deviceInfoProvider.future);
 

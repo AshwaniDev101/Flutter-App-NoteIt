@@ -6,6 +6,7 @@ import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.d
 import '../../shared/menus/context_menu_helper.dart';
 import '../../core/config/app_env.dart';
 import '../../core/sync/sync_engine.dart';
+import '../../core/sync/sync_orchestrator.dart';
 import '../../shared/note_card/core/note_action_controller.dart';
 import '../../shared/overlays/snack_bar_manager.dart';
 import '../archive/providers/archive_providers.dart';
@@ -401,6 +402,8 @@ class _DrawerAuthHeaderWidgetState extends ConsumerState<_DrawerAuthHeaderWidget
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final authState = ref.watch(authStateProvider);
+    final syncMode = ref.watch(syncModeProvider);
+    final isCloudMode = syncMode.isCloud;
 
     return authState.when(
       data: (user) {
@@ -408,7 +411,6 @@ class _DrawerAuthHeaderWidgetState extends ConsumerState<_DrawerAuthHeaderWidget
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Material(
-              // color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
               color: colorScheme.surfaceContainerLowest,
               borderRadius: BorderRadius.circular(14),
               child: InkWell(
@@ -442,12 +444,14 @@ class _DrawerAuthHeaderWidgetState extends ConsumerState<_DrawerAuthHeaderWidget
                               ),
                             ),
                             const SizedBox(height: 4),
-
-
                             Row(
                               children: [
-                                Icon(SyncEngine.cloud.icon,size: 16,color: colorScheme.onSurfaceVariant,),
-                                SizedBox(width: 8,),
+                                Icon(
+                                  SyncEngine.cloud.icon,
+                                  size: 16,
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                                const SizedBox(width: 8),
                                 Text(
                                   "${SyncEngine.cloud.label} sync",
                                   style: theme.textTheme.labelSmall?.copyWith(
@@ -457,7 +461,6 @@ class _DrawerAuthHeaderWidgetState extends ConsumerState<_DrawerAuthHeaderWidget
                                 ),
                               ],
                             ),
-
                           ],
                         ),
                       ),
@@ -503,73 +506,94 @@ class _DrawerAuthHeaderWidgetState extends ConsumerState<_DrawerAuthHeaderWidget
                         _isExpanded = !_isExpanded;
                       });
                     },
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      child: Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 18,
-                            backgroundColor: colorScheme.primaryContainer,
-                            backgroundImage: user.photoURL != null ? NetworkImage(user.photoURL!) : null,
-                            child: user.photoURL == null
-                                ? Text(
-                                    (user.displayName?.isNotEmpty == true
-                                            ? user.displayName![0]
-                                            : (user.email?[0] ?? 'U'))
-                                        .toUpperCase(),
-                                    style: TextStyle(
-                                      color: colorScheme.onPrimaryContainer,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
+                    child: Stack(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 18,
+                                backgroundColor: colorScheme.primaryContainer,
+                                backgroundImage: user.photoURL != null ? NetworkImage(user.photoURL!) : null,
+                                child: user.photoURL == null
+                                    ? Text(
+                                        (user.displayName?.isNotEmpty == true
+                                                ? user.displayName![0]
+                                                : (user.email?[0] ?? 'U'))
+                                            .toUpperCase(),
+                                        style: TextStyle(
+                                          color: colorScheme.onPrimaryContainer,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                        ),
+                                      )
+                                    : null,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      user.displayName ?? 'Google User',
+                                      style: theme.textTheme.bodyMedium?.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                        color: isCloudMode
+                                            ? colorScheme.onSurface
+                                            : colorScheme.onSurface.withValues(alpha: 0.5),
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                  )
-                                : null,
+                                    const SizedBox(height: 1),
+                                    Text(
+                                      user.email ?? '',
+                                      style: theme.textTheme.labelSmall?.copyWith(
+                                        color: isCloudMode
+                                            ? colorScheme.onSurfaceVariant.withValues(alpha: 0.8)
+                                            : colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                                        fontSize: 11,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              AnimatedRotation(
+                                turns: _isExpanded ? 0.5 : 0.0,
+                                duration: const Duration(milliseconds: 200),
+                                child: Icon(
+                                  Icons.keyboard_arrow_down_rounded,
+                                  size: 20,
+                                  color: isCloudMode
+                                      ? colorScheme.onSurfaceVariant
+                                      : colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  user.displayName ?? 'Google User',
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    color: colorScheme.onSurface,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                        ),
+                        if (!isCloudMode)
+                          Positioned.fill(
+                            child: IgnorePointer(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: colorScheme.surface.withValues(alpha: 0.45),
+                                  borderRadius: BorderRadius.circular(14),
                                 ),
-                                const SizedBox(height: 1),
-                                Text(
-                                  user.email ?? '',
-                                  style: theme.textTheme.labelSmall?.copyWith(
-                                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
-                                    fontSize: 11,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
+                              ),
                             ),
                           ),
-                          const SizedBox(width: 4),
-                          AnimatedRotation(
-                            turns: _isExpanded ? 0.5 : 0.0,
-                            duration: const Duration(milliseconds: 200),
-                            child: Icon(
-                              Icons.keyboard_arrow_down_rounded,
-                              size: 20,
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
+                      ],
                     ),
                   ),
                 ),
 
-                // Collapsible Sign Out Button
+                // Collapsible Actions
                 AnimatedSize(
                   duration: const Duration(milliseconds: 200),
                   curve: Curves.easeInOut,
@@ -583,6 +607,60 @@ class _DrawerAuthHeaderWidgetState extends ConsumerState<_DrawerAuthHeaderWidget
                               endIndent: 12,
                               color: colorScheme.outlineVariant.withValues(alpha: 0.3),
                             ),
+                            if (!isCloudMode) ...[
+                              Padding(
+                                padding: const EdgeInsets.all(6),
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    borderRadius: BorderRadius.circular(10),
+                                    onTap: () async {
+                                      final success = await ref
+                                          .read(syncModeProvider.notifier)
+                                          .requestModeChange(SyncMode.cloud);
+                                      if (success) {
+                                        ref.read(syncOrchestratorProvider).triggerSync();
+                                        if (mounted) {
+                                          setState(() {
+                                            _isExpanded = false;
+                                          });
+                                        }
+                                        SnackBarManager.show(
+                                          msg: 'Cloud sync enabled.',
+                                          type: SnackBarMessageType.acknowledgment,
+                                        );
+                                      }
+                                    },
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.cloud_queue_rounded,
+                                            size: 18,
+                                            color: colorScheme.primary,
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Text(
+                                            'Enable Cloud Sync',
+                                            style: theme.textTheme.bodySmall?.copyWith(
+                                              fontWeight: FontWeight.w600,
+                                              color: colorScheme.primary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Divider(
+                                height: 1,
+                                indent: 12,
+                                endIndent: 12,
+                                color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+                              ),
+                            ],
                             Padding(
                               padding: const EdgeInsets.all(6),
                               child: Material(

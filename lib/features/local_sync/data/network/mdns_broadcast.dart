@@ -76,12 +76,12 @@ class MdnsBroadcastNotifier extends Notifier<Registration?> {
     }
   }
 
-  void _closeNativeRegistration() {
+  Future<void> _closeNativeRegistration() async {
     if (_globalActiveRegistration != null) {
       final regToCancel = _globalActiveRegistration!;
       _globalActiveRegistration = null;
       try {
-        unregister(regToCancel);
+        await unregister(regToCancel);
         AppLogger.d('MdnsBroadcastNotifier: Stopped broadcasting successfully');
       } catch (e) {
         AppLogger.e('MdnsBroadcastNotifier: Unregister error', error: e);
@@ -92,7 +92,7 @@ class MdnsBroadcastNotifier extends Notifier<Registration?> {
   /// Call this ONLY if you need a manual button to stop syncing while staying on the page.
   /// (The onDispose block handles the automatic cleanup when leaving the page).
   Future<void> stopBroadcasting() async {
-    _closeNativeRegistration();
+    await _closeNativeRegistration();
     if (state != null) {
       state = null;
     }

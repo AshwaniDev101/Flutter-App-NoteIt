@@ -106,9 +106,6 @@ class SyncModeNotifier extends Notifier<SyncMode> {
       if (user == null && currentMode == SyncMode.cloud) {
         AppLogger.d("SyncModeNotifier: User unauthenticated. Falling back from Cloud to Offline mode.");
         Future.microtask(() => setMode(SyncMode.offline));
-      } else if (user != null && currentMode == SyncMode.offline) {
-        AppLogger.d("SyncModeNotifier: User authenticated. Automatically switching from Offline to Cloud mode.");
-        Future.microtask(() => setMode(SyncMode.cloud));
       }
     }, fireImmediately: true);
 
