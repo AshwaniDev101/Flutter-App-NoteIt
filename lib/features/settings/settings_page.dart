@@ -144,8 +144,8 @@ class SettingsPage extends ConsumerWidget {
                 ),
                 SettingsTile(
                   icon: Icons.tune_outlined,
-                  title: 'Default Views & Layout',
-                  subtitle: 'Default layout, view mode, and sorting options',
+                  title: 'Window Presets',
+                  subtitle: 'Configure desktop window dimensions and size presets',
                   onTap: () {
                     nav.navigate(context, RightPanelPageOptions.defaultSettings);
                   },

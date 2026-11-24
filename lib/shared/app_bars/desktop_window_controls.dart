@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../../core/helpers/platform_helper.dart';
+import '../../database/shared_preference/shared_preference_manager.dart';
 
 /// Desktop window control buttons (minimize, maximize/unmaximize, close).
 ///
@@ -38,9 +39,11 @@ class DesktopWindowControls extends StatelessWidget {
             tooltip: 'Maximize',
             onPressed: () async {
               if (await windowManager.isMaximized()) {
-                windowManager.unmaximize();
+                await windowManager.unmaximize();
+                await SharedPreferenceManager.instance.setWindowMaximized(false);
               } else {
-                windowManager.maximize();
+                await windowManager.maximize();
+                await SharedPreferenceManager.instance.setWindowMaximized(true);
               }
             },
           ),

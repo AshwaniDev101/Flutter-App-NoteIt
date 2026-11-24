@@ -17,6 +17,13 @@ class LayoutPreferences {
   static const String _keyDefaultWindowHeight = 'default_window_height';
   static const String _keyListPanelWidth = 'list_panel_width';
   static const String _keyDefaultListPanelWidth = 'default_list_panel_width';
+  static const String _keyIsWindowMaximized = 'is_window_maximized';
+
+  bool get isWindowMaximized => _prefs.getBool(_keyIsWindowMaximized) ?? false;
+
+  Future<bool> setWindowMaximized(bool value) async {
+    return await _prefs.setBool(_keyIsWindowMaximized, value);
+  }
 
   double get listPanelWidth => _prefs.getDouble(_keyListPanelWidth) ?? getDefaultListPanelWidth();
 

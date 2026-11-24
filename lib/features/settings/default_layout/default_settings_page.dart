@@ -4,17 +4,11 @@ import 'package:window_manager/window_manager.dart';
 
 import '../../../core/helpers/platform_helper.dart';
 import '../../../database/shared_preference/shared_preference_manager.dart';
-import '../../../shared/menus/view_menu_button.dart';
 import '../../../shared/overlays/snack_bar_manager.dart';
-import '../../archive/providers/archive_providers.dart';
-import '../../home/core/db_sorting_filtering.dart';
-import '../../home/core/providers.dart';
 import '../../home/view/desktop/content_panel/core/navigator.dart';
-import '../../trash/providers/trash_providers.dart';
 import '../shared/settings_widgets.dart';
 
-/// Settings page for configuring default page views (List vs Grid), sorting criteria,
-/// middle panel width, and desktop application window sizes.
+/// Settings page for configuring desktop application window size presets.
 class DefaultSettingsPage extends ConsumerStatefulWidget {
   const DefaultSettingsPage({super.key});
 
@@ -23,18 +17,8 @@ class DefaultSettingsPage extends ConsumerStatefulWidget {
 }
 
 class _DefaultSettingsPageState extends ConsumerState<DefaultSettingsPage> {
-  late NoteViewType _homeDefaultView;
-  late NoteSortPreference _homeDefaultSort;
-
-  late NoteViewType _archiveDefaultView;
-  late NoteSortPreference _archiveDefaultSort;
-
-  late NoteViewType _trashDefaultView;
-  late NoteSortPreference _trashDefaultSort;
-
   late double _defaultWindowWidth;
   late double _defaultWindowHeight;
-  late double _defaultListPanelWidth;
 
   @override
   void initState() {
@@ -42,29 +26,20 @@ class _DefaultSettingsPageState extends ConsumerState<DefaultSettingsPage> {
     _loadDefaults();
   }
 
-  void _loadDefaults() {
+  void _loadDefaults() async {
     final prefs = SharedPreferenceManager.instance;
-    _homeDefaultView = prefs.getDefaultPageViewType('home');
-    _homeDefaultSort = prefs.getDefaultPageSortOption('home');
+    _defaultWindowWidth = prefs.windowWidth;
+    _defaultWindowHeight = prefs.windowHeight;
 
-    _archiveDefaultView = prefs.getDefaultPageViewType('archive');
-    _archiveDefaultSort = prefs.getDefaultPageSortOption('archive');
-
-    _trashDefaultView = prefs.getDefaultPageViewType('trash');
-    _trashDefaultSort = prefs.getDefaultPageSortOption('trash');
-
-    _defaultWindowWidth = prefs.getDefaultWindowWidth();
-    _defaultWindowHeight = prefs.getDefaultWindowHeight();
-    _defaultListPanelWidth = prefs.getDefaultListPanelWidth();
-  }
-
-  void _refreshProviders() {
-    ref.invalidate(homeNoteViewTypeProvider);
-    ref.invalidate(homeNoteSortPreferenceProvider);
-    ref.invalidate(archiveNoteViewTypeProvider);
-    ref.invalidate(archiveNoteSortPreferenceProvider);
-    ref.invalidate(trashNoteViewTypeProvider);
-    ref.invalidate(trashNoteSortPreferenceProvider);
+    if (PlatformHelper.isNativeDesktop) {
+      final size = await windowManager.getSize();
+      if (mounted) {
+        setState(() {
+          _defaultWindowWidth = size.width;
+          _defaultWindowHeight = size.height;
+        });
+      }
+    }
   }
 
   @override
@@ -79,131 +54,18 @@ class _DefaultSettingsPageState extends ConsumerState<DefaultSettingsPage> {
         children: [
           // Header
           const SettingsPageHeader(
-            title: 'Default Views & Layout',
-            subtitle:
-                'Configure default page display styles, sorting preferences, and panel dimensions',
+            title: 'Window Presets',
+            subtitle: 'Quickly resize application window to standard size presets',
           ),
 
-          // PAGE DEFAULTS SECTION
-          const SettingsSectionHeader(title: 'Default Page Views & Sorting'),
-          SettingsCard(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                _buildPageDefaultConfigTile(
-                  pageTitle: 'Home Page',
-                  currentView: _homeDefaultView,
-                  currentSort: _homeDefaultSort,
-                  onViewChanged: (view) async {
-                    await SharedPreferenceManager.instance.setDefaultPageViewType('home', view);
-                    setState(() => _homeDefaultView = view);
-                    _refreshProviders();
-                  },
-                  onSortChanged: (sort) async {
-                    await SharedPreferenceManager.instance.setDefaultPageSortOption('home', sort);
-                    setState(() => _homeDefaultSort = sort);
-                    _refreshProviders();
-                  },
-                ),
-                const Divider(height: 24),
-                _buildPageDefaultConfigTile(
-                  pageTitle: 'Archive Page',
-                  currentView: _archiveDefaultView,
-                  currentSort: _archiveDefaultSort,
-                  allowReminderSort: false,
-                  onViewChanged: (view) async {
-                    await SharedPreferenceManager.instance.setDefaultPageViewType('archive', view);
-                    setState(() => _archiveDefaultView = view);
-                    _refreshProviders();
-                  },
-                  onSortChanged: (sort) async {
-                    await SharedPreferenceManager.instance.setDefaultPageSortOption('archive', sort);
-                    setState(() => _archiveDefaultSort = sort);
-                    _refreshProviders();
-                  },
-                ),
-                const Divider(height: 24),
-                _buildPageDefaultConfigTile(
-                  pageTitle: 'Trash Page',
-                  currentView: _trashDefaultView,
-                  currentSort: _trashDefaultSort,
-                  allowReminderSort: false,
-                  onViewChanged: (view) async {
-                    await SharedPreferenceManager.instance.setDefaultPageViewType('trash', view);
-                    setState(() => _trashDefaultView = view);
-                    _refreshProviders();
-                  },
-                  onSortChanged: (sort) async {
-                    await SharedPreferenceManager.instance.setDefaultPageSortOption('trash', sort);
-                    setState(() => _trashDefaultSort = sort);
-                    _refreshProviders();
-                  },
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // DESKTOP LAYOUT SECTION
           if (PlatformHelper.isNativeDesktop) ...[
-            const SettingsSectionHeader(title: 'Desktop Layout Defaults'),
+            const SettingsSectionHeader(title: 'Preset Window Sizes'),
             SettingsCard(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Middle Panel Width
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Default Middle Panel Width',
-                        style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w500),
-                      ),
-                      Text(
-                        '${_defaultListPanelWidth.round()} px',
-                        style: textTheme.titleMedium?.copyWith(
-                          color: colorScheme.primary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Slider(
-                    value: _defaultListPanelWidth,
-                    min: 250,
-                    max: 600,
-                    divisions: 35,
-                    label: '${_defaultListPanelWidth.round()} px',
-                    onChanged: (value) async {
-                      setState(() => _defaultListPanelWidth = value);
-                      await SharedPreferenceManager.instance.setDefaultListPanelWidth(value);
-                      ref.read(listPanelWidthProvider.notifier).saveWidth(value);
-                    },
-                  ),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton.icon(
-                      icon: const Icon(Icons.straighten, size: 16),
-                      label: const Text('Use Current Middle Panel Width'),
-                      onPressed: () async {
-                        final currentWidth = SharedPreferenceManager.instance.listPanelWidth;
-                        setState(() => _defaultListPanelWidth = currentWidth);
-                        await SharedPreferenceManager.instance.setDefaultListPanelWidth(currentWidth);
-                        ref.read(listPanelWidthProvider.notifier).saveWidth(currentWidth);
-                        if (context.mounted) {
-                          SnackBarManager.show(
-                            msg: 'Set default panel width to ${currentWidth.round()}px',
-                          );
-                        }
-                      },
-                    ),
-                  ),
-
-                  const Divider(height: 24),
-
-                  // Window Size
+                  // Current Window Size Display
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -220,35 +82,17 @@ class _DefaultSettingsPageState extends ConsumerState<DefaultSettingsPage> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          icon: const Icon(Icons.aspect_ratio),
-                          label: const Text('Set as Default Window Size'),
-                          onPressed: () async {
-                            final size = await windowManager.getSize();
-                            _applyWindowSizePreset(
-                              size.width,
-                              size.height,
-                              '${size.width.round()}x${size.height.round()}',
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
 
-                  const SizedBox(height: 12),
+                  const Divider(height: 24),
+
                   Text(
-                    'Preset Window Sizes',
+                    'Window Size Presets',
                     style: textTheme.bodySmall?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
@@ -306,82 +150,14 @@ class _DefaultSettingsPageState extends ConsumerState<DefaultSettingsPage> {
                 ],
               ),
             ),
-            const SizedBox(height: 24),
-          ],
-
-          // RESET ACTIONS SECTION
-          const SettingsSectionHeader(title: 'Reset & Maintenance'),
-          SettingsCard(
-            child: Column(
-              children: [
-                SettingsTile(
-                  leading: Icon(Icons.restart_alt, color: colorScheme.tertiary),
-                  title: 'Reset Page Views to Defaults',
-                  subtitle:
-                      'Clears page-specific view/sort overrides and uses configured defaults',
-                  trailing: const SizedBox.shrink(),
-                  onTap: () async {
-                    await SharedPreferenceManager.instance.resetPageViewsAndSortsToDefaults();
-                    _refreshProviders();
-                    if (context.mounted) {
-                      SnackBarManager.show(
-                        msg: 'Page views and sorts reset to defaults',
-                      );
-                    }
-                  },
-                ),
-                Divider(
-                  height: 1,
-                  indent: 56,
-                  color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-                ),
-                SettingsTile(
-                  leading: Icon(Icons.delete_sweep_outlined, color: colorScheme.error),
-                  title: 'Clear All Preferences',
-                  subtitle:
-                      'Resets all app settings, views, and cached preferences to factory defaults',
-                  trailing: const SizedBox.shrink(),
-                  onTap: () async {
-                    final confirm = await showDialog<bool>(
-                      context: context,
-                      builder: (ctx) => AlertDialog(
-                        title: const Text('Clear All Preferences?'),
-                        content: const Text(
-                          'This will reset all app settings, themes, and views to default values.',
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.of(ctx).pop(false),
-                            child: const Text('Cancel'),
-                          ),
-                          TextButton(
-                            onPressed: () => Navigator.of(ctx).pop(true),
-                            child: Text(
-                              'Clear All',
-                              style: TextStyle(color: colorScheme.error),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-
-                    if (confirm == true) {
-                      await SharedPreferenceManager.instance.clearAll();
-                      setState(() {
-                        _loadDefaults();
-                      });
-                      _refreshProviders();
-                      if (context.mounted) {
-                        SnackBarManager.show(
-                          msg: 'All preferences cleared successfully',
-                        );
-                      }
-                    }
-                  },
-                ),
-              ],
+          ] else ...[
+            const SettingsCard(
+              padding: EdgeInsets.all(16.0),
+              child: Center(
+                child: Text('Window size presets are only available on desktop platforms.'),
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -397,10 +173,9 @@ class _DefaultSettingsPageState extends ConsumerState<DefaultSettingsPage> {
       _defaultWindowWidth = width;
       _defaultWindowHeight = height;
     });
-    await SharedPreferenceManager.instance.setDefaultWindowWidth(width);
-    await SharedPreferenceManager.instance.setDefaultWindowHeight(height);
     await SharedPreferenceManager.instance.setWindowWidth(width);
     await SharedPreferenceManager.instance.setWindowHeight(height);
+    await SharedPreferenceManager.instance.setWindowMaximized(isFullscreen);
 
     if (PlatformHelper.isNativeDesktop) {
       if (isFullscreen) {
@@ -449,132 +224,6 @@ class _DefaultSettingsPageState extends ConsumerState<DefaultSettingsPage> {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       onPressed: onSelected,
-    );
-  }
-
-  Widget _buildPageDefaultConfigTile({
-    required String pageTitle,
-    required NoteViewType currentView,
-    required NoteSortPreference currentSort,
-    required ValueChanged<NoteViewType> onViewChanged,
-    required ValueChanged<NoteSortPreference> onSortChanged,
-    bool allowReminderSort = true,
-  }) {
-    final textTheme = Theme.of(context).textTheme;
-    final colorScheme = Theme.of(context).colorScheme;
-
-    final sortOptions = [
-      (NoteSortPreference.createdAt, 'Created Date'),
-      (NoteSortPreference.name, 'Alphabetically'),
-      (NoteSortPreference.updatedAt, 'Modified Date'),
-      (NoteSortPreference.folder, 'By Folder'),
-      if (allowReminderSort) (NoteSortPreference.reminderAt, 'By Reminder Time'),
-    ];
-
-    final effectiveSort = (!allowReminderSort && currentSort == NoteSortPreference.reminderAt)
-        ? NoteSortPreference.createdAt
-        : currentSort;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          pageTitle,
-          style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Default View',
-                    style: textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  InputDecorator(
-                    decoration: InputDecoration(
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 4,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<NoteViewType>(
-                        value: currentView,
-                        isExpanded: true,
-                        items: NoteViewType.values.map((v) {
-                          return DropdownMenuItem(
-                            value: v,
-                            child: Row(
-                              children: [
-                                Icon(v.icon, size: 18),
-                                const SizedBox(width: 8),
-                                Text(v.label),
-                              ],
-                            ),
-                          );
-                        }).toList(),
-                        onChanged: (val) {
-                          if (val != null) onViewChanged(val);
-                        },
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Default Sort',
-                    style: textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  InputDecorator(
-                    decoration: InputDecoration(
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 4,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<NoteSortPreference>(
-                        value: effectiveSort,
-                        isExpanded: true,
-                        items: sortOptions.map((opt) {
-                          return DropdownMenuItem<NoteSortPreference>(
-                            value: opt.$1,
-                            child: Text(opt.$2),
-                          );
-                        }).toList(),
-                        onChanged: (val) {
-                          if (val != null) onSortChanged(val);
-                        },
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ],
     );
   }
 }

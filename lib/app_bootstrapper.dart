@@ -62,8 +62,10 @@ class AppBootstrapper {
 
     const minWindowSize = Size(360, 500);
 
-    final savedWidth = math.max(SharedPreferenceManager.instance.windowWidth, minWindowSize.width);
-    final savedHeight = math.max(SharedPreferenceManager.instance.windowHeight, minWindowSize.height);
+    final prefs = SharedPreferenceManager.instance;
+    final savedWidth = math.max(prefs.windowWidth, minWindowSize.width);
+    final savedHeight = math.max(prefs.windowHeight, minWindowSize.height);
+    final isMaximized = prefs.isWindowMaximized;
 
     WindowOptions windowOptions = WindowOptions(
       titleBarStyle: TitleBarStyle.hidden,
@@ -73,8 +75,12 @@ class AppBootstrapper {
     );
 
     await windowManager.waitUntilReadyToShow(windowOptions, () async {
+      await windowManager.setSize(Size(savedWidth, savedHeight));
       await windowManager.show();
       await windowManager.focus();
+      if (isMaximized) {
+        await windowManager.maximize();
+      }
     });
   }
 

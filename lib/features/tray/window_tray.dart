@@ -95,6 +95,7 @@ class DesktopTrayHandler extends WindowListener with TrayListener {
   /// Destroys the system tray icon cleanly before destroying the main app window
   /// to avoid leaving orphaned/ghost tray icons on Windows.
   Future<void> destroyTrayAndExit() async {
+    await flushWindowState();
     try {
       await trayManager.destroy();
     } catch (e) {
@@ -102,6 +103,20 @@ class DesktopTrayHandler extends WindowListener with TrayListener {
     }
     await windowManager.setPreventClose(false);
     await windowManager.destroy();
+  }
+
+  /// Flushes current window size and maximized status immediately to persistent preferences.
+  Future<void> flushWindowState() async {
+    _resizeDebounce?.cancel();
+    _resizeDebounce = null;
+    if (_isInitialized) {
+      final isMax = await windowManager.isMaximized();
+      await SharedPreferenceManager.instance.setWindowMaximized(isMax);
+      if (!isMax && !await windowManager.isMinimized()) {
+        final size = await windowManager.getSize();
+        await SharedPreferenceManager.instance.setWindowSize(size.width, size.height);
+      }
+    }
   }
 
   /// Dynamically rebuilds the tray context menu based on alarm ringing state and sound preference.
@@ -149,6 +164,21 @@ class DesktopTrayHandler extends WindowListener with TrayListener {
     _debounceWindowSizeSave();
   }
 
+  @override
+  void onWindowMaximize() async {
+    if (_isInitialized) {
+      await SharedPreferenceManager.instance.setWindowMaximized(true);
+    }
+  }
+
+  @override
+  void onWindowUnmaximize() async {
+    if (_isInitialized) {
+      await SharedPreferenceManager.instance.setWindowMaximized(false);
+      _debounceWindowSizeSave();
+    }
+  }
+
   void _debounceWindowSizeSave() {
     // Debounce window size persistence to prevent unthrottled disk I/O while dragging window borders.
     _resizeDebounce?.cancel();
@@ -165,6 +195,7 @@ class DesktopTrayHandler extends WindowListener with TrayListener {
 
   @override
   void onWindowClose() async {
+    await flushWindowState();
     bool isPreventClose = await windowManager.isPreventClose();
     if (isPreventClose) {
       await windowManager.hide();

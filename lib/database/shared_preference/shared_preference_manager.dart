@@ -135,6 +135,8 @@ class SharedPreferenceManager {
   double getDefaultWindowHeight() => _layout.getDefaultWindowHeight();
   Future<bool> setDefaultWindowHeight(double height) => _layout.setDefaultWindowHeight(height);
   Future<bool> setWindowSize(double width, double height) => _layout.setWindowSize(width, height);
+  bool get isWindowMaximized => _layout.isWindowMaximized;
+  Future<bool> setWindowMaximized(bool value) => _layout.setWindowMaximized(value);
 
   // =========================================================================
   // 6. NOTE EDITOR PREFERENCES
