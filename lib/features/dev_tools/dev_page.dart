@@ -210,6 +210,7 @@ class DevPage extends ConsumerWidget {
                               noteUuid: 'test_note_uuid',
                               title: 'Project Deadline & Team Review',
                               message: 'Review quarterly goals and update NoteIt features.',
+                              repeatMode: 'daily',
                             );
                           },
                         ),

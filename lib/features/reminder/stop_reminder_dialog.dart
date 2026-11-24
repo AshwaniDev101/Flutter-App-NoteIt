@@ -77,6 +77,18 @@ class _StopReminderDialogState extends State<StopReminderDialog>
     );
   }
 
+  Future<void> _onClearPressed() async {
+    final uuid = widget.reminderInfo.noteUuid;
+    if (mounted) {
+      Navigator.of(context, rootNavigator: true).pop();
+    }
+    await ReminderManager().clearReminderForNote(uuid);
+    SnackBarManager.show(
+      msg: 'Reminder cleared',
+      type: SnackBarMessageType.acknowledgment,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -226,38 +238,87 @@ class _StopReminderDialogState extends State<StopReminderDialog>
               ),
               const SizedBox(height: 24),
 
-              // Action Buttons Row: Stop Reminder & Open Note
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
+              // Action Buttons Row: Clear (if repeating), Stop Reminder & Open Note
+              if (widget.reminderInfo.isRepeating) ...[
+                Row(
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: _onClearPressed,
+                      icon: const Icon(Icons.delete_outline, size: 18),
+                      label: const Text('Clear'),
                       style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        foregroundColor: colorScheme.error,
+                        side: BorderSide(color: colorScheme.error),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      onPressed: _onStopPressed,
-                      icon: const Icon(Icons.alarm_off_rounded, size: 20),
-                      label: const Text('Stop Reminder'),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: FilledButton.icon(
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
+                        onPressed: _onStopPressed,
+                        icon: const Icon(Icons.alarm_off_rounded, size: 20),
+                        label: const Text('Stop Reminder'),
                       ),
-                      onPressed: _onOpenNotePressed,
-                      icon: const Icon(Icons.edit_note_rounded, size: 20),
-                      label: const Text('Open Note'),
                     ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: _onOpenNotePressed,
+                    icon: const Icon(Icons.edit_note_rounded, size: 20),
+                    label: const Text('Open Note'),
                   ),
-                ],
-              ),
+                ),
+              ] else ...[
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: _onStopPressed,
+                        icon: const Icon(Icons.alarm_off_rounded, size: 20),
+                        label: const Text('Stop Reminder'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: _onOpenNotePressed,
+                        icon: const Icon(Icons.edit_note_rounded, size: 20),
+                        label: const Text('Open Note'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),

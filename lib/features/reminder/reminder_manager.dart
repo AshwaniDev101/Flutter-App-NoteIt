@@ -12,6 +12,7 @@ import 'package:window_manager/window_manager.dart';
 import '../../core/router/router.dart';
 import '../../core/helpers/platform_helper.dart';
 import '../../core/helpers/time_helper.dart';
+import '../../core/sync/sync_orchestrator.dart';
 import '../../core/util/logger.dart';
 import '../../database/drift/notes/notes_dao.dart';
 import '../../database/shared_preference/shared_preference_manager.dart';
@@ -26,6 +27,7 @@ class ActiveReminderInfo {
   final String title;
   final String contentSnippet;
   final bool isLocked;
+  final String? repeatMode;
   final DateTime triggerTime;
 
   ActiveReminderInfo({
@@ -33,8 +35,15 @@ class ActiveReminderInfo {
     required this.title,
     required this.contentSnippet,
     this.isLocked = false,
+    this.repeatMode,
     required this.triggerTime,
   });
+
+  bool get isRepeating =>
+      repeatMode != null &&
+      repeatMode != 'none' &&
+      repeatMode != 'once' &&
+      repeatMode!.isNotEmpty;
 }
 
 class ReminderManager {
@@ -100,10 +109,12 @@ class ReminderManager {
     String? title,
     String? message,
     bool? isLocked,
+    String? repeatMode,
   }) async {
     String noteTitle = title ?? '';
     String noteContent = message ?? '';
     bool locked = isLocked ?? false;
+    String? mode = repeatMode;
 
     final container = _container;
     if (container != null) {
@@ -112,6 +123,7 @@ class ReminderManager {
         final note = noteWithFolder.note;
         noteTitle = note.title.isNotEmpty ? note.title : 'Untitled Note';
         locked = note.lockedAt != null;
+        mode = note.reminderRepeatMode;
         noteContent = locked ? '' : note.content;
       } catch (e) {
         AppLogger.w('ReminderManager: Error fetching note details for popup: $e');
@@ -123,6 +135,7 @@ class ReminderManager {
       title: noteTitle.isNotEmpty ? noteTitle : 'Untitled Note',
       contentSnippet: noteContent,
       isLocked: locked,
+      repeatMode: mode,
       triggerTime: DateTime.now(),
     );
 
@@ -141,6 +154,17 @@ class ReminderManager {
     final context = rootNavigatorKey.currentContext;
     if (context != null && context.mounted) {
       StopReminderDialog.show(context, activeReminder!);
+    }
+  }
+
+  /// Clear reminder completely for a note
+  Future<void> clearReminderForNote(String noteUuid) async {
+    await stopAlarmSound();
+    await cancelForNote(noteUuid);
+    final container = _container;
+    if (container != null) {
+      await container.read(notesDaoProvider).updateNoteReminder(noteUuid, null);
+      container.read(syncOrchestratorProvider).triggerSync();
     }
   }
 

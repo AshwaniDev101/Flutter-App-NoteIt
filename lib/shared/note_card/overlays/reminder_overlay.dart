@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:noteit/core/helpers/platform_helper.dart';
 import 'package:noteit/database/drift/notes/notes_dao.dart';
 import 'package:noteit/features/reminder/reminder_manager.dart';
 
@@ -14,6 +15,8 @@ class ReminderOverlayWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final note = noteWithFolder.note;
     final reminderAt = note.reminderAt;
+
+    final isWide = PlatformHelper.isWideLayout(context);
 
     // If no reminder is set, render nothing
     if (reminderAt == null) return const SizedBox.shrink();
@@ -45,9 +48,8 @@ class ReminderOverlayWidget extends ConsumerWidget {
       note.reminderCustomDays,
     );
 
-    return Positioned(
-      top: 4,
-      right: 4,
+    return Align(
+      alignment: Alignment.center,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
         decoration: BoxDecoration(
@@ -64,12 +66,14 @@ class ReminderOverlayWidget extends ConsumerWidget {
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Icon(
               isRepeating
                   ? Icons.repeat_rounded
                   : (isPast ? Icons.notification_important_rounded : Icons.notifications_active_rounded),
-              size: 8,
+              size: isWide ? 12 : 8,
               color: isPast
                   ? colorScheme.onErrorContainer
                   : colorScheme.onSecondaryContainer,
@@ -78,7 +82,7 @@ class ReminderOverlayWidget extends ConsumerWidget {
             Text(
               formattedDate,
               style: theme.textTheme.labelSmall?.copyWith(
-                fontSize: 8,
+                fontSize: isWide ? 12 : 8,
                 fontWeight: FontWeight.w600,
                 color: isPast
                     ? colorScheme.onErrorContainer
