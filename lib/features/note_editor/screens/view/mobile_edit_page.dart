@@ -129,6 +129,17 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
     });
   }
 
+  @override
+  void didUpdateWidget(covariant MobileEditNotePage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.existingNoteWithFolder != oldWidget.existingNoteWithFolder &&
+        widget.existingNoteWithFolder != null) {
+      setState(() {
+        _currentNoteWithFolder = widget.existingNoteWithFolder;
+      });
+    }
+  }
+
   Future<void> _loadDecryptedContentIfLocked() async {
     if (_currentNoteWithFolder == null) return;
     final lockState = ref.read(lockManagerProvider);
@@ -356,12 +367,19 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
   Future<void> _openReminderDialog() async {
     if (_currentNoteWithFolder == null) return;
     final mTargetUuid = _currentNoteWithFolder!.note.uuid;
+
+    try {
+      final latest = await ref.read(notesDaoProvider).getNoteById(mTargetUuid);
+      _currentNoteWithFolder = latest;
+    } catch (_) {}
+
+    if (!mounted) return;
     final mTargetTitle = _currentNoteWithFolder!.note.title;
     final mExistingReminder = _currentNoteWithFolder!.note.reminderAt;
     final mExistingRepeatMode = _currentNoteWithFolder!.note.reminderRepeatMode;
     final mExistingCustomDays = _currentNoteWithFolder!.note.reminderCustomDays;
 
-    await showDialog<bool>(
+    final result = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => ReminderPage(
         noteUuid: mTargetUuid,
@@ -371,14 +389,17 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
         existingCustomDays: mExistingCustomDays,
       ),
     );
-    if (!mounted) return;
-    try {
-      final updatedNote = await ref.read(notesDaoProvider).getNoteById(mTargetUuid);
-      ref.read(activeNoteProvider.notifier).setNote(updatedNote);
-      setState(() {
-        _currentNoteWithFolder = updatedNote;
-      });
-    } catch (_) {}
+    if (result != null && mounted) {
+      try {
+        final updatedNote = await ref.read(notesDaoProvider).getNoteById(mTargetUuid);
+        ref.read(activeNoteProvider.notifier).setNote(updatedNote);
+        if (mounted) {
+          setState(() {
+            _currentNoteWithFolder = updatedNote;
+          });
+        }
+      } catch (_) {}
+    }
   }
 
   String _getFormattedDate() {
@@ -393,9 +414,16 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<NoteWithFolder?>(activeNoteProvider, (previous, next) {
+      if (next != null && next.note.uuid == _currentNoteWithFolder?.note.uuid) {
+        if (_currentNoteWithFolder != next) {
+          setState(() {
+            _currentNoteWithFolder = next;
+          });
+        }
+      }
+    });
 
-    // final panelColor = Theme.of(context).colorScheme.surfaceContainerHighest;
-    // final panelColor = Theme.of(context).colorScheme.surfaceContainerHigh;
     final panelColor = Theme.of(context).colorScheme.surfaceContainer;
     // final panelColor = Theme.of(context).colorScheme.surfaceContainerLow;
     // final panelColor = Theme.of(context).colorScheme.surfaceContainerLowest;

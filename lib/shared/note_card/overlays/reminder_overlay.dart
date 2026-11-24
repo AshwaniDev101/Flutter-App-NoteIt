@@ -69,7 +69,7 @@ class ReminderOverlayWidget extends ConsumerWidget {
               isRepeating
                   ? Icons.repeat_rounded
                   : (isPast ? Icons.notification_important_rounded : Icons.notifications_active_rounded),
-              size: 11,
+              size: 8,
               color: isPast
                   ? colorScheme.onErrorContainer
                   : colorScheme.onSecondaryContainer,
@@ -78,7 +78,7 @@ class ReminderOverlayWidget extends ConsumerWidget {
             Text(
               formattedDate,
               style: theme.textTheme.labelSmall?.copyWith(
-                fontSize: 10,
+                fontSize: 8,
                 fontWeight: FontWeight.w600,
                 color: isPast
                     ? colorScheme.onErrorContainer

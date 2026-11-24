@@ -30,7 +30,6 @@ class ReminderPage extends ConsumerStatefulWidget {
 }
 
 class _ReminderPageState extends ConsumerState<ReminderPage> {
-  late final TextEditingController _msgController;
   late final ReminderFormInitArgs _args;
 
   static const Map<int, String> _weekDays = {
@@ -40,21 +39,12 @@ class _ReminderPageState extends ConsumerState<ReminderPage> {
   @override
   void initState() {
     super.initState();
-    _msgController = TextEditingController(
-      text: widget.noteTitle.trim().isNotEmpty ? widget.noteTitle.trim() : 'Note',
-    );
     _args = ReminderFormInitArgs(
       existingReminderAt: widget.existingReminderAt,
       existingRepeatMode: widget.existingRepeatMode,
       existingCustomDays: widget.existingCustomDays,
       noteTitle: widget.noteTitle,
     );
-  }
-
-  @override
-  void dispose() {
-    _msgController.dispose();
-    super.dispose();
   }
 
   ReminderFormInitArgs get _initArgs => _args;
@@ -275,9 +265,7 @@ class _ReminderPageState extends ConsumerState<ReminderPage> {
     notifier.setSaving(true);
 
     try {
-      final messageText = _msgController.text.trim().isNotEmpty
-          ? _msgController.text.trim()
-          : (widget.noteTitle.trim().isNotEmpty ? widget.noteTitle.trim() : 'Note');
+      final noteDisplayTitle = widget.noteTitle.trim().isNotEmpty ? widget.noteTitle.trim() : 'Note';
 
       String? saveRepeatModeStr;
       String? saveCustomDaysStr;
@@ -312,7 +300,7 @@ class _ReminderPageState extends ConsumerState<ReminderPage> {
       final calculatedNextDate = await ReminderManager().scheduleForNote(
         noteUuid: widget.noteUuid,
         title: 'Note-It Reminder',
-        message: messageText,
+        message: noteDisplayTitle,
         date: finalDateTime,
         repeatMode: formState.repeatMode,
         selectedDays: selectedDaysList,
@@ -462,20 +450,6 @@ class _ReminderPageState extends ConsumerState<ReminderPage> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // --- Message Input ---
-                      TextField(
-                        controller: _msgController,
-                        decoration: InputDecoration(
-                          labelText: 'Reminder Message',
-                          hintText: 'Enter reminder text...',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          prefixIcon: const Icon(Icons.edit_note_rounded),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-
                       // --- Conversational "Mad Libs" Sentence UI ---
                       Container(
                         width: double.infinity,

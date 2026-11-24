@@ -12,6 +12,7 @@ import '../../database/shared_preference/shared_preference_manager.dart';
 import '../../database/shared_preference/reminder_preferences.dart';
 
 import '../../shared/menus/app_bottom_sheet.dart';
+import '../../shared/note_card/core/note_action_controller.dart';
 import '../../shared/overlays/app_scaffold.dart';
 import '../../shared/overlays/snack_bar_manager.dart';
 import '../home/core/providers.dart';
@@ -242,6 +243,7 @@ class _ReminderSettingsPageState extends ConsumerState<ReminderSettingsPage> {
                                 await ReminderManager().cancelForNote(note.uuid);
                                 await notesDao.updateNoteReminder(note.uuid, null);
                                 ref.read(syncOrchestratorProvider).triggerSync();
+                                await ref.read(noteActionsControllerProvider).updateActiveNoteIfAffected([note.uuid]);
                                 modalSetState(() {
                                   pendingNotes.removeAt(index);
                                 });
@@ -296,25 +298,25 @@ class _ReminderSettingsPageState extends ConsumerState<ReminderSettingsPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // --- Header ---
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back),
-                        onPressed: () {
-                          ref.read(drawerNavigationProvider).navigate(
-                              context, RightPanelPageOptions.settings);
-                        },
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Reminders & Alarms',
-                        style: textTheme.headlineSmall
-                            ?.copyWith(fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
+                  // // --- Header ---
+                  // Row(
+                  //   children: [
+                  //     IconButton(
+                  //       icon: const Icon(Icons.arrow_back),
+                  //       onPressed: () {
+                  //         ref.read(drawerNavigationProvider).navigate(
+                  //             context, RightPanelPageOptions.settings);
+                  //       },
+                  //     ),
+                  //     const SizedBox(width: 8),
+                  //     Text(
+                  //       'Reminders & Alarms',
+                  //       style: textTheme.headlineSmall
+                  //           ?.copyWith(fontWeight: FontWeight.bold),
+                  //     ),
+                  //   ],
+                  // ),
+                  // const SizedBox(height: 20),
 
                   // ==================== ALARM SOUND SECTION ====================
                   Padding(

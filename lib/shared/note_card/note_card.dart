@@ -150,7 +150,7 @@ class _NoteCardState extends ConsumerState<NoteCard> {
 
         if (option == NoteAction.reminder) {
           final hasReminder = _note.reminderAt != null;
-          label = hasReminder ? 'Remove Reminder' : 'Remind me';
+          label = hasReminder ? 'Clean Reminder' : 'Set Reminder';
           iconData = hasReminder ? Icons.notifications_off_outlined : Icons.notifications_none_outlined;
         }
 

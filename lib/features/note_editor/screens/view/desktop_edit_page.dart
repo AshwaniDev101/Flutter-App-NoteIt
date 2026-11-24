@@ -153,6 +153,17 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
     });
   }
 
+  @override
+  void didUpdateWidget(covariant DesktopEditNotePage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.existingNoteWithFolder != oldWidget.existingNoteWithFolder &&
+        widget.existingNoteWithFolder != null) {
+      setState(() {
+        _currentNoteWithFolder = widget.existingNoteWithFolder;
+      });
+    }
+  }
+
   Future<void> _loadDecryptedContentIfLocked() async {
     if (_currentNoteWithFolder == null) return;
     final lockState = ref.read(lockManagerProvider);
@@ -433,12 +444,19 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
   Future<void> _openReminderDialog() async {
     if (_currentNoteWithFolder == null) return;
     final targetUuid = _currentNoteWithFolder!.note.uuid;
+
+    try {
+      final latest = await ref.read(notesDaoProvider).getNoteById(targetUuid);
+      _currentNoteWithFolder = latest;
+    } catch (_) {}
+
+    if (!mounted) return;
     final targetTitle = _currentNoteWithFolder!.note.title;
     final existingReminder = _currentNoteWithFolder!.note.reminderAt;
     final existingRepeatMode = _currentNoteWithFolder!.note.reminderRepeatMode;
     final existingCustomDays = _currentNoteWithFolder!.note.reminderCustomDays;
 
-    await showDialog<bool>(
+    final result = await showDialog<bool>(
       context: context,
       builder: (_) => ReminderPage(
         noteUuid: targetUuid,
@@ -449,12 +467,13 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
       ),
     );
 
-    if (!mounted) return;
-    try {
-      final updatedNote = await ref.read(notesDaoProvider).getNoteById(targetUuid);
-      ref.read(activeNoteProvider.notifier).setNote(updatedNote);
-      if (mounted) setState(() => _currentNoteWithFolder = updatedNote);
-    } catch (_) {}
+    if (result != null && mounted) {
+      try {
+        final updatedNote = await ref.read(notesDaoProvider).getNoteById(targetUuid);
+        ref.read(activeNoteProvider.notifier).setNote(updatedNote);
+        if (mounted) setState(() => _currentNoteWithFolder = updatedNote);
+      } catch (_) {}
+    }
   }
 
   String _getFormattedDate() {
@@ -469,6 +488,16 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<NoteWithFolder?>(activeNoteProvider, (previous, next) {
+      if (next != null && next.note.uuid == _currentNoteWithFolder?.note.uuid) {
+        if (_currentNoteWithFolder != next) {
+          setState(() {
+            _currentNoteWithFolder = next;
+          });
+        }
+      }
+    });
+
     final panelColor = Theme.of(context).colorScheme.surfaceContainer;
     // final panelColor = Theme.of(context).colorScheme.surfaceContainerLow;
     final currentFolder = _currentNoteWithFolder?.folder ?? _selectedFolderForNewNote;

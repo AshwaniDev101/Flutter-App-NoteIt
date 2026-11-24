@@ -11,7 +11,7 @@ enum NoteAction {
   lock('Lock', Icons.lock_outline),
   unlock('Remove lock', CupertinoIcons.lock_slash),
   lockSession('Lock', Icons.lock_outline),
-  reminder('Remind me', Icons.notifications_none_outlined),
+  reminder('Set Reminder', Icons.notifications_none_outlined),
   moveTo('Move to...', Icons.drive_file_move_outlined),
   duplicate('Duplicate', Icons.copy_outlined),
 

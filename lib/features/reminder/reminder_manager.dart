@@ -17,8 +17,25 @@ import '../../database/drift/notes/notes_dao.dart';
 import '../../database/shared_preference/shared_preference_manager.dart';
 import '../home/core/providers.dart';
 import '../home/view/desktop/content_panel/core/navigator.dart';
+import 'stop_reminder_dialog.dart';
 
 enum ReminderRepeatMode { once, daily, weekly, monthly, yearly }
+
+class ActiveReminderInfo {
+  final String noteUuid;
+  final String title;
+  final String contentSnippet;
+  final bool isLocked;
+  final DateTime triggerTime;
+
+  ActiveReminderInfo({
+    required this.noteUuid,
+    required this.title,
+    required this.contentSnippet,
+    this.isLocked = false,
+    required this.triggerTime,
+  });
+}
 
 class ReminderManager {
   static final ReminderManager _instance = ReminderManager._internal();
@@ -33,6 +50,7 @@ class ReminderManager {
   AudioPlayer? _audioPlayer;
   Timer? _desktopSoundTimer;
   final ValueNotifier<bool> isRinging = ValueNotifier<bool>(false);
+  ActiveReminderInfo? activeReminder;
   bool _isInitialized = false;
 
   /// Play custom alarm sound on Desktop (Windows / macOS / Linux)
@@ -67,6 +85,7 @@ class ReminderManager {
   Future<void> stopAlarmSound() async {
     try {
       isRinging.value = false;
+      activeReminder = null;
       _desktopSoundTimer?.cancel();
       _desktopSoundTimer = null;
       await _audioPlayer?.stop();
@@ -75,18 +94,64 @@ class ReminderManager {
     } catch (_) {}
   }
 
-  Future<void> _handleNotificationTap(String? payload) async {
-    await stopAlarmSound();
-    if (payload == null || payload.isEmpty) return;
+  /// Show dedicated Stop Reminder Popup when a reminder fires
+  void triggerReminderPopup({
+    required String noteUuid,
+    String? title,
+    String? message,
+    bool? isLocked,
+  }) async {
+    String noteTitle = title ?? '';
+    String noteContent = message ?? '';
+    bool locked = isLocked ?? false;
 
-    final String noteUuid = payload.startsWith('note_') ? payload.substring(5) : payload;
+    final container = _container;
+    if (container != null) {
+      try {
+        final noteWithFolder = await container.read(notesDaoProvider).getNoteById(noteUuid);
+        final note = noteWithFolder.note;
+        noteTitle = note.title.isNotEmpty ? note.title : 'Untitled Note';
+        locked = note.lockedAt != null;
+        noteContent = locked ? '' : note.content;
+      } catch (e) {
+        AppLogger.w('ReminderManager: Error fetching note details for popup: $e');
+      }
+    }
+
+    activeReminder = ActiveReminderInfo(
+      noteUuid: noteUuid,
+      title: noteTitle.isNotEmpty ? noteTitle : 'Untitled Note',
+      contentSnippet: noteContent,
+      isLocked: locked,
+      triggerTime: DateTime.now(),
+    );
+
+    if (PlatformHelper.isNativeDesktop) {
+      try {
+        if (await windowManager.isMinimized()) {
+          await windowManager.restore();
+        }
+        await windowManager.show();
+        await windowManager.focus();
+      } catch (e) {
+        AppLogger.w('ReminderManager: Error focusing window on reminder: $e');
+      }
+    }
+
+    final context = rootNavigatorKey.currentContext;
+    if (context != null && context.mounted) {
+      StopReminderDialog.show(context, activeReminder!);
+    }
+  }
+
+  /// Open note associated with active reminder
+  Future<void> openNoteFromReminder(String noteUuid) async {
+    await stopAlarmSound();
     if (noteUuid.isEmpty) return;
 
     try {
       final container = _container;
       if (container == null) return;
-
-      await _onReminderTriggered(noteUuid);
 
       final noteWithFolder = await container.read(notesDaoProvider).getNoteById(noteUuid);
 
@@ -117,6 +182,54 @@ class ReminderManager {
           GoRouter.of(context).push(AppRoutes.edit, extra: noteWithFolder);
         }
       }
+    } catch (e) {
+      AppLogger.w('ReminderManager: Error launching note: $e');
+    }
+  }
+
+  /// Snooze active reminder by specified duration
+  Future<void> snoozeReminder(String noteUuid, Duration duration) async {
+    final container = _container;
+    if (container == null) return;
+
+    try {
+      final noteWithFolder = await container.read(notesDaoProvider).getNoteById(noteUuid);
+      final note = noteWithFolder.note;
+      final newDate = DateTime.now().add(duration);
+
+      await scheduleForNote(
+        noteUuid: noteUuid,
+        title: note.title.isNotEmpty ? note.title : 'Reminder for your note',
+        message: note.title.isNotEmpty ? note.title : 'Reminder for your note',
+        date: newDate,
+        repeatMode: ReminderRepeatMode.once,
+      );
+
+      await container.read(notesDaoProvider).updateNoteReminder(
+        noteUuid,
+        newDate,
+        repeatMode: 'once',
+      );
+
+      await stopAlarmSound();
+    } catch (e) {
+      AppLogger.w('ReminderManager: Error snoozing reminder: $e');
+    }
+  }
+
+  Future<void> _handleNotificationTap(String? payload) async {
+    await stopAlarmSound();
+    if (payload == null || payload.isEmpty) return;
+
+    final String noteUuid = payload.startsWith('note_') ? payload.substring(5) : payload;
+    if (noteUuid.isEmpty) return;
+
+    try {
+      final container = _container;
+      if (container == null) return;
+
+      await _onReminderTriggered(noteUuid);
+      await openNoteFromReminder(noteUuid);
     } catch (e) {
       AppLogger.w('ReminderManager: Error launching note from notification: $e');
     }
@@ -187,6 +300,8 @@ class ReminderManager {
 
   /// Re-reads all upcoming pending reminders from SQLite and re-arms in-memory desktop sound timers.
   Future<void> rearmPendingReminders() async {
+    if (!PlatformHelper.isNativeDesktop) return;
+
     final container = _container;
     if (container == null) return;
 
@@ -496,13 +611,15 @@ class ReminderManager {
       }
 
       // 2. Desktop in-memory timer backup
-      _scheduleDesktopTimer(
-        id: id,
-        noteUuid: noteUuid,
-        title: title,
-        message: message,
-        scheduledDate: targetDate,
-      );
+      if (PlatformHelper.isNativeDesktop) {
+        _scheduleDesktopTimer(
+          id: id,
+          noteUuid: noteUuid,
+          title: title,
+          message: message,
+          scheduledDate: targetDate,
+        );
+      }
     }
 
     switch (repeatMode) {
@@ -585,6 +702,11 @@ class ReminderManager {
       _desktopTimers.remove(id);
       await _playDesktopAlarmSound();
       await _onReminderTriggered(noteUuid);
+      triggerReminderPopup(
+        noteUuid: noteUuid,
+        title: title,
+        message: message,
+      );
 
       final NotificationDetails details = NotificationDetails(
         android: AndroidNotificationDetails(

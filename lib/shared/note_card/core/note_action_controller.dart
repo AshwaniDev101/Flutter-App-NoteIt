@@ -38,7 +38,7 @@ class NoteActionsController {
   }
 
   /// Helper to refresh [activeNoteProvider] if the currently open note is in [targetUuids].
-  Future<void> _updateActiveNoteIfAffected(List<String> targetUuids) async {
+  Future<void> updateActiveNoteIfAffected(List<String> targetUuids) async {
     final activeNote = ref.read(activeNoteProvider);
     if (activeNote != null && targetUuids.contains(activeNote.note.uuid)) {
       try {
@@ -63,7 +63,7 @@ class NoteActionsController {
     await db.notesDao.togglePinStatus(uuids);
     AppLogger.d('NoteActionsController: Toggled pin status ($uuids)');
     ref.read(syncOrchestratorProvider).triggerSync();
-    await _updateActiveNoteIfAffected(uuids);
+    await updateActiveNoteIfAffected(uuids);
   }
 
   /// Sets notes as pinned.
@@ -71,7 +71,7 @@ class NoteActionsController {
     await db.notesDao.setNotesPinStatus(uuids, isPinned: true);
     AppLogger.d('NoteActionsController: Pinned notes ($uuids)');
     ref.read(syncOrchestratorProvider).triggerSync();
-    await _updateActiveNoteIfAffected(uuids);
+    await updateActiveNoteIfAffected(uuids);
   }
 
   /// Sets notes as unpinned.
@@ -79,7 +79,7 @@ class NoteActionsController {
     await db.notesDao.setNotesPinStatus(uuids, isPinned: false);
     AppLogger.d('NoteActionsController: Unpinned notes ($uuids)');
     ref.read(syncOrchestratorProvider).triggerSync();
-    await _updateActiveNoteIfAffected(uuids);
+    await updateActiveNoteIfAffected(uuids);
   }
 
   /// Archives a list of notes.
@@ -122,7 +122,7 @@ class NoteActionsController {
     }
     AppLogger.d('NoteActionsController: Unlocked notes ($uuids)');
     ref.read(syncOrchestratorProvider).triggerSync();
-    await _updateActiveNoteIfAffected(uuids);
+    await updateActiveNoteIfAffected(uuids);
   }
 
   /// Locks active session for a list of notes.

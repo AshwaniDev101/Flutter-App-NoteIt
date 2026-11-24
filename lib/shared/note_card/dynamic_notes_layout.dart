@@ -284,7 +284,7 @@ class DynamicNotesLayout extends ConsumerWidget {
           try {
             final noteWithFolder = await db.notesDao.getNoteById(targetUuid);
             if (!context.mounted) return;
-            await showDialog<bool>(
+            final result = await showDialog<bool>(
               context: context,
               builder: (_) => ReminderPage(
                 noteUuid: noteWithFolder.note.uuid,
@@ -294,6 +294,9 @@ class DynamicNotesLayout extends ConsumerWidget {
                 existingCustomDays: noteWithFolder.note.reminderCustomDays,
               ),
             );
+            if (result != null) {
+              await actionsController.updateActiveNoteIfAffected([targetUuid]);
+            }
           } catch (_) {}
         }
         break;

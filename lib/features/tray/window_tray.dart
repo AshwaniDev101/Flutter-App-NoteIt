@@ -117,12 +117,12 @@ class DesktopTrayHandler extends WindowListener with TrayListener {
         ),
         MenuItem(
           key: 'snooze_reminder',
-          label: 'Snooze Reminder',
+          label: 'Stop ringing...',
           disabled: !isRinging,
         ),
         MenuItem(
           key: 'toggle_alarm_sound',
-          label: isSoundEnabled ? 'Alarm OFF' : 'Alarm ON',
+          label: isSoundEnabled ? 'Alarm sound(OFF)' : 'Alarm Sound(ON)',
         ),
         MenuItem.separator(),
         MenuItem(

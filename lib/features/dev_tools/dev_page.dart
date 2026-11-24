@@ -7,7 +7,6 @@ import 'package:noteit/database/firebase/auth/firebase_provider.dart';
 import 'package:noteit/database/shared_preference/shared_preference_manager.dart';
 import 'package:noteit/features/cloud_sync/data/cloud_sync_service.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
-import 'package:noteit/features/lock/lock_manger/lock_manager.dart';
 import 'package:noteit/features/workspace/data/workspace_secure_storage.dart';
 import 'package:noteit/features/reminder/reminder_manager.dart';
 import 'package:noteit/shared/overlays/app_scaffold.dart';
@@ -65,20 +64,12 @@ class DevPage extends ConsumerWidget {
                     child: Column(
                       children: [
                         DevActionTile(
-                          icon: Icons.password,
-                          iconColor: Colors.red,
-                          title: 'Wipes Password',
-                          subtitle: 'Force Wipes the Master Password',
-                          enabled: true,
-                          onTap: () async {
-                            await ref.read(lockManagerProvider.notifier).removeMasterPassword();
-                            if (context.mounted) {
-                              SnackBarManager.show(
-                                msg: 'Master password and sessions completely wiped.',
-                                type: SnackBarMessageType.acknowledgment,
-                              );
-                            }
-                          },
+                          icon: Icons.looks_one_rounded,
+                          iconColor: Colors.blue,
+                          title: 'Action 1',
+                          subtitle: 'Action 1 description placeholder',
+                          enabled: false,
+                          onTap: () {},
                         ),
                         _buildDivider(colorScheme),
                         DevActionTile(
@@ -209,12 +200,18 @@ class DevPage extends ConsumerWidget {
                         ),
                         _buildDivider(colorScheme),
                         DevActionTile(
-                          icon: Icons.looks_6_rounded,
-                          iconColor: Colors.purple,
-                          title: 'Action 6',
-                          subtitle: 'Action 6 description placeholder',
-                          enabled: false, // Disabled
-                          onTap: () {},
+                          icon: Icons.notifications_active_rounded,
+                          iconColor: Colors.amber.shade700,
+                          title: 'Test Stop Reminder Popup',
+                          subtitle: 'Triggers the dedicated Stop Reminder popup dialog with sample note data',
+                          enabled: true,
+                          onTap: () {
+                            ReminderManager().triggerReminderPopup(
+                              noteUuid: 'test_note_uuid',
+                              title: 'Project Deadline & Team Review',
+                              message: 'Review quarterly goals and update NoteIt features.',
+                            );
+                          },
                         ),
                       ],
                     ),

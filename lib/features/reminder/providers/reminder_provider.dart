@@ -9,7 +9,6 @@ class ReminderFormState {
   final ReminderRepeatMode repeatMode;
   final Set<int> selectedWeeklyDays;
   final int selectedMonthlyDay;
-  final String messageText;
   final bool isSaving;
 
   const ReminderFormState({
@@ -18,7 +17,6 @@ class ReminderFormState {
     required this.repeatMode,
     required this.selectedWeeklyDays,
     required this.selectedMonthlyDay,
-    required this.messageText,
     this.isSaving = false,
   });
 
@@ -28,7 +26,6 @@ class ReminderFormState {
     ReminderRepeatMode? repeatMode,
     Set<int>? selectedWeeklyDays,
     int? selectedMonthlyDay,
-    String? messageText,
     bool? isSaving,
   }) {
     return ReminderFormState(
@@ -37,7 +34,6 @@ class ReminderFormState {
       repeatMode: repeatMode ?? this.repeatMode,
       selectedWeeklyDays: selectedWeeklyDays ?? this.selectedWeeklyDays,
       selectedMonthlyDay: selectedMonthlyDay ?? this.selectedMonthlyDay,
-      messageText: messageText ?? this.messageText,
       isSaving: isSaving ?? this.isSaving,
     );
   }
@@ -104,15 +100,12 @@ class ReminderFormNotifier extends Notifier<ReminderFormState> {
       }
     }
 
-    final displayTitle = args.noteTitle.trim().isNotEmpty ? args.noteTitle.trim() : 'Note';
-
     return ReminderFormState(
       selectedDate: selectedDate,
       selectedTime: selectedTime,
       repeatMode: repeatMode,
       selectedWeeklyDays: selectedWeeklyDays,
       selectedMonthlyDay: selectedMonthlyDay,
-      messageText: displayTitle,
     );
   }
 
@@ -140,10 +133,6 @@ class ReminderFormNotifier extends Notifier<ReminderFormState> {
 
   void setMonthlyDay(int day) {
     state = state.copyWith(selectedMonthlyDay: day);
-  }
-
-  void setMessage(String message) {
-    state = state.copyWith(messageText: message);
   }
 
   void setSaving(bool saving) {
