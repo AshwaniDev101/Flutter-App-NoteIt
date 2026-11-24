@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/helpers/platform_helper.dart';
+import '../../../../database/drift/notes/notes_dao.dart';
 import '../../../../shared/app_bars/app_search_bar.dart';
 import '../../../../shared/menus/filter_menu_button.dart';
 import '../../../../shared/menus/sort_menu_button.dart';
@@ -65,6 +66,12 @@ class _TrashControlBarState extends ConsumerState<TrashControlBar> {
           SortMenuButton(
             icon: CupertinoIcons.sort_down,
             currentSortSelection: currentSort,
+            allowedOptions: const [
+              NoteSortPreference.createdAt,
+              NoteSortPreference.name,
+              NoteSortPreference.updatedAt,
+              NoteSortPreference.folder,
+            ],
             onSelected: (sort) {
               ref.read(trashNoteSortPreferenceProvider.notifier).updateSort(sort);
             },
@@ -112,6 +119,12 @@ class _TrashControlBarState extends ConsumerState<TrashControlBar> {
             SortMenuButton(
               icon: CupertinoIcons.sort_down,
               currentSortSelection: currentSort,
+              allowedOptions: const [
+                NoteSortPreference.createdAt,
+                NoteSortPreference.name,
+                NoteSortPreference.updatedAt,
+                NoteSortPreference.folder,
+              ],
               onSelected: (sort) {
                 ref.read(trashNoteSortPreferenceProvider.notifier).updateSort(sort);
               },

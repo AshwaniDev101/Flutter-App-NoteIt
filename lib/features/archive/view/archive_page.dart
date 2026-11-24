@@ -616,6 +616,12 @@ class _ArchivePageState extends ConsumerState<ArchivePage> with WidgetsBindingOb
     return SortMenuButton(
       icon: CupertinoIcons.sort_down,
       currentSortSelection: currentSort,
+      allowedOptions: const [
+        NoteSortPreference.createdAt,
+        NoteSortPreference.name,
+        NoteSortPreference.updatedAt,
+        NoteSortPreference.folder,
+      ],
       onSelected: (sort) {
         ref.read(archiveNoteSortPreferenceProvider.notifier).updateSort(sort);
       },

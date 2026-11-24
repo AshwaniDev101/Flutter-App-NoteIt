@@ -110,6 +110,7 @@ class _DefaultSettingsPageState extends ConsumerState<DefaultSettingsPage> {
                   pageTitle: 'Archive Page',
                   currentView: _archiveDefaultView,
                   currentSort: _archiveDefaultSort,
+                  allowReminderSort: false,
                   onViewChanged: (view) async {
                     await SharedPreferenceManager.instance.setDefaultPageViewType('archive', view);
                     setState(() => _archiveDefaultView = view);
@@ -126,6 +127,7 @@ class _DefaultSettingsPageState extends ConsumerState<DefaultSettingsPage> {
                   pageTitle: 'Trash Page',
                   currentView: _trashDefaultView,
                   currentSort: _trashDefaultSort,
+                  allowReminderSort: false,
                   onViewChanged: (view) async {
                     await SharedPreferenceManager.instance.setDefaultPageViewType('trash', view);
                     setState(() => _trashDefaultView = view);
@@ -456,9 +458,22 @@ class _DefaultSettingsPageState extends ConsumerState<DefaultSettingsPage> {
     required NoteSortPreference currentSort,
     required ValueChanged<NoteViewType> onViewChanged,
     required ValueChanged<NoteSortPreference> onSortChanged,
+    bool allowReminderSort = true,
   }) {
     final textTheme = Theme.of(context).textTheme;
     final colorScheme = Theme.of(context).colorScheme;
+
+    final sortOptions = [
+      (NoteSortPreference.createdAt, 'Created Date'),
+      (NoteSortPreference.name, 'Alphabetically'),
+      (NoteSortPreference.updatedAt, 'Modified Date'),
+      (NoteSortPreference.folder, 'By Folder'),
+      if (allowReminderSort) (NoteSortPreference.reminderAt, 'By Reminder Time'),
+    ];
+
+    final effectiveSort = (!allowReminderSort && currentSort == NoteSortPreference.reminderAt)
+        ? NoteSortPreference.createdAt
+        : currentSort;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -540,30 +555,14 @@ class _DefaultSettingsPageState extends ConsumerState<DefaultSettingsPage> {
                     ),
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<NoteSortPreference>(
-                        value: currentSort,
+                        value: effectiveSort,
                         isExpanded: true,
-                        items: const [
-                          DropdownMenuItem(
-                            value: NoteSortPreference.createdAt,
-                            child: Text('Created Date'),
-                          ),
-                          DropdownMenuItem(
-                            value: NoteSortPreference.name,
-                            child: Text('Alphabetically'),
-                          ),
-                          DropdownMenuItem(
-                            value: NoteSortPreference.updatedAt,
-                            child: Text('Modified Date'),
-                          ),
-                          DropdownMenuItem(
-                            value: NoteSortPreference.folder,
-                            child: Text('By Folder'),
-                          ),
-                          DropdownMenuItem(
-                            value: NoteSortPreference.reminderAt,
-                            child: Text('By Reminder Time'),
-                          ),
-                        ],
+                        items: sortOptions.map((opt) {
+                          return DropdownMenuItem<NoteSortPreference>(
+                            value: opt.$1,
+                            child: Text(opt.$2),
+                          );
+                        }).toList(),
                         onChanged: (val) {
                           if (val != null) onSortChanged(val);
                         },

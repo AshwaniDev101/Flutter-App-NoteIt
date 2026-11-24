@@ -9,6 +9,7 @@ class SortMenuButton extends StatelessWidget {
   final String tooltip;
   final NoteSortPreference currentSortSelection;
   final ValueChanged<NoteSortPreference> onSelected;
+  final List<NoteSortPreference>? allowedOptions;
 
   const SortMenuButton({
     super.key,
@@ -16,6 +17,7 @@ class SortMenuButton extends StatelessWidget {
     this.tooltip = 'Sort options',
     required this.currentSortSelection,
     required this.onSelected,
+    this.allowedOptions,
   });
 
   String _getLabel(NoteSortPreference sort) {
@@ -50,7 +52,8 @@ class SortMenuButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final items = NoteSortPreference.values.map((sort) {
+    final availableOptions = allowedOptions ?? NoteSortPreference.values;
+    final items = availableOptions.map((sort) {
       return MenuItemSpec<NoteSortPreference>(
         value: sort,
         label: _getLabel(sort),
