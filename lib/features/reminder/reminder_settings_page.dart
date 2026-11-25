@@ -626,6 +626,33 @@ class _ReminderSettingsPageState extends ConsumerState<ReminderSettingsPage> {
                       ),
                     ),
                   ),
+
+                  // ==================== RESET SECTION ====================
+                  SettingsResetCard(
+                    title: 'Reset Reminder Settings to Defaults',
+                    subtitle:
+                        'Restores default alarm sound, vibration, duration, and repeat mode',
+                    onTap: () async {
+                      await _stopTestAudio();
+                      await _prefs.setCustomReminderSound(null, null);
+                      await _prefs.setReminderVibrationEnabled(true);
+                      await _prefs.setReminderDurationSeconds(30);
+                      await _prefs.setDefaultRepeatMode('once');
+                      await ref.read(reminderSoundProvider.notifier).setEnabled(true);
+                      setState(() {
+                        _vibrationEnabled = true;
+                        _durationSeconds = 30;
+                        _defaultRepeatMode = 'once';
+                        _customSoundPath = null;
+                        _customSoundName = 'Default Ring (alarm_ring.mp3)';
+                      });
+                      if (context.mounted) {
+                        SnackBarManager.show(
+                          msg: 'Reminder settings reset to defaults',
+                        );
+                      }
+                    },
+                  ),
                 ],
               ),
             ),

@@ -91,17 +91,15 @@ class _KeybindingSettingsPageState extends ConsumerState<KeybindingSettingsPage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Header Row
-          SettingsPageHeader(
-            title: 'Keyboard Shortcuts',
-            actions: [
-              OutlinedButton.icon(
-                icon: const Icon(Icons.restart_alt_rounded, size: 18),
-                label: const Text('Reset All'),
-                onPressed: () => _confirmResetAll(context, dao, platform),
-              ),
-            ],
-          ),
+          // // Header Row
+          // SettingsPageHeader(
+          //   title: 'Keyboard Shortcuts',
+          //   actions: [
+          //
+          //   ],
+          // ),
+
+
 
           // Show Keyboard Shortcuts Preference Switch
           SettingsCard(
@@ -204,6 +202,13 @@ class _KeybindingSettingsPageState extends ConsumerState<KeybindingSettingsPage>
                 }).toList(),
               );
             },
+          ),
+
+          SettingsResetCard(
+            title: 'Reset All Keyboard Shortcuts',
+            subtitle:
+                'Restores all keybindings across all panels to system defaults',
+            onTap: () => _confirmResetAll(context, dao, platform),
           ),
         ],
       ),

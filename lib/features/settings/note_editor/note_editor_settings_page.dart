@@ -37,12 +37,12 @@ class _NoteEditorSettingsPageState extends ConsumerState<NoteEditorSettingsPage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Header
-          const SettingsPageHeader(
-            title: 'Note Editor Settings',
-            subtitle:
-                'Configure default editor font sizes, line spacing, and cursor focus',
-          ),
+          // // Header
+          // const SettingsPageHeader(
+          //   title: 'Note Editor Settings',
+          //   subtitle:
+          //       'Configure default editor font sizes, line spacing, and cursor focus',
+          // ),
 
           // LIVE PREVIEW CARD
           const SettingsSectionHeader(title: 'Live Preview'),
@@ -203,28 +203,23 @@ class _NoteEditorSettingsPageState extends ConsumerState<NoteEditorSettingsPage>
           const SizedBox(height: 24),
 
           // RESET SECTION
-          const SettingsSectionHeader(title: 'Reset Settings'),
-          SettingsCard(
-            child: SettingsTile(
-              leading: Icon(Icons.restart_alt_rounded, color: colorScheme.tertiary),
-              title: 'Reset Editor Settings to Defaults',
-              subtitle:
-                  'Restores default font sizes, line spacing, and cursor focus preference',
-              trailing: const SizedBox.shrink(),
-              onTap: () async {
-                setState(() {
-                  _localTitleFontSize = null;
-                  _localContentFontSize = null;
-                  _localLineSpacing = null;
-                });
-                await notifier.resetToDefaults();
-                if (context.mounted) {
-                  SnackBarManager.show(
-                    msg: 'Note editor settings reset to defaults',
-                  );
-                }
-              },
-            ),
+          SettingsResetCard(
+            title: 'Reset Editor Settings to Defaults',
+            subtitle:
+                'Restores default font sizes, line spacing, and cursor focus preference',
+            onTap: () async {
+              setState(() {
+                _localTitleFontSize = null;
+                _localContentFontSize = null;
+                _localLineSpacing = null;
+              });
+              await notifier.resetToDefaults();
+              if (context.mounted) {
+                SnackBarManager.show(
+                  msg: 'Note editor settings reset to defaults',
+                );
+              }
+            },
           ),
         ],
       ),

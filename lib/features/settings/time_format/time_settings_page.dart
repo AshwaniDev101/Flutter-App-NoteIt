@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../shared/overlays/snack_bar_manager.dart';
 import '../../home/view/desktop/content_panel/core/navigator.dart';
 import '../shared/settings_widgets.dart';
 import 'time_preferences_provider.dart';
@@ -25,18 +26,14 @@ class TimeSettingsPage extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Header
-          SettingsPageHeader(
-            title: 'Time & Date Format',
-            subtitle: 'Customize how dates and timestamps appear across NoteIt',
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.restart_alt_rounded),
-                tooltip: 'Reset to Defaults',
-                onPressed: () => notifier.resetToDefaults(),
-              ),
-            ],
-          ),
+          // // Header
+          // SettingsPageHeader(
+          //   title: 'Time & Date Format',
+          //   subtitle: 'Customize how dates and timestamps appear across NoteIt',
+          //   actions: [
+          //
+          //   ],
+          // ),
 
           // --- 1. LIVE PREVIEW CARD ---
           SettingsCard(
@@ -288,6 +285,20 @@ class TimeSettingsPage extends ConsumerWidget {
                 ],
               ),
             ),
+          ),
+
+          SettingsResetCard(
+            title: 'Reset Time & Date Settings to Defaults',
+            subtitle:
+                'Restores default date format, time format, and layout sequence',
+            onTap: () {
+              notifier.resetToDefaults();
+              if (context.mounted) {
+                SnackBarManager.show(
+                  msg: 'Time & date settings reset to defaults',
+                );
+              }
+            },
           ),
         ],
       ),

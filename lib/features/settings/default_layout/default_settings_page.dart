@@ -53,10 +53,10 @@ class _DefaultSettingsPageState extends ConsumerState<DefaultSettingsPage> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Header
-          const SettingsPageHeader(
-            title: 'Window Presets',
-            subtitle: 'Quickly resize application window to standard size presets',
-          ),
+          // const SettingsPageHeader(
+          //   title: 'Window Presets',
+          //   subtitle: 'Quickly resize application window to standard size presets',
+          // ),
 
           if (PlatformHelper.isNativeDesktop) ...[
             const SettingsSectionHeader(title: 'Preset Window Sizes'),
@@ -158,6 +158,14 @@ class _DefaultSettingsPageState extends ConsumerState<DefaultSettingsPage> {
               ),
             ),
           ],
+          SettingsResetCard(
+            title: 'Reset Window Size Presets',
+            subtitle:
+                'Restores application window to default dimensions (1400 x 900)',
+            onTap: () {
+              _applyWindowSizePreset(1400, 900, 'Default Size (1400x900)');
+            },
+          ),
         ],
       ),
     );

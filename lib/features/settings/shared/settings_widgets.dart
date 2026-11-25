@@ -57,87 +57,87 @@ class SettingsPageLayout extends ConsumerWidget {
   }
 }
 
-/// Standardized header row for Settings sub-pages featuring back navigation,
-/// a page title, optional subtitle, and custom right-aligned trailing actions.
-class SettingsPageHeader extends ConsumerWidget {
-  /// Main title text for the settings page.
-  final String title;
-
-  /// Optional subtitle description displayed below the title.
-  final String? subtitle;
-
-  /// Optional callback for the back navigation button. If null, navigates back
-  /// to the root settings page (`RightPanelPageOptions.settings`).
-  final VoidCallback? onBack;
-
-  /// Optional trailing action widgets (e.g. search bars, reset buttons).
-  final List<Widget>? actions;
-
-  const SettingsPageHeader({
-    super.key,
-    required this.title,
-    this.subtitle,
-    this.onBack,
-    this.actions,
-  });
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final textTheme = Theme.of(context).textTheme;
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-
-            // if(!PlatformHelper.isWideLayout(context))...[
-            //   IconButton(
-            //     icon: const Icon(Icons.arrow_back),
-            //     tooltip: 'Back to Settings',
-            //     onPressed: onBack ??
-            //             () {
-            //           ref.read(drawerNavigationProvider).navigate(
-            //             context,
-            //             RightPanelPageOptions.settings,
-            //           );
-            //         },
-            //   ),
-            //
-            //
-            // ],
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle!,
-                      style: textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            ...?actions,
-          ],
-        ),
-        const SizedBox(height: 20),
-      ],
-    );
-  }
-}
+// /// Standardized header row for Settings sub-pages featuring back navigation,
+// /// a page title, optional subtitle, and custom right-aligned trailing actions.
+// class SettingsPageHeader extends ConsumerWidget {
+//   /// Main title text for the settings page.
+//   final String title;
+//
+//   /// Optional subtitle description displayed below the title.
+//   final String? subtitle;
+//
+//   /// Optional callback for the back navigation button. If null, navigates back
+//   /// to the root settings page (`RightPanelPageOptions.settings`).
+//   final VoidCallback? onBack;
+//
+//   /// Optional trailing action widgets (e.g. search bars, reset buttons).
+//   final List<Widget>? actions;
+//
+//   const SettingsPageHeader({
+//     super.key,
+//     required this.title,
+//     this.subtitle,
+//     this.onBack,
+//     this.actions,
+//   });
+//
+//   @override
+//   Widget build(BuildContext context, WidgetRef ref) {
+//     final textTheme = Theme.of(context).textTheme;
+//     final colorScheme = Theme.of(context).colorScheme;
+//
+//     return Column(
+//       crossAxisAlignment: CrossAxisAlignment.start,
+//       children: [
+//         Row(
+//           children: [
+//
+//             // if(!PlatformHelper.isWideLayout(context))...[
+//             //   IconButton(
+//             //     icon: const Icon(Icons.arrow_back),
+//             //     tooltip: 'Back to Settings',
+//             //     onPressed: onBack ??
+//             //             () {
+//             //           ref.read(drawerNavigationProvider).navigate(
+//             //             context,
+//             //             RightPanelPageOptions.settings,
+//             //           );
+//             //         },
+//             //   ),
+//             //
+//             //
+//             // ],
+//             const SizedBox(width: 8),
+//             Expanded(
+//               child: Column(
+//                 crossAxisAlignment: CrossAxisAlignment.start,
+//                 children: [
+//                   Text(
+//                     title,
+//                     style: textTheme.headlineSmall?.copyWith(
+//                       fontWeight: FontWeight.bold,
+//                     ),
+//                   ),
+//                   if (subtitle != null) ...[
+//                     const SizedBox(height: 2),
+//                     Text(
+//                       subtitle!,
+//                       style: textTheme.bodyMedium?.copyWith(
+//                         color: colorScheme.onSurfaceVariant,
+//                       ),
+//                     ),
+//                   ],
+//                 ],
+//               ),
+//             ),
+//             ...?actions,
+//           ],
+//         ),
+//         const SizedBox(height: 20),
+//       ],
+//     );
+//   }
+// }
 
 /// Styled section header title text for grouping related settings options.
 class SettingsSectionHeader extends StatelessWidget {
@@ -555,3 +555,56 @@ class SettingsSliderTile extends StatelessWidget {
     );
   }
 }
+
+/// Standardized reset card widget used at the bottom of settings screens to restore default settings.
+class SettingsResetCard extends StatelessWidget {
+  /// Primary title for the reset action (e.g. `'Reset Editor Settings to Defaults'`).
+  final String title;
+
+  /// Optional subtitle describing what will be restored.
+  final String? subtitle;
+
+  /// Callback executed when the reset tile is tapped.
+  final VoidCallback onTap;
+
+  /// Section title displayed above the card. Defaults to `'Reset Settings'`.
+  final String sectionTitle;
+
+  /// Icon color for the leading restart icon. Defaults to `null` (uses `colorScheme.tertiary`).
+  final Color? iconColor;
+
+  const SettingsResetCard({
+    super.key,
+    required this.title,
+    this.subtitle,
+    required this.onTap,
+    this.sectionTitle = 'Reset Settings',
+    this.iconColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 24),
+        SettingsSectionHeader(title: sectionTitle),
+        SettingsCard(
+          child: SettingsTile(
+            leading: Icon(
+              Icons.restart_alt_rounded,
+              color: iconColor ?? colorScheme.tertiary,
+            ),
+            title: title,
+            subtitle: subtitle,
+            trailing: const SizedBox.shrink(),
+            onTap: onTap,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
