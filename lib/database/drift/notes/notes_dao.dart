@@ -188,16 +188,16 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
     });
   }
 
-  /// Fetches a single note and its folder.
-  Future<NoteWithFolder> getNoteById(String uuid) {
+  /// Fetches a single note and its folder, or null if not found.
+  Future<NoteWithFolder?> getNoteById(String uuid) async {
     final query = select(notes).join([
       leftOuterJoin(folders, folders.uuid.equalsExp(notes.folderId)),
     ])..where(notes.uuid.equals(uuid));
 
-    return query.map((row) => NoteWithFolder(
+    return await query.map((row) => NoteWithFolder(
       note: row.readTable(notes),
       folder: row.readTableOrNull(folders),
-    )).getSingle();
+    )).getSingleOrNull();
   }
 
   /// Decrypts the content of a locked note using [masterKeyBytes].

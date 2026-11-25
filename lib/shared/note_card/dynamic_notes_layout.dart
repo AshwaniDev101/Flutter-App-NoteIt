@@ -283,7 +283,7 @@ class DynamicNotesLayout extends ConsumerWidget {
           final db = ref.read(localDatabaseProvider);
           try {
             final noteWithFolder = await db.notesDao.getNoteById(targetUuid);
-            if (!context.mounted) return;
+            if (noteWithFolder == null || !context.mounted) return;
             final result = await showDialog<bool>(
               context: context,
               builder: (_) => ReminderPage(

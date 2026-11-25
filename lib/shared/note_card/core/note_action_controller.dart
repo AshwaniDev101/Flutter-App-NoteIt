@@ -41,10 +41,10 @@ class NoteActionsController {
   Future<void> updateActiveNoteIfAffected(List<String> targetUuids) async {
     final activeNote = ref.read(activeNoteProvider);
     if (activeNote != null && targetUuids.contains(activeNote.note.uuid)) {
-      try {
-        final updatedNote = await db.notesDao.getNoteById(activeNote.note.uuid);
+      final updatedNote = await db.notesDao.getNoteById(activeNote.note.uuid);
+      if (updatedNote != null) {
         ref.read(activeNoteProvider.notifier).setNote(updatedNote);
-      } catch (_) {
+      } else {
         ref.read(activeNoteProvider.notifier).clear();
       }
     }

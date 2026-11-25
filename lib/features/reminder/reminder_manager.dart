@@ -120,11 +120,13 @@ class ReminderManager {
     if (container != null) {
       try {
         final noteWithFolder = await container.read(notesDaoProvider).getNoteById(noteUuid);
-        final note = noteWithFolder.note;
-        noteTitle = note.title.isNotEmpty ? note.title : 'Untitled Note';
-        locked = note.lockedAt != null;
-        mode = note.reminderRepeatMode;
-        noteContent = locked ? '' : note.content;
+        if (noteWithFolder != null) {
+          final note = noteWithFolder.note;
+          noteTitle = note.title.isNotEmpty ? note.title : 'Untitled Note';
+          locked = note.lockedAt != null;
+          mode = note.reminderRepeatMode;
+          noteContent = locked ? '' : note.content;
+        }
       } catch (e) {
         AppLogger.w('ReminderManager: Error fetching note details for popup: $e');
       }
@@ -178,6 +180,7 @@ class ReminderManager {
       if (container == null) return;
 
       final noteWithFolder = await container.read(notesDaoProvider).getNoteById(noteUuid);
+      if (noteWithFolder == null) return;
 
       // Set active note in Riverpod state
       container.read(activeNoteProvider.notifier).setNote(noteWithFolder);
@@ -218,6 +221,7 @@ class ReminderManager {
 
     try {
       final noteWithFolder = await container.read(notesDaoProvider).getNoteById(noteUuid);
+      if (noteWithFolder == null) return;
       final note = noteWithFolder.note;
       final newDate = DateTime.now().add(duration);
 
@@ -808,6 +812,7 @@ class ReminderManager {
 
     try {
       final noteWithFolder = await container.read(notesDaoProvider).getNoteById(noteUuid);
+      if (noteWithFolder == null) return;
       final note = noteWithFolder.note;
       final repeatMode = note.reminderRepeatMode;
 

@@ -358,11 +358,13 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
         await _viewModel.updateNote(_currentNoteWithFolder!.note.uuid, title, content, _contentVersion);
         try {
           final updatedNote = await ref.read(notesDaoProvider).getNoteById(_currentNoteWithFolder!.note.uuid);
-          ref.read(activeNoteProvider.notifier).setNote(updatedNote);
-          if (mounted) {
-            setState(() {
-              _currentNoteWithFolder = updatedNote;
-            });
+          if (updatedNote != null) {
+            ref.read(activeNoteProvider.notifier).setNote(updatedNote);
+            if (mounted) {
+              setState(() {
+                _currentNoteWithFolder = updatedNote;
+              });
+            }
           }
         } catch (_) {}
       }
@@ -470,8 +472,10 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
     if (result != null && mounted) {
       try {
         final updatedNote = await ref.read(notesDaoProvider).getNoteById(targetUuid);
-        ref.read(activeNoteProvider.notifier).setNote(updatedNote);
-        if (mounted) setState(() => _currentNoteWithFolder = updatedNote);
+        if (updatedNote != null) {
+          ref.read(activeNoteProvider.notifier).setNote(updatedNote);
+          if (mounted) setState(() => _currentNoteWithFolder = updatedNote);
+        }
       } catch (_) {}
     }
   }
@@ -571,8 +575,10 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
                         await actionsController.togglePinNotes([targetUuid]);
                         try {
                           final updatedNote = await ref.read(notesDaoProvider).getNoteById(targetUuid);
-                          ref.read(activeNoteProvider.notifier).setNote(updatedNote);
-                          _currentNoteWithFolder = updatedNote;
+                          if (updatedNote != null) {
+                            ref.read(activeNoteProvider.notifier).setNote(updatedNote);
+                            _currentNoteWithFolder = updatedNote;
+                          }
                         } catch (_) {}
                         if (mounted) setState(() {});
                         break;

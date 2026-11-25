@@ -281,7 +281,9 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
         await _viewModel.updateNote(_currentNoteWithFolder!.note.uuid, title, content, _contentVersion);
         try {
           final updatedNote = await _notesDao.getNoteById(_currentNoteWithFolder!.note.uuid);
-          _activeNoteNotifier.setNote(updatedNote);
+          if (updatedNote != null) {
+            _activeNoteNotifier.setNote(updatedNote);
+          }
         } catch (_) {}
       }
     }
@@ -392,11 +394,13 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
     if (result != null && mounted) {
       try {
         final updatedNote = await ref.read(notesDaoProvider).getNoteById(mTargetUuid);
-        ref.read(activeNoteProvider.notifier).setNote(updatedNote);
-        if (mounted) {
-          setState(() {
-            _currentNoteWithFolder = updatedNote;
-          });
+        if (updatedNote != null) {
+          ref.read(activeNoteProvider.notifier).setNote(updatedNote);
+          if (mounted) {
+            setState(() {
+              _currentNoteWithFolder = updatedNote;
+            });
+          }
         }
       } catch (_) {}
     }
@@ -809,7 +813,11 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
             if (_currentNoteWithFolder != null) {
               try {
                 final currentNote = await ref.read(notesDaoProvider).getNoteById(_currentNoteWithFolder!.note.uuid);
-                ref.read(activeNoteProvider.notifier).setNote(currentNote);
+                if (currentNote != null) {
+                  ref.read(activeNoteProvider.notifier).setNote(currentNote);
+                } else {
+                  ref.read(activeNoteProvider.notifier).setNote(_currentNoteWithFolder!);
+                }
               } catch (_) {
                 ref.read(activeNoteProvider.notifier).setNote(_currentNoteWithFolder!);
               }

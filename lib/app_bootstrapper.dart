@@ -116,7 +116,7 @@ class AppBootstrapper {
       final db = container.read(notesDaoProvider);
       final noteWithFolder = await db.getNoteById(lastNoteId);
 
-      if (noteWithFolder.note.deletedAt == null && noteWithFolder.note.archivedAt == null) {
+      if (noteWithFolder != null && noteWithFolder.note.deletedAt == null && noteWithFolder.note.archivedAt == null) {
         return activeNoteProvider.overrideWith(() => ActiveNoteNotifier(initialState: noteWithFolder));
       } else {
         SharedPreferenceManager.instance.setLastActiveNoteId(null);
