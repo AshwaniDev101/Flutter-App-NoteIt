@@ -107,7 +107,7 @@ class _MobileHomePageState extends ConsumerState<MobileHomePage> with WidgetsBin
             )
           : null,
       elevation: 0,
-      scrolledUnderElevation: PlatformHelper.isNativeDesktop ? 0.0 : null,
+      scrolledUnderElevation: PlatformHelper.isWideLayout(context) ? 0.0 : null,
       actions: const [
         // IconTray(),
         WorkspaceBadge(),

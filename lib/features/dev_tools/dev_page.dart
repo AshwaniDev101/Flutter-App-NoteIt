@@ -378,13 +378,13 @@ class DevActionSwitchTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDesktop = PlatformHelper.isDesktopScreen;
+    final isWide = PlatformHelper.isWideLayout(context);
 
     return Opacity(
       opacity: enabled ? 1.0 : 0.4, // Visually disables the entire tile
       child: ListTile(
-        dense: isDesktop,
-        visualDensity: isDesktop ? VisualDensity.compact : VisualDensity.standard,
+        dense: isWide,
+        visualDensity: isWide ? VisualDensity.compact : VisualDensity.standard,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
         hoverColor: theme.colorScheme.primary.withValues(alpha: 0.04),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

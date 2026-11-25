@@ -386,13 +386,17 @@ class _SyncStatusBadgeState extends ConsumerState<SyncStatusBadge> {
       return;
     }
 
-    // 7. Synced -> Force Sync
+    // 7. Synced -> Open Menu (Android) or Force Sync (Desktop)
     if (displayState == SyncDisplayState.synced) {
-      ref.read(syncOrchestratorProvider).triggerSync();
-      SnackBarManager.show(
-        msg: 'Syncing notes...',
-        type: SnackBarMessageType.info,
-      );
+      if (PlatformHelper.isWideLayout(context)) {
+        _openSyncMenu(context);
+      } else {
+        ref.read(syncOrchestratorProvider).triggerSync();
+        SnackBarManager.show(
+          msg: 'Syncing notes...',
+          type: SnackBarMessageType.info,
+        );
+      }
       return;
     }
   }

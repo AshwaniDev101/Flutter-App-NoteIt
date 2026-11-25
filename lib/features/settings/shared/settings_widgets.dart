@@ -320,11 +320,11 @@ class SettingsSwitchTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDesktop = PlatformHelper.isDesktopScreen;
+    final isWide = PlatformHelper.isWideLayout(context);
 
     return ListTile(
-      dense: isDesktop,
-      visualDensity: isDesktop ? VisualDensity.compact : VisualDensity.standard,
+      dense: isWide,
+      visualDensity: isWide ? VisualDensity.compact : VisualDensity.standard,
       contentPadding: contentPadding,
       hoverColor: theme.colorScheme.primary.withValues(alpha: 0.04),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -393,7 +393,7 @@ class SettingsSelectionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final isDesktop = PlatformHelper.isDesktopScreen;
+    final isWide = PlatformHelper.isWideLayout(context);
 
     final leadingWidget = leading ??
         (icon != null
@@ -427,8 +427,8 @@ class SettingsSelectionTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         clipBehavior: Clip.antiAlias,
         child: ListTile(
-          dense: isDesktop,
-          visualDensity: isDesktop ? VisualDensity.compact : VisualDensity.standard,
+          dense: isWide,
+          visualDensity: isWide ? VisualDensity.compact : VisualDensity.standard,
           contentPadding: contentPadding,
           hoverColor: colorScheme.primary.withValues(alpha: 0.04),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

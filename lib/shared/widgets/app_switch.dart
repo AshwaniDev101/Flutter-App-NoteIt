@@ -40,9 +40,9 @@ class AppSwitch extends StatelessWidget {
     this.desktopScale = 0.75,
   });
 
-  void _handleChanged(bool newValue) {
+  void _handleChanged(BuildContext context, bool newValue) {
     if (onChanged == null) return;
-    if (PlatformHelper.isAndroid || PlatformHelper.isIOS) {
+    if (!PlatformHelper.isWideLayout(context)) {
       HapticFeedback.lightImpact();
     }
     onChanged!(newValue);
@@ -50,18 +50,18 @@ class AppSwitch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDesktop = PlatformHelper.isDesktopScreen;
+    final isWide = PlatformHelper.isWideLayout(context);
 
     Widget switchWidget = Switch(
       value: value,
-      onChanged: onChanged != null ? _handleChanged : null,
+      onChanged: onChanged != null ? (val) => _handleChanged(context, val) : null,
       thumbIcon: thumbIcon,
       activeThumbColor: activeColor,
-      inactiveThumbColor: inactiveThumbColor,
+      inactiveThumbColor: inactiveTrackColor,
       inactiveTrackColor: inactiveTrackColor,
     );
 
-    if (isDesktop) {
+    if (isWide) {
       switchWidget = Transform.scale(
         scale: desktopScale,
         alignment: Alignment.centerRight,
