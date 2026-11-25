@@ -25,16 +25,66 @@ part 'custom_themes/ocean.dart';
 
 // THEME ENUM
 enum AppThemeType {
-  light,
-  dark,
-  amoled,
-  sepia,
-  dracula,
-  nord,
-  catppuccin,
-  forest,
-  cyberpunk,
-  ocean,
+  light(
+    label: 'Light Mode',
+    subtitle: 'Standard bright and clean look',
+    iconColor: Colors.orange,
+  ),
+  dark(
+    label: 'Dark Mode',
+    subtitle: 'Easy on the eyes, deep blue tint',
+    iconColor: Colors.indigo,
+  ),
+  amoled(
+    label: 'AMOLED Black',
+    subtitle: 'True pitch black, saves battery',
+    iconColor: Colors.black87,
+  ),
+  sepia(
+    label: 'Sepia',
+    subtitle: 'Warm e-reader paper style',
+    iconColor: Colors.brown,
+  ),
+  dracula(
+    label: 'Dracula',
+    subtitle: 'Vibrant dark purple aesthetic',
+    iconColor: Color(0xFFBD93F9),
+  ),
+  nord(
+    label: 'Nord',
+    subtitle: 'Cool arctic blue-grey tone',
+    iconColor: Color(0xFF88C0D0),
+  ),
+  catppuccin(
+    label: 'Catppuccin Mocha',
+    subtitle: 'Warm modern pastel dark',
+    iconColor: Color(0xFFCBA6F7),
+  ),
+  forest(
+    label: 'Forest',
+    subtitle: 'Deep nature evergreen style',
+    iconColor: Color(0xFF52B788),
+  ),
+  cyberpunk(
+    label: 'Cyberpunk',
+    subtitle: 'Futuristic neon glowing dark',
+    iconColor: Color(0xFFFF2A85),
+  ),
+  ocean(
+    label: 'Ocean Breeze',
+    subtitle: 'Refreshing light blue & teal',
+    iconColor: Color(0xFF1E6091),
+  );
+
+  final String label;
+  final String subtitle;
+  final Color iconColor;
+
+  const AppThemeType({
+    required this.label,
+    required this.subtitle,
+    required this.iconColor,
+  });
 }
 
 final themeProvider = NotifierProvider<ThemeNotifier, AppThemeType>(ThemeNotifier.new);

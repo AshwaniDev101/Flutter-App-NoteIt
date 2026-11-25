@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/sync/sync_engine.dart';
 import 'package:noteit/core/sync/sync_orchestrator.dart';
-import '../keybinding/keybindings_provider.dart';
+import 'package:noteit/core/theme/app_theme.dart';
 import '../lock/lock_manger/lock_manager.dart';
 import '../lock/password_prompt_helper.dart';
 import '../home/core/providers.dart';
@@ -11,7 +11,8 @@ import '../workspace/providers/workspace_providers.dart';
 import 'shared/settings_widgets.dart';
 
 /// Main Settings Page hub providing top-level configuration sections for
-/// Synchronization, General Security, Interface & Keyboard, and Data Management.
+/// Appearance & Interface, Synchronization, Keyboard & Shortcuts,
+/// Reminders & Time Format, Security & Privacy, and Data & Backup.
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
 
@@ -22,23 +23,92 @@ class SettingsPage extends ConsumerWidget {
 
     // Watch states
     final lockState = ref.watch(lockManagerProvider);
+    final currentTheme = ref.watch(themeProvider);
     final syncMode = ref.watch(syncModeProvider);
     final currentEngine = syncMode.isCloud
         ? SyncEngine.cloud
         : (syncMode.isLocal ? SyncEngine.local : SyncEngine.offline);
-
-    // Watch shortcut preferences
-    final shortcutPrefs = ref.watch(shortcutPreferencesProvider);
-    final bool showShortcuts =
-        shortcutPrefs.showDynamicKeyHints || shortcutPrefs.appendShortcutToTooltips;
 
     return SettingsPageLayout(
       option: RightPanelPageOptions.settings,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // ==================== APPEARANCE & INTERFACE ====================
+          const SettingsSectionHeader(title: 'Appearance & Interface'),
+          SettingsCard(
+            child: Column(
+              children: [
+                SettingsTile(
+                  icon: Icons.palette_outlined,
+                  title: 'App Theme & Color',
+                  subtitle: currentTheme.label,
+                  onTap: () {
+                    nav.navigate(context, RightPanelPageOptions.themes);
+                  },
+                ),
+                Divider(
+                  height: 1,
+                  indent: 48,
+                  color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+                ),
+                SettingsTile(
+                  icon: Icons.edit_note_rounded,
+                  title: 'Note Editor',
+                  subtitle: 'Font size, line spacing, and editor preferences',
+                  onTap: () {
+                    nav.navigate(context, RightPanelPageOptions.noteEditorSettings);
+                  },
+                ),
+                Divider(
+                  height: 1,
+                  indent: 48,
+                  color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+                ),
+                SettingsTile(
+                  icon: Icons.aspect_ratio_rounded,
+                  title: 'Window Size Presets',
+                  subtitle: 'Configure desktop window dimensions and size presets',
+                  onTap: () {
+                    nav.navigate(context, RightPanelPageOptions.windowSizePresets);
+                  },
+                ),
+                Divider(
+                  height: 1,
+                  indent: 48,
+                  color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+                ),
+                SettingsSwitchTile(
+                  icon: Icons.workspaces_outlined,
+                  title: 'Enable workspace',
+                  subtitle: 'Show workspace switcher badge on the homepage',
+                  value: ref.watch(workspaceEnableProvider),
+                  onChanged: (bool value) {
+                    ref.read(workspaceEnableProvider.notifier).setWorkspaceEnable(value);
+                  },
+                ),
+                Divider(
+                  height: 1,
+                  indent: 48,
+                  color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+                ),
+                SettingsSwitchTile(
+                  icon: Icons.devices_outlined,
+                  title: 'Enable device filter',
+                  subtitle: 'Show device filter button on the control bar',
+                  value: ref.watch(showDeviceFilterProvider),
+                  onChanged: (bool value) {
+                    ref.read(showDeviceFilterProvider.notifier).setShowDeviceFilter(value);
+                  },
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
           // ==================== SYNCHRONIZATION SECTION ====================
-          const SettingsSectionHeader(title: 'Synchronization'),
+          const SettingsSectionHeader(title: 'Sync Mode'),
           SettingsCard(
             child: Column(
               children: [
@@ -84,6 +154,21 @@ class SettingsPage extends ConsumerWidget {
                     },
                   ),
                 ],
+                if (currentEngine == SyncEngine.local) ...[
+                  Divider(
+                    height: 1,
+                    indent: 48,
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+                  ),
+                  SettingsTile(
+                    icon: Icons.phonelink_outlined,
+                    title: 'Local Network Devices',
+                    subtitle: 'Configure host/client sync mode and view paired devices',
+                    onTap: () {
+                      nav.navigate(context, RightPanelPageOptions.localSync);
+                    },
+                  ),
+                ],
               ],
             ),
           ),
@@ -91,101 +176,26 @@ class SettingsPage extends ConsumerWidget {
           const SizedBox(height: 24),
 
           // ==================== KEYBOARD & SHORTCUTS SECTION ====================
-          const SettingsSectionHeader(title: 'Keyboard'),
+          const SettingsSectionHeader(title: 'Keyboard & Shortcuts'),
           SettingsCard(
             child: Column(
               children: [
                 SettingsTile(
                   icon: Icons.keyboard_rounded,
-                  title: 'Keyboard Binding Shortcuts',
+                  title: 'Keyboard Shortcuts',
                   subtitle: 'Customize keyboard shortcuts and keybinding chord rules',
                   onTap: () {
                     nav.navigate(context, RightPanelPageOptions.keybindingSettings);
                   },
                 ),
-                // Divider(
-                //   height: 1,
-                //   indent: 48,
-                //   color: colorScheme.outlineVariant.withValues(alpha: 0.3),
-                // ),
-                // SettingsSwitchTile(
-                //   icon: Icons.keyboard_alt_outlined,
-                //   title: 'Show keyboard shortcuts',
-                //   subtitle: 'Display keyboard hints and tooltips in the UI',
-                //   value: showShortcuts,
-                //   onChanged: (bool value) {
-                //     ref.read(shortcutPreferencesProvider.notifier).toggleHints(value);
-                //     ref.read(shortcutPreferencesProvider.notifier).toggleTooltips(value);
-                //   },
-                // ),
               ],
             ),
           ),
 
           const SizedBox(height: 24),
 
-          // ==================== EDITOR & INTERFACE SECTION ====================
-          const SettingsSectionHeader(title: 'Editor & Interface'),
-          SettingsCard(
-            child: Column(
-              children: [
-                SettingsTile(
-                  icon: Icons.edit_note_rounded,
-                  title: 'Note Editor',
-                  subtitle: 'Font size, line spacing, and cursor position',
-                  onTap: () {
-                    nav.navigate(context, RightPanelPageOptions.noteEditorSettings);
-                  },
-                ),
-                Divider(
-                  height: 1,
-                  indent: 48,
-                  color: colorScheme.outlineVariant.withValues(alpha: 0.3),
-                ),
-                SettingsTile(
-                  icon: Icons.tune_outlined,
-                  title: 'Window Size Presets',
-                  subtitle: 'Configure desktop window dimensions and size presets',
-                  onTap: () {
-                    nav.navigate(context, RightPanelPageOptions.windowSizePresets);
-                  },
-                ),
-                Divider(
-                  height: 1,
-                  indent: 48,
-                  color: colorScheme.outlineVariant.withValues(alpha: 0.3),
-                ),
-                SettingsSwitchTile(
-                  icon: Icons.workspaces_outlined,
-                  title: 'Enable workspace',
-                  subtitle: 'Show workspace switcher badge on the homepage',
-                  value: ref.watch(workspaceEnableProvider),
-                  onChanged: (bool value) {
-                    ref.read(workspaceEnableProvider.notifier).setWorkspaceEnable(value);
-                  },
-                ),
-                Divider(
-                  height: 1,
-                  indent: 48,
-                  color: colorScheme.outlineVariant.withValues(alpha: 0.3),
-                ),
-                SettingsSwitchTile(
-                  icon: Icons.devices_outlined,
-                  title: 'Enable device filter',
-                  subtitle: 'Show device filter button on the control bar',
-                  value: ref.watch(showDeviceFilterProvider),
-                  onChanged: (bool value) {
-                    ref.read(showDeviceFilterProvider.notifier).setShowDeviceFilter(value);
-                  },
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // ==================== GENERAL SECTION ====================
-          const SettingsSectionHeader(title: 'General'),
+          // ==================== REMINDERS & TIME FORMAT SECTION ====================
+          const SettingsSectionHeader(title: 'Reminders & Time Format'),
           SettingsCard(
             child: Column(
               children: [
@@ -216,8 +226,8 @@ class SettingsPage extends ConsumerWidget {
 
           const SizedBox(height: 24),
 
-          // ==================== SECURITY SECTION ====================
-          const SettingsSectionHeader(title: 'Security'),
+          // ==================== SECURITY & PRIVACY SECTION ====================
+          const SettingsSectionHeader(title: 'Security & Privacy'),
           SettingsCard(
             child: Column(
               children: [
@@ -251,8 +261,8 @@ class SettingsPage extends ConsumerWidget {
 
           const SizedBox(height: 24),
 
-          // ==================== DATA MANAGEMENT SECTION ====================
-          const SettingsSectionHeader(title: 'Data Management'),
+          // ==================== DATA & BACKUP SECTION ====================
+          const SettingsSectionHeader(title: 'Data & Backup'),
           SettingsCard(
             child: Column(
               children: [
@@ -281,3 +291,4 @@ class SettingsPage extends ConsumerWidget {
     );
   }
 }
+
