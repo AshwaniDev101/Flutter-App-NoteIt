@@ -29,7 +29,7 @@ import '../../../../../core/helpers/inline_action_badges.dart';
 import '../../../../../core/helpers/platform_helper.dart';
 import '../../../../../shared/app_bars/desktop_window_controls.dart';
 import '../../../../workspace/view/widgets/workspace_badge.dart';
-import '../../../../settings/default_layout/default_settings_page.dart';
+import '../../../../settings/default_layout/window_size_presets_page.dart';
 import '../../../../settings/keybindings/keybinding_settings_page.dart';
 import '../../../../settings/note_editor/note_editor_settings_page.dart';
 import '../../../../settings/settings_page.dart';
@@ -160,7 +160,7 @@ class DesktopContentPanel extends ConsumerWidget {
           key: ValueKey('archive_view'),
           child: ArchivePage(),
         );
-      case RightPanelPageOptions.defaultSettings:
+      case RightPanelPageOptions.windowSizePresets:
         return const _PaddingWrapper(
           key: ValueKey('default_settings_view'),
           child: DefaultSettingsPage(),

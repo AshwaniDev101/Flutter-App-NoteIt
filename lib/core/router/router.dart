@@ -21,7 +21,7 @@ import '../../features/local_sync/view/synced_list.dart';
 import '../../features/note_editor/screens/view/desktop_edit_page.dart';
 import '../../features/note_editor/screens/view/mobile_edit_page.dart';
 import '../../features/reminder/reminder_settings_page.dart';
-import '../../features/settings/default_layout/default_settings_page.dart';
+import '../../features/settings/default_layout/window_size_presets_page.dart';
 import '../../features/settings/keybindings/keybinding_settings_page.dart';
 import '../../features/settings/settings_page.dart';
 import '../../features/settings/note_editor/note_editor_settings_page.dart';

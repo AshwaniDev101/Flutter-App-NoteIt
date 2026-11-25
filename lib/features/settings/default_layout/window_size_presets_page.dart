@@ -48,7 +48,7 @@ class _DefaultSettingsPageState extends ConsumerState<DefaultSettingsPage> {
     final textTheme = Theme.of(context).textTheme;
 
     return SettingsPageLayout(
-      option: RightPanelPageOptions.defaultSettings,
+      option: RightPanelPageOptions.windowSizePresets,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -132,7 +132,7 @@ class _DefaultSettingsPageState extends ConsumerState<DefaultSettingsPage> {
                       _buildWindowSizePresetChip(
                         label: 'Compact Size',
                         subtitle: '1024 x 700',
-                        icon: Icons.stay_current_portrait_outlined,
+                        icon: Icons.tablet,
                         onSelected: () {
                           _applyWindowSizePreset(1024, 700, 'Compact Size (1024x700)');
                         },

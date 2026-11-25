@@ -91,33 +91,33 @@ class SettingsPage extends ConsumerWidget {
           const SizedBox(height: 24),
 
           // ==================== KEYBOARD & SHORTCUTS SECTION ====================
-          const SettingsSectionHeader(title: 'Keyboard & Shortcuts'),
+          const SettingsSectionHeader(title: 'Keyboard'),
           SettingsCard(
             child: Column(
               children: [
                 SettingsTile(
                   icon: Icons.keyboard_rounded,
-                  title: 'Keyboard Shortcuts',
+                  title: 'Keyboard Binding Shortcuts',
                   subtitle: 'Customize keyboard shortcuts and keybinding chord rules',
                   onTap: () {
                     nav.navigate(context, RightPanelPageOptions.keybindingSettings);
                   },
                 ),
-                Divider(
-                  height: 1,
-                  indent: 48,
-                  color: colorScheme.outlineVariant.withValues(alpha: 0.3),
-                ),
-                SettingsSwitchTile(
-                  icon: Icons.keyboard_alt_outlined,
-                  title: 'Show keyboard shortcuts',
-                  subtitle: 'Display keyboard hints and tooltips in the UI',
-                  value: showShortcuts,
-                  onChanged: (bool value) {
-                    ref.read(shortcutPreferencesProvider.notifier).toggleHints(value);
-                    ref.read(shortcutPreferencesProvider.notifier).toggleTooltips(value);
-                  },
-                ),
+                // Divider(
+                //   height: 1,
+                //   indent: 48,
+                //   color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+                // ),
+                // SettingsSwitchTile(
+                //   icon: Icons.keyboard_alt_outlined,
+                //   title: 'Show keyboard shortcuts',
+                //   subtitle: 'Display keyboard hints and tooltips in the UI',
+                //   value: showShortcuts,
+                //   onChanged: (bool value) {
+                //     ref.read(shortcutPreferencesProvider.notifier).toggleHints(value);
+                //     ref.read(shortcutPreferencesProvider.notifier).toggleTooltips(value);
+                //   },
+                // ),
               ],
             ),
           ),
@@ -131,7 +131,7 @@ class SettingsPage extends ConsumerWidget {
               children: [
                 SettingsTile(
                   icon: Icons.edit_note_rounded,
-                  title: 'Note Editor Preferences',
+                  title: 'Note Editor',
                   subtitle: 'Font size, line spacing, and cursor position',
                   onTap: () {
                     nav.navigate(context, RightPanelPageOptions.noteEditorSettings);
@@ -144,10 +144,10 @@ class SettingsPage extends ConsumerWidget {
                 ),
                 SettingsTile(
                   icon: Icons.tune_outlined,
-                  title: 'Window Presets',
+                  title: 'Window Size Presets',
                   subtitle: 'Configure desktop window dimensions and size presets',
                   onTap: () {
-                    nav.navigate(context, RightPanelPageOptions.defaultSettings);
+                    nav.navigate(context, RightPanelPageOptions.windowSizePresets);
                   },
                 ),
                 Divider(
