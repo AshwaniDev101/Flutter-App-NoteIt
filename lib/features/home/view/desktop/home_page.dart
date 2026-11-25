@@ -138,6 +138,7 @@ class _DesktopHomePageState extends ConsumerState<DesktopHomePanel> {
       createdAt: DateTime.now().toUtc(),
       updatedAt: DateTime.now().toUtc(),
       deletedAt: null,
+      isHardDeleted: false,
       updateCounter: 1,
       cloudSyncStatus: 0,
       localSyncStatus: 0,

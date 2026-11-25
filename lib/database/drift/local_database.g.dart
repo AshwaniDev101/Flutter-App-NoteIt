@@ -297,6 +297,21 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _isHardDeletedMeta = const VerificationMeta(
+    'isHardDeleted',
+  );
+  @override
+  late final GeneratedColumn<bool> isHardDeleted = GeneratedColumn<bool>(
+    'is_hard_deleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_hard_deleted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _creationPlatformMeta = const VerificationMeta(
     'creationPlatform',
   );
@@ -391,6 +406,7 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
     hlc,
     cloudSyncStatus,
     localSyncStatus,
+    isHardDeleted,
     creationPlatform,
     creationDevice,
     lastEditedPlatform,
@@ -603,6 +619,15 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
         ),
       );
     }
+    if (data.containsKey('is_hard_deleted')) {
+      context.handle(
+        _isHardDeletedMeta,
+        isHardDeleted.isAcceptableOrUnknown(
+          data['is_hard_deleted']!,
+          _isHardDeletedMeta,
+        ),
+      );
+    }
     if (data.containsKey('creation_platform')) {
       context.handle(
         _creationPlatformMeta,
@@ -770,6 +795,10 @@ class $NotesTable extends Notes with TableInfo<$NotesTable, Note> {
         DriftSqlType.int,
         data['${effectivePrefix}local_sync_status'],
       )!,
+      isHardDeleted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_hard_deleted'],
+      )!,
       creationPlatform: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}creation_platform'],
@@ -830,6 +859,7 @@ class Note extends DataClass implements Insertable<Note> {
   final String? hlc;
   final int cloudSyncStatus;
   final int localSyncStatus;
+  final bool isHardDeleted;
   final String? creationPlatform;
   final String? creationDevice;
   final String? lastEditedPlatform;
@@ -863,6 +893,7 @@ class Note extends DataClass implements Insertable<Note> {
     this.hlc,
     required this.cloudSyncStatus,
     required this.localSyncStatus,
+    required this.isHardDeleted,
     this.creationPlatform,
     this.creationDevice,
     this.lastEditedPlatform,
@@ -929,6 +960,7 @@ class Note extends DataClass implements Insertable<Note> {
     }
     map['cloud_sync_status'] = Variable<int>(cloudSyncStatus);
     map['local_sync_status'] = Variable<int>(localSyncStatus);
+    map['is_hard_deleted'] = Variable<bool>(isHardDeleted);
     if (!nullToAbsent || creationPlatform != null) {
       map['creation_platform'] = Variable<String>(creationPlatform);
     }
@@ -1004,6 +1036,7 @@ class Note extends DataClass implements Insertable<Note> {
       hlc: hlc == null && nullToAbsent ? const Value.absent() : Value(hlc),
       cloudSyncStatus: Value(cloudSyncStatus),
       localSyncStatus: Value(localSyncStatus),
+      isHardDeleted: Value(isHardDeleted),
       creationPlatform: creationPlatform == null && nullToAbsent
           ? const Value.absent()
           : Value(creationPlatform),
@@ -1065,6 +1098,7 @@ class Note extends DataClass implements Insertable<Note> {
       hlc: serializer.fromJson<String?>(json['hlc']),
       cloudSyncStatus: serializer.fromJson<int>(json['cloudSyncStatus']),
       localSyncStatus: serializer.fromJson<int>(json['localSyncStatus']),
+      isHardDeleted: serializer.fromJson<bool>(json['isHardDeleted']),
       creationPlatform: serializer.fromJson<String?>(json['creationPlatform']),
       creationDevice: serializer.fromJson<String?>(json['creationDevice']),
       lastEditedPlatform: serializer.fromJson<String?>(
@@ -1105,6 +1139,7 @@ class Note extends DataClass implements Insertable<Note> {
       'hlc': serializer.toJson<String?>(hlc),
       'cloudSyncStatus': serializer.toJson<int>(cloudSyncStatus),
       'localSyncStatus': serializer.toJson<int>(localSyncStatus),
+      'isHardDeleted': serializer.toJson<bool>(isHardDeleted),
       'creationPlatform': serializer.toJson<String?>(creationPlatform),
       'creationDevice': serializer.toJson<String?>(creationDevice),
       'lastEditedPlatform': serializer.toJson<String?>(lastEditedPlatform),
@@ -1141,6 +1176,7 @@ class Note extends DataClass implements Insertable<Note> {
     Value<String?> hlc = const Value.absent(),
     int? cloudSyncStatus,
     int? localSyncStatus,
+    bool? isHardDeleted,
     Value<String?> creationPlatform = const Value.absent(),
     Value<String?> creationDevice = const Value.absent(),
     Value<String?> lastEditedPlatform = const Value.absent(),
@@ -1184,6 +1220,7 @@ class Note extends DataClass implements Insertable<Note> {
     hlc: hlc.present ? hlc.value : this.hlc,
     cloudSyncStatus: cloudSyncStatus ?? this.cloudSyncStatus,
     localSyncStatus: localSyncStatus ?? this.localSyncStatus,
+    isHardDeleted: isHardDeleted ?? this.isHardDeleted,
     creationPlatform: creationPlatform.present
         ? creationPlatform.value
         : this.creationPlatform,
@@ -1257,6 +1294,9 @@ class Note extends DataClass implements Insertable<Note> {
       localSyncStatus: data.localSyncStatus.present
           ? data.localSyncStatus.value
           : this.localSyncStatus,
+      isHardDeleted: data.isHardDeleted.present
+          ? data.isHardDeleted.value
+          : this.isHardDeleted,
       creationPlatform: data.creationPlatform.present
           ? data.creationPlatform.value
           : this.creationPlatform,
@@ -1307,6 +1347,7 @@ class Note extends DataClass implements Insertable<Note> {
           ..write('hlc: $hlc, ')
           ..write('cloudSyncStatus: $cloudSyncStatus, ')
           ..write('localSyncStatus: $localSyncStatus, ')
+          ..write('isHardDeleted: $isHardDeleted, ')
           ..write('creationPlatform: $creationPlatform, ')
           ..write('creationDevice: $creationDevice, ')
           ..write('lastEditedPlatform: $lastEditedPlatform, ')
@@ -1345,6 +1386,7 @@ class Note extends DataClass implements Insertable<Note> {
     hlc,
     cloudSyncStatus,
     localSyncStatus,
+    isHardDeleted,
     creationPlatform,
     creationDevice,
     lastEditedPlatform,
@@ -1382,6 +1424,7 @@ class Note extends DataClass implements Insertable<Note> {
           other.hlc == this.hlc &&
           other.cloudSyncStatus == this.cloudSyncStatus &&
           other.localSyncStatus == this.localSyncStatus &&
+          other.isHardDeleted == this.isHardDeleted &&
           other.creationPlatform == this.creationPlatform &&
           other.creationDevice == this.creationDevice &&
           other.lastEditedPlatform == this.lastEditedPlatform &&
@@ -1417,6 +1460,7 @@ class NotesCompanion extends UpdateCompanion<Note> {
   final Value<String?> hlc;
   final Value<int> cloudSyncStatus;
   final Value<int> localSyncStatus;
+  final Value<bool> isHardDeleted;
   final Value<String?> creationPlatform;
   final Value<String?> creationDevice;
   final Value<String?> lastEditedPlatform;
@@ -1451,6 +1495,7 @@ class NotesCompanion extends UpdateCompanion<Note> {
     this.hlc = const Value.absent(),
     this.cloudSyncStatus = const Value.absent(),
     this.localSyncStatus = const Value.absent(),
+    this.isHardDeleted = const Value.absent(),
     this.creationPlatform = const Value.absent(),
     this.creationDevice = const Value.absent(),
     this.lastEditedPlatform = const Value.absent(),
@@ -1486,6 +1531,7 @@ class NotesCompanion extends UpdateCompanion<Note> {
     this.hlc = const Value.absent(),
     this.cloudSyncStatus = const Value.absent(),
     this.localSyncStatus = const Value.absent(),
+    this.isHardDeleted = const Value.absent(),
     this.creationPlatform = const Value.absent(),
     this.creationDevice = const Value.absent(),
     this.lastEditedPlatform = const Value.absent(),
@@ -1522,6 +1568,7 @@ class NotesCompanion extends UpdateCompanion<Note> {
     Expression<String>? hlc,
     Expression<int>? cloudSyncStatus,
     Expression<int>? localSyncStatus,
+    Expression<bool>? isHardDeleted,
     Expression<String>? creationPlatform,
     Expression<String>? creationDevice,
     Expression<String>? lastEditedPlatform,
@@ -1561,6 +1608,7 @@ class NotesCompanion extends UpdateCompanion<Note> {
       if (hlc != null) 'hlc': hlc,
       if (cloudSyncStatus != null) 'cloud_sync_status': cloudSyncStatus,
       if (localSyncStatus != null) 'local_sync_status': localSyncStatus,
+      if (isHardDeleted != null) 'is_hard_deleted': isHardDeleted,
       if (creationPlatform != null) 'creation_platform': creationPlatform,
       if (creationDevice != null) 'creation_device': creationDevice,
       if (lastEditedPlatform != null)
@@ -1599,6 +1647,7 @@ class NotesCompanion extends UpdateCompanion<Note> {
     Value<String?>? hlc,
     Value<int>? cloudSyncStatus,
     Value<int>? localSyncStatus,
+    Value<bool>? isHardDeleted,
     Value<String?>? creationPlatform,
     Value<String?>? creationDevice,
     Value<String?>? lastEditedPlatform,
@@ -1634,6 +1683,7 @@ class NotesCompanion extends UpdateCompanion<Note> {
       hlc: hlc ?? this.hlc,
       cloudSyncStatus: cloudSyncStatus ?? this.cloudSyncStatus,
       localSyncStatus: localSyncStatus ?? this.localSyncStatus,
+      isHardDeleted: isHardDeleted ?? this.isHardDeleted,
       creationPlatform: creationPlatform ?? this.creationPlatform,
       creationDevice: creationDevice ?? this.creationDevice,
       lastEditedPlatform: lastEditedPlatform ?? this.lastEditedPlatform,
@@ -1727,6 +1777,9 @@ class NotesCompanion extends UpdateCompanion<Note> {
     if (localSyncStatus.present) {
       map['local_sync_status'] = Variable<int>(localSyncStatus.value);
     }
+    if (isHardDeleted.present) {
+      map['is_hard_deleted'] = Variable<bool>(isHardDeleted.value);
+    }
     if (creationPlatform.present) {
       map['creation_platform'] = Variable<String>(creationPlatform.value);
     }
@@ -1780,6 +1833,7 @@ class NotesCompanion extends UpdateCompanion<Note> {
           ..write('hlc: $hlc, ')
           ..write('cloudSyncStatus: $cloudSyncStatus, ')
           ..write('localSyncStatus: $localSyncStatus, ')
+          ..write('isHardDeleted: $isHardDeleted, ')
           ..write('creationPlatform: $creationPlatform, ')
           ..write('creationDevice: $creationDevice, ')
           ..write('lastEditedPlatform: $lastEditedPlatform, ')
@@ -1934,6 +1988,21 @@ class $FoldersTable extends Folders with TableInfo<$FoldersTable, Folder> {
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _isHardDeletedMeta = const VerificationMeta(
+    'isHardDeleted',
+  );
+  @override
+  late final GeneratedColumn<bool> isHardDeleted = GeneratedColumn<bool>(
+    'is_hard_deleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_hard_deleted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _creationPlatformMeta = const VerificationMeta(
     'creationPlatform',
   );
@@ -2014,6 +2083,7 @@ class $FoldersTable extends Folders with TableInfo<$FoldersTable, Folder> {
     hlc,
     cloudSyncStatus,
     localSyncStatus,
+    isHardDeleted,
     creationPlatform,
     creationDevice,
     lastEditedPlatform,
@@ -2113,6 +2183,15 @@ class $FoldersTable extends Folders with TableInfo<$FoldersTable, Folder> {
         localSyncStatus.isAcceptableOrUnknown(
           data['local_sync_status']!,
           _localSyncStatusMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_hard_deleted')) {
+      context.handle(
+        _isHardDeletedMeta,
+        isHardDeleted.isAcceptableOrUnknown(
+          data['is_hard_deleted']!,
+          _isHardDeletedMeta,
         ),
       );
     }
@@ -2227,6 +2306,10 @@ class $FoldersTable extends Folders with TableInfo<$FoldersTable, Folder> {
         DriftSqlType.int,
         data['${effectivePrefix}local_sync_status'],
       )!,
+      isHardDeleted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_hard_deleted'],
+      )!,
       creationPlatform: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}creation_platform'],
@@ -2273,6 +2356,7 @@ class Folder extends DataClass implements Insertable<Folder> {
   final String? hlc;
   final int cloudSyncStatus;
   final int localSyncStatus;
+  final bool isHardDeleted;
   final String? creationPlatform;
   final String? creationDevice;
   final String? lastEditedPlatform;
@@ -2292,6 +2376,7 @@ class Folder extends DataClass implements Insertable<Folder> {
     this.hlc,
     required this.cloudSyncStatus,
     required this.localSyncStatus,
+    required this.isHardDeleted,
     this.creationPlatform,
     this.creationDevice,
     this.lastEditedPlatform,
@@ -2322,6 +2407,7 @@ class Folder extends DataClass implements Insertable<Folder> {
     }
     map['cloud_sync_status'] = Variable<int>(cloudSyncStatus);
     map['local_sync_status'] = Variable<int>(localSyncStatus);
+    map['is_hard_deleted'] = Variable<bool>(isHardDeleted);
     if (!nullToAbsent || creationPlatform != null) {
       map['creation_platform'] = Variable<String>(creationPlatform);
     }
@@ -2363,6 +2449,7 @@ class Folder extends DataClass implements Insertable<Folder> {
       hlc: hlc == null && nullToAbsent ? const Value.absent() : Value(hlc),
       cloudSyncStatus: Value(cloudSyncStatus),
       localSyncStatus: Value(localSyncStatus),
+      isHardDeleted: Value(isHardDeleted),
       creationPlatform: creationPlatform == null && nullToAbsent
           ? const Value.absent()
           : Value(creationPlatform),
@@ -2402,6 +2489,7 @@ class Folder extends DataClass implements Insertable<Folder> {
       hlc: serializer.fromJson<String?>(json['hlc']),
       cloudSyncStatus: serializer.fromJson<int>(json['cloudSyncStatus']),
       localSyncStatus: serializer.fromJson<int>(json['localSyncStatus']),
+      isHardDeleted: serializer.fromJson<bool>(json['isHardDeleted']),
       creationPlatform: serializer.fromJson<String?>(json['creationPlatform']),
       creationDevice: serializer.fromJson<String?>(json['creationDevice']),
       lastEditedPlatform: serializer.fromJson<String?>(
@@ -2428,6 +2516,7 @@ class Folder extends DataClass implements Insertable<Folder> {
       'hlc': serializer.toJson<String?>(hlc),
       'cloudSyncStatus': serializer.toJson<int>(cloudSyncStatus),
       'localSyncStatus': serializer.toJson<int>(localSyncStatus),
+      'isHardDeleted': serializer.toJson<bool>(isHardDeleted),
       'creationPlatform': serializer.toJson<String?>(creationPlatform),
       'creationDevice': serializer.toJson<String?>(creationDevice),
       'lastEditedPlatform': serializer.toJson<String?>(lastEditedPlatform),
@@ -2450,6 +2539,7 @@ class Folder extends DataClass implements Insertable<Folder> {
     Value<String?> hlc = const Value.absent(),
     int? cloudSyncStatus,
     int? localSyncStatus,
+    bool? isHardDeleted,
     Value<String?> creationPlatform = const Value.absent(),
     Value<String?> creationDevice = const Value.absent(),
     Value<String?> lastEditedPlatform = const Value.absent(),
@@ -2469,6 +2559,7 @@ class Folder extends DataClass implements Insertable<Folder> {
     hlc: hlc.present ? hlc.value : this.hlc,
     cloudSyncStatus: cloudSyncStatus ?? this.cloudSyncStatus,
     localSyncStatus: localSyncStatus ?? this.localSyncStatus,
+    isHardDeleted: isHardDeleted ?? this.isHardDeleted,
     creationPlatform: creationPlatform.present
         ? creationPlatform.value
         : this.creationPlatform,
@@ -2510,6 +2601,9 @@ class Folder extends DataClass implements Insertable<Folder> {
       localSyncStatus: data.localSyncStatus.present
           ? data.localSyncStatus.value
           : this.localSyncStatus,
+      isHardDeleted: data.isHardDeleted.present
+          ? data.isHardDeleted.value
+          : this.isHardDeleted,
       creationPlatform: data.creationPlatform.present
           ? data.creationPlatform.value
           : this.creationPlatform,
@@ -2546,6 +2640,7 @@ class Folder extends DataClass implements Insertable<Folder> {
           ..write('hlc: $hlc, ')
           ..write('cloudSyncStatus: $cloudSyncStatus, ')
           ..write('localSyncStatus: $localSyncStatus, ')
+          ..write('isHardDeleted: $isHardDeleted, ')
           ..write('creationPlatform: $creationPlatform, ')
           ..write('creationDevice: $creationDevice, ')
           ..write('lastEditedPlatform: $lastEditedPlatform, ')
@@ -2570,6 +2665,7 @@ class Folder extends DataClass implements Insertable<Folder> {
     hlc,
     cloudSyncStatus,
     localSyncStatus,
+    isHardDeleted,
     creationPlatform,
     creationDevice,
     lastEditedPlatform,
@@ -2593,6 +2689,7 @@ class Folder extends DataClass implements Insertable<Folder> {
           other.hlc == this.hlc &&
           other.cloudSyncStatus == this.cloudSyncStatus &&
           other.localSyncStatus == this.localSyncStatus &&
+          other.isHardDeleted == this.isHardDeleted &&
           other.creationPlatform == this.creationPlatform &&
           other.creationDevice == this.creationDevice &&
           other.lastEditedPlatform == this.lastEditedPlatform &&
@@ -2614,6 +2711,7 @@ class FoldersCompanion extends UpdateCompanion<Folder> {
   final Value<String?> hlc;
   final Value<int> cloudSyncStatus;
   final Value<int> localSyncStatus;
+  final Value<bool> isHardDeleted;
   final Value<String?> creationPlatform;
   final Value<String?> creationDevice;
   final Value<String?> lastEditedPlatform;
@@ -2634,6 +2732,7 @@ class FoldersCompanion extends UpdateCompanion<Folder> {
     this.hlc = const Value.absent(),
     this.cloudSyncStatus = const Value.absent(),
     this.localSyncStatus = const Value.absent(),
+    this.isHardDeleted = const Value.absent(),
     this.creationPlatform = const Value.absent(),
     this.creationDevice = const Value.absent(),
     this.lastEditedPlatform = const Value.absent(),
@@ -2655,6 +2754,7 @@ class FoldersCompanion extends UpdateCompanion<Folder> {
     this.hlc = const Value.absent(),
     this.cloudSyncStatus = const Value.absent(),
     this.localSyncStatus = const Value.absent(),
+    this.isHardDeleted = const Value.absent(),
     this.creationPlatform = const Value.absent(),
     this.creationDevice = const Value.absent(),
     this.lastEditedPlatform = const Value.absent(),
@@ -2676,6 +2776,7 @@ class FoldersCompanion extends UpdateCompanion<Folder> {
     Expression<String>? hlc,
     Expression<int>? cloudSyncStatus,
     Expression<int>? localSyncStatus,
+    Expression<bool>? isHardDeleted,
     Expression<String>? creationPlatform,
     Expression<String>? creationDevice,
     Expression<String>? lastEditedPlatform,
@@ -2697,6 +2798,7 @@ class FoldersCompanion extends UpdateCompanion<Folder> {
       if (hlc != null) 'hlc': hlc,
       if (cloudSyncStatus != null) 'cloud_sync_status': cloudSyncStatus,
       if (localSyncStatus != null) 'local_sync_status': localSyncStatus,
+      if (isHardDeleted != null) 'is_hard_deleted': isHardDeleted,
       if (creationPlatform != null) 'creation_platform': creationPlatform,
       if (creationDevice != null) 'creation_device': creationDevice,
       if (lastEditedPlatform != null)
@@ -2721,6 +2823,7 @@ class FoldersCompanion extends UpdateCompanion<Folder> {
     Value<String?>? hlc,
     Value<int>? cloudSyncStatus,
     Value<int>? localSyncStatus,
+    Value<bool>? isHardDeleted,
     Value<String?>? creationPlatform,
     Value<String?>? creationDevice,
     Value<String?>? lastEditedPlatform,
@@ -2742,6 +2845,7 @@ class FoldersCompanion extends UpdateCompanion<Folder> {
       hlc: hlc ?? this.hlc,
       cloudSyncStatus: cloudSyncStatus ?? this.cloudSyncStatus,
       localSyncStatus: localSyncStatus ?? this.localSyncStatus,
+      isHardDeleted: isHardDeleted ?? this.isHardDeleted,
       creationPlatform: creationPlatform ?? this.creationPlatform,
       creationDevice: creationDevice ?? this.creationDevice,
       lastEditedPlatform: lastEditedPlatform ?? this.lastEditedPlatform,
@@ -2791,6 +2895,9 @@ class FoldersCompanion extends UpdateCompanion<Folder> {
     if (localSyncStatus.present) {
       map['local_sync_status'] = Variable<int>(localSyncStatus.value);
     }
+    if (isHardDeleted.present) {
+      map['is_hard_deleted'] = Variable<bool>(isHardDeleted.value);
+    }
     if (creationPlatform.present) {
       map['creation_platform'] = Variable<String>(creationPlatform.value);
     }
@@ -2830,6 +2937,7 @@ class FoldersCompanion extends UpdateCompanion<Folder> {
           ..write('hlc: $hlc, ')
           ..write('cloudSyncStatus: $cloudSyncStatus, ')
           ..write('localSyncStatus: $localSyncStatus, ')
+          ..write('isHardDeleted: $isHardDeleted, ')
           ..write('creationPlatform: $creationPlatform, ')
           ..write('creationDevice: $creationDevice, ')
           ..write('lastEditedPlatform: $lastEditedPlatform, ')
@@ -4452,7 +4560,7 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
   );
   late final Index idxNotesActive = Index(
     'idx_notes_active',
-    'CREATE INDEX idx_notes_active ON notes (deleted_at, archived_at)',
+    'CREATE INDEX idx_notes_active ON notes (deleted_at, archived_at, is_hard_deleted)',
   );
   late final Index idxNotesFolder = Index(
     'idx_notes_folder',
@@ -4468,7 +4576,7 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
   );
   late final Index idxFoldersActive = Index(
     'idx_folders_active',
-    'CREATE INDEX idx_folders_active ON folders (deleted_at)',
+    'CREATE INDEX idx_folders_active ON folders (deleted_at, is_hard_deleted)',
   );
   late final Index idxFoldersHlc = Index(
     'idx_folders_hlc',
@@ -4539,6 +4647,7 @@ typedef $$NotesTableCreateCompanionBuilder =
       Value<String?> hlc,
       Value<int> cloudSyncStatus,
       Value<int> localSyncStatus,
+      Value<bool> isHardDeleted,
       Value<String?> creationPlatform,
       Value<String?> creationDevice,
       Value<String?> lastEditedPlatform,
@@ -4575,6 +4684,7 @@ typedef $$NotesTableUpdateCompanionBuilder =
       Value<String?> hlc,
       Value<int> cloudSyncStatus,
       Value<int> localSyncStatus,
+      Value<bool> isHardDeleted,
       Value<String?> creationPlatform,
       Value<String?> creationDevice,
       Value<String?> lastEditedPlatform,
@@ -4720,6 +4830,11 @@ class $$NotesTableFilterComposer
 
   ColumnFilters<int> get localSyncStatus => $composableBuilder(
     column: $table.localSyncStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isHardDeleted => $composableBuilder(
+    column: $table.isHardDeleted,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4893,6 +5008,11 @@ class $$NotesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isHardDeleted => $composableBuilder(
+    column: $table.isHardDeleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get creationPlatform => $composableBuilder(
     column: $table.creationPlatform,
     builder: (column) => ColumnOrderings(column),
@@ -5037,6 +5157,11 @@ class $$NotesTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<bool> get isHardDeleted => $composableBuilder(
+    column: $table.isHardDeleted,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get creationPlatform => $composableBuilder(
     column: $table.creationPlatform,
     builder: (column) => column,
@@ -5122,6 +5247,7 @@ class $$NotesTableTableManager
                 Value<String?> hlc = const Value.absent(),
                 Value<int> cloudSyncStatus = const Value.absent(),
                 Value<int> localSyncStatus = const Value.absent(),
+                Value<bool> isHardDeleted = const Value.absent(),
                 Value<String?> creationPlatform = const Value.absent(),
                 Value<String?> creationDevice = const Value.absent(),
                 Value<String?> lastEditedPlatform = const Value.absent(),
@@ -5156,6 +5282,7 @@ class $$NotesTableTableManager
                 hlc: hlc,
                 cloudSyncStatus: cloudSyncStatus,
                 localSyncStatus: localSyncStatus,
+                isHardDeleted: isHardDeleted,
                 creationPlatform: creationPlatform,
                 creationDevice: creationDevice,
                 lastEditedPlatform: lastEditedPlatform,
@@ -5192,6 +5319,7 @@ class $$NotesTableTableManager
                 Value<String?> hlc = const Value.absent(),
                 Value<int> cloudSyncStatus = const Value.absent(),
                 Value<int> localSyncStatus = const Value.absent(),
+                Value<bool> isHardDeleted = const Value.absent(),
                 Value<String?> creationPlatform = const Value.absent(),
                 Value<String?> creationDevice = const Value.absent(),
                 Value<String?> lastEditedPlatform = const Value.absent(),
@@ -5226,6 +5354,7 @@ class $$NotesTableTableManager
                 hlc: hlc,
                 cloudSyncStatus: cloudSyncStatus,
                 localSyncStatus: localSyncStatus,
+                isHardDeleted: isHardDeleted,
                 creationPlatform: creationPlatform,
                 creationDevice: creationDevice,
                 lastEditedPlatform: lastEditedPlatform,
@@ -5270,6 +5399,7 @@ typedef $$FoldersTableCreateCompanionBuilder =
       Value<String?> hlc,
       Value<int> cloudSyncStatus,
       Value<int> localSyncStatus,
+      Value<bool> isHardDeleted,
       Value<String?> creationPlatform,
       Value<String?> creationDevice,
       Value<String?> lastEditedPlatform,
@@ -5292,6 +5422,7 @@ typedef $$FoldersTableUpdateCompanionBuilder =
       Value<String?> hlc,
       Value<int> cloudSyncStatus,
       Value<int> localSyncStatus,
+      Value<bool> isHardDeleted,
       Value<String?> creationPlatform,
       Value<String?> creationDevice,
       Value<String?> lastEditedPlatform,
@@ -5367,6 +5498,11 @@ class $$FoldersTableFilterComposer
 
   ColumnFilters<int> get localSyncStatus => $composableBuilder(
     column: $table.localSyncStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isHardDeleted => $composableBuilder(
+    column: $table.isHardDeleted,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5470,6 +5606,11 @@ class $$FoldersTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isHardDeleted => $composableBuilder(
+    column: $table.isHardDeleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get creationPlatform => $composableBuilder(
     column: $table.creationPlatform,
     builder: (column) => ColumnOrderings(column),
@@ -5554,6 +5695,11 @@ class $$FoldersTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<bool> get isHardDeleted => $composableBuilder(
+    column: $table.isHardDeleted,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get creationPlatform => $composableBuilder(
     column: $table.creationPlatform,
     builder: (column) => column,
@@ -5625,6 +5771,7 @@ class $$FoldersTableTableManager
                 Value<String?> hlc = const Value.absent(),
                 Value<int> cloudSyncStatus = const Value.absent(),
                 Value<int> localSyncStatus = const Value.absent(),
+                Value<bool> isHardDeleted = const Value.absent(),
                 Value<String?> creationPlatform = const Value.absent(),
                 Value<String?> creationDevice = const Value.absent(),
                 Value<String?> lastEditedPlatform = const Value.absent(),
@@ -5645,6 +5792,7 @@ class $$FoldersTableTableManager
                 hlc: hlc,
                 cloudSyncStatus: cloudSyncStatus,
                 localSyncStatus: localSyncStatus,
+                isHardDeleted: isHardDeleted,
                 creationPlatform: creationPlatform,
                 creationDevice: creationDevice,
                 lastEditedPlatform: lastEditedPlatform,
@@ -5667,6 +5815,7 @@ class $$FoldersTableTableManager
                 Value<String?> hlc = const Value.absent(),
                 Value<int> cloudSyncStatus = const Value.absent(),
                 Value<int> localSyncStatus = const Value.absent(),
+                Value<bool> isHardDeleted = const Value.absent(),
                 Value<String?> creationPlatform = const Value.absent(),
                 Value<String?> creationDevice = const Value.absent(),
                 Value<String?> lastEditedPlatform = const Value.absent(),
@@ -5687,6 +5836,7 @@ class $$FoldersTableTableManager
                 hlc: hlc,
                 cloudSyncStatus: cloudSyncStatus,
                 localSyncStatus: localSyncStatus,
+                isHardDeleted: isHardDeleted,
                 creationPlatform: creationPlatform,
                 creationDevice: creationDevice,
                 lastEditedPlatform: lastEditedPlatform,

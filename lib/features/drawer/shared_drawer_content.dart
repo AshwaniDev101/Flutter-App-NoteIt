@@ -416,13 +416,18 @@ class _DrawerAuthHeaderWidgetState extends ConsumerState<_DrawerAuthHeaderWidget
               child: InkWell(
                 borderRadius: BorderRadius.circular(14),
                 onTap: () async {
-                  final authRepo = ref.read(authRepositoryProvider);
-                  final signedInUser = await authRepo.signInWithGoogle();
-                  if (signedInUser != null) {
-                    SnackBarManager.show(
-                      msg: 'Signed in as ${signedInUser.email}',
-                      type: SnackBarMessageType.acknowledgment,
-                    );
+                  final success = await ref
+                      .read(syncModeProvider.notifier)
+                      .requestModeChange(SyncMode.cloud);
+                  if (success) {
+                    ref.read(syncOrchestratorProvider).triggerSync();
+                    final signedInUser = ref.read(authRepositoryProvider).currentUser;
+                    if (signedInUser != null) {
+                      SnackBarManager.show(
+                        msg: 'Signed in as ${signedInUser.email}',
+                        type: SnackBarMessageType.acknowledgment,
+                      );
+                    }
                   }
                 },
                 child: Padding(

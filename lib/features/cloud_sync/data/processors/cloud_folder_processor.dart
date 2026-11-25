@@ -32,8 +32,16 @@ class CloudFolderProcessor extends CloudEntityProcessor {
         return 0;
       }
 
-      final folderMaps = pendingFolders.map((f) => f.toJson()).toList();
-      await firebaseDb.pushBatch('folders', folderMaps, targetWorkspaceId: targetWorkspaceId);
+      final activePending = pendingFolders.where((f) => !f.isHardDeleted).map((f) => f.toJson()).toList();
+      final tombstonePending = pendingFolders.where((f) => f.isHardDeleted).map((f) => f.toJson()).toList();
+
+      if (activePending.isNotEmpty) {
+        await firebaseDb.pushBatch('folders', activePending, targetWorkspaceId: targetWorkspaceId);
+      }
+      if (tombstonePending.isNotEmpty) {
+        await firebaseDb.pushTombstones('folders', tombstonePending, targetWorkspaceId: targetWorkspaceId);
+      }
+
       await foldersDao.markAsCloudSynced(pendingFolders.map((f) => f.uuid));
       AppLogger.d('CloudFolderProcessor: Pushed ${pendingFolders.length} pending folders for workspace $wsId.');
       return pendingFolders.length;

@@ -100,6 +100,11 @@ class WorkspaceRepository {
     return List.unmodifiable(list);
   }
 
+  /// Returns an unmodifiable list of ALL workspaces including soft-deleted tombstones (used for cloud sync).
+  List<Workspace> getAllWorkspaces() {
+    return List.unmodifiable(_workspaces);
+  }
+
   /// Retrieves a specific workspace by its [id].
   Workspace? getWorkspaceById(String id) {
     try {

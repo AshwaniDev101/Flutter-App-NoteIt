@@ -136,12 +136,12 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
     return select(notes).watch();
   }
 
-  /// Stream the total count of active (non-deleted, non-archived) notes across all folders.
+  /// Stream the total count of active (non-deleted, non-archived, non-tombstone) notes across all folders.
   Stream<int> watchActiveNotesCount() {
     final countExpression = notes.uuid.count();
     final query = selectOnly(notes)
       ..addColumns([countExpression])
-      ..where(notes.deletedAt.isNull() & notes.archivedAt.isNull());
+      ..where(notes.deletedAt.isNull() & notes.archivedAt.isNull() & notes.isHardDeleted.equals(false));
 
     return query.watchSingle().map((row) => row.read(countExpression) ?? 0);
   }
@@ -155,7 +155,7 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
       leftOuterJoin(folders, folders.uuid.equalsExp(notes.folderId)),
     ]);
 
-    query.where(notes.deletedAt.isNull() & notes.archivedAt.isNull());
+    query.where(notes.deletedAt.isNull() & notes.archivedAt.isNull() & notes.isHardDeleted.equals(false));
 
     query.orderBy([
       // Pinned notes first, newest pinned first
@@ -556,6 +556,30 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
   /// MERGE: Upsert notes pulled down from Firebase OR Local Wi-Fi
   Future<void> upsertNoteFromCloud(Map<String, dynamic> incomingData) async {
     final incomingUuid = incomingData['uuid'] as String;
+    final isHardDeleted = incomingData['isHardDeleted'] as bool? ?? false;
+
+    if (isHardDeleted) {
+      final existingNote = await (select(notes)..where((t) => t.uuid.equals(incomingUuid))).getSingleOrNull();
+      if (existingNote != null) {
+        final incomingUpdateCounter = incomingData['updateCounter'] as int? ?? 1;
+        final incomingUpdatedAt = _parseNetworkTimestamp(incomingData['updatedAt']) ?? DateTime.now().toUtc();
+        final incomingHlc = incomingData['hlc'] as String?;
+
+        if (_shouldOverwriteLocalNote(
+          incomingUpdateCounter: incomingUpdateCounter,
+          incomingUpdatedAt: incomingUpdatedAt,
+          incomingHlc: incomingHlc,
+          existingNote: existingNote,
+        )) {
+          await deleteNote(incomingUuid);
+          AppLogger.d("NotesDao: Hard-deleted local note $incomingUuid due to incoming cloud tombstone.");
+        } else {
+          AppLogger.d("NotesDao: Ignored incoming cloud tombstone for note $incomingUuid. Local edits are newer.");
+        }
+      }
+      return;
+    }
+
     final incomingUpdatedAt = _parseNetworkTimestamp(incomingData['updatedAt']) ?? DateTime.now().toUtc();
 
     final noteCompanion = NotesCompanion(
@@ -597,6 +621,30 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
   /// MERGE: Upsert notes pulled down from Local Wi-Fi
   Future<void> upsertNoteFromLocal(Map<String, dynamic> incomingData) async {
     final incomingUuid = incomingData['uuid'] as String;
+    final isHardDeleted = incomingData['isHardDeleted'] as bool? ?? false;
+
+    if (isHardDeleted) {
+      final existingNote = await (select(notes)..where((t) => t.uuid.equals(incomingUuid))).getSingleOrNull();
+      if (existingNote != null) {
+        final incomingUpdateCounter = incomingData['updateCounter'] as int? ?? 1;
+        final incomingUpdatedAt = _parseNetworkTimestamp(incomingData['updatedAt']) ?? DateTime.now().toUtc();
+        final incomingHlc = incomingData['hlc'] as String?;
+
+        if (_shouldOverwriteLocalNote(
+          incomingUpdateCounter: incomingUpdateCounter,
+          incomingUpdatedAt: incomingUpdatedAt,
+          incomingHlc: incomingHlc,
+          existingNote: existingNote,
+        )) {
+          await deleteNote(incomingUuid);
+          AppLogger.d("NotesDao: Hard-deleted local note $incomingUuid due to incoming local Wi-Fi tombstone.");
+        } else {
+          AppLogger.d("NotesDao: Ignored incoming local Wi-Fi tombstone for note $incomingUuid. Local edits are newer.");
+        }
+      }
+      return;
+    }
+
     final incomingUpdatedAt = _parseNetworkTimestamp(incomingData['updatedAt']) ?? DateTime.now().toUtc();
 
     final noteCompanion = NotesCompanion(
@@ -690,19 +738,56 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
 
   /// CONFIRM CLOUD: Mark notes as successfully pushed to Firebase
   Future<void> markAsCloudSynced(Iterable<String> uuids) async {
-    await (update(notes)..where((t) => t.uuid.isIn(uuids))).write(const NotesCompanion(cloudSyncStatus: Value(1)));
+    if (uuids.isEmpty) return;
+    await transaction(() async {
+      await (update(notes)..where((t) => t.uuid.isIn(uuids))).write(const NotesCompanion(cloudSyncStatus: Value(1)));
+      await (delete(notes)..where((t) => t.uuid.isIn(uuids) & t.isHardDeleted.equals(true))).go();
+    });
   }
 
   /// CONFIRM LOCAL: Mark notes as successfully pushed over Wi-Fi
   Future<void> markAsLocalSynced(Iterable<String> uuids) async {
-    await (update(notes)..where((t) => t.uuid.isIn(uuids))).write(const NotesCompanion(localSyncStatus: Value(1)));
+    if (uuids.isEmpty) return;
+    await transaction(() async {
+      await (update(notes)..where((t) => t.uuid.isIn(uuids))).write(const NotesCompanion(localSyncStatus: Value(1)));
+      await (delete(notes)..where((t) => t.uuid.isIn(uuids) & t.isHardDeleted.equals(true))).go();
+    });
+  }
+
+  /// MARKS NOTES AS HARD-DELETED TOMBSTONES FOR SYNC
+  Future<void> markAsPendingTombstone(Iterable<String> uuids) async {
+    if (uuids.isEmpty) return;
+    await transaction(() async {
+      final targetNotes = await (select(notes)..where((t) => t.uuid.isIn(uuids))).get();
+      final now = DateTime.now().toUtc();
+
+      for (final note in targetNotes) {
+        final newCounter = note.updateCounter + 1;
+        final newHlc = _generateHlc(counter: newCounter, lastKnownTime: now);
+
+        await (update(notes)..where((t) => t.uuid.equals(note.uuid))).write(
+          NotesCompanion.custom(
+            content: const Variable(''),
+            encryptedPayload: const Variable(null),
+            encryptionIv: const Variable(null),
+            isHardDeleted: const Variable(true),
+            cloudSyncStatus: const Variable(0),
+            localSyncStatus: const Variable(0),
+            updatedAt: Variable(now),
+            updateCounter: Variable(newCounter),
+            hlc: Variable(newHlc),
+          ),
+        );
+      }
+      AppLogger.d("NotesDao: Marked ${targetNotes.length} notes as pending tombstones (uuids: $uuids)");
+    });
   }
 
   // =========================================================================
   // TRASH PAGE METHODS
   // =========================================================================
 
-  /// VIEW TRASH: Watch only notes that have a deletedAt timestamp
+  /// VIEW TRASH: Watch only notes that have a deletedAt timestamp and are not hard-deleted
 
   Stream<List<NoteWithFolder>> watchTrashNotes() {
     final query = select(notes).join([
@@ -710,7 +795,7 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
     ]);
 
     query
-      ..where(notes.deletedAt.isNotNull())
+      ..where(notes.deletedAt.isNotNull() & notes.isHardDeleted.equals(false))
       ..orderBy([OrderingTerm(expression: notes.deletedAt, mode: OrderingMode.desc)]);
 
     return query.watch().map((rows) => rows.map((row) => NoteWithFolder(
@@ -861,7 +946,7 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
     });
   }
 
-  /// VIEW ARCHIVE: Watch only notes that are archived and not in the trash
+  /// VIEW ARCHIVE: Watch only notes that are archived and not in the trash or hard-deleted
 
   Stream<List<NoteWithFolder>> watchArchivedNotes() {
     final query = select(notes).join([
@@ -869,7 +954,7 @@ class NotesDao extends DatabaseAccessor<LocalDatabase> with _$NotesDaoMixin {
     ]);
 
     query
-      ..where(notes.archivedAt.isNotNull() & notes.deletedAt.isNull())
+      ..where(notes.archivedAt.isNotNull() & notes.deletedAt.isNull() & notes.isHardDeleted.equals(false))
       ..orderBy([OrderingTerm(expression: notes.updatedAt, mode: OrderingMode.desc)]);
 
     return query.watch().map((rows) => rows.map((row) => NoteWithFolder(

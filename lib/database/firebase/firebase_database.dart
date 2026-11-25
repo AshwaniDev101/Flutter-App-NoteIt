@@ -152,6 +152,42 @@ class NoteFirestoreDatabase {
     }
   }
 
+  /// PUSH TOMBSTONES: Write soft-tombstone payloads for permanently deleted items to Firestore
+  Future<void> pushTombstones(
+    String collectionName,
+    List<Map<String, dynamic>> tombstoneItems, {
+    String? targetWorkspaceId,
+  }) async {
+    if (tombstoneItems.isEmpty) return;
+
+    final ref = _collectionRef(collectionName, targetWorkspaceId: targetWorkspaceId);
+    final activeWsId = targetWorkspaceId ?? workspaceId;
+    final expireAt = Timestamp.fromDate(DateTime.now().toUtc().add(const Duration(days: 365)));
+
+    for (var i = 0; i < tombstoneItems.length; i += 500) {
+      final chunk = tombstoneItems.sublist(i, i + 500 > tombstoneItems.length ? tombstoneItems.length : i + 500);
+      final batch = _firestore.batch();
+
+      for (final item in chunk) {
+        final docUuid = item['uuid'] as String;
+        final docRef = ref.doc(docUuid);
+
+        final tombstoneData = <String, dynamic>{
+          'uuid': docUuid,
+          'isHardDeleted': true,
+          'hlc': item['hlc'],
+          'cloudUpdatedAt': FieldValue.serverTimestamp(),
+          'expireAt': expireAt,
+        };
+
+        batch.set(docRef, tombstoneData, SetOptions(merge: true));
+      }
+
+      await batch.commit();
+      AppLogger.d("NoteFirestoreDatabase: Pushed ${chunk.length} '$collectionName' tombstones for workspace $activeWsId.");
+    }
+  }
+
   /// PUSH MANIFEST: Push workspace manifest items to /users/{userId}/workspaces_manifest
   Future<void> pushWorkspaceManifest(List<Map<String, dynamic>> workspaceItems) async {
     if (workspaceItems.isEmpty) return;

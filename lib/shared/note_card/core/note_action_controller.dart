@@ -5,7 +5,6 @@ import 'package:drift/drift.dart';
 import 'package:noteit/core/sync/sync_orchestrator.dart';
 import 'package:noteit/core/util/logger.dart';
 import 'package:noteit/database/drift/local_database.dart';
-import 'package:noteit/database/firebase/firebase_database.dart';
 import 'package:noteit/features/home/core/providers.dart';
 import 'package:noteit/features/lock/lock_manger/lock_manager.dart';
 
@@ -170,7 +169,9 @@ class NoteActionsController {
 
   /// Permanently deletes a list of notes.
   Future<void> deleteForever(List<String> uuids) async {
-    await db.notesDao.hardDeleteNotesBatch(uuids);
+    if (uuids.isEmpty) return;
+
+    await db.notesDao.markAsPendingTombstone(uuids);
     AppLogger.d('NoteActionsController: Permanently deleted notes ($uuids)');
     ref.read(syncOrchestratorProvider).triggerSync();
     _clearActiveNoteIfAffected(uuids);
@@ -178,17 +179,17 @@ class NoteActionsController {
 
   /// Empties local notes and folders trash, and purges corresponding Firestore entries if online.
   Future<void> emptyLocalAndCloudTrash() async {
-    final cloudNoteIdsToDelete = await db.notesDao.emptyLocalTrash();
-    final cloudFolderIdsToDelete = await db.foldersDao.emptyLocalFolderTrash();
+    final trashedNotes = await (db.select(db.notes)..where((t) => t.deletedAt.isNotNull())).get();
+    final cloudNoteIdsToDelete = trashedNotes.map((n) => n.uuid).toList();
 
-    final firebaseDb = ref.read(noteFirebaseDatabaseProvider);
-    if (firebaseDb != null) {
-      if (cloudNoteIdsToDelete.isNotEmpty) {
-        await firebaseDb.deleteBatch('notes', cloudNoteIdsToDelete);
-      }
-      if (cloudFolderIdsToDelete.isNotEmpty) {
-        await firebaseDb.deleteBatch('folders', cloudFolderIdsToDelete);
-      }
+    final trashedFolders = await (db.select(db.folders)..where((t) => t.deletedAt.isNotNull())).get();
+    final cloudFolderIdsToDelete = trashedFolders.map((f) => f.uuid).toList();
+
+    if (cloudNoteIdsToDelete.isNotEmpty) {
+      await db.notesDao.markAsPendingTombstone(cloudNoteIdsToDelete);
+    }
+    if (cloudFolderIdsToDelete.isNotEmpty) {
+      await db.foldersDao.markFolderAsPendingTombstone(cloudFolderIdsToDelete);
     }
 
     AppLogger.d('NoteActionsController: Emptied local and cloud trash');
@@ -204,22 +205,10 @@ class NoteActionsController {
     final foldersList = folderUuids?.toList() ?? [];
 
     if (notesList.isNotEmpty) {
-      await db.notesDao.hardDeleteNotesBatch(notesList);
+      await db.notesDao.markAsPendingTombstone(notesList);
     }
     if (foldersList.isNotEmpty) {
-      for (final uuid in foldersList) {
-        await db.foldersDao.hardDeleteFolder(uuid);
-      }
-    }
-
-    final firebaseDb = ref.read(noteFirebaseDatabaseProvider);
-    if (firebaseDb != null) {
-      if (notesList.isNotEmpty) {
-        await firebaseDb.deleteBatch('notes', notesList);
-      }
-      if (foldersList.isNotEmpty) {
-        await firebaseDb.deleteBatch('folders', foldersList);
-      }
+      await db.foldersDao.markFolderAsPendingTombstone(foldersList);
     }
 
     AppLogger.d('NoteActionsController: Hard deleted ${notesList.length} notes and ${foldersList.length} folders');

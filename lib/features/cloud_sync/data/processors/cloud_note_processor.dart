@@ -33,8 +33,16 @@ class CloudNoteProcessor extends CloudEntityProcessor {
         return 0;
       }
 
-      final noteMaps = pendingNotes.map((n) => n.toJson()).toList();
-      await firebaseDb.pushBatch('notes', noteMaps, targetWorkspaceId: targetWorkspaceId);
+      final activePending = pendingNotes.where((n) => !n.isHardDeleted).map((n) => n.toJson()).toList();
+      final tombstonePending = pendingNotes.where((n) => n.isHardDeleted).map((n) => n.toJson()).toList();
+
+      if (activePending.isNotEmpty) {
+        await firebaseDb.pushBatch('notes', activePending, targetWorkspaceId: targetWorkspaceId);
+      }
+      if (tombstonePending.isNotEmpty) {
+        await firebaseDb.pushTombstones('notes', tombstonePending, targetWorkspaceId: targetWorkspaceId);
+      }
+
       await notesDao.markAsCloudSynced(pendingNotes.map((n) => n.uuid));
       AppLogger.d('CloudNoteProcessor: Pushed ${pendingNotes.length} pending notes for workspace $wsId.');
       return pendingNotes.length;

@@ -207,14 +207,51 @@ class FoldersDao extends DatabaseAccessor<LocalDatabase> with _$FoldersDaoMixin 
 
   Future<void> markAsCloudSynced(Iterable<String> uuids) async {
     if (uuids.isEmpty) return;
-    await (update(folders)..where((t) => t.uuid.isIn(uuids)))
-        .write(const FoldersCompanion(cloudSyncStatus: Value(1)));
+    await transaction(() async {
+      await (update(folders)..where((t) => t.uuid.isIn(uuids)))
+          .write(const FoldersCompanion(cloudSyncStatus: Value(1)));
+      await (delete(folders)..where((t) => t.uuid.isIn(uuids) & t.isHardDeleted.equals(true))).go();
+    });
   }
 
   Future<void> markAsLocalSynced(Iterable<String> uuids) async {
     if (uuids.isEmpty) return;
-    await (update(folders)..where((t) => t.uuid.isIn(uuids)))
-        .write(const FoldersCompanion(localSyncStatus: Value(1)));
+    await transaction(() async {
+      await (update(folders)..where((t) => t.uuid.isIn(uuids)))
+          .write(const FoldersCompanion(localSyncStatus: Value(1)));
+      await (delete(folders)..where((t) => t.uuid.isIn(uuids) & t.isHardDeleted.equals(true))).go();
+    });
+  }
+
+  /// MARKS FOLDERS AS HARD-DELETED TOMBSTONES FOR SYNC
+  Future<void> markFolderAsPendingTombstone(Iterable<String> uuids) async {
+    if (uuids.isEmpty) return;
+    await transaction(() async {
+      final targetFolders = await (select(folders)..where((t) => t.uuid.isIn(uuids))).get();
+      final now = DateTime.now().toUtc();
+
+      for (final folder in targetFolders) {
+        final newCounter = folder.updateCounter + 1;
+        final newHlc = _generateHlc(counter: newCounter, lastKnownTime: now);
+
+        await (update(folders)..where((t) => t.uuid.equals(folder.uuid))).write(
+          FoldersCompanion.custom(
+            isHardDeleted: const Variable(true),
+            cloudSyncStatus: const Variable(0),
+            localSyncStatus: const Variable(0),
+            updatedAt: Variable(now),
+            updateCounter: Variable(newCounter),
+            hlc: Variable(newHlc),
+          ),
+        );
+
+        // Unassign any notes referencing this folder
+        await (update(notes)..where((t) => t.folderId.equals(folder.uuid))).write(
+          const NotesCompanion(folderId: Value(null)),
+        );
+      }
+      AppLogger.d("FoldersDao: Marked ${targetFolders.length} folders as pending tombstones (uuids: $uuids)");
+    });
   }
 
   Future<void> upsertFolderFromLocal(Map<String, dynamic> incomingData) async {
@@ -256,6 +293,30 @@ class FoldersDao extends DatabaseAccessor<LocalDatabase> with _$FoldersDaoMixin 
 
   Future<void> _upsertFolder(Map<String, dynamic> incomingData, {required bool isCloud}) async {
     final incomingUuid = incomingData['uuid'] as String;
+    final isHardDeleted = incomingData['isHardDeleted'] as bool? ?? false;
+
+    if (isHardDeleted) {
+      final existingFolder = await (select(folders)..where((t) => t.uuid.equals(incomingUuid))).getSingleOrNull();
+      if (existingFolder != null) {
+        final incomingUpdateCounter = incomingData['updateCounter'] as int? ?? 1;
+        final incomingUpdatedAt = _parseNetworkTimestamp(incomingData['updatedAt']) ?? DateTime.now().toUtc();
+        final incomingHlc = incomingData['hlc'] as String?;
+
+        if (_shouldOverwriteLocalFolder(
+          incomingUpdateCounter: incomingUpdateCounter,
+          incomingUpdatedAt: incomingUpdatedAt,
+          incomingHlc: incomingHlc,
+          existingFolder: existingFolder,
+        )) {
+          await hardDeleteFolder(incomingUuid);
+          AppLogger.d("FoldersDao: Hard-deleted local folder $incomingUuid due to incoming cloud tombstone.");
+        } else {
+          AppLogger.d("FoldersDao: Ignored incoming cloud tombstone for folder $incomingUuid. Local edits are newer.");
+        }
+      }
+      return;
+    }
+
     final incomingUpdatedAt = _parseNetworkTimestamp(incomingData['updatedAt']) ?? DateTime.now().toUtc();
 
     final companion = FoldersCompanion(
@@ -305,12 +366,9 @@ class FoldersDao extends DatabaseAccessor<LocalDatabase> with _$FoldersDaoMixin 
 
     // If folder is soft-deleted, unassign any local notes referencing this folder
     if (companion.deletedAt.present && companion.deletedAt.value != null) {
-      final affectedNotes = await (select(notes)..where((t) => t.folderId.equals(incomingUuid))).get();
-      for (final note in affectedNotes) {
-        await (update(notes)..where((t) => t.uuid.equals(note.uuid))).write(
-          const NotesCompanion(folderId: Value(null)),
-        );
-      }
+      await (update(notes)..where((t) => t.folderId.equals(incomingUuid))).write(
+        const NotesCompanion(folderId: Value(null)),
+      );
     }
   }
 
@@ -331,7 +389,7 @@ class FoldersDao extends DatabaseAccessor<LocalDatabase> with _$FoldersDaoMixin 
 
   Stream<List<Folder>> watchTrashFolders() {
     return (select(folders)
-          ..where((t) => t.deletedAt.isNotNull())
+          ..where((t) => t.deletedAt.isNotNull() & t.isHardDeleted.equals(false))
           ..orderBy([(t) => OrderingTerm(expression: t.deletedAt, mode: OrderingMode.desc)]))
         .watch();
   }
@@ -358,7 +416,12 @@ class FoldersDao extends DatabaseAccessor<LocalDatabase> with _$FoldersDaoMixin 
   }
 
   Future<int> hardDeleteFolder(String uuid) async {
-    return await (delete(folders)..where((t) => t.uuid.equals(uuid))).go();
+    return await transaction(() async {
+      await (update(notes)..where((t) => t.folderId.equals(uuid))).write(
+        const NotesCompanion(folderId: Value(null)),
+      );
+      return await (delete(folders)..where((t) => t.uuid.equals(uuid))).go();
+    });
   }
 
   Future<List<String>> emptyLocalFolderTrash() async {

@@ -3,7 +3,7 @@ import 'package:uuid/uuid.dart';
 
 // --- PERFORMANCE INDEXES ---
 @TableIndex(name: 'idx_folders_updated_at', columns: {#updatedAt})
-@TableIndex(name: 'idx_folders_active', columns: {#deletedAt})
+@TableIndex(name: 'idx_folders_active', columns: {#deletedAt, #isHardDeleted})
 @TableIndex(name: 'idx_folders_hlc', columns: {#hlc})
 class Folders extends Table {
   // PRIMARY KEY
@@ -32,6 +32,9 @@ class Folders extends Table {
   // SYNC STATUS (0 = synced, 1 = pending)
   IntColumn get cloudSyncStatus => integer().withDefault(const Constant(0))();
   IntColumn get localSyncStatus => integer().withDefault(const Constant(0))();
+
+  // TOMBSTONE STATUS FOR PERMANENT DELETION SYNC
+  BoolColumn get isHardDeleted => boolean().withDefault(const Constant(false))();
 
   // METADATA
   TextColumn get creationPlatform => text().nullable()();

@@ -439,13 +439,15 @@ class _WorkspaceMenuContentState extends ConsumerState<WorkspaceMenuContent> {
   Future<void> _handleSignIn(BuildContext context) async {
     widget.onCloseMenu();
 
-    final authRepo = ref.read(authRepositoryProvider);
-    final signedInUser = await authRepo.signInWithGoogle();
+    final success = await ref
+        .read(syncModeProvider.notifier)
+        .requestModeChange(SyncMode.cloud);
 
-    if (signedInUser != null) {
+    if (success) {
       ref.read(syncOrchestratorProvider).triggerSync();
+      final signedInUser = ref.read(authRepositoryProvider).currentUser;
       SnackBarManager.show(
-        msg: 'Signed in as ${signedInUser.email ?? "Google User"}.',
+        msg: 'Signed in as ${signedInUser?.email ?? "Google User"}.',
         type: SnackBarMessageType.acknowledgment,
       );
     }

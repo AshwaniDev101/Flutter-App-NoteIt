@@ -28,7 +28,7 @@ class CloudWorkspaceProcessor extends CloudEntityProcessor {
   Future<int> pushPendingChanges(NoteFirestoreDatabase firebaseDb, {String? targetWorkspaceId}) async {
     try {
       final repo = WorkspaceRepository.instance;
-      final localWorkspaces = repo.getWorkspaces();
+      final localWorkspaces = repo.getAllWorkspaces();
       if (localWorkspaces.isEmpty) return 0;
 
       final prefs = ref.read(sharedPreferenceProvider);

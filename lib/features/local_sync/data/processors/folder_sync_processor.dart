@@ -26,7 +26,19 @@ class FolderSyncProcessor extends SyncEntityProcessor {
     final pendingFolders = (peerLastSyncedHlc != null && peerLastSyncedHlc.isNotEmpty)
         ? await foldersDao.getFoldersModifiedSince(peerLastSyncedHlc)
         : await foldersDao.getPendingLocalFolders();
-    return pendingFolders.map((folder) => folder.toJson()).toList();
+    return pendingFolders.map((folder) {
+      if (folder.isHardDeleted) {
+        return {
+          'uuid': folder.uuid,
+          'isHardDeleted': true,
+          'name': '',
+          'hlc': folder.hlc,
+          'updateCounter': folder.updateCounter,
+          'updatedAt': folder.updatedAt.toIso8601String(),
+        };
+      }
+      return folder.toJson();
+    }).toList();
   }
 
   @override

@@ -129,7 +129,7 @@ class SyncModeNotifier extends Notifier<SyncMode> {
 
     final authRepo = ref.read(authRepositoryProvider);
 
-    if (authRepo.isSignedIn && authRepo.currentUser?.email != null) {
+    if (authRepo.isSignedIn && authRepo.currentUser != null) {
       await setMode(SyncMode.cloud);
       return true;
     }
@@ -138,7 +138,7 @@ class SyncModeNotifier extends Notifier<SyncMode> {
     final result = await authRepo.signInWithGoogleDetails();
     final user = result.user;
 
-    if (user != null && user.email != null) {
+    if (user != null) {
       await setMode(SyncMode.cloud);
       AppLogger.d("SyncModeNotifier: Google Sign-In successful. Switching to Cloud Mode.");
       return true;

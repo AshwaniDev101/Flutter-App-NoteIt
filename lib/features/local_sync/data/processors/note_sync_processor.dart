@@ -26,7 +26,20 @@ class NoteSyncProcessor extends SyncEntityProcessor {
     final pendingNotes = (peerLastSyncedHlc != null && peerLastSyncedHlc.isNotEmpty)
         ? await notesDao.getNotesModifiedSince(peerLastSyncedHlc)
         : await notesDao.getPendingLocalNotes();
-    return pendingNotes.map((note) => note.toJson()).toList();
+    return pendingNotes.map((note) {
+      if (note.isHardDeleted) {
+        return {
+          'uuid': note.uuid,
+          'isHardDeleted': true,
+          'title': '',
+          'content': '',
+          'hlc': note.hlc,
+          'updateCounter': note.updateCounter,
+          'updatedAt': note.updatedAt.toIso8601String(),
+        };
+      }
+      return note.toJson();
+    }).toList();
   }
 
   @override

@@ -20,7 +20,7 @@ import 'package:uuid/uuid.dart';
 // We index our heaviest queries: opening a folder (folder_id), finding
 // notes that need to be synced (updated_at), and filtering out trash (deleted_at).
 @TableIndex(name: 'idx_notes_updated_at', columns: {#updatedAt})
-@TableIndex(name: 'idx_notes_active', columns: {#deletedAt, #archivedAt})
+@TableIndex(name: 'idx_notes_active', columns: {#deletedAt, #archivedAt, #isHardDeleted})
 @TableIndex(name: 'idx_notes_folder', columns: {#folderId})
 @TableIndex(name: 'idx_notes_hlc', columns: {#hlc})
 class Notes extends Table {
@@ -108,6 +108,9 @@ class Notes extends Table {
   IntColumn get cloudSyncStatus => integer().withDefault(const Constant(0))();
 
   IntColumn get localSyncStatus => integer().withDefault(const Constant(0))();
+
+  // TOMBSTONE STATUS FOR PERMANENT DELETION SYNC
+  BoolColumn get isHardDeleted => boolean().withDefault(const Constant(false))();
 
   // METADATA (Debugging tools)
   // Helps track down sync bugs in edge cases (e.g., "Why did this note delete? Ah, Windows did it.")

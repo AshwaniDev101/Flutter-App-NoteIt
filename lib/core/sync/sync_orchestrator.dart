@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/network/network_reachability_service.dart';
@@ -123,12 +124,27 @@ class SyncOrchestrator with WidgetsBindingObserver {
     }
   }
 
+  Timer? _debounceTimer;
+
   // When EditNoteViewModel or manual UI tap calls this, it routes the data to the correct engine.
   void triggerSync({bool isUserInitiated = true}) {
+    if (isUserInitiated) {
+      _debounceTimer?.cancel();
+      _debounceTimer = null;
+      _executeSync(isUserInitiated: true);
+    } else {
+      _debounceTimer?.cancel();
+      _debounceTimer = Timer(const Duration(milliseconds: 500), () {
+        _executeSync(isUserInitiated: false);
+      });
+    }
+  }
+
+  void _executeSync({required bool isUserInitiated}) {
     final mode = ref.read(syncModeProvider);
 
     if (mode.isCloud) {
-      AppLogger.d("SyncOrchestrator: UI triggered sync. Routing to Cloud Engine.");
+      AppLogger.d("SyncOrchestrator: UI triggered sync. Routing to Cloud Engine [isUserInitiated: $isUserInitiated].");
       ref.read(cloudSyncServiceProvider).executeFullSync(isUserInitiated: isUserInitiated);
     } else if (mode.isLocal) {
       AppLogger.d("SyncOrchestrator: UI triggered sync. Routing to Local Wi-Fi Engine.");
@@ -139,6 +155,8 @@ class SyncOrchestrator with WidgetsBindingObserver {
   }
 
   void dispose() {
+    _debounceTimer?.cancel();
+    _debounceTimer = null;
     WidgetsBinding.instance.removeObserver(this);
   }
 }
