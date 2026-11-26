@@ -85,11 +85,34 @@ class LocalSyncSessionManager extends Notifier<LocalSyncSession> {
 
   /// Updates connection status (e.g. ghostDetected, reconnecting, error)
   void updateConnectionState(SyncConnectionState connectionState, {String? errorMessage}) {
-    if (state.connectionState != connectionState || state.errorMessage != errorMessage) {
+    final isTerminal = connectionState == SyncConnectionState.disconnected ||
+        connectionState == SyncConnectionState.ghostDetected ||
+        connectionState == SyncConnectionState.error;
+
+    if (isTerminal) {
+      if (state.connectionState == connectionState &&
+          state.peerUuid == null &&
+          state.errorMessage == errorMessage &&
+          !state.isSyncing) {
+        return; // Already fully reset in terminal state
+      }
+
       state = state.copyWith(
         connectionState: connectionState,
+        peerUuid: null,
+        peerName: null,
+        peerPlatform: null,
+        connectedAt: null,
+        isSyncing: false,
         errorMessage: errorMessage,
       );
+    } else {
+      if (state.connectionState != connectionState || state.errorMessage != errorMessage) {
+        state = state.copyWith(
+          connectionState: connectionState,
+          errorMessage: errorMessage,
+        );
+      }
     }
   }
 

@@ -40,6 +40,7 @@ class LocalSyncNotifier extends Notifier<SyncConnectionState> {
   Completer<bool>? _probeCompleter;
   int _latencyMs = 0;
   bool _isPeerVerified = false;
+  bool _isStopping = false;
 
   int get latencyMs => _latencyMs;
 
@@ -86,11 +87,20 @@ class LocalSyncNotifier extends Notifier<SyncConnectionState> {
   }
 
   void stop({SyncConnectionState reason = SyncConnectionState.disconnected}) {
-    AppLogger.d("LocalSyncService: Shutting down Local Wi-Fi Sync ($reason).");
-    _closeActiveResources();
+    if (_isStopping) return;
+    _isStopping = true;
+    try {
+      AppLogger.d("LocalSyncService: Shutting down Local Wi-Fi Sync ($reason).");
+      _closeActiveResources();
 
-    if (state != reason) {
-      state = reason;
+      if (state != reason) {
+        state = reason;
+      }
+
+      // Propagate connection state to single source of truth (LocalSyncSessionManager)
+      ref.read(localSyncSessionProvider.notifier).updateConnectionState(reason);
+    } finally {
+      _isStopping = false;
     }
   }
 
@@ -107,13 +117,16 @@ class LocalSyncNotifier extends Notifier<SyncConnectionState> {
 
     AppLogger.d("LocalSyncService: Active connection established!");
 
+    final currentChannel = channel;
     _streamSubscription = _activeChannel!.stream.listen(
       (message) => _handleIncomingSyncPayload(message),
       onDone: () {
+        if (_activeChannel != null && _activeChannel != currentChannel) return;
         AppLogger.d("LocalSyncService: Disconnected from peer (stream closed).");
         stop();
       },
       onError: (e) {
+        if (_activeChannel != null && _activeChannel != currentChannel) return;
         AppLogger.e("LocalSyncService: WebSocket Error", error: e);
         stop();
       },

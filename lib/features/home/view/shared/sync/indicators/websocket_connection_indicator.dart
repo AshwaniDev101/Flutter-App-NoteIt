@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/core/helpers/platform_helper.dart';
 import 'package:noteit/core/theme/network_signal_colors.dart';
 import 'package:noteit/features/local_sync/data/network/local_sync_service.dart';
+import 'package:noteit/features/local_sync/data/providers/local_sync_session_manager.dart';
 import 'package:noteit/features/local_sync/data/providers/sync_server_provider.dart';
 
 /// Represents the high-level WebSocket connection lifecycle states.
@@ -56,7 +57,7 @@ class WebSocketConnectionIndicator extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final bool isHosting = ref.watch(syncServerProvider) != null;
-    final SyncConnectionState syncState = ref.watch(localSyncServiceProvider);
+    final SyncConnectionState syncState = ref.watch(localSyncSessionProvider.select((s) => s.connectionState));
 
     final activity = evaluateActivity(isHosting: isHosting, syncState: syncState);
 

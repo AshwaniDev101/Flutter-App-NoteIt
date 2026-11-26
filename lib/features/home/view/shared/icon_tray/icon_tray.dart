@@ -6,7 +6,7 @@ import 'package:noteit/database/firebase/auth/firebase_provider.dart';
 import 'package:noteit/features/home/view/shared/sync/indicators/mdns_host_indicator.dart';
 import 'package:noteit/features/home/view/shared/sync/indicators/mdns_search_indicator.dart';
 import 'package:noteit/features/home/view/shared/sync/indicators/websocket_connection_indicator.dart';
-import 'package:noteit/features/local_sync/data/network/local_sync_service.dart';
+import 'package:noteit/features/local_sync/data/providers/local_sync_session_manager.dart';
 import 'package:noteit/shared/overlays/snack_bar_manager.dart';
 import 'package:noteit/shared/widgets/spinning_icon.dart';
 
@@ -30,7 +30,7 @@ class IconTray extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final syncMode = ref.watch(syncModeProvider);
     final isSyncing = ref.watch(isSyncingProvider);
-    final isLocalConnected = ref.watch(localSyncServiceProvider) == SyncConnectionState.connected;
+    final isLocalConnected = ref.watch(localSyncSessionProvider.select((s) => s.isConnected));
     final isAuthenticated = ref.watch(authStateProvider).value != null;
 
     // --- BUTTON VISIBILITY POLICY ---

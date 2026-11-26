@@ -10,6 +10,7 @@ import 'package:noteit/database/firebase/auth/firebase_provider.dart';
 import 'package:noteit/features/home/view/desktop/content_panel/core/navigator.dart';
 import 'package:noteit/features/local_sync/data/network/local_sync_service.dart';
 import 'package:noteit/features/local_sync/data/network/mdns_searcher.dart';
+import 'package:noteit/features/local_sync/data/providers/local_sync_session_manager.dart';
 import 'package:noteit/features/local_sync/data/providers/sync_server_provider.dart';
 import 'package:noteit/database/drift/synced_devices/synced_devices_dao.dart';
 import 'package:noteit/shared/menus/app_bottom_sheet.dart';
@@ -24,9 +25,16 @@ enum SyncDisplayState {
   offline(
     label: 'Offline',
     icon: Icons.cloud_off,
+    // icon: Icons.wb_cloudy_outlined,
+    // icon: Icons.cloud_done_outlined,
+    // icon: Icons.cloud_off,
+    // icon: Icons.router,
+    // icon: Icons.,
     tooltip: 'Sync is disabled in Offline mode. Tap to select Sync mode.',
     isActionable: true,
   ),
+
+
   unauthenticated(
     label: 'Not Synced',
     icon: Icons.account_circle_outlined,
@@ -264,7 +272,7 @@ SyncDisplayInfo calculateSyncDisplayInfo({
 final syncDisplayInfoProvider = Provider<SyncDisplayInfo>((ref) {
   final syncMode = ref.watch(syncModeProvider);
   final isAuthenticated = ref.watch(authStateProvider.select((a) => a.unwrapPrevious().value != null));
-  final localSyncState = ref.watch(localSyncServiceProvider);
+  final localSyncState = ref.watch(localSyncSessionProvider.select((s) => s.connectionState));
   final isHosting = ref.watch(syncServerProvider.select((s) => s != null));
   final isSyncing = ref.watch(isSyncingProvider);
   final isSearching = ref.watch(mdnsSearcherProvider.select((s) => s.status == ScanStatus.scanning));
