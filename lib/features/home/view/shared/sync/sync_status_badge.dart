@@ -394,16 +394,16 @@ class _SyncStatusBadgeState extends ConsumerState<SyncStatusBadge> {
       return;
     }
 
-    // 7. Synced -> Open Menu (Android) or Force Sync (Desktop)
+    // 7. Synced -> Force Sync (Desktop) or Open Menu (Mobile)
     if (displayState == SyncDisplayState.synced) {
       if (PlatformHelper.isWideLayout(context)) {
-        _openSyncMenu(context);
-      } else {
         ref.read(syncOrchestratorProvider).triggerSync();
         SnackBarManager.show(
           msg: 'Syncing notes...',
           type: SnackBarMessageType.info,
         );
+      } else {
+        _openSyncMenu(context);
       }
       return;
     }
@@ -440,6 +440,7 @@ class _SyncStatusBadgeState extends ConsumerState<SyncStatusBadge> {
               onTap: displayState.isActionable
                   ? () => _handleTap(context, ref, displayState)
                   : null,
+              onLongPress: () => _openSyncMenu(context),
               onSecondaryTap: () => _openSyncMenu(context),
               child: Padding(
                 padding: const EdgeInsets.symmetric(
