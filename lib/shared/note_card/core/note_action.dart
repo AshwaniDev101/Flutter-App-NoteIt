@@ -27,7 +27,8 @@ enum NoteAction {
   // Editor-specific
   info('Details', Icons.info_outline),
   checklist('Checklist', Icons.check_box_outlined),
-  find('Find', Icons.search_outlined);
+  find('Find', Icons.search_outlined),
+  settings('Settings', Icons.settings_outlined);
 
   final String label;
   final IconData icon;
@@ -98,6 +99,8 @@ extension NoteActionUI on NoteAction {
         return (label: 'Details', icon: Icons.info_outline, tooltip: 'Note Meta Data', isActive: false);
       case NoteAction.find:
         return (label: 'Find', icon: Icons.search_outlined, tooltip: 'Find in Note', isActive: false);
+      case NoteAction.settings:
+        return (label: 'Settings', icon: Icons.settings_outlined, tooltip: 'Note Editor Settings', isActive: false);
       default:
         return (label: label, icon: icon, tooltip: label, isActive: false);
     }

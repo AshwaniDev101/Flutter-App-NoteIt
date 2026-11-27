@@ -825,6 +825,10 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
             if (!mounted) return;
             ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.noteDetails);
             break;
+          case NoteAction.settings:
+            if (!mounted) return;
+            ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.noteEditorSettings);
+            break;
           default:
             break;
         }

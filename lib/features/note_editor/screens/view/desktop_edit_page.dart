@@ -555,7 +555,7 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
                   isChecklist: _contentVersion == ContentVersion.checklist,
                   hasReminder: _currentNoteWithFolder?.note.reminderAt != null,
                   onPressed: (NoteAction option) async {
-                    if (_isNewNote && option != NoteAction.info) {
+                    if (_isNewNote && option != NoteAction.info && option != NoteAction.settings) {
                       SnackBarManager.show(msg: 'Please save the note first', type: SnackBarMessageType.error);
                       return;
                     }
@@ -621,6 +621,10 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
                         break;
                       case NoteAction.reminder:
                         await _openReminderDialog();
+                        break;
+                      case NoteAction.settings:
+                        if (!context.mounted) return;
+                        ref.read(drawerNavigationProvider).navigate(context, RightPanelPageOptions.noteEditorSettings);
                         break;
                       default:
                         break;

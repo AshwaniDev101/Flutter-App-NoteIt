@@ -26,6 +26,7 @@ class NoteEditorOptionButton extends StatelessWidget {
     NoteAction.checklist,
     NoteAction.find,
     NoteAction.reminder,
+    NoteAction.settings,
   ];
 
   const NoteEditorOptionButton({
@@ -188,51 +189,58 @@ class NoteEditorOptionMenu extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final double calculatedWidth = (_itemWidth * _columnCount) + (_spacing * (_columnCount - 1));
 
+    final Widget wrapWidget = Wrap(
+      alignment: WrapAlignment.start,
+      spacing: _spacing,
+      runSpacing: _spacing,
+      children: options.map((option) {
+        final appearance = option.getAppearance(
+          isLocked: isLocked,
+          isPinned: isPinned,
+          isChecklist: isChecklist,
+          hasReminder: hasReminder,
+        );
+
+        final Color iconColor = appearance.isActive
+            ? colorScheme.primary
+            : colorScheme.onSurfaceVariant;
+
+        final Widget optionWidget = _editorOption(
+          context: context,
+          icon: Icon(appearance.icon, color: iconColor),
+          name: appearance.label,
+          onPressed: () {
+            MenuController.maybeOf(context)?.close();
+            onPressed(option);
+          },
+        );
+
+        if (option == NoteAction.find) {
+          return SmartActionWidget(
+            action: AppActions.findInNote,
+            scope: ShortcutScope.editor,
+            baseTooltip: appearance.tooltip,
+            badgeTop: -2,
+            badgeRight: -2,
+            child: optionWidget,
+          );
+        }
+
+        return optionWidget;
+      }).toList(),
+    );
+
     final content = Padding(
       padding: const EdgeInsets.all(8.0),
-      child: SizedBox(
-        width: calculatedWidth,
-        child: Wrap(
-          alignment: WrapAlignment.start,
-          spacing: _spacing,
-          runSpacing: _spacing,
-          children: options.map((option) {
-            final appearance = option.getAppearance(
-              isLocked: isLocked,
-              isPinned: isPinned,
-              isChecklist: isChecklist,
-              hasReminder: hasReminder,
-            );
-
-            final Color iconColor = appearance.isActive
-                ? colorScheme.primary
-                : colorScheme.onSurfaceVariant;
-
-            final Widget optionWidget = _editorOption(
-              context: context,
-              icon: Icon(appearance.icon, color: iconColor),
-              name: appearance.label,
-              onPressed: () {
-                MenuController.maybeOf(context)?.close();
-                onPressed(option);
-              },
-            );
-
-            if (option == NoteAction.find) {
-              return SmartActionWidget(
-                action: AppActions.findInNote,
-                scope: ShortcutScope.editor,
-                baseTooltip: appearance.tooltip,
-                badgeTop: -2,
-                badgeRight: -2,
-                child: optionWidget,
-              );
-            }
-
-            return optionWidget;
-          }).toList(),
-        ),
-      ),
+      child: showCard
+          ? SizedBox(
+              width: calculatedWidth,
+              child: wrapWidget,
+            )
+          : SizedBox(
+              width: double.infinity,
+              child: wrapWidget,
+            ),
     );
 
     if (!showCard) {
