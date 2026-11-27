@@ -176,49 +176,52 @@ class DynamicNotesLayout extends ConsumerWidget {
         ? NoteCard.defaultContextMenuOptions.where((opt) => opt != NoteAction.reminder).toList()
         : NoteCard.defaultContextMenuOptions;
 
-    return NoteCard(
-      noteWithFolder: currentNoteWithFolder,
-      viewType: viewType,
-      key: ValueKey(currentNoteWithFolder.note.uuid),
-      isSelected: isCurrentlySelected,
-      isActive: isActive,
-      searchQuery: ref.read(searchQueryProvider),
-      contextMenuOptions: contextMenuOptions,
+    return RepaintBoundary(
+      key: ValueKey('repaint_${currentNoteWithFolder.note.uuid}'),
+      child: NoteCard(
+        noteWithFolder: currentNoteWithFolder,
+        viewType: viewType,
+        key: ValueKey(currentNoteWithFolder.note.uuid),
+        isSelected: isCurrentlySelected,
+        isActive: isActive,
+        searchQuery: ref.read(searchQueryProvider),
+        contextMenuOptions: contextMenuOptions,
 
-      onTap: () {
-        // Native Desktop UX: Check if Ctrl (Windows) or Cmd (Mac) is held down
-        final isModifierPressed = HardwareKeyboard.instance.isControlPressed ||
-            HardwareKeyboard.instance.isMetaPressed;
+        onTap: () {
+          // Native Desktop UX: Check if Ctrl (Windows) or Cmd (Mac) is held down
+          final isModifierPressed = HardwareKeyboard.instance.isControlPressed ||
+              HardwareKeyboard.instance.isMetaPressed;
 
-        if (isSelectMode || isModifierPressed) {
-          if (!isSelectMode) onEnableSelectMode();
-          onToggleSelection(currentNoteWithFolder.note.uuid);
-        } else {
-          onNoteTap(currentNoteWithFolder);
-        }
-      },
-      onLongPress: () {
-        if (!isSelectMode) {
-          onEnableSelectMode();
-          onToggleSelection(currentNoteWithFolder.note.uuid);
-        }
-      },
-
-      onContextMenuAction: (option) {
-        if (option == NoteAction.select) {
-          if (!isSelectMode) onEnableSelectMode();
-          if (!isCurrentlySelected) {
+          if (isSelectMode || isModifierPressed) {
+            if (!isSelectMode) onEnableSelectMode();
+            onToggleSelection(currentNoteWithFolder.note.uuid);
+          } else {
+            onNoteTap(currentNoteWithFolder);
+          }
+        },
+        onLongPress: () {
+          if (!isSelectMode) {
+            onEnableSelectMode();
             onToggleSelection(currentNoteWithFolder.note.uuid);
           }
-          return;
-        }
+        },
 
-        if (isCurrentlySelected) {
-          _handleBatchAction(context, ref, option, noteIds.toList());
-        } else {
-          _handleBatchAction(context, ref, option, [currentNoteWithFolder.note.uuid]);
-        }
-      },
+        onContextMenuAction: (option) {
+          if (option == NoteAction.select) {
+            if (!isSelectMode) onEnableSelectMode();
+            if (!isCurrentlySelected) {
+              onToggleSelection(currentNoteWithFolder.note.uuid);
+            }
+            return;
+          }
+
+          if (isCurrentlySelected) {
+            _handleBatchAction(context, ref, option, noteIds.toList());
+          } else {
+            _handleBatchAction(context, ref, option, [currentNoteWithFolder.note.uuid]);
+          }
+        },
+      ),
     );
   }
 

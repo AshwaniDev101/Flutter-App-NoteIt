@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:noteit/features/home/core/db_sorting_filtering.dart';
 import '../../../database/drift/notes/notes_dao.dart';
@@ -117,14 +118,28 @@ class ShowDeviceFilterNotifier extends Notifier<bool> {
 /// SEARCH FILTER
 final searchQueryProvider = NotifierProvider<SearchQueryNotifier, String>(SearchQueryNotifier.new);
 class SearchQueryNotifier extends Notifier<String> {
+  Timer? _debounceTimer;
+
   @override
-  String build() => '';
+  String build() {
+    ref.onDispose(() => _debounceTimer?.cancel());
+    return '';
+  }
 
   void updateQuery(String query) {
-    state = query;
+    _debounceTimer?.cancel();
+    if (query.trim().isEmpty) {
+      state = '';
+      return;
+    }
+
+    _debounceTimer = Timer(const Duration(milliseconds: 150), () {
+      state = query;
+    });
   }
 
   void clear() {
+    _debounceTimer?.cancel();
     state = '';
   }
 }
