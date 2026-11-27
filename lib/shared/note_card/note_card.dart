@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,6 +16,7 @@ import 'package:noteit/core/config/menu_anchor_constants.dart';
 import '../menus/context_menu_helper.dart';
 import '../text/highlighted_text.dart';
 import 'core/note_action.dart';
+import 'core/note_preview_helper.dart';
 
 /// A card widget displaying a note summary across list and grid layouts.
 class NoteCard extends ConsumerStatefulWidget {
@@ -468,37 +467,14 @@ class _NoteCardState extends ConsumerState<NoteCard> {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme.bodyMedium!.copyWith(color: theme.colorScheme.onSurfaceVariant);
 
-    if (_note.contentVersion == 2 && _note.content.startsWith('[')) {
-      try {
-        final List<dynamic> decoded = jsonDecode(_note.content);
-        final itemsToRender = maxLines != null ? decoded.take(maxLines).toList() : decoded;
-
-        return SingleChildScrollView(
-          physics: const NeverScrollableScrollPhysics(),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: itemsToRender.map((item) {
-              final isChecked = item['isChecked'] == true;
-              final text = item['text'] as String? ?? '';
-
-              return Text(
-                '${isChecked ? "◆" : "◇"} $text',
-                maxLines: 1,
-                softWrap: false,
-                overflow: TextOverflow.ellipsis,
-                style: textTheme,
-              );
-            }).toList(),
-          ),
-        );
-      } catch (_) {
-        // Fall back to standard text rendering if JSON parsing fails.
-      }
-    }
+    final previewText = NotePreviewHelper.getPreviewText(
+      _note,
+      searchQuery: widget.searchQuery,
+      maxChars: 300,
+    );
 
     return HighlightedText(
-      text: _note.content,
+      text: previewText,
       query: widget.searchQuery,
       maxLines: maxLines,
       overflow: overflow,

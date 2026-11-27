@@ -23,6 +23,11 @@ class HighlightedText extends StatelessWidget {
   Widget build(BuildContext context) {
     final defaultStyle = normalStyle ?? Theme.of(context).textTheme.bodyMedium ?? const TextStyle();
 
+    // Safety guardrail: cap text length to 500 characters max to protect against layout/memory spikes
+    final String textToDisplay = text.characters.length > 500
+        ? '${text.characters.take(500).toString()} …'
+        : text;
+
     final colors = SearchHighlightColors.of(context);
     final defaultHighlight = highlightStyle ?? defaultStyle.copyWith(
       fontWeight: FontWeight.bold,
@@ -35,14 +40,14 @@ class HighlightedText extends StatelessWidget {
 
     if (query.isEmpty) {
       return Text(
-        text,
+        textToDisplay,
         style: defaultStyle,
         maxLines: maxLines,
         overflow: overflow,
       );
     }
 
-    final String textLower = text.toLowerCase();
+    final String textLower = textToDisplay.toLowerCase();
     final String queryLower = query.toLowerCase();
 
     List<TextSpan> spans = [];
@@ -53,7 +58,7 @@ class HighlightedText extends StatelessWidget {
       if (indexOfMatch > start) {
         spans.add(
           TextSpan(
-            text: text.substring(start, indexOfMatch),
+            text: textToDisplay.substring(start, indexOfMatch),
             style: defaultStyle,
           ),
         );
@@ -61,7 +66,7 @@ class HighlightedText extends StatelessWidget {
 
       spans.add(
         TextSpan(
-          text: text.substring(indexOfMatch, indexOfMatch + query.length),
+          text: textToDisplay.substring(indexOfMatch, indexOfMatch + query.length),
           style: defaultHighlight,
         ),
       );
@@ -70,8 +75,8 @@ class HighlightedText extends StatelessWidget {
       indexOfMatch = textLower.indexOf(queryLower, start);
     }
 
-    if (start < text.length) {
-      spans.add(TextSpan(text: text.substring(start), style: defaultStyle));
+    if (start < textToDisplay.length) {
+      spans.add(TextSpan(text: textToDisplay.substring(start), style: defaultStyle));
     }
 
     return RichText(
