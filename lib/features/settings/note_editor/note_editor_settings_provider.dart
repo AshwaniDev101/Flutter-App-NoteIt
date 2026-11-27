@@ -17,7 +17,7 @@ class NoteEditorSettings {
   final double lineSpacing;
 
   const NoteEditorSettings({
-    this.putCursorOnContent = true,
+    this.putCursorOnContent = false,
     this.titleFontSize = 22.0,
     this.contentFontSize = 16.0,
     this.lineSpacing = 1.5,
@@ -99,7 +99,7 @@ class NoteEditorSettingsNotifier extends Notifier<NoteEditorSettings> {
 
   /// Restores all note editor settings to factory default values.
   Future<void> resetToDefaults() async {
-    await _prefs.setPutCursorOnContent(true);
+    await _prefs.setPutCursorOnContent(false);
     await _prefs.setTitleFontSize(22.0);
     await _prefs.setContentFontSize(16.0);
     await _prefs.setLineSpacing(1.5);

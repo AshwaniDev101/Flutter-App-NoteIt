@@ -143,12 +143,14 @@ class _DesktopEditNotePageState extends ConsumerState<DesktopEditNotePage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && !_isLocked) {
-        final settings = ref.read(noteEditorSettingsProvider);
-        if (settings.putCursorOnContent) {
-          _contentFocusNode.requestFocus();
-        } else if (_isNewNote) {
-          _titleFocusNode.requestFocus();
-        }
+
+        _contentFocusNode.requestFocus();
+        // final settings = ref.read(noteEditorSettingsProvider);
+        // if (settings.putCursorOnContent) {
+        //   _contentFocusNode.requestFocus();
+        // } else if (_isNewNote) {
+        //   _titleFocusNode.requestFocus();
+        // }
       }
     });
   }

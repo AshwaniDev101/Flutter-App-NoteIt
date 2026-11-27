@@ -16,6 +16,7 @@ class NoteEditorOptionButton extends StatelessWidget {
   final bool hasReminder;
   final List<NoteAction> options;
   final IconData icon;
+  final Widget Function(BuildContext context, VoidCallback onPressed)? builder;
 
   static const List<NoteAction> defaultOptions = [
     NoteAction.delete,
@@ -38,6 +39,7 @@ class NoteEditorOptionButton extends StatelessWidget {
     this.hasReminder = false,
     this.options = defaultOptions,
     this.icon = Icons.more_vert,
+    this.builder,
   });
 
   void _showMobileBottomSheet(BuildContext context) {
@@ -79,31 +81,22 @@ class NoteEditorOptionButton extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     if (isMobile) {
+      if (builder != null) {
+        return builder!(context, () => _showMobileBottomSheet(context));
+      }
 
       return IconButton(
         tooltip: "Option Menu",
         icon: Icon(icon),
         onPressed: () => _showMobileBottomSheet(context),
         style: IconButton.styleFrom(
-
-          // backgroundColor: colorScheme.surfaceContainerLow,
           backgroundColor: colorScheme.surfaceContainerLowest, // The background color
-          // backgroundColor: colorScheme.surfaceContainer,
-          // backgroundColor: colorScheme.surfaceContainerHigh,
-          // backgroundColor: colorScheme.surfaceContainerHighest,
-
           foregroundColor: colorScheme.onSurface, // The icon color
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16.0),
           ),
-          // padding: EdgeInsets.all(0.0), // Adjust padding if the background is too tight
         ),
       );
-      // return IconButton(
-      //   tooltip: "Option Menu",
-      //   icon: Icon(icon),
-      //   onPressed: () => _showMobileBottomSheet(context),
-      // );
     }
 
     return MenuAnchor(
@@ -113,16 +106,21 @@ class NoteEditorOptionButton extends StatelessWidget {
         elevation: WidgetStatePropertyAll(0),
       ),
       builder: (BuildContext context, MenuController controller, Widget? child) {
+        void toggleMenu() {
+          if (controller.isOpen) {
+            controller.close();
+          } else {
+            controller.open();
+          }
+        }
+
+        if (builder != null) {
+          return builder!(context, toggleMenu);
+        }
+
         return IconButton(
           tooltip: "Option Menu",
-          onPressed: () {
-            if (controller.isOpen) {
-              controller.close();
-            } else {
-              controller.open();
-            }
-          },
-          // 1. Remove the default minimum box constraints
+          onPressed: toggleMenu,
           constraints: const BoxConstraints(),
 
           style: IconButton.styleFrom(

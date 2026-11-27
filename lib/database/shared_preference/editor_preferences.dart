@@ -16,7 +16,7 @@ class EditorPreferences {
   static const String _keyContentFontSize = 'editor_content_font_size';
   static const String _keyLineSpacing = 'editor_line_spacing';
 
-  bool get putCursorOnContent => _prefs.getBool(_keyPutCursorOnContent) ?? true;
+  bool get putCursorOnContent => _prefs.getBool(_keyPutCursorOnContent) ?? false;
 
   Future<bool> setPutCursorOnContent(bool value) async => await _prefs.setBool(_keyPutCursorOnContent, value);
 

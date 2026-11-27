@@ -448,8 +448,33 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
                 backgroundColor: panelColor,
                 surfaceTintColor: Colors.transparent,
                 title: _getTextField(),
-                actions: [_optionMenu()],
+                // actions: [_optionMenu()],
               ),
+        floatingActionButton: _optionMenu(
+          builder: (context, onPressed) {
+            final isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
+            if (isKeyboardVisible) return const SizedBox.shrink();
+
+            final colorScheme = Theme.of(context).colorScheme;
+            return SizedBox(
+              width: 48,
+              height: 48,
+              child: FloatingActionButton(
+                heroTag: 'mobile_edit_note_option_fab',
+                onPressed: onPressed,
+                tooltip: 'Note Options',
+                backgroundColor: colorScheme.surfaceContainerLowest,
+                foregroundColor: colorScheme.onSurface,
+                elevation: 1,
+                highlightElevation: 1,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16.0),
+                ),
+                child: const Icon(Icons.more_vert),
+              ),
+            );
+          },
+        ),
         body: SafeArea(
           child: Stack(
             children: [
@@ -563,7 +588,7 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
                 Expanded(
                   child: titleTextField,
                 ),
-                if (!isWide) _optionMenu(),
+                // if (!isWide) _optionMenu(),
               ],
             ),
           ),
@@ -740,12 +765,15 @@ class _MobileEditNotePageState extends ConsumerState<MobileEditNotePage> {
     );
   }
 
-  Widget _optionMenu() {
+  Widget _optionMenu({
+    Widget Function(BuildContext context, VoidCallback onPressed)? builder,
+  }) {
     return NoteEditorOptionButton(
       isLocked: _isLocked,
       isPinned: _isPinned,
       isChecklist: _contentVersion == ContentVersion.checklist,
       hasReminder: _currentNoteWithFolder?.note.reminderAt != null,
+      builder: builder,
       onPressed: (NoteAction option) async {
         switch (option) {
           case NoteAction.delete:
